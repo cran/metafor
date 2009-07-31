@@ -21,6 +21,9 @@
 
 	If the model contains moderators, then a forest plot, funnel plot, plot of the standardized residuals against the fitted values, and a plot of the standardized residuals is provided. If \code{qqplot=TRUE}, the last plot is replaced by a normal QQ plot of the standardized residuals.
 }
+\note{
+	If the number of studies is large, the forest plot may become quite impossible to read.
+}
 \author{Wolfgang Viechtbauer; \email{wvb@www.wvbauer.com}; \url{http://www.wvbauer.com/}}
 \seealso{
 	\code{\link{forest}}, \code{\link{funnel}}, \code{\link{radial}}, \code{\link{qqnorm.rma.uni}}

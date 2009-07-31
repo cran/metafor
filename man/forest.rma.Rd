@@ -59,7 +59,7 @@
 	Additional summary estimates can also be added to the plot with the \code{\link{addpoly}} function. See the documentation for that function for examples.
 }
 \note{
-	The function tries to set some sensible values for the optional arguments, but it may be necessary to tweak these in certain circumstances.
+	The function tries to set some sensible values for the optional arguments, but it may be necessary to tweak these in certain circumstances. In particular, if the number of studies is quite large, the labels, annotations, and symbols may become quite small and impossible to read. Stretching the plot window vertically may then provide a more readable figure (you will have to call the function again after the stretching, so that the label/symbol sizes are properly adjusted).
 
 	If the horizontal plot and/or x axis limits are set by the user, then the horizontal plot limits (\code{xlim}) must be at least as wide as the x axis limits (\code{alim}). Moreover, the x axis limits must encompass the observed effect sizes or outcomes. These restrictions are enforced inside the function.
 }
@@ -77,16 +77,17 @@ res <- rma(ai=tpos, bi=tneg, ci=cpos, di=cneg, slab=paste(author, year),
 
 ### several forest plots illustrating the use of various arguments
 forest(res, xlab="Log Relative Risk")
+forest(res, xlab="Log Relative Risk", order=order(dat.bcg$ablat))
 forest(res, transf=exp, alim=c(0,6), steps=4, xlim=c(-8,12), 
        xlab="Relative Risk", refline=1)
 forest(res, atransf=exp, at=log(c(.05,.25,1,4,12)), xlim=c(-8,6), 
        xlab="Relative Risk (log scale)", order="prec")
-forest(res, atransf=exp, at=log(c(.05,1,12)), xlim=c(-34,14), ylim=c(-2.5,15), 
-       xlab="Relative Risk (log scale)", order="prec", 
+forest(res, atransf=exp, at=log(c(.05,.25,1,8)), xlim=c(-14,6), 
+       ylim=c(-1.5,15), xlab="Relative Risk (log scale)", order="prec", 
        ilab=cbind(dat.bcg$tpos, dat.bcg$tneg, dat.bcg$cpos, dat.bcg$cneg), 
-       ilab.xpos=c(-18,-14,-10,-6), cex=.7)
-text(c(-18,-14,-10,-6), y=14.5, c("TB+", "TB-", "TB+", "TB-"), cex=.7)
-text(c(-16,-8), y=15.5, c("Vaccinated", "Control"), cex=.7)
+       ilab.xpos=c(-8,-7,-5,-4), cex=.7)
+text(c(-8,-7,-5,-4), y=14.5, c("TB+", "TB-", "TB+", "TB-"), cex=.7)
+text(c(-7.5,-4.5), y=15.5, c("Vaccinated", "Control"), cex=.7)
 text(c(10), y=15, c("Observed [95\% CI]"), cex=.7)
 
 ### mixed-effects model with absolute latitude in the model

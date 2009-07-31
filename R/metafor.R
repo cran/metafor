@@ -319,7 +319,8 @@ function (measure, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i,
     vtype = "LS") 
 {
     if (!is.element(measure, c("MD", "SMD", "RR", "OR", "PETO", 
-        "RD", "AS", "PR", "PL", "PAS", "PFT", "COR", "ZCOR"))) 
+        "RD", "AS", "PR", "PLN", "PLO", "PAS", "PFT", "COR", 
+        "ZCOR"))) 
         stop("Unknown 'measure' specified.")
     if (!is.element(to, c("all", "only0", "if0all", "none"))) 
         stop("Unknown 'to' argument specified.")
@@ -454,7 +455,7 @@ function (measure, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i,
             vi <- 1/(4 * n1i) + 1/(4 * n2i)
         }
     }
-    if (is.element(measure, c("PR", "PL", "PAS", "PFT"))) {
+    if (is.element(measure, c("PR", "PLN", "PLO", "PAS", "PFT"))) {
         mf.xi <- mf[[match("xi", names(mf))]]
         mf.mi <- mf[[match("mi", names(mf))]]
         mf.ni <- mf[[match("ni", names(mf))]]
@@ -483,17 +484,21 @@ function (measure, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i,
             }
         }
         ni <- xi + mi
-        pi <- xi/ni
+        pri <- xi/ni
         if (measure == "PR") {
-            yi <- pi
-            vi <- pi * (1 - pi)/ni
+            yi <- pri
+            vi <- pri * (1 - pri)/ni
         }
-        if (measure == "PL") {
-            yi <- log(pi/(1 - pi))
+        if (measure == "PLN") {
+            yi <- log(pri)
+            vi <- 1/xi - 1/ni
+        }
+        if (measure == "PLO") {
+            yi <- log(pri/(1 - pri))
             vi <- 1/xi + 1/mi
         }
         if (measure == "PAS") {
-            yi <- asin(sqrt(pi))
+            yi <- asin(sqrt(pri))
             vi <- 1/(4 * ni)
         }
         if (measure == "PFT") {
@@ -737,7 +742,9 @@ function (x, vi, sei, annotate = TRUE, xlim = NULL, alim = NULL,
     abline(h = k + 1, ...)
     par.usr <- par("usr")
     height <- par.usr[4] - par.usr[3]
-    cex.adj <- min(1, 25/height)
+    lheight <- strheight("O")
+    cex.adj <- ifelse(k * lheight > height * 0.8, height/(1.25 * 
+        k * lheight), 1)
     if (is.null(cex)) {
         cex <- par("cex") * cex.adj
     }
@@ -1031,7 +1038,9 @@ function (x, annotate = TRUE, addfit = TRUE, xlim = NULL, alim = NULL,
     abline(h = k + 1, ...)
     par.usr <- par("usr")
     height <- par.usr[4] - par.usr[3]
-    cex.adj <- min(1, 25/height)
+    lheight <- strheight("O")
+    cex.adj <- ifelse(k * lheight > height * 0.8, height/(1.25 * 
+        k * lheight), 1)
     if (is.null(cex)) {
         cex <- par("cex") * cex.adj
     }
@@ -1716,8 +1725,8 @@ function (x, qqplot = FALSE, ...)
     invisible()
 }
 plot.rma.uni.infl <-
-function (x, plotdfb = FALSE, pch = 21, bg = "black", bg.infl = "red", 
-    col.na = "lightgray", ...) 
+function (x, plotdfb = FALSE, dfbnew = FALSE, pch = 21, bg = "black", 
+    bg.infl = "red", col.na = "lightgray", ...) 
 {
     if (class(x) != "rma.uni.infl") 
         stop("Argument 'x' must be an object of class \"rma.uni.infl\".")
@@ -1830,8 +1839,18 @@ function (x, plotdfb = FALSE, pch = 21, bg = "black", bg.infl = "red",
     points((1:lids)[ids.infl], x$inf$weight[ids.infl], bg = bg.infl, 
         pch = pch, ...)
     if (plotdfb) {
-        par.ask <- par("ask")
-        par(ask = TRUE)
+        if (dfbnew) {
+            dev.new()
+            par.mar <- par("mar")
+            par.mar.adj <- par.mar - c(2, 2, 2, 1)
+            par.mar.adj[par.mar.adj < 1] <- 1
+            par(mar = par.mar.adj)
+            on.exit(par(mar = par.mar), add = TRUE)
+        }
+        else {
+            par.ask <- par("ask")
+            par(ask = TRUE)
+        }
         par(mfrow = c(x$p, 1))
         for (i in 1:x$p) {
             plot(NA, NA, xlim = c(1, lids), ylim = range(x$dfb[, 
@@ -1850,7 +1869,9 @@ function (x, plotdfb = FALSE, pch = 21, bg = "black", bg.infl = "red",
             points((1:lids)[ids.infl], x$dfb[ids.infl, i], bg = bg.infl, 
                 pch = pch, ...)
         }
-        par(ask = par.ask)
+        if (!dfbnew) {
+            par(ask = par.ask)
+        }
     }
     invisible()
 }
@@ -2667,10 +2688,10 @@ function (yi, vi, sei, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i,
     digits = 4, btt = NULL, tau2 = NULL, knha = FALSE, control = list()) 
 {
     if (!is.element(measure, c("GEN", "MD", "SMD", "RR", "OR", 
-        "PETO", "RD", "AS", "PR", "PL", "PAS", "PFT", "COR", 
-        "ZCOR"))) 
+        "PETO", "RD", "AS", "PR", "PLN", "PLO", "PAS", "PFT", 
+        "COR", "ZCOR"))) 
         stop("Unknown 'measure' specified.")
-    if (!is.element(method, c("FE", "HS", "HE", "DL",  
+    if (!is.element(method, c("FE", "HS", "HE", "DL",
         "SJ", "ML", "REML", "EB"))) 
         stop("Unknown 'method' specified.")
     if (is.null(data)) {
@@ -2740,7 +2761,8 @@ function (yi, vi, sei, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i,
             dat <- escalc(measure, m1i = m1i, m2i = m2i, sd1i = sd1i, 
                 sd2i = sd2i, n1i = n1i, n2i = n2i, vtype = vtype)
         }
-        if (is.element(measure, c("PR", "PL", "PAS", "PFT"))) {
+        if (is.element(measure, c("PR", "PLN", "PLO", "PAS", 
+            "PFT"))) {
             mf.xi <- mf[[match("xi", names(mf))]]
             mf.mi <- mf[[match("mi", names(mf))]]
             mf.ni <- mf[[match("ni", names(mf))]]
@@ -3065,11 +3087,11 @@ function (yi, vi, sei, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i,
     }
     ci.lb <- c(b - crit * se)
     ci.ub <- c(b + crit * se)
-    ll.ML <- -1/2 * (k) * log(2 * pi) - 1/2 * sum(log(vi + tau2)) - 
-        1/2 * RSS.f
-    ll.REML <- -1/2 * (k - p) * log(2 * pi) - 1/2 * sum(log(vi + 
-        tau2)) - 1/2 * log(det(crossprod(X, W) %*% X)) - 1/2 * 
-        RSS.f
+    ll.ML <- -1/2 * (k) * log(2 * get("pi", pos = "package:base")) - 
+        1/2 * sum(log(vi + tau2)) - 1/2 * RSS.f
+    ll.REML <- -1/2 * (k - p) * log(2 * get("pi", pos = "package:base")) - 
+        1/2 * sum(log(vi + tau2)) - 1/2 * log(det(crossprod(X, 
+        W) %*% X)) - 1/2 * RSS.f
     dev.ML <- -2 * ll.ML
     dev.REML <- -2 * ll.REML
     AIC.ML <- -2 * ll.ML + 2 * (p + (if (method == "FE") 
@@ -3365,10 +3387,10 @@ function (ai, bi, ci, di, n1i, n2i, data = NULL, slab = NULL,
     wi <- 1/vi
     QE <- sum(wi * (yi - b)^2)
     QEp <- 1 - pchisq(QE, df = k.yi - 1)
-    ll.ML <- -1/2 * (k.yi) * log(2 * pi) - 1/2 * sum(log(vi)) - 
-        1/2 * QE
-    ll.REML <- -1/2 * (k.yi - 1) * log(2 * pi) - 1/2 * sum(log(vi)) - 
-        1/2 * log(sum(wi)) - 1/2 * QE
+    ll.ML <- -1/2 * (k.yi) * log(2 * get("pi", pos = "package:base")) - 
+        1/2 * sum(log(vi)) - 1/2 * QE
+    ll.REML <- -1/2 * (k.yi - 1) * log(2 * get("pi", pos = "package:base")) - 
+        1/2 * sum(log(vi)) - 1/2 * log(sum(wi)) - 1/2 * QE
     dev.ML <- -2 * ll.ML
     dev.REML <- -2 * ll.REML
     AIC.ML <- -2 * ll.ML + 2
@@ -3558,10 +3580,10 @@ function (ai, bi, ci, di, n1i, n2i, data = NULL, slab = NULL,
     wi <- 1/vi
     QE <- sum(wi * (yi - b)^2)
     QEp <- 1 - pchisq(QE, df = k.yi - 1)
-    ll.ML <- -1/2 * (k.yi) * log(2 * pi) - 1/2 * sum(log(vi)) - 
-        1/2 * QE
-    ll.REML <- -1/2 * (k.yi - 1) * log(2 * pi) - 1/2 * sum(log(vi)) - 
-        1/2 * log(sum(wi)) - 1/2 * QE
+    ll.ML <- -1/2 * (k.yi) * log(2 * get("pi", pos = "package:base")) - 
+        1/2 * sum(log(vi)) - 1/2 * QE
+    ll.REML <- -1/2 * (k.yi - 1) * log(2 * get("pi", pos = "package:base")) - 
+        1/2 * sum(log(vi)) - 1/2 * log(sum(wi)) - 1/2 * QE
     dev.ML <- -2 * ll.ML
     dev.REML <- -2 * ll.REML
     AIC.ML <- -2 * ll.ML + 2
@@ -3600,10 +3622,10 @@ function (yi, vi, sei, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i,
     digits = 4, btt = NULL, tau2 = NULL, knha = FALSE, control = list()) 
 {
     if (!is.element(measure, c("GEN", "MD", "SMD", "RR", "OR", 
-        "PETO", "RD", "AS", "PR", "PL", "PAS", "PFT", "COR", 
-        "ZCOR"))) 
+        "PETO", "RD", "AS", "PR", "PLN", "PLO", "PAS", "PFT", 
+        "COR", "ZCOR"))) 
         stop("Unknown 'measure' specified.")
-    if (!is.element(method, c("FE", "HS", "HE", "DL", 
+    if (!is.element(method, c("FE", "HS", "HE", "DL",
         "SJ", "ML", "REML", "EB"))) 
         stop("Unknown 'method' specified.")
     if (is.null(data)) {
@@ -3673,7 +3695,8 @@ function (yi, vi, sei, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i,
             dat <- escalc(measure, m1i = m1i, m2i = m2i, sd1i = sd1i, 
                 sd2i = sd2i, n1i = n1i, n2i = n2i, vtype = vtype)
         }
-        if (is.element(measure, c("PR", "PL", "PAS", "PFT"))) {
+        if (is.element(measure, c("PR", "PLN", "PLO", "PAS", 
+            "PFT"))) {
             mf.xi <- mf[[match("xi", names(mf))]]
             mf.mi <- mf[[match("mi", names(mf))]]
             mf.ni <- mf[[match("ni", names(mf))]]
@@ -3998,11 +4021,11 @@ function (yi, vi, sei, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i,
     }
     ci.lb <- c(b - crit * se)
     ci.ub <- c(b + crit * se)
-    ll.ML <- -1/2 * (k) * log(2 * pi) - 1/2 * sum(log(vi + tau2)) - 
-        1/2 * RSS.f
-    ll.REML <- -1/2 * (k - p) * log(2 * pi) - 1/2 * sum(log(vi + 
-        tau2)) - 1/2 * log(det(crossprod(X, W) %*% X)) - 1/2 * 
-        RSS.f
+    ll.ML <- -1/2 * (k) * log(2 * get("pi", pos = "package:base")) - 
+        1/2 * sum(log(vi + tau2)) - 1/2 * RSS.f
+    ll.REML <- -1/2 * (k - p) * log(2 * get("pi", pos = "package:base")) - 
+        1/2 * sum(log(vi + tau2)) - 1/2 * log(det(crossprod(X, 
+        W) %*% X)) - 1/2 * RSS.f
     dev.ML <- -2 * ll.ML
     dev.REML <- -2 * ll.REML
     AIC.ML <- -2 * ll.ML + 2 * (p + (if (method == "FE") 

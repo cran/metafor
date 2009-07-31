@@ -1,0 +1,21 @@
+Changes in metafor version 0.5-3
+
+	o small changes to some of the examples
+	o added the log transformed proportion (measure="PLN") as another 
+     measure to the escalc function; changed "PL" to "PLO" to specify 
+     the logit (i.e., log odds) transformation for proportions
+
+Changes in metafor version 0.5-2
+
+	o added an option in plot.rma.uni.infl to open a new device 
+	  for plotting the DFBETAS values
+	o thanks to Jim Lemon, added a much better method of adjusting 
+	  the size of the labels, annotations, and symbols in the forest 
+	  functions when the number of studies is large
+
+Changes in metafor version 0.5-1
+
+	o made some small changes to the documentation (some typos 
+	  corrected, some confusing points clarified)
+
+First version released on CRAN: 0.5-0

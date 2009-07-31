@@ -5,12 +5,13 @@
    Plot method for objects of class \code{"rma.uni.infl"}.
 }
 \usage{
-\method{plot}{rma.uni.infl}(x, plotdfb=FALSE, pch=21, bg="black", 
-     bg.infl="red", col.na="lightgray", ...)
+\method{plot}{rma.uni.infl}(x, plotdfb=FALSE, dfbnew=FALSE, pch=21, 
+     bg="black", bg.infl="red", col.na="lightgray", ...)
 }
 \arguments{
 	\item{x}{an object of class \code{"rma.uni.infl"}.}
 	\item{plotdfb}{logical indicating whether the DFBETAS values should be plotted (default is \code{FALSE}).}
+	\item{dfbnew}{logical indicating whether a new device should be opened for plotting the DFBETAS values (default is \code{FALSE}).}
 	\item{pch}{plotting symbol to use. By default, a filled circle is used. See \code{\link{points}} for other options.}
 	\item{bg}{color to use for filling the plotting symbol (default is \code{"black"}).}
 	\item{bg.infl}{color to use for filling the plotting symbol when the point is considered influential (default is \code{"red"}).}
@@ -18,9 +19,9 @@
 	\item{...}{other arguments.}
 }
 \details{
-	The function plots the externally standardized residuals, DFFITS values, Cook's distances, covariance ratios, leave-one-out \eqn{\tau^2}{tau^2} estimates, leave-one-out (residual) heterogeneity test statistics, hat values, and weights. If \code{plotdfb=TRUE}, the DFBETAS values are plotted after confirming the page change. Points are considered \sQuote{influential} if at least one of the following is true:
+	The function plots the externally standardized residuals, DFFITS values, Cook's distances, covariance ratios, leave-one-out \eqn{\tau^2}{tau^2} estimates, leave-one-out (residual) heterogeneity test statistics, hat values, and weights. If \code{plotdfb=TRUE}, the DFBETAS values are also plotted either after confirming the page change (if \code{newdfb=FALSE}) or on a separate device (if \code{newdfb=TRUE}). Points are considered \sQuote{influential} if at least one of the following is true:
 	\itemize{
-	\item The absolute DFFITS value is larger than \eqn{3 \sqrt{p/(k-p)}}{3 sqrt(p/(k-p))}, where \eqn{p} is the number of model coefficients and \eqn{k} the number of studies.
+	\item The absolute DFFITS value is larger than \eqn{3\sqrt{p/(k-p)}}{3sqrt(p/(k-p))}, where \eqn{p} is the number of model coefficients and \eqn{k} the number of studies.
 	\item The lower tail area of a chi-square distribution with \eqn{p} degrees of freedom cut off by the Cook's distance is larger than \eqn{1/2}.
 	\item The hat value is larger than \eqn{3(p/k)}{3(p/k)}.
 	\item Any DFBETAS value is larger than \eqn{1}.
@@ -43,5 +44,6 @@ data(dat.bcg)
 res <- rma(ai=tpos, bi=tneg, ci=cpos, di=cneg, mods=cbind(ablat, year),
            data=dat.bcg, measure="RR", method="REML")
 plot(influence(res))
+plot(influence(res), plotdfb=TRUE)
 }
 \keyword{hplot}

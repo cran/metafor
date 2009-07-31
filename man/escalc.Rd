@@ -60,10 +60,11 @@ escalc(measure, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i, sd2i,
 
 	\bold{Proportions and Transformations Thereof}
 
-	When the studies provide data for a single group with respect to a dichotomous dependent variable, then the raw proportion, logit transformed proportion, the arc-sine transformed proportion, and the Freeman-Tukey double arc-sine transformed proportion are useful outcome measures. Here, one needs to specify \code{xi} and \code{ni}, denoting the number of individuals experiencing the event of interest and the total number of individuals, respectively. Instead of specifying \code{ni}, one can use \code{mi} to specify the number of individuals that do not experience the event of interest.
+	When the studies provide data for a single group with respect to a dichotomous dependent variable, then the raw proportion, log transformed proportion, logit transformed proportion (i.e., log odds), the arc-sine transformed proportion, and the Freeman-Tukey double arc-sine transformed proportion are useful outcome measures. Here, one needs to specify \code{xi} and \code{ni}, denoting the number of individuals experiencing the event of interest and the total number of individuals, respectively. Instead of specifying \code{ni}, one can use \code{mi} to specify the number of individuals that do not experience the event of interest.
 	\itemize{
 	\item \code{"PR"}: The \emph{raw proportion} is equal to \code{xi/ni}.
-	\item \code{"PL"}: The \emph{logit transformed proportion} is equal to the log of \code{xi/(ni-xi)}.
+	\item \code{"PLN"}: The \emph{log transformed proportion} is equal to the log of \code{xi/ni}.
+	\item \code{"PLO"}: The \emph{logit transformed proportion} is equal to the log of \code{xi/(ni-xi)}.
 	\item \code{"PAS"}: The arc-sine transformation is a variance stabilizing transformation for proportions. The \emph{arc-sine transformed proportion} is equal to \code{asin(sqrt(xi/ni))}.
 	\item \code{"PFT"}: Yet another variance stabilizing transformation for proportions was suggested by Freeman & Tukey (1950). The \emph{Freeman-Tukey double arc-sine transformed proportion} is equal to \code{1/2*(asin(sqrt(xi/(ni+1))) + asin(sqrt((xi+1)/(ni+1))))}.
 	} Again, zero cell entries can be problematic. When \code{to="all"}, the value of \code{add} is added to \code{xi} and \code{mi} in all \eqn{k} studies. When \code{to="only0"}, the value of \code{add} is added only for studies where the \code{xi} or \code{mi} is equal to 0. When \code{to="if0all"}, the value of \code{add} is added in all \eqn{k} studies, but only when there is at least one study with a zero value for \code{xi} or \code{mi}. Setting \code{to="none"} or \code{add=0} again means that no adjustment to the observed values is made.

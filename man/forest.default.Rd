@@ -49,7 +49,7 @@
 	Summary estimates can also be added to the plot with the \code{\link{addpoly}} function. See the documentation for that function for examples.
 }
 \note{
-	The function tries to set some sensible values for the optional arguments, but it may be necessary to tweak these in certain circumstances.
+	The function tries to set some sensible values for the optional arguments, but it may be necessary to tweak these in certain circumstances. In particular, if the number of studies is quite large, the labels, annotations, and symbols may become quite small and impossible to read. Stretching the plot window vertically may then provide a more readable figure (you will have to call the function again after the stretching, so that the label/symbol sizes are properly adjusted).
 
 	If the horizontal plot and/or x axis limits are set by the user, then the horizontal plot limits (\code{xlim}) must be at least as wide as the x axis limits (\code{alim}). Moreover, the x axis limits must encompass the observed effect sizes or outcomes. These restrictions are enforced inside the function.
 }
