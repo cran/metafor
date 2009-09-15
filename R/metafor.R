@@ -1,7 +1,7 @@
 .onLoad <-
 function (lib, pkg) 
 {
-    loadmsg <- "Loading 'metafor' package. Type: help(metafor)\nfor an overview and introduction to the package."
+    loadmsg <- "Loading 'metafor' package (version 0.5-4). For an overview \nand introduction to the package please type: help(metafor)."
     packageStartupMessage(loadmsg, domain = NULL, appendLF = TRUE)
 }
 addpoly <-
@@ -110,6 +110,70 @@ function (x, row = -2, level = x$level, digits = 2, annotate = TRUE,
     addpoly(x$b, vi = x$vb, row = row, level = level, digits = digits, 
         annotate = annotate, mlab = mlab, transf = transf, atransf = atransf, 
         col = col, targs = targs, efac = efac, cex = cex, ...)
+}
+anova.rma.uni <-
+function (object, object2, digits = object$digits, ...) 
+{
+    if (!is.element("rma.uni", class(object))) 
+        stop("Argument 'object' must be an object of class \"rma.uni\".")
+    if (!is.element("rma.uni", class(object2))) 
+        stop("Argument 'object2' must be an object of class \"rma.uni\".")
+    m.f <- object
+    m.r <- object2
+    if (!(identical(m.f$yi, m.r$yi) && identical(m.f$vi, m.r$vi))) 
+        stop("Observed outcomes and/or sampling variances not equal in the full and reduced model.")
+    if (m.f$method == "FE") {
+        p.f <- m.f$p
+    }
+    else {
+        p.f <- m.f$p + 1
+    }
+    if (m.r$method == "FE") {
+        p.r <- m.r$p
+    }
+    else {
+        p.r <- m.r$p + 1
+    }
+    if (p.f == p.r) 
+        stop("Models have the same number of parameters. LRT not meaningful.")
+    if (p.f < p.r) {
+        m.f <- object2
+        m.r <- object
+        p.s <- p.f
+        p.f <- p.r
+        p.r <- p.s
+    }
+    if (m.f$method == "FE" && m.r$method != "FE") 
+        stop("Full model uses a fixed- and reduced model uses random/mixed-effects model.")
+    p.diff <- p.f - p.r
+    if (m.f$method == "REML") {
+        LRT <- abs(m.r$fit.stats$REML[2] - m.f$fit.stats$REML[2])
+        fit.stats.f <- m.f$fit.stats$REML
+        fit.stats.r <- m.r$fit.stats$REML
+        if (!identical(m.f$X, m.r$X)) 
+            warning("Models with different fixed effects. REML comparisons are not meaningful.")
+    }
+    else {
+        LRT <- abs(m.r$fit.stats$ML[2] - m.f$fit.stats$ML[2])
+        fit.stats.f <- m.f$fit.stats$ML
+        fit.stats.r <- m.r$fit.stats$ML
+    }
+    pval <- pchisq(LRT, df = p.diff, lower.tail = FALSE)
+    if (m.f$method == "FE" || identical(m.r$tau2, 0)) {
+        VAF <- NA
+    }
+    else {
+        VAF <- round(100 * max(0, (m.r$tau2 - m.f$tau2)/m.r$tau2), 
+            2)
+    }
+    res <- list(fit.stats.f, fit.stats.r, p.f, p.r, LRT, pval, 
+        m.f$QE, m.r$QE, m.f$tau2, m.r$tau2, VAF, m.f$method, 
+        digits)
+    names(res) <- c("fit.stats.f", "fit.stats.r", "p.f", "p.r", 
+        "LRT", "pval", "QE.f", "QE.r", "tau2.f", "tau2.r", "VAF", 
+        "method", "digits")
+    class(res) <- c("anova.rma.uni")
+    return(res)
 }
 blup <-
 function (x, ...) 
@@ -251,10 +315,14 @@ function (object, fixed = FALSE, random = TRUE, level = object$level,
             s2 <- (x$k - 1) * sum(wi)/(sum(wi)^2 - sum(wi^2))
             I2.lb <- tau2.lb/(tau2.lb + s2) * 100
             I2.ub <- tau2.ub/(tau2.ub + s2) * 100
+            H2.lb <- tau2.lb/s2 + 1
+            H2.ub <- tau2.ub/s2 + 1
         }
         else {
             I2.lb <- NA
             I2.ub <- NA
+            H2.lb <- NA
+            H2.ub <- NA
         }
         if (is.na(tau2.lb) && is.na(tau2.lb)) {
             cat("The upper and lower bound both fall below ", 
@@ -266,9 +334,11 @@ function (object, fixed = FALSE, random = TRUE, level = object$level,
             ifelse(tau2.lb >= 0, tau2.lb, NA), ifelse(tau2.ub >= 
                 0, tau2.ub, NA))), digits)
         I2 <- round(c(x$I2, I2.lb, I2.ub), digits)
+        H2 <- round(c(x$H2, H2.lb, H2.ub), digits)
         if (x$int.only) {
-            res.random <- rbind(tau2, tau, I2)
-            dimnames(res.random)[[1]] <- c("tau^2", "tau", "I^2(%)")
+            res.random <- rbind(tau2, tau, I2, H2)
+            dimnames(res.random)[[1]] <- c("tau^2", "tau", "I^2(%)", 
+                "H^2")
         }
         else {
             res.random <- rbind(tau2, tau)
@@ -320,7 +390,7 @@ function (measure, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i,
 {
     if (!is.element(measure, c("MD", "SMD", "RR", "OR", "PETO", 
         "RD", "AS", "PR", "PLN", "PLO", "PAS", "PFT", "COR", 
-        "ZCOR"))) 
+        "UCOR", "ZCOR"))) 
         stop("Unknown 'measure' specified.")
     if (!is.element(to, c("all", "only0", "if0all", "none"))) 
         stop("Unknown 'to' argument specified.")
@@ -507,12 +577,28 @@ function (measure, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i,
             vi <- 1/(4 * ni + 2)
         }
     }
-    if (is.element(measure, c("COR", "ZCOR"))) {
+    if (is.element(measure, c("COR", "UCOR", "ZCOR"))) {
         mf.ri <- mf[[match("ri", names(mf))]]
         mf.ni <- mf[[match("ni", names(mf))]]
         ri <- eval(mf.ri, data)
         ni <- eval(mf.ni, data)
         if (measure == "COR") {
+            yi <- ri
+            if (vtype == "UB") {
+                vi <- (ri + ri * (1 - ri^2)/(2 * (ni - 4)))^2 - 
+                  1 + (ni - 3)/(ni - 2) * ((1 - ri^2) + 2 * (1 - 
+                  ri^2)^2/ni + 8 * (1 - ri^2)^3/(ni * (ni + 2)) + 
+                  48 * (1 - ri^2)^4/(ni * (ni + 2) * (ni + 4)))
+            }
+            if (vtype == "LS") {
+                vi <- (1 - ri^2)^2/(ni - 1)
+            }
+            if (vtype == "HS") {
+                mr <- sum(ni * ri)/sum(ni)
+                vi <- (1 - mr^2)^2/(ni - 1)
+            }
+        }
+        if (measure == "UCOR") {
             yi <- ri + ri * (1 - ri^2)/(2 * (ni - 4))
             if (vtype == "UB") {
                 vi <- yi^2 - 1 + (ni - 3)/(ni - 2) * ((1 - ri^2) + 
@@ -521,10 +607,10 @@ function (measure, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i,
                   (ni + 4)))
             }
             if (vtype == "LS") {
-                vi <- (1 - ri^2)^2/(ni - 1)
+                vi <- (1 - yi^2)^2/(ni - 1)
             }
             if (vtype == "HS") {
-                mr <- sum(ni * ri)/sum(ni)
+                mr <- sum(ni * yi)/sum(ni)
                 vi <- (1 - mr^2)^2/(ni - 1)
             }
         }
@@ -705,7 +791,7 @@ function (x, vi, sei, annotate = TRUE, xlim = NULL, alim = NULL,
     if (addrows > 0) 
         addrows <- addrows + 1
     if (is.null(ylim)) {
-        ylim <- c(0.5 - addrows, k + 1)
+        ylim <- c(0.5 - addrows, k + 2)
     }
     else {
         ylim <- sort(ylim)
@@ -1001,7 +1087,7 @@ function (x, annotate = TRUE, addfit = TRUE, xlim = NULL, alim = NULL,
             addrows <- addrows + 1
     }
     if (is.null(ylim)) {
-        ylim <- c(0.5 - addrows, k + 1)
+        ylim <- c(0.5 - addrows, k + 2)
     }
     else {
         ylim <- sort(ylim)
@@ -1197,11 +1283,15 @@ function (x, annotate = TRUE, addfit = TRUE, xlim = NULL, alim = NULL,
     invisible()
 }
 fsn <-
-function (yi, vi, sei, data = NULL, subset = NULL, alpha = 0.05) 
+function (yi, vi, sei, data = NULL, type = "Rosenthal", alpha = 0.05, 
+    target = NULL, digits = 4, subset = NULL) 
 {
     na.act <- getOption("na.action")
     if (!is.element(na.act, c("na.omit", "na.exclude", "na.fail"))) 
         stop("Unknwn 'na.action' specified under options().")
+    type <- match.arg(type, c("Rosenthal", "Orwin", "Rosenberg"))
+    if (!is.element(type, c("Rosenthal", "Orwin", "Rosenberg"))) 
+        stop("Unknown 'type' specified.")
     if (is.null(data)) {
         data <- sys.frame(sys.parent())
     }
@@ -1237,13 +1327,45 @@ function (yi, vi, sei, data = NULL, subset = NULL, alpha = 0.05)
         if (na.act == "na.fail") 
             stop("Missing values in results.")
     }
-    k <- length(yi)
-    zi <- yi/sqrt(vi)
-    z.avg <- sum(zi)/sqrt(k)
-    fsnum <- max(0, k * (z.avg/qnorm(1 - alpha))^2 - k)
-    fsnum <- data.frame(ceiling(fsnum), row.names = c("Fail-safe N:"))
-    dimnames(fsnum)[[2]] <- " "
-    return(fsnum)
+    if (type == "Rosenthal") {
+        k <- length(yi)
+        zi <- yi/sqrt(vi)
+        z.avg <- abs(sum(zi)/sqrt(k))
+        pval <- pnorm(z.avg, lower.tail = FALSE)
+        fsnum <- ceiling(max(0, k * (z.avg/qnorm(1 - alpha))^2 - 
+            k))
+        meanes <- NA
+        target <- NA
+    }
+    if (type == "Orwin") {
+        k <- length(yi)
+        meanes <- mean(yi)
+        if (is.null(target)) {
+            target <- meanes/2
+        }
+        if (identical(target, 0)) {
+            fsnum <- Inf
+        }
+        else {
+            fsnum <- ceiling(max(0, k * (meanes - target)/target))
+        }
+        pval <- NA
+    }
+    if (type == "Rosenberg") {
+        k <- length(yi)
+        wi <- 1/vi
+        meanes <- sum(wi * yi)/sum(wi)
+        zval <- meanes/sqrt(1/sum(wi))
+        w.p <- (sum(wi * yi)/qnorm(1 - alpha/2))^2 - sum(wi)
+        pval <- 2 * (1 - pnorm(abs(zval)))
+        fsnum <- ceiling(max(0, k * w.p/sum(wi)))
+        target <- NA
+    }
+    res <- list(type, fsnum, alpha, pval, meanes, target, digits)
+    names(res) <- c("type", "fsnum", "alpha", "pval", "meanes", 
+        "target", "digits")
+    class(res) <- c("fsn")
+    return(res)
 }
 funnel <-
 function (x, ...) 
@@ -1467,10 +1589,10 @@ function (model, digits = model$digits, ...)
     delresid <- x$yi.f - delpred
     sedelresid <- sqrt(x$vi.f + vdelpred + tau2.del)
     standelres <- delresid/sedelresid
-    dffits <- (pred - delpred)/sqrt(vdelpred)
     options(na.action = "na.exclude")
     hii <- hatvalues(x)
     options(na.action = na.act)
+    dffits <- (pred - delpred)/sqrt(vdelpred)
     weight <- rep(NA, x$k.f)
     if (x$weighted) {
         weight[x$not.na] <- wi/sum(wi) * 100
@@ -1982,6 +2104,146 @@ function (object, newmods = NULL, level = object$level, digits = object$digits,
     class(out) <- c("rma.list")
     return(out)
 }
+print.anova.rma.uni <-
+function (x, digits = x$digits, ...) 
+{
+    if (class(x) != "anova.rma.uni") 
+        stop("Argument 'x' must be an object of class \"anova.rma.uni\".")
+    cutoff <- paste(c(".", rep(0, digits - 1), 1), collapse = "")
+    ncutoff <- as.numeric(cutoff)
+    res.table <- rbind(c(x$p.f, x$fit.stats.f[3], x$fit.stats.f[4], 
+        x$fit.stats.f[1], NA, NA, x$QE.f, x$tau2.f, NA), c(x$p.r, 
+        x$fit.stats.r[3], x$fit.stats.r[4], x$fit.stats.r[1], 
+        x$LRT, x$pval, x$QE.r, x$tau2.r, NA))
+    res.table[, 2:9] <- formatC(res.table[, 2:9], digits = digits, 
+        format = "f")
+    colnames(res.table) <- c("df", "AIC", "BIC", "logLik", "LRT", 
+        "pval", "QE", "tau^2", "VAF")
+    rownames(res.table) <- c("Full", "Reduced")
+    pval <- x$pval
+    if (pval > ncutoff) {
+        res.table[2, 6] <- formatC(pval, digits = digits, format = "f")
+    }
+    else {
+        res.table[2, 6] <- paste("<", cutoff, sep = "", collapse = "")
+    }
+    res.table[1, 5:6] <- ""
+    res.table[1, 9] <- ""
+    res.table[2, 9] <- paste(x$VAF, "%", sep = "")
+    if (x$method == "FE") {
+        res.table <- res.table[, 1:7]
+    }
+    print(res.table, quote = FALSE, right = TRUE)
+    invisible()
+}
+print.fsn <-
+function (x, digits = x$digits, ...) 
+{
+    if (class(x) != "fsn") 
+        stop("Argument 'x' must be an object of class \"fsn\".")
+    cutoff <- paste(c(".", rep(0, digits - 1), 1), collapse = "")
+    ncutoff <- as.numeric(cutoff)
+    cat("\n")
+    cat("Fail-safe N Calculation Using the", x$type, "Approach", 
+        "\n\n")
+    if (x$type == "Rosenthal") {
+        pval <- x$pval
+        if (pval > ncutoff) {
+            pval <- formatC(pval, digits = digits, format = "f")
+        }
+        else {
+            pval <- paste("<", cutoff, sep = "", collapse = "")
+        }
+        cat("Observed Significance Level:", formatC(pval, digits = digits, 
+            format = "f"), "\n")
+        cat("Target Significance Level:  ", x$alpha, "\n\n")
+        cat("Fail-safe N:", x$fsnum, "\n\n")
+    }
+    if (x$type == "Orwin") {
+        cat("Average Effect Size:", formatC(x$meanes, digits = digits, 
+            format = "f"), "\n")
+        cat("Target Effect Size: ", formatC(x$target, digits = digits, 
+            format = "f"), "\n\n")
+        cat("Fail-safe N:", x$fsnum, "\n\n")
+    }
+    if (x$type == "Rosenberg") {
+        pval <- x$pval
+        if (pval > ncutoff) {
+            pval <- formatC(pval, digits = digits, format = "f")
+        }
+        else {
+            pval <- paste("<", cutoff, sep = "", collapse = "")
+        }
+        cat("Average Effect Size:        ", formatC(x$meanes, 
+            digits = digits, format = "f"), "\n")
+        cat("Observed Significance Level:", formatC(pval, digits = digits, 
+            format = "f"), "\n")
+        cat("Target Significance Level:  ", x$alpha, "\n\n")
+        cat("Fail-safe N:", x$fsnum, "\n\n")
+    }
+    invisible()
+}
+print.ranktest.rma <-
+function (x, digits = x$digits, ...) 
+{
+    if (class(x) != "ranktest.rma") 
+        stop("Argument 'x' must be an object of class \"ranktest.rma\".")
+    cutoff <- paste(c(".", rep(0, digits - 1), 1), collapse = "")
+    ncutoff <- as.numeric(cutoff)
+    pval <- x$pval
+    if (pval > ncutoff) {
+        pval <- paste("=", formatC(pval, digits = digits, format = "f"))
+    }
+    else {
+        pval <- paste("< ", cutoff, sep = "", collapse = "")
+    }
+    cat("\n")
+    cat("Rank Correlation Test for Funnel Plot Asymmetry\n\n")
+    cat("Kendall's tau = ", formatC(x$tau, digits = digits, format = "f"), 
+        ", p ", pval, "\n\n", sep = "")
+    invisible()
+}
+print.regtest.rma <-
+function (x, digits = x$digits, ...) 
+{
+    if (class(x) != "regtest.rma") 
+        stop("Argument 'x' must be an object of class \"regtest.rma\".")
+    cutoff <- paste(c(".", rep(0, digits - 1), 1), collapse = "")
+    ncutoff <- as.numeric(cutoff)
+    pval <- x$pval
+    if (pval > ncutoff) {
+        pval <- paste("=", formatC(pval, digits = digits, format = "f"))
+    }
+    else {
+        pval <- paste("< ", cutoff, sep = "", collapse = "")
+    }
+    cat("\n")
+    cat("Regression Test for Funnel Plot Asymmetry\n\n")
+    if (x$model == "lm") {
+        cat("model:     weighted regression with multiplicative dispersion\n")
+    }
+    else {
+        cat("model:    ", ifelse(x$method == "FE", "fixed-effects", 
+            "mixed-effects"), "meta-regression model\n")
+    }
+    if (x$predictor == "sei") 
+        cat("predictor: standard error\n\n")
+    if (x$predictor == "vi") 
+        cat("predictor: sampling variance\n\n")
+    if (x$predictor == "ni") 
+        cat("predictor: total sample size\n\n")
+    if (x$predictor == "ninv") 
+        cat("predictor: inverse of the total sample size\n\n")
+    if (is.na(x$dfs)) {
+        cat("z = ", formatC(x$zval, digits = digits, format = "f"), 
+            ", p ", pval, "\n\n", sep = "")
+    }
+    else {
+        cat("t = ", formatC(x$zval, digits = digits, format = "f"), 
+            ", df = ", x$dfs, ", p ", pval, "\n\n", sep = "")
+    }
+    invisible()
+}
 print.rma.list <-
 function (x, digits = x$digits, ...) 
 {
@@ -1999,6 +2261,8 @@ function (x, digits = x$digits, showfit = FALSE, ...)
 {
     if (!is.element("rma.mh", class(x))) 
         stop("Argument 'x' must be an object of class \"rma.mh\".")
+    cutoff <- paste(c(".", rep(0, digits - 1), 1), collapse = "")
+    ncutoff <- as.numeric(cutoff)
     cat("\n")
     cat("Fixed-Effects Model (k = ", x$k, ")", sep = "")
     if (showfit) {
@@ -2014,15 +2278,26 @@ function (x, digits = x$digits, showfit = FALSE, ...)
     else {
         cat("\n\n")
     }
-    cat("Test for Heterogeneity: \n\n")
-    cat("Q(df = ", x$k.yi - 1, ") = ", round(x$QE, digits), ", p-val = ", 
-        round(x$QEp, digits), sep = "")
+    QEp <- x$QEp
+    if (QEp > ncutoff) {
+        QEp <- paste("=", formatC(QEp, digits = digits, format = "f"))
+    }
+    else {
+        QEp <- paste("< ", cutoff, sep = "", collapse = "")
+    }
+    cat("Test for Heterogeneity: \n")
+    cat("Q(df = ", x$k.yi - 1, ") = ", formatC(x$QE, digits = digits, 
+        format = "f"), ", p-val ", QEp, sep = "")
     if (x$measure == "OR" || x$measure == "RR") {
         res.table <- c(x$b, x$se, x$zval, x$pval, x$ci.lb, x$ci.ub)
         res.table.exp <- c(exp(x$b), exp(x$ci.lb), exp(x$ci.ub))
         if (!is.na(x$b)) {
             res.table <- formatC(res.table, digits = digits, 
                 format = "f")
+            res.table[4][x$pval > ncutoff] <- formatC(x$pval[x$pval > 
+                ncutoff], digits = digits, format = "f")
+            res.table[4][x$pval < ncutoff] <- paste("<", cutoff, 
+                sep = "", collapse = "")
         }
         if (!is.na(x$b)) {
             res.table.exp <- formatC(res.table.exp, digits = digits, 
@@ -2046,20 +2321,34 @@ function (x, digits = x$digits, showfit = FALSE, ...)
                   sep = "")
             }
             else {
+                pval <- x$CMHp
+                if (pval > ncutoff) {
+                  pval <- paste("=", formatC(pval, digits = digits, 
+                    format = "f"))
+                }
+                else {
+                  pval <- paste("< ", cutoff, sep = "", collapse = "")
+                }
                 cat("Cochran-Mantel-Haenszel Test:     CMH = ", 
-                  formatC(x$CMH, digits, format = "f"), ", df = 1, p-val = ", 
-                  formatC(x$CMHp, digits, format = "f"), "\n", 
-                  sep = "")
+                  formatC(x$CMH, digits, format = "f"), ", df = 1, p-val ", 
+                  pval, "\n", sep = "")
             }
             if (is.na(x$TAp)) {
                 cat("Tarone's Test for Heterogeneity:  Tarone's Test not defined for these data \n\n", 
                   sep = "")
             }
             else {
+                pval <- x$TAp
+                if (pval > ncutoff) {
+                  pval <- paste("=", formatC(pval, digits = digits, 
+                    format = "f"))
+                }
+                else {
+                  pval <- paste("< ", cutoff, sep = "", collapse = "")
+                }
                 cat("Tarone's Test for Heterogeneity:  X^2 = ", 
                   formatC(x$TA, digits, format = "f"), ", df = ", 
-                  x$k.pos - 1, ", p-val = ", formatC(x$TAp, digits, 
-                    format = "f"), "\n\n", sep = "")
+                  x$k.pos - 1, ", p-val ", pval, "\n\n", sep = "")
             }
         }
     }
@@ -2068,6 +2357,10 @@ function (x, digits = x$digits, showfit = FALSE, ...)
         if (!is.na(x$b)) {
             res.table <- formatC(res.table, digits = digits, 
                 format = "f")
+            res.table[4][x$pval > ncutoff] <- formatC(x$pval[x$pval > 
+                ncutoff], digits = digits, format = "f")
+            res.table[4][x$pval < ncutoff] <- paste("<", cutoff, 
+                sep = "", collapse = "")
         }
         names(res.table) <- c("estimate", "se", "zval", "pval", 
             "ci.lb", "ci.ub")
@@ -2083,6 +2376,8 @@ function (x, digits = x$digits, showfit = FALSE, ...)
 {
     if (!is.element("rma.peto", class(x))) 
         stop("Argument 'x' must be an object of class \"rma.peto\".")
+    cutoff <- paste(c(".", rep(0, digits - 1), 1), collapse = "")
+    ncutoff <- as.numeric(cutoff)
     cat("\n")
     cat("Fixed-Effects Model (k = ", x$k, ")", sep = "")
     if (showfit) {
@@ -2098,13 +2393,24 @@ function (x, digits = x$digits, showfit = FALSE, ...)
     else {
         cat("\n\n")
     }
-    cat("Test for Heterogeneity: \n\n")
-    cat("Q(df = ", x$k.yi - 1, ") = ", round(x$QE, digits), ", p-val = ", 
-        round(x$QEp, digits), sep = "")
+    QEp <- x$QEp
+    if (QEp > ncutoff) {
+        QEp <- paste("=", formatC(QEp, digits = digits, format = "f"))
+    }
+    else {
+        QEp <- paste("< ", cutoff, sep = "", collapse = "")
+    }
+    cat("Test for Heterogeneity: \n")
+    cat("Q(df = ", x$k.yi - 1, ") = ", formatC(x$QE, digits = digits, 
+        format = "f"), ", p-val ", QEp, sep = "")
     res.table <- c(x$b, x$se, x$zval, x$pval, x$ci.lb, x$ci.ub)
     res.table.exp <- c(exp(x$b), exp(x$ci.lb), exp(x$ci.ub))
     if (!is.na(x$b)) {
         res.table <- formatC(res.table, digits = digits, format = "f")
+        res.table[4][x$pval > ncutoff] <- formatC(x$pval[x$pval > 
+            ncutoff], digits = digits, format = "f")
+        res.table[4][x$pval < ncutoff] <- paste("<", cutoff, 
+            sep = "", collapse = "")
     }
     if (!is.na(x$b)) {
         res.table.exp <- formatC(res.table.exp, digits = digits, 
@@ -2130,6 +2436,8 @@ function (x, digits = x$digits, showfit = FALSE, signif.legend = TRUE,
 {
     if (!is.element("rma.uni", class(x))) 
         stop("Argument 'x' must be an object of class \"rma.uni\".")
+    cutoff <- paste(c(".", rep(0, digits - 1), 1), collapse = "")
+    ncutoff <- as.numeric(cutoff)
     cat("\n")
     if (x$method == "FE") {
         if (x$int.only) {
@@ -2174,56 +2482,77 @@ function (x, digits = x$digits, showfit = FALSE, signif.legend = TRUE,
         if (x$int.only) {
             if (x$method == "ML" || x$method == "REML") {
                 cat("tau^2 (estimate of total amount of heterogeneity): ", 
-                  round(x$tau2, digits), " (SE = ", round(x$se.tau2, 
-                    digits), ")", "\n", sep = "")
+                  formatC(x$tau2, digits = digits, format = "f"), 
+                  " (SE = ", formatC(x$se.tau2, digits = digits, 
+                    format = "f"), ")", "\n", sep = "")
             }
             else {
                 cat("tau^2 (estimate of total amount of heterogeneity): ", 
-                  round(x$tau2, digits), "\n", sep = "")
+                  formatC(x$tau2, digits = digits, format = "f"), 
+                  "\n", sep = "")
             }
             cat("tau (sqrt of the estimate of total heterogeneity): ", 
-                round(sqrt(ifelse(x$tau2 >= 0, x$tau2, NA)), 
-                  digits), "\n", sep = "")
+                ifelse(x$tau2 >= 0, formatC(sqrt(x$tau2), digits = digits, 
+                  format = "f"), NA), "\n", sep = "")
             cat("I^2 (% of total variability due to heterogeneity): ", 
-                round(x$I2, 1), "%", sep = "")
+                formatC(x$I2, digits = 2, format = "f"), "%", 
+                "\n", sep = "")
+            cat("H^2 (total variability / within-study variance):   ", 
+                formatC(x$H2, digits = 2, format = "f"), sep = "")
         }
         else {
             if (x$method == "ML" || x$method == "REML") {
                 cat("tau^2 (estimate of residual amount of heterogeneity): ", 
-                  round(x$tau2, digits), " (SE = ", round(x$se.tau2, 
-                    digits), ")", "\n", sep = "")
+                  formatC(x$tau2, digits = digits, format = "f"), 
+                  " (SE = ", formatC(x$se.tau2, digits = digits, 
+                    format = "f"), ")", "\n", sep = "")
             }
             else {
                 cat("tau^2 (estimate of residual amount of heterogeneity): ", 
-                  round(x$tau2, digits), "\n", sep = "")
+                  formatC(x$tau2, digits = digits, format = "f"), 
+                  "\n", sep = "")
             }
             cat("tau (sqrt of the estimate of residual heterogeneity): ", 
-                round(sqrt(ifelse(x$tau2 >= 0, x$tau2, NA)), 
-                  digits), sep = "")
+                ifelse(x$tau2 >= 0, formatC(sqrt(x$tau2), digits = digits, 
+                  format = "f"), NA), sep = "")
         }
         cat("\n\n")
     }
-    if (x$int.only) {
-        cat("Test for Heterogeneity: \n\n")
-        cat("Q(df = ", x$k - x$p, ") = ", round(x$QE, digits), 
-            ", p-val = ", round(x$QEp, digits), "\n\n", sep = "")
+    QEp <- x$QEp
+    if (QEp > ncutoff) {
+        QEp <- paste("=", formatC(QEp, digits = digits, format = "f"))
     }
     else {
-        cat("Test for Residual Heterogeneity: \n\n")
-        cat("QE(df = ", x$k - x$p, ") = ", round(x$QE, digits), 
-            ", p-val = ", round(x$QEp, digits), "\n\n", sep = "")
+        QEp <- paste("< ", cutoff, sep = "", collapse = "")
+    }
+    if (x$int.only) {
+        cat("Test for Heterogeneity: \n")
+        cat("Q(df = ", x$k - x$p, ") = ", formatC(x$QE, digits = digits, 
+            format = "f"), ", p-val ", QEp, "\n\n", sep = "")
+    }
+    else {
+        cat("Test for Residual Heterogeneity: \n")
+        cat("QE(df = ", x$k - x$p, ") = ", formatC(x$QE, digits = digits, 
+            format = "f"), ", p-val ", QEp, "\n\n", sep = "")
+    }
+    QMp <- x$QMp
+    if (QMp > ncutoff) {
+        QMp <- paste("=", formatC(QMp, digits = digits, format = "f"))
+    }
+    else {
+        QMp <- paste("< ", cutoff, sep = "", collapse = "")
     }
     if (x$p > 1) {
         cat("Test of Moderators (coefficient(s) ", paste(x$btt, 
-            collapse = ","), "): \n\n", sep = "")
+            collapse = ","), "): \n", sep = "")
         if (!x$knha) {
-            cat("QM(df = ", x$m, ") = ", round(x$QM, digits), 
-                ", p-val = ", round(x$QMp, digits), "\n\n", sep = "")
+            cat("QM(df = ", x$m, ") = ", formatC(x$QM, digits = digits, 
+                format = "f"), ", p-val ", QMp, "\n\n", sep = "")
         }
         else {
             cat("F(df1 = ", x$m, ", df2 = ", x$k - x$p, ") = ", 
-                round(x$QM/x$m, digits), ", p-val = ", round(x$QMp, 
-                  digits), "\n\n", sep = "")
+                formatC(x$QM, digits = digits, format = "f"), 
+                ", p-val = ", QMp, "\n\n", sep = "")
         }
     }
     if (x$int.only) {
@@ -2240,6 +2569,10 @@ function (x, digits = x$digits, showfit = FALSE, signif.legend = TRUE,
         res.table <- c(formatC(res.table, digits = digits, format = "f"), 
             signif)
         names(res.table)[7] <- ""
+        res.table[4][x$pval > ncutoff] <- formatC(x$pval[x$pval > 
+            ncutoff], digits = digits, format = "f")
+        res.table[4][x$pval < ncutoff] <- paste("<", cutoff, 
+            sep = "", collapse = "")
     }
     else {
         res.table <- cbind(x$b, x$se, x$zval, x$pval, x$ci.lb, 
@@ -2255,6 +2588,10 @@ function (x, digits = x$digits, showfit = FALSE, signif.legend = TRUE,
         res.table <- cbind(formatC(res.table, digits = digits, 
             format = "f"), signif)
         dimnames(res.table)[[2]][7] <- ""
+        res.table[x$pval > ncutoff, 4] <- formatC(x$pval[x$pval > 
+            ncutoff], digits = digits, format = "f")
+        res.table[x$pval < ncutoff, 4] <- paste("<", cutoff, 
+            sep = "", collapse = "")
     }
     cat("Model Results:")
     cat("\n\n")
@@ -2275,8 +2612,14 @@ function (x, digits = x$digits, ...)
 {
     if (class(x) != "rma.uni.infl") 
         stop("Argument 'x' must be an object of class \"rma.uni.infl\".")
-    x <- list(inf = round(x$inf, digits), dfb = round(x$dfb, 
-        digits))
+    inf <- round(x$inf, digits)
+    if (sum(is.na(x$dfb) == FALSE) == 0) {
+        dfb <- x$dfb
+    }
+    else {
+        dfb <- round(x$dfb, digits)
+    }
+    x <- list(inf = inf, dfb = dfb)
     print(x)
 }
 qqnorm.rma.mh <-
@@ -2483,8 +2826,8 @@ function (x, center = FALSE, xlim = NULL, zlim = NULL, xlab = NULL,
         if (center) {
             if (x$method == "FE") {
                 mtext(expression(z[i] == frac(y[i] - hat(theta), 
-                  v[i])), side = 2, line = par.mar.adj[2] - 1, 
-                  at = 0, adj = 0, las = 1, cex = cex, ...)
+                  sqrt(v[i]))), side = 2, line = par.mar.adj[2] - 
+                  1, at = 0, adj = 0, las = 1, cex = cex, ...)
             }
             else {
                 mtext(expression(z[i] == frac(y[i] - hat(mu), 
@@ -2494,9 +2837,9 @@ function (x, center = FALSE, xlim = NULL, zlim = NULL, xlab = NULL,
         }
         else {
             if (x$method == "FE") {
-                mtext(expression(z[i] == frac(y[i], v[i])), side = 2, 
-                  line = par.mar.adj[2] - 2, at = 0, adj = 0, 
-                  las = 1, cex = cex, ...)
+                mtext(expression(z[i] == frac(y[i], sqrt(v[i]))), 
+                  side = 2, line = par.mar.adj[2] - 2, at = 0, 
+                  adj = 0, las = 1, cex = cex, ...)
             }
             else {
                 mtext(expression(z[i] == frac(y[i], sqrt(v[i] + 
@@ -2614,52 +2957,90 @@ function (x, center = FALSE, xlim = NULL, zlim = NULL, xlab = NULL,
     invisible()
 }
 ranktest <-
-function (yi, vi, sei, data = NULL, subset = NULL) 
+function (x, ...) 
+UseMethod("ranktest")
+ranktest.rma <-
+function (x, ...) 
 {
-    na.act <- getOption("na.action")
-    if (!is.element(na.act, c("na.omit", "na.exclude", "na.fail"))) 
-        stop("Unknwn 'na.action' specified under options().")
-    if (is.null(data)) {
-        data <- sys.frame(sys.parent())
-    }
-    else {
-        if (!is.data.frame(data)) {
-            data <- data.frame(data)
-        }
-    }
-    mf <- match.call()
-    mf.yi <- mf[[match("yi", names(mf))]]
-    mf.vi <- mf[[match("vi", names(mf))]]
-    mf.sei <- mf[[match("sei", names(mf))]]
-    mf.subset <- mf[[match("subset", names(mf))]]
-    yi <- eval(mf.yi, data)
-    vi <- eval(mf.vi, data)
-    sei <- eval(mf.sei, data)
-    subset <- eval(mf.subset, data)
-    if (missing(vi)) 
-        vi <- sei^2
-    if (length(yi) != length(vi)) 
-        stop("Length of yi and vi (or sei) is not the same.")
-    if (!is.null(subset)) {
-        yi <- yi[subset]
-        vi <- vi[subset]
-    }
-    yivi.na <- is.na(cbind(yi, vi))
-    if (sum(yivi.na) > 0) {
-        not.na <- apply(yivi.na, MARGIN = 1, sum) == 0
-        if (na.act == "na.omit" || na.act == "na.exclude") {
-            yi <- yi[not.na]
-            vi <- vi[not.na]
-        }
-        if (na.act == "na.fail") 
-            stop("Missing values in results.")
-    }
+    if (!is.element("rma", class(x))) 
+        stop("Argument 'x' must be an object of class \"rma\".")
+    yi <- x$yi
+    vi <- x$vi
     res <- rma(yi, vi, method = "FE")
     b <- res$b
     vb <- res$vb
     vi.star <- vi - c(vb)
     yi.star <- (yi - c(b))/sqrt(vi.star)
-    cor.test(yi.star, vi, method = "kendall", exact = TRUE)
+    res <- cor.test(yi.star, vi, method = "kendall", exact = TRUE)
+    pval <- res$p.value
+    tau <- c(res$estimate)
+    res <- list(tau, pval, x$digits)
+    names(res) <- c("tau", "pval", "digits")
+    class(res) <- c("ranktest.rma")
+    return(res)
+}
+regtest <-
+function (x, ...) 
+UseMethod("regtest")
+regtest.rma <-
+function (x, model = "rma", predictor = "sei", ni = NULL, ...) 
+{
+    if (!is.element("rma", class(x))) 
+        stop("Argument 'x' must be an object of class \"rma\".")
+    model <- match.arg(model, c("lm", "rma"))
+    predictor <- match.arg(predictor, c("sei", "vi", "ni", "ninv"))
+    if (!is.element(model, c("rma", "lm"))) 
+        stop("Unknown 'model' specified.")
+    if (!is.element(predictor, c("vi", "sei", "ni", "ninv"))) 
+        stop("Unknown 'predictor' specified.")
+    yi <- x$yi
+    vi <- x$vi
+    X <- x$X
+    p <- x$p
+    if (is.null(ni)) {
+        ni <- x$ni
+    }
+    if (predictor == "sei") {
+        X <- cbind(X, sei = sqrt(vi))
+    }
+    if (predictor == "vi") {
+        X <- cbind(X, vi = vi)
+    }
+    if (predictor == "ni" || predictor == "ninv") {
+        if (is.null(ni)) {
+            stop("Need total sample size (ni) to carry out the test.")
+        }
+        else {
+            ni <- c(scale(ni))
+            if (predictor == "ni") {
+                X <- cbind(X, ni = ni)
+            }
+            else {
+                X <- cbind(X, ninv = 1/ni)
+            }
+        }
+    }
+    if (model == "rma") {
+        res <- rma(yi, vi, mods = X, method = x$method, weighted = x$weighted, 
+            intercept = FALSE, knha = x$knha, control = x$control, 
+            ...)
+        zval <- res$zval[p + 1]
+        pval <- res$pval[p + 1]
+        dfs <- ifelse(x$knha == TRUE, res$k - res$p, NA)
+    }
+    else {
+        res <- lm(yi ~ X - 1, weights = 1/vi)
+        res <- summary(res)
+        zval <- coef(res)[p + 1, 3]
+        pval <- coef(res)[p + 1, 4]
+        dfs <- x$k - x$p - 1
+    }
+    res <- list(model, predictor, zval, pval, dfs, x$method, 
+        x$digits)
+    names(res) <- c("model", "predictor", "zval", "pval", "dfs", 
+        "method", "digits")
+    class(res) <- c("regtest.rma")
+    return(res)
 }
 residuals.rma <-
 function (object, ...) 
@@ -2671,6 +3052,7 @@ function (object, ...)
         stop("Unknwn 'na.action' specified under options().")
     x <- object
     out <- c(x$yi.f - x$X.f %*% x$b)
+    out[abs(out) < 100 * .Machine$double.eps] <- 0
     names(out) <- x$slab
     if (na.act == "na.omit") {
         out <- na.omit(out)
@@ -2689,9 +3071,9 @@ function (yi, vi, sei, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i,
 {
     if (!is.element(measure, c("GEN", "MD", "SMD", "RR", "OR", 
         "PETO", "RD", "AS", "PR", "PLN", "PLO", "PAS", "PFT", 
-        "COR", "ZCOR"))) 
+        "COR", "UCOR", "ZCOR"))) 
         stop("Unknown 'measure' specified.")
-    if (!is.element(method, c("FE", "HS", "HE", "DL",
+    if (!is.element(method, c("FE", "HS", "HE", "DL", 
         "SJ", "ML", "REML", "EB"))) 
         stop("Unknown 'method' specified.")
     if (is.null(data)) {
@@ -2716,6 +3098,7 @@ function (yi, vi, sei, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i,
         yi <- eval(mf.yi, data)
         vi <- eval(mf.vi, data)
         sei <- eval(mf.sei, data)
+        ni <- NULL
         if (is.null(vi)) {
             vi <- sei^2
         }
@@ -2742,6 +3125,7 @@ function (yi, vi, sei, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i,
             if (is.null(di)) {
                 di <- n2i - ci
             }
+            ni <- ai + bi + ci + di
             dat <- escalc(measure, ai = ai, bi = bi, ci = ci, 
                 di = di, add = add, to = to)
         }
@@ -2758,6 +3142,7 @@ function (yi, vi, sei, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i,
             sd2i <- eval(mf.sd2i, data)
             n1i <- eval(mf.n1i, data)
             n2i <- eval(mf.n2i, data)
+            ni <- n1i + n2i
             dat <- escalc(measure, m1i = m1i, m2i = m2i, sd1i = sd1i, 
                 sd2i = sd2i, n1i = n1i, n2i = n2i, vtype = vtype)
         }
@@ -2772,10 +3157,11 @@ function (yi, vi, sei, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i,
             if (is.null(mi)) {
                 mi <- ni - xi
             }
+            ni <- xi + mi
             dat <- escalc(measure, xi = xi, mi = mi, add = add, 
                 to = to)
         }
-        if (is.element(measure, c("COR", "ZCOR"))) {
+        if (is.element(measure, c("COR", "UCOR", "ZCOR"))) {
             mf.ri <- mf[[match("ri", names(mf))]]
             mf.ni <- mf[[match("ni", names(mf))]]
             ri <- eval(mf.ri, data)
@@ -2805,6 +3191,7 @@ function (yi, vi, sei, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i,
     if (!is.null(subset)) {
         yi <- yi[subset]
         vi <- vi[subset]
+        ni <- ni[subset]
         mods <- mods[subset, , drop = FALSE]
         slab <- slab[subset]
         ids <- ids[subset]
@@ -2812,6 +3199,7 @@ function (yi, vi, sei, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i,
     }
     yi.f <- yi
     vi.f <- vi
+    ni.f <- ni
     mods.f <- mods
     k.f <- k
     YVM.na <- is.na(cbind(yi, vi, mods))
@@ -2823,6 +3211,7 @@ function (yi, vi, sei, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i,
         if (na.act == "na.omit" || na.act == "na.exclude") {
             yi <- yi[not.na]
             vi <- vi[not.na]
+            ni <- ni[not.na]
             mods <- mods[not.na, , drop = FALSE]
             k <- length(yi)
             warning("Cases with NAs omitted from model fitting.")
@@ -2910,7 +3299,7 @@ function (yi, vi, sei, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i,
     con <- list(tau2.init = NULL, tau2.min = 0, tau2.max = 50, 
         threshold = 10^-5, maxit = 50, verbose = FALSE)
     con[pmatch(names(control), names(con))] <- control
-    se.tau2 <- I2 <- QE <- QEp <- NA
+    se.tau2 <- I2 <- H2 <- QE <- QEp <- NA
     s2w <- 1
     Y <- as.matrix(yi)
     alpha <- (100 - level)/100
@@ -2975,15 +3364,15 @@ function (yi, vi, sei, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i,
                 W <- diag(wi)
                 stXWX <- .invcalc(X = X, W = W, k = k)
                 P <- W - W %*% X %*% stXWX %*% crossprod(X, W)
-                if (method == "REML") {
-                  PP <- P %*% P
-                  adj <- 1/tr(PP) * (crossprod(Y, PP) %*% Y - 
-                    tr(P))
-                }
                 if (method == "ML") {
                   PP <- P %*% P
                   adj <- 1/sum(wi^2) * (crossprod(Y, PP) %*% 
                     Y - sum(wi))
+                }
+                if (method == "REML") {
+                  PP <- P %*% P
+                  adj <- 1/tr(PP) * (crossprod(Y, PP) %*% Y - 
+                    tr(P))
                 }
                 if (method == "EB") {
                   adj <- 1/sum(wi) * (crossprod(Y, P) %*% Y * 
@@ -3020,12 +3409,13 @@ function (yi, vi, sei, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i,
         W <- diag(wi)
         stXWX <- .invcalc(X = X, W = W, k = k)
         P <- W - W %*% X %*% stXWX %*% crossprod(X, W)
-        QE <- c(crossprod(Y, P) %*% Y)
+        QE <- max(0, c(crossprod(Y, P) %*% Y))
         QEp <- 1 - pchisq(QE, df = k - p)
         if (int.only) {
             sumwi <- sum(wi)
             vi.avg <- (k - 1)/(sumwi - sum(wi^2)/sumwi)
             I2 <- 100 * tau2/(vi.avg + tau2)
+            H2 <- tau2/vi.avg + 1
         }
     }
     wi <- 1/(vi + tau2)
@@ -3076,7 +3466,8 @@ function (yi, vi, sei, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i,
     names(se) <- NULL
     zval <- c(b/se)
     if (knha) {
-        QMp <- 1 - pf(QM/m, df1 = m, df2 = k - p)
+        QM <- QM/m
+        QMp <- 1 - pf(QM, df1 = m, df2 = k - p)
         pval <- 2 * (1 - pt(abs(zval), df = k - p))
         crit <- qt(1 - alpha/2, df = k - p)
     }
@@ -3112,16 +3503,17 @@ function (yi, vi, sei, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i,
         c("ML", "REML"))
     fit.stats <- data.frame(fit.stats)
     res <- list(b, se, zval, pval, ci.lb, ci.ub, vb, tau2, se.tau2, 
-        k, k.f, p, m, QE, QEp, QM, QMp, I2, int.only, yi, vi, 
-        X, yi.f, vi.f, X.f, ids, not.na, slab, slab.null, measure, 
-        method, weighted, knha, s2w, btt, intercept, digits, 
-        level, con, fit.stats)
+        k, k.f, p, m, QE, QEp, QM, QMp, I2, H2, int.only, yi, 
+        vi, X, yi.f, vi.f, X.f, ni, ni.f, ids, not.na, slab, 
+        slab.null, measure, method, weighted, knha, s2w, btt, 
+        intercept, digits, level, con, fit.stats)
     names(res) <- c("b", "se", "zval", "pval", "ci.lb", "ci.ub", 
         "vb", "tau2", "se.tau2", "k", "k.f", "p", "m", "QE", 
-        "QEp", "QM", "QMp", "I2", "int.only", "yi", "vi", "X", 
-        "yi.f", "vi.f", "X.f", "ids", "not.na", "slab", "slab.null", 
-        "measure", "method", "weighted", "knha", "s2w", "btt", 
-        "intercept", "digits", "level", "control", "fit.stats")
+        "QEp", "QM", "QMp", "I2", "H2", "int.only", "yi", "vi", 
+        "X", "yi.f", "vi.f", "X.f", "ni", "ni.f", "ids", "not.na", 
+        "slab", "slab.null", "measure", "method", "weighted", 
+        "knha", "s2w", "btt", "intercept", "digits", "level", 
+        "control", "fit.stats")
     class(res) <- c("rma.uni", "rma")
     return(res)
 }
@@ -3174,6 +3566,7 @@ function (ai, bi, ci, di, n1i, n2i, data = NULL, slab = NULL,
     if (is.null(di)) {
         di <- n2i - ci
     }
+    ni <- ai + bi + ci + di
     k <- length(ai)
     ids <- 1:k
     if (is.null(slab)) {
@@ -3192,6 +3585,7 @@ function (ai, bi, ci, di, n1i, n2i, data = NULL, slab = NULL,
         bi <- bi[subset]
         ci <- ci[subset]
         di <- di[subset]
+        ni <- ni[subset]
         slab <- slab[subset]
         ids <- ids[subset]
         k <- length(ai)
@@ -3207,6 +3601,7 @@ function (ai, bi, ci, di, n1i, n2i, data = NULL, slab = NULL,
     di.f <- di
     yi.f <- yi
     vi.f <- vi
+    ni.f <- ni
     aibicidi.na <- is.na(cbind(ai, bi, ci, di))
     if (sum(aibicidi.na) > 0) {
         not.na <- apply(aibicidi.na, MARGIN = 1, sum) == 0
@@ -3232,6 +3627,7 @@ function (ai, bi, ci, di, n1i, n2i, data = NULL, slab = NULL,
         if (na.act == "na.omit" || na.act == "na.exclude") {
             yi <- yi[not.na.yivi]
             vi <- vi[not.na.yivi]
+            ni <- ni[not.na.yivi]
             warning("Some yi/vi values are NA.")
         }
         if (na.act == "na.fail") 
@@ -3406,19 +3802,22 @@ function (ai, bi, ci, di, n1i, n2i, data = NULL, slab = NULL,
     X.f <- cbind(rep(1, k.f))
     int.only <- TRUE
     method <- "FE"
+    weighted <- TRUE
+    knha <- FALSE
     res <- list(b, se, zval, pval, ci.lb, ci.ub, vb, tau2, k, 
         k.f, k.yi, k.pos, QE, QEp, CO, COp, CMH, CMHp, BD, BDp, 
         TA, TAp, int.only, yi, vi, yi.f, vi.f, X.f, ai, bi, ci, 
-        di, ai.f, bi.f, ci.f, di.f, ids, not.na, not.na.yivi, 
-        slab, slab.null, measure, method, digits, level, add, 
-        to, fit.stats)
+        di, ai.f, bi.f, ci.f, di.f, ni, ni.f, ids, not.na, not.na.yivi, 
+        slab, slab.null, measure, method, weighted, knha, digits, 
+        level, add, to, fit.stats)
     names(res) <- c("b", "se", "zval", "pval", "ci.lb", "ci.ub", 
         "vb", "tau2", "k", "k.f", "k.yi", "k.pos", "QE", "QEp", 
         "CO", "COp", "CMH", "CMHp", "BD", "BDp", "TA", "TAp", 
         "int.only", "yi", "vi", "yi.f", "vi.f", "X.f", "ai", 
-        "bi", "ci", "di", "ai.f", "bi.f", "ci.f", "di.f", "ids", 
-        "not.na", "not.na.yivi", "slab", "slab.null", "measure", 
-        "method", "digits", "level", "add", "to", "fit.stats")
+        "bi", "ci", "di", "ai.f", "bi.f", "ci.f", "di.f", "ni", 
+        "ni.f", "ids", "not.na", "not.na.yivi", "slab", "slab.null", 
+        "measure", "method", "weighted", "knha", "digits", "level", 
+        "add", "to", "fit.stats")
     class(res) <- c("rma.mh", "rma")
     return(res)
 }
@@ -3469,6 +3868,7 @@ function (ai, bi, ci, di, n1i, n2i, data = NULL, slab = NULL,
     if (is.null(di)) {
         di <- n2i - ci
     }
+    ni <- ai + bi + ci + di
     k <- length(ai)
     ids <- 1:k
     if (is.null(slab)) {
@@ -3487,6 +3887,7 @@ function (ai, bi, ci, di, n1i, n2i, data = NULL, slab = NULL,
         bi <- bi[subset]
         ci <- ci[subset]
         di <- di[subset]
+        ni <- ni[subset]
         slab <- slab[subset]
         ids <- ids[subset]
         k <- length(ai)
@@ -3502,6 +3903,7 @@ function (ai, bi, ci, di, n1i, n2i, data = NULL, slab = NULL,
     di.f <- di
     yi.f <- yi
     vi.f <- vi
+    ni.f <- ni
     aibicidi.na <- is.na(cbind(ai, bi, ci, di))
     if (sum(aibicidi.na) > 0) {
         not.na <- apply(aibicidi.na, MARGIN = 1, sum) == 0
@@ -3527,6 +3929,7 @@ function (ai, bi, ci, di, n1i, n2i, data = NULL, slab = NULL,
         if (na.act == "na.omit" || na.act == "na.exclude") {
             yi <- yi[not.na.yivi]
             vi <- vi[not.na.yivi]
+            ni <- ni[not.na.yivi]
             warning("Some yi/vi values are NA.")
         }
         if (na.act == "na.fail") 
@@ -3600,17 +4003,20 @@ function (ai, bi, ci, di, n1i, n2i, data = NULL, slab = NULL,
     int.only <- TRUE
     measure <- "PETO"
     method <- "FE"
+    weighted <- TRUE
+    knha <- FALSE
     res <- list(b, se, zval, pval, ci.lb, ci.ub, vb, tau2, k, 
         k.f, k.yi, QE, QEp, int.only, yi, vi, yi.f, vi.f, X.f, 
-        ai, bi, ci, di, ai.f, bi.f, ci.f, di.f, ids, not.na, 
-        not.na.yivi, slab, slab.null, measure, method, digits, 
-        level, add, to, fit.stats)
+        ai, bi, ci, di, ai.f, bi.f, ci.f, di.f, ni, ni.f, ids, 
+        not.na, not.na.yivi, slab, slab.null, measure, method, 
+        weighted, knha, digits, level, add, to, fit.stats)
     names(res) <- c("b", "se", "zval", "pval", "ci.lb", "ci.ub", 
         "vb", "tau2", "k", "k.f", "k.yi", "QE", "QEp", "int.only", 
         "yi", "vi", "yi.f", "vi.f", "X.f", "ai", "bi", "ci", 
-        "di", "ai.f", "bi.f", "ci.f", "di.f", "ids", "not.na", 
-        "not.na.yivi", "slab", "slab.null", "measure", "method", 
-        "digits", "level", "add", "to", "fit.stats")
+        "di", "ai.f", "bi.f", "ci.f", "di.f", "ni", "ni.f", "ids", 
+        "not.na", "not.na.yivi", "slab", "slab.null", "measure", 
+        "method", "weighted", "knha", "digits", "level", "add", 
+        "to", "fit.stats")
     class(res) <- c("rma.peto", "rma")
     return(res)
 }
@@ -3623,9 +4029,9 @@ function (yi, vi, sei, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i,
 {
     if (!is.element(measure, c("GEN", "MD", "SMD", "RR", "OR", 
         "PETO", "RD", "AS", "PR", "PLN", "PLO", "PAS", "PFT", 
-        "COR", "ZCOR"))) 
+        "COR", "UCOR", "ZCOR"))) 
         stop("Unknown 'measure' specified.")
-    if (!is.element(method, c("FE", "HS", "HE", "DL",
+    if (!is.element(method, c("FE", "HS", "HE", "DL", 
         "SJ", "ML", "REML", "EB"))) 
         stop("Unknown 'method' specified.")
     if (is.null(data)) {
@@ -3650,6 +4056,7 @@ function (yi, vi, sei, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i,
         yi <- eval(mf.yi, data)
         vi <- eval(mf.vi, data)
         sei <- eval(mf.sei, data)
+        ni <- NULL
         if (is.null(vi)) {
             vi <- sei^2
         }
@@ -3676,6 +4083,7 @@ function (yi, vi, sei, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i,
             if (is.null(di)) {
                 di <- n2i - ci
             }
+            ni <- ai + bi + ci + di
             dat <- escalc(measure, ai = ai, bi = bi, ci = ci, 
                 di = di, add = add, to = to)
         }
@@ -3692,6 +4100,7 @@ function (yi, vi, sei, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i,
             sd2i <- eval(mf.sd2i, data)
             n1i <- eval(mf.n1i, data)
             n2i <- eval(mf.n2i, data)
+            ni <- n1i + n2i
             dat <- escalc(measure, m1i = m1i, m2i = m2i, sd1i = sd1i, 
                 sd2i = sd2i, n1i = n1i, n2i = n2i, vtype = vtype)
         }
@@ -3706,10 +4115,11 @@ function (yi, vi, sei, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i,
             if (is.null(mi)) {
                 mi <- ni - xi
             }
+            ni <- xi + mi
             dat <- escalc(measure, xi = xi, mi = mi, add = add, 
                 to = to)
         }
-        if (is.element(measure, c("COR", "ZCOR"))) {
+        if (is.element(measure, c("COR", "UCOR", "ZCOR"))) {
             mf.ri <- mf[[match("ri", names(mf))]]
             mf.ni <- mf[[match("ni", names(mf))]]
             ri <- eval(mf.ri, data)
@@ -3739,6 +4149,7 @@ function (yi, vi, sei, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i,
     if (!is.null(subset)) {
         yi <- yi[subset]
         vi <- vi[subset]
+        ni <- ni[subset]
         mods <- mods[subset, , drop = FALSE]
         slab <- slab[subset]
         ids <- ids[subset]
@@ -3746,6 +4157,7 @@ function (yi, vi, sei, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i,
     }
     yi.f <- yi
     vi.f <- vi
+    ni.f <- ni
     mods.f <- mods
     k.f <- k
     YVM.na <- is.na(cbind(yi, vi, mods))
@@ -3757,6 +4169,7 @@ function (yi, vi, sei, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i,
         if (na.act == "na.omit" || na.act == "na.exclude") {
             yi <- yi[not.na]
             vi <- vi[not.na]
+            ni <- ni[not.na]
             mods <- mods[not.na, , drop = FALSE]
             k <- length(yi)
             warning("Cases with NAs omitted from model fitting.")
@@ -3844,7 +4257,7 @@ function (yi, vi, sei, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i,
     con <- list(tau2.init = NULL, tau2.min = 0, tau2.max = 50, 
         threshold = 10^-5, maxit = 50, verbose = FALSE)
     con[pmatch(names(control), names(con))] <- control
-    se.tau2 <- I2 <- QE <- QEp <- NA
+    se.tau2 <- I2 <- H2 <- QE <- QEp <- NA
     s2w <- 1
     Y <- as.matrix(yi)
     alpha <- (100 - level)/100
@@ -3909,15 +4322,15 @@ function (yi, vi, sei, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i,
                 W <- diag(wi)
                 stXWX <- .invcalc(X = X, W = W, k = k)
                 P <- W - W %*% X %*% stXWX %*% crossprod(X, W)
-                if (method == "REML") {
-                  PP <- P %*% P
-                  adj <- 1/tr(PP) * (crossprod(Y, PP) %*% Y - 
-                    tr(P))
-                }
                 if (method == "ML") {
                   PP <- P %*% P
                   adj <- 1/sum(wi^2) * (crossprod(Y, PP) %*% 
                     Y - sum(wi))
+                }
+                if (method == "REML") {
+                  PP <- P %*% P
+                  adj <- 1/tr(PP) * (crossprod(Y, PP) %*% Y - 
+                    tr(P))
                 }
                 if (method == "EB") {
                   adj <- 1/sum(wi) * (crossprod(Y, P) %*% Y * 
@@ -3954,12 +4367,13 @@ function (yi, vi, sei, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i,
         W <- diag(wi)
         stXWX <- .invcalc(X = X, W = W, k = k)
         P <- W - W %*% X %*% stXWX %*% crossprod(X, W)
-        QE <- c(crossprod(Y, P) %*% Y)
+        QE <- max(0, c(crossprod(Y, P) %*% Y))
         QEp <- 1 - pchisq(QE, df = k - p)
         if (int.only) {
             sumwi <- sum(wi)
             vi.avg <- (k - 1)/(sumwi - sum(wi^2)/sumwi)
             I2 <- 100 * tau2/(vi.avg + tau2)
+            H2 <- tau2/vi.avg + 1
         }
     }
     wi <- 1/(vi + tau2)
@@ -4010,7 +4424,8 @@ function (yi, vi, sei, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i,
     names(se) <- NULL
     zval <- c(b/se)
     if (knha) {
-        QMp <- 1 - pf(QM/m, df1 = m, df2 = k - p)
+        QM <- QM/m
+        QMp <- 1 - pf(QM, df1 = m, df2 = k - p)
         pval <- 2 * (1 - pt(abs(zval), df = k - p))
         crit <- qt(1 - alpha/2, df = k - p)
     }
@@ -4046,16 +4461,17 @@ function (yi, vi, sei, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i,
         c("ML", "REML"))
     fit.stats <- data.frame(fit.stats)
     res <- list(b, se, zval, pval, ci.lb, ci.ub, vb, tau2, se.tau2, 
-        k, k.f, p, m, QE, QEp, QM, QMp, I2, int.only, yi, vi, 
-        X, yi.f, vi.f, X.f, ids, not.na, slab, slab.null, measure, 
-        method, weighted, knha, s2w, btt, intercept, digits, 
-        level, con, fit.stats)
+        k, k.f, p, m, QE, QEp, QM, QMp, I2, H2, int.only, yi, 
+        vi, X, yi.f, vi.f, X.f, ni, ni.f, ids, not.na, slab, 
+        slab.null, measure, method, weighted, knha, s2w, btt, 
+        intercept, digits, level, con, fit.stats)
     names(res) <- c("b", "se", "zval", "pval", "ci.lb", "ci.ub", 
         "vb", "tau2", "se.tau2", "k", "k.f", "p", "m", "QE", 
-        "QEp", "QM", "QMp", "I2", "int.only", "yi", "vi", "X", 
-        "yi.f", "vi.f", "X.f", "ids", "not.na", "slab", "slab.null", 
-        "measure", "method", "weighted", "knha", "s2w", "btt", 
-        "intercept", "digits", "level", "control", "fit.stats")
+        "QEp", "QM", "QMp", "I2", "H2", "int.only", "yi", "vi", 
+        "X", "yi.f", "vi.f", "X.f", "ni", "ni.f", "ids", "not.na", 
+        "slab", "slab.null", "measure", "method", "weighted", 
+        "knha", "s2w", "btt", "intercept", "digits", "level", 
+        "control", "fit.stats")
     class(res) <- c("rma.uni", "rma")
     return(res)
 }
@@ -4069,7 +4485,7 @@ function (model, digits = model$digits, ...)
         stop("Unknwn 'na.action' specified under options().")
     x <- model
     e <- c(x$yi.f - x$b)
-    e[abs(e) < 100 * .Machine$double.eps * median(abs(e), na.rm = TRUE)] <- 0
+    e[abs(e) < 100 * .Machine$double.eps] <- 0
     se <- sqrt(x$vi.f)
     z <- e/se
     if (na.act == "na.omit") {
@@ -4097,7 +4513,7 @@ function (model, digits = model$digits, ...)
         stop("Unknwn 'na.action' specified under options().")
     x <- model
     e <- c(x$yi.f - x$b)
-    e[abs(e) < 100 * .Machine$double.eps * median(abs(e), na.rm = TRUE)] <- 0
+    e[abs(e) < 100 * .Machine$double.eps] <- 0
     se <- sqrt(x$vi.f)
     z <- e/se
     if (na.act == "na.omit") {
@@ -4142,7 +4558,7 @@ function (model, digits = model$digits, ...)
     }
     ImH <- diag(x$k) - H
     e <- ImH %*% cbind(x$yi)
-    e[abs(e) < 100 * .Machine$double.eps * median(abs(e), na.rm = TRUE)] <- 0
+    e[abs(e) < 100 * .Machine$double.eps] <- 0
     ve <- ImH %*% tcrossprod(V, ImH)
     se <- sqrt(diag(ve))
     resid <- rep(NA, x$k.f)
@@ -4190,8 +4606,7 @@ function (model, digits = model$digits, ...)
         vdelpred[i] <- res$vb
     }
     delresid <- x$yi.f - delpred
-    delresid[abs(delresid) < 100 * .Machine$double.eps * median(abs(delresid), 
-        na.rm = TRUE)] <- 0
+    delresid[abs(delresid) < 100 * .Machine$double.eps] <- 0
     sedelresid <- sqrt(x$vi.f + vdelpred)
     standelres <- delresid/sedelresid
     if (na.act == "na.omit") {
@@ -4233,8 +4648,7 @@ function (model, digits = model$digits, ...)
         vdelpred[i] <- res$vb
     }
     delresid <- x$yi.f - delpred
-    delresid[abs(delresid) < 100 * .Machine$double.eps * median(abs(delresid), 
-        na.rm = TRUE)] <- 0
+    delresid[abs(delresid) < 100 * .Machine$double.eps] <- 0
     sedelresid <- sqrt(x$vi.f + vdelpred)
     standelres <- delresid/sedelresid
     if (na.act == "na.omit") {
@@ -4279,8 +4693,7 @@ function (model, digits = model$digits, ...)
         vdelpred[i] <- Xi %*% tcrossprod(res$vb, Xi)
     }
     delresid <- x$yi.f - delpred
-    delresid[abs(delresid) < 100 * .Machine$double.eps * median(abs(delresid), 
-        na.rm = TRUE)] <- 0
+    delresid[abs(delresid) < 100 * .Machine$double.eps] <- 0
     sedelresid <- sqrt(x$vi.f + vdelpred + tau2.del)
     standelres <- delresid/sedelresid
     if (na.act == "na.omit") {
@@ -4450,8 +4863,10 @@ function (x, estimator = "L0", side = NULL, maxit = 50, verbose = FALSE,
     }
     if (k0 > 0) {
         if (side == "right") {
-            yi <- -1 * yi
-            yi.c <- -1 * yi.c
+            yi.c <- -1 * (yi.c - b)
+        }
+        else {
+            yi.c <- yi.c - b
         }
         yi.fill <- c(x$yi.f, -1 * yi.c[(k - k0 + 1):k])
         vi.fill <- c(x$vi.f, vi[(k - k0 + 1):k])

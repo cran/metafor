@@ -65,13 +65,13 @@
 }
 \author{Wolfgang Viechtbauer; \email{wvb@www.wvbauer.com}; \url{http://www.wvbauer.com/}}
 \seealso{
-	\code{\link{forest.rma}}, \code{\link{addpoly}}, \code{\link{addpoly.default}}, \code{\link{addpoly.rma}}
+	\code{\link{forest}}, \code{\link{addpoly}}
 }
 \examples{
 ### load BCG vaccine data
 data(dat.bcg)
 
-### meta-analysis of the log risk rates using a random-effects model
+### meta-analysis of the log risk ratios using a random-effects model
 res <- rma(ai=tpos, bi=tneg, ci=cpos, di=cneg, slab=paste(author, year),
            data=dat.bcg, measure="RR", method="REML")
 

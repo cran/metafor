@@ -1,21 +1,38 @@
+Changes in metafor version 0.5-4
+
+   o corrected the trimfill() function
+   o improvements to various print functions
+   o added a regtest() function for various regression tests of
+     funnel plot asymmetry (e.g., Egger's regression test)
+   o made ranktest() generic and added a method for objects of 
+     class "rma" so that the test can be carried out after fitting
+   o added anova() function for full vs reduced model comparisons
+     via fit statistics and likelihood ratio tests
+   o added the Orwin and Rosenberg approaches to fsn()
+   o added H^2 measure to the output for random-effects models
+   o in escalc(), measure="COR" is now used for the (usual) raw
+     correlation coefficient and measure="UCOR" for the bias
+     corrected correlation coefficients
+   o some small corrections to the documentation
+
 Changes in metafor version 0.5-3
 
-	o small changes to some of the examples
-	o added the log transformed proportion (measure="PLN") as another 
-     measure to the escalc function; changed "PL" to "PLO" to specify 
-     the logit (i.e., log odds) transformation for proportions
+   o small changes to some of the examples
+   o added the log transformed proportion (measure="PLN") as another 
+     measure to the escalc() function; changed "PL" to "PLO" for the 
+     logit (i.e., log odds) transformation for proportions
 
 Changes in metafor version 0.5-2
 
-	o added an option in plot.rma.uni.infl to open a new device 
-	  for plotting the DFBETAS values
-	o thanks to Jim Lemon, added a much better method of adjusting 
-	  the size of the labels, annotations, and symbols in the forest 
-	  functions when the number of studies is large
+   o added an option in plot.rma.uni.infl() to open a new device 
+     for plotting the DFBETAS values
+   o thanks to Jim Lemon, added a much better method of adjusting 
+     the size of the labels, annotations, and symbols in the forest() 
+     function when the number of studies is large
 
 Changes in metafor version 0.5-1
 
-	o made some small changes to the documentation (some typos 
-	  corrected, some confusing points clarified)
+   o made some small changes to the documentation (some typos 
+     corrected, some confusing points clarified)
 
 First version released on CRAN: 0.5-0

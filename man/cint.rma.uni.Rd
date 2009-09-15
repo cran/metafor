@@ -20,7 +20,7 @@
 \details{
 	The confidence intervals for the model coefficients are simply the usual Wald-type intervals which are also shown when printing the fitted object or when calling \code{\link{coef.rma}}.
 
-	The confidence interval for the amount of (residual) heterogeneity is obtained via the Q-profile method as described by Hartung and Knapp (2005) and Viechtbauer (2007). The method provides an exact confidence interval for \eqn{\tau^2}{tau^2} in random- and mixed-effects models. The square root of the interval bounds is also returned for easier interpretation. For random-effects models, a confidence interval for \eqn{I^2} is also provided. Since \eqn{I^2} is just a monotonic transformation of \eqn{\tau^2}{tau^2}, the confidence interval for \eqn{I^2} is also exact.
+	The confidence interval for the amount of (residual) heterogeneity is obtained via the Q-profile method as described by Hartung and Knapp (2005) and Viechtbauer (2007). The method provides an exact confidence interval for \eqn{\tau^2}{tau^2} in random- and mixed-effects models. The square root of the interval bounds is also returned for easier interpretation. For random-effects models, confidence intervals for \eqn{I^2} and \eqn{H^2} are also provided (Higgins & Thompson, 2002). Since \eqn{I^2} and \eqn{H^2} are just monotonic transformation of \eqn{\tau^2}{tau^2}, the confidence intervals for \eqn{I^2} and \eqn{H^2} are also exact.
 }
 \value{
 	Either a single data frame or a list with two data frames (named \code{fixed} and \code{random}) with the following elements:
@@ -39,7 +39,9 @@
 }
 \author{Wolfgang Viechtbauer; \email{wvb@www.wvbauer.com}; \url{http://www.wvbauer.com/}}
 \references{
-	Hartung, J.,& Knapp, G. (2005) On confidence intervals for the among-group variance in the one-way random effects model with unequal error variances. \emph{Journal of Statistical Planning and Inference}, \bold{127}, 157--177.
+	Hartung, J. & Knapp, G. (2005) On confidence intervals for the among-group variance in the one-way random effects model with unequal error variances. \emph{Journal of Statistical Planning and Inference}, \bold{127}, 157--177.
+
+	Higgins, J. P. T. & Thompson, S. G. (2002) Quantifying heterogeneity in a meta-analysis. \emph{Statistics in Medicine}, \bold{21}, 1539--1558.
 
 	Viechtbauer, W. (2007) Confidence intervals for the amount of heterogeneity in meta-analysis. \emph{Statistics in Medicine}, \bold{26}, 37--52.
 }
@@ -50,7 +52,7 @@
 ### load BCG vaccine data
 data(dat.bcg)
 
-### meta-analysis of the log risk rates using a random-effects model
+### meta-analysis of the log risk ratios using a random-effects model
 res <- rma(ai=tpos, bi=tneg, ci=cpos, di=cneg, 
            data=dat.bcg, measure="RR", method="REML")
 

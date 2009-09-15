@@ -42,14 +42,14 @@ transf.exp.int(x, targs, ...)
 ### load BCG vaccine data
 data(dat.bcg)
 
-### meta-analysis of the log risk rates using a random-effects model
+### meta-analysis of the log risk ratios using a random-effects model
 res <- rma(ai=tpos, bi=tneg, ci=cpos, di=cneg, 
            measure="RR", data=dat.bcg, method="REML")
 
-### average risk rate with 95\% CI
+### average risk ratio with 95\% CI
 predict(res, transf=exp)
 
-### average risk rate with 95\% CI using integral transformation
+### average risk ratio with 95\% CI using integral transformation
 predict(res, transf=transf.exp.int, targs=list(tau2=res$tau2, lower=-4, upper=4))
 }
 \keyword{manip}

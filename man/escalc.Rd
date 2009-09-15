@@ -36,7 +36,7 @@ escalc(measure, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i, sd2i,
 	The raw mean difference and standardized mean difference are useful effect size measure when meta-analyzing a set of studies comparing two groups (e.g., treatment and control groups) with respect to some quantitative (and ideally normally distributed) dependent variable. For these outcome measures, \code{m1i} and \code{m2i} denote the means of the two groups, \code{sd1i} and \code{sd2i} the standard deviations of the scores in the two groups, and \code{n1i} and \code{n2i} the sample sizes of the two groups.
 	\itemize{
 	\item \code{"MD"}: The \emph{raw mean difference} is equal to \code{m1i-m2i}.
-	\item \code{"SMD"}: The \emph{standardized mean difference} is equal to \code{m1i-m2i}, divided by the pooled standard deviation of the two groups. The standardized mean difference is automatically corrected for its slight positive bias within the function (see Hedges & Olkin, 1985). When \code{vtype="LS"}, the large sample approximation of the sampling variance is calculated. Alternatively, the unbiased estimate of the sampling variance can be obtained with \code{vtype="UB"}.
+	\item \code{"SMD"}: The \emph{standardized mean difference} is equal to \code{(m1i-m2i)/spi}, where \code{spi} is the pooled standard deviation of the two groups (which is calculated inside of the function). The standardized mean difference is automatically corrected for its slight positive bias within the function (see Hedges & Olkin, 1985). When \code{vtype="LS"}, the sampling variances are calculated based on the large sample approximation. Alternatively, the unbiased estimates of the sampling variances can be obtained with \code{vtype="UB"}.
 	}
 
 	\bold{Effect Size and Outcome Measures for 2x2 Table Data}
@@ -52,10 +52,10 @@ escalc(measure, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i, sd2i,
 	Depending on the type of design, a meta-analysis of 2x2 table data can be based on one of several different outcome measures, including the odds ratio, the risk ratio (also called relative risk), the risk difference, and the arc-sine transformed risk difference. For these measures, one needs to supply either \code{ai}, \code{bi}, \code{ci}, and \code{di} or alternatively \code{ai}, \code{ci}, \code{n1i}, and \code{n2i}. Note that the log is taken of the risk and the odds ratio, which helps to make the distribution of these outcome measure closer to normal.
 	\itemize{
 	\item \code{"RR"}: The \emph{log relative risk} is equal to the log of \code{(ai/n1i)/(ci/n2i)}.
-	\item \code{"OR"}: The \emph{log odds ratio} is equal to the log of \code{(ai*di/(bi*di)}.
+	\item \code{"OR"}: The \emph{log odds ratio} is equal to the log of \code{(ai*di)/(bi*di)}.
 	\item \code{"RD"}: The \emph{risk difference} is equal to \code{(ai/n1i)-(ci/n2i)}.
 	\item \code{"AS"}: The \emph{arc-sine transformed risk difference} is equal to \code{asin(sqrt(ai/n1i)) - asin(sqrt(ci/n2i))}. See Ruecker et al. (2009) for a discussion of this and other outcome measures for 2x2 table data.
-	\item \code{"PETO"}: The \emph{log odds ratio estimated with Peto's method} (see Yusuf et al., 1985) is equal to \code{(ai+ci)*n1i/(n1i+n2i)}. Note that this measure technically assumes that the true odds ratio is equal to 1 in all tables.
+	\item \code{"PETO"}: The \emph{log odds ratio estimated with Peto's method} (see Yusuf et al., 1985) is equal to \code{(ai-si*n1i/ni)/((si*ti*n1i*n2i)/(ni^2*(ni-1)))}, where \code{si=ai+ci}, \code{ti=bi+di}, and \code{ni=n1i+n2i}. Note that this measure technically assumes that the true odds ratio is equal to 1 in all tables.
 	} Cell entries with a zero can be problematic, especially for the risk and the odds ratio. Adding a constant to the cells of the 2x2 tables is a common solution to this problem. When \code{to="all"}, the value of \code{add} is added to each cell of the 2x2 tables in all \eqn{k} tables. When \code{to="only0"}, the value of \code{add} is added to each cell of the 2x2 tables only in those tables with at least one cell equal to 0. When \code{to="if0all"}, the value of \code{add} is added to each cell of the 2x2 tables in all \eqn{k} tables, but only when there is at least one 2x2 table with a zero entry. Setting \code{to="none"} or \code{add=0} has the same effect: No adjustment to the observed table frequencies is made. Depending on the outcome measure and the data, this may lead to division by zero inside of the function (when this occurs, the resulting \code{Inf} value is recoded to \code{NA}).
 
 	\bold{Proportions and Transformations Thereof}
@@ -73,7 +73,8 @@ escalc(measure, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i, sd2i,
 
 	Another frequently used outcome measure in meta-analyses is the correlation coefficient. Here, one needs to specify \code{ri}, the vector with the raw correlation coefficients, and \code{ni}, the corresponding sample sizes.
 	\itemize{
-	\item \code{"COR"}: The \emph{raw correlation coefficient} is automatically corrected inside the function for its slight negative bias (based on equation 2.7 in Olkin & Pratt, 1958). When \code{vtype="LS"}, the large sample approximation of the sampling variance is calculated. Alternatively, an approximation to the unbiased estimate of the sampling variance can be obtained with \code{vtype="UB"} (see Hedges, 1989).
+	\item \code{"COR"}: The \emph{raw correlation coefficient} is simply equal to \code{ri} as supplied to the function. When \code{vtype="LS"}, the sampling variances are calculated based on the large sample approximation. Alternatively, an approximation to the unbiased estimates of the sampling variances can be obtained with \code{vtype="UB"} (see Hedges, 1989).	
+	\item \code{"UCOR"}: The \emph{unbiased estimate of the correlation coefficient} is obtained by correcting the raw correlation coefficient for its slight negative bias (based on equation 2.7 in Olkin & Pratt, 1958). Again, \code{vtype="LS"} and \code{vtype="UB"} can be used to choose between the large sample approximations or the approximately unbiased estimates of the sampling variances.
 	\item \code{"ZCOR"}: Fisher's r-to-z transformation is a variance stabilizing transformation for correlation coefficients with the added benefit of also being a rather effective normalizing transformation (Fisher, 1921). The \emph{Fisher's r-to-z transformed correlation coefficient} is equal to \code{1/2*log((1+ri)/(1-ri))}.
 	}
 }
@@ -107,10 +108,10 @@ escalc(measure, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i, sd2i,
 ### load BCG vaccine data
 data(dat.bcg)
 
-### calculate log risk rates and corresponding sampling variances
+### calculate log risk ratios and corresponding sampling variances
 dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
 
-### add log risk rates and sampling variances to the dat.bcg data frame
+### add log risk ratios and sampling variances to the dat.bcg data frame
 dat.bcg$yi <- dat$yi
 dat.bcg$vi <- dat$vi
 dat.bcg

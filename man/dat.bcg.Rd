@@ -29,7 +29,7 @@
 	The data set has been used in several publications to illustrate meta-analytic methods (see \sQuote{References}).
 }
 \source{
-	Colditz, G. A., Brewer, T. F., Berkey, C. S., Wilson, M. E., Burdick, E., Fineberg, H. V., et al. (1994) Efficacy of BCG vaccine in the prevention of tuberculosis: Meta-analysis of the published literature. \emph{Journal of the American Medical Association}, \bold{271}, 698--702.
+	Colditz, G. A., Brewer, T. F., Berkey, C. S., Wilson, M. E., Burdick, E., Fineberg, H. V. & Mosteller, F. (1994) Efficacy of BCG vaccine in the prevention of tuberculosis: Meta-analysis of the published literature. \emph{Journal of the American Medical Association}, \bold{271}, 698--702.
 }
 \references{
 	Berkey, C. S., Hoaglin, D. C., Mosteller, F. & Colditz, G. A. (1995). A random-effects regression model for meta-analysis. \emph{Statistics in Medicine}, \bold{14}, 395--411.
@@ -40,12 +40,12 @@
 ### load BCG vaccine data
 data(dat.bcg)
 
-### meta-analysis of the log risk rates using a random-effects model
+### meta-analysis of the log risk ratios using a random-effects model
 res <- rma(ai=tpos, bi=tneg, ci=cpos, di=cneg, 
            measure="RR", data=dat.bcg, method="DL")
 res
 
-### average risk rate with 95\% CI
+### average risk ratio with 95\% CI
 predict(res, transf=exp)
 
 ### mixed-effects model with absolute latitude as a moderator
@@ -53,7 +53,7 @@ res <- rma(ai=tpos, bi=tneg, ci=cpos, di=cneg,
            mods=ablat, measure="RR", data=dat.bcg, method="DL")
 res
 
-### predicted average risk rates for 10-60 degrees absolute latitude
+### predicted average risk ratios for 10-60 degrees absolute latitude
 predict(res, newmods=c(10, 20, 30, 40, 50, 60), transf=exp)
 }
 \keyword{datasets}

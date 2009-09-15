@@ -60,28 +60,28 @@
 ### load BCG vaccine data
 data(dat.bcg)
 
-### meta-analysis of the log risk rates using a random-effects model
+### meta-analysis of the log risk ratios using a random-effects model
 res <- rma(ai=tpos, bi=tneg, ci=cpos, di=cneg, 
            measure="RR", data=dat.bcg, method="REML")
 
-### average risk rate with 95\% CI
+### average risk ratio with 95\% CI
 predict(res, transf=exp)
 
 ### mixed-effects model with absolute latitude as a moderator
 res <- rma(ai=tpos, bi=tneg, ci=cpos, di=cneg, mods=ablat, 
            measure="RR", data=dat.bcg, method="REML")
 
-### predicted average risk rates for given absolute latitude values
+### predicted average risk ratios for given absolute latitude values
 predict(res, transf=exp)
 
-### predicted average risk rates for 10-60 degrees absolute latitude
+### predicted average risk ratios for 10-60 degrees absolute latitude
 predict(res, newmods=c(10, 20, 30, 40, 50, 60), transf=exp)
 
 ### mixed-effects model with two moderators (absolute latitude and publication year)
 res <- rma(ai=tpos, bi=tneg, ci=cpos, di=cneg, mods=cbind(ablat, year), 
            measure="RR", data=dat.bcg, method="REML")
 
-### predicted average risk rates for 10 and 60 degrees latitude in 1950 and 1980
+### predicted average risk ratios for 10 and 60 degrees latitude in 1950 and 1980
 predict(res, newmods=cbind(c(10,60,10,60),c(1950,1950,1980,1980)), transf=exp)
 }
 \keyword{models}

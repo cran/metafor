@@ -55,21 +55,21 @@ rma(yi, vi, sei, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i, sd2i,
 
 	\bold{Specifying the Data}
 
-	The function can be used in conjunction with any of the usual effect size or outcome measures used in meta-analyses (e.g., log odds ratios, log risk ratios, risk differences, mean differences, standardized mean differences, raw correlation coefficients, correlation coefficients transformed with Fisher's r-to-z transformation, and so on). Simply supply the observed outcomes via the \code{yi} argument and the corresponding sampling variances via the \code{vi} argument (or supply the standard errors, the square root of sampling variances, via the \code{sei} argument).
+	The function can be used in conjunction with any of the usual effect size or outcome measures used in meta-analyses (e.g., log odds ratios, log risk ratios, risk differences, mean differences, standardized mean differences, raw correlation coefficients, correlation coefficients transformed with Fisher's r-to-z transformation, and so on). Simply supply the observed outcomes via the \code{yi} argument and the corresponding sampling variances via the \code{vi} argument (or supply the standard errors, the square root of sampling variances, via the \code{sei} argument). In this case, one should set \code{measure="GEN"} (the default).
 
-	Alternatively, the function can automatically calculate many effect size or outcome measures when supplied with the needed data. The \code{\link{escalc}} function describes which measures are currently implemented and what data/arguments should then be specified. The \code{measure} argument should then be set to the desired measure.
+	Alternatively, the function can automatically calculate many effect size or outcome measures (and the corresponding sampling variances) when supplied with the needed data. The \code{\link{escalc}} function describes which measures are currently implemented and what data/arguments should then be specified. The \code{measure} argument should then be set to the desired measure.
 
 	\bold{Specifying the Model}
 
 	Assuming the observed outcomes and corresponding sampling variances are supplied via \code{yi} and \code{vi}, the \bold{fixed-effects model} is fitted with \code{rma(yi, vi, method="FE")}. The \bold{random-effects model} is fitted with the same code but setting \code{method} to one of the various estimators for the amount of heterogeneity:
 	\itemize{
-	\item \code{"HS"} = Hunter-Schmidt estimator
-	\item \code{"HE"} = Hedges estimator
-	\item \code{"DL"} = DerSimonian-Laird estimator
-	\item \code{"SJ"} = Sidik-Jonkman estimator
-	\item \code{"ML"} = maximum-likelihood estimator
-	\item \code{"REML"} = restricted maximum-likelihood estimator
-	\item \code{"EB"} = empirical Bayes estimator.
+	\item \code{method="HS"} = Hunter-Schmidt estimator
+	\item \code{method="HE"} = Hedges estimator
+	\item \code{method="DL"} = DerSimonian-Laird estimator
+	\item \code{method="SJ"} = Sidik-Jonkman estimator
+	\item \code{method="ML"} = maximum-likelihood estimator
+	\item \code{method="REML"} = restricted maximum-likelihood estimator
+	\item \code{method="EB"} = empirical Bayes estimator.
 	}
 	One or more moderators can be included in these models via the \code{mods} argument. A single moderator can be given as a (row or column) vector of length \eqn{k} specifying the values of the moderator. Multiple moderators are specified by giving a matrix with \eqn{k} rows and \eqn{p'} columns (e.g., using \code{mods = cbind(mod1, mod2, mod3)}, where \code{mod1}, \code{mod2}, \code{mod3} correspond to the names of the variables for the three moderator variables). A \bold{fixed-effects with moderators model} is then fitted by setting \code{method="FE"}, while a \bold{mixed-effects model} is fitted by specifying one of the estimators for the amount of (residual) heterogeneity given earlier. The intercept is automatically included in the model, unless \code{intercept=FALSE} is used.
 
@@ -104,12 +104,13 @@ rma(yi, vi, sei, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i, sd2i,
 	\item{QM}{test statistic for the omnibus test of coefficients.}
 	\item{QMp}{p-value for the omnibus test of coefficients.}
 	\item{I2}{value of \eqn{I^2} (only for the random-effects model; \code{NA} otherwise).}
+	\item{H2}{value of \eqn{H^2} (only for the random-effects model; \code{NA} otherwise).}
 	\item{int.only}{logical that indicates whether the model only includes an intercept.}
 	\item{yi, vi, X}{the vector of outcomes, the corresponding sampling variances, and the design matrix of the model.}
 	\item{fit.stats}{a list with the log likelihood, deviance, AIC, and BIC values under the unrestricted and restricted likelihood.}
 	\item{...}{some additional elements/values.}
 
-	The results of the fitted model are neatly formated and printed with the \code{\link{print.rma.uni}} function. If you also want the fit statistics, use \code{\link{summary.rma}} (or use the \code{\link{fitstats.rma}} function to extract them).
+	The results of the fitted model are neatly formated and printed with the \code{\link{print.rma.uni}} function. If you also want the fit statistics, use \code{\link{summary.rma}} (or use the \code{\link{fitstats.rma}} function to extract them). Full versus reduced model comparisons in terms of fit statistics and likelihoods can be obtained with \code{\link{anova.rma.uni}}.
 
 	Predicted/fitted values can be obtained with \code{\link{predict.rma.uni}} and \code{\link{fitted.rma}}. For best linear unbiased predictions, see \code{\link{blup.rma.uni}}.
 
@@ -119,6 +120,8 @@ rma(yi, vi, sei, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i, sd2i,
 
 	Forest, funnel, and radial plots (the latter only for models without moderators) are drawn with \code{\link{forest.rma}}, \code{\link{funnel.rma}}, and \code{\link{radial.rma}}. The \code{\link{qqnorm.rma.uni}} function provides a normal QQ plot of the standardized residuals. One can also just call \code{\link{plot.rma.uni}} on the fitted model object to obtain various plots at once.
 
+	Tests for publication bias (or more accurately, for funnel plot asymmetry) can be obtained with \code{\link{ranktest.rma}} and \code{\link{regtest.rma}}.
+
 	Other assessor functions include \code{\link{coef.rma}}, \code{\link{vcov.rma}}, \code{\link{logLik.rma}}, and \code{\link{hatvalues.rma.uni}}.
 }
 \note{
@@ -126,17 +129,17 @@ rma(yi, vi, sei, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i, sd2i,
 
 	All of the heterogeneity estimators except SJ can in principle yield negative estimates for the amount of (residual) heterogeneity. However, negative estimates of \eqn{\tau^2}{tau^2} are outside of the parameter space. For the HS, HE, and DL estimators, negative estimates are therefore truncated to zero. For ML, REML, and EB estimation, the Fisher scoring algorithm makes use of step halving to guarantee a non-negative estimate. For those brave enough to step into risky territory, there is the option to set the lower bound of \eqn{\tau^2}{tau^2} equal to some other value besides zero with \code{control=list(tau2.min=value)}.
 
-	The Hunter-Schmidt estimator of the amount of heterogeneity is defined in Hunter and Schmidt (1990) only in the context of the random-effects model when analyzing correlation coefficients. A general version of this estimator for the random-effects model not specific to any particular outcome measure is described in Viechtbauer (2005). The same idea can be easily extended to the mixed-effects model and is implemented here.
+	The Hunter-Schmidt estimator for the amount of heterogeneity is defined in Hunter and Schmidt (1990) only in the context of the random-effects model when analyzing correlation coefficients. A general version of this estimator for the random-effects model not specific to any particular outcome measure is described in Viechtbauer (2005). The same idea can be easily extended to the mixed-effects model and is implemented here.
 
 	Outcomes with non-positive sampling variances are problematic. If a sampling variance is equal to zero, then its weight will be \eqn{1/0} for fixed-effects models when using weighted estimation. Switching to unweighted estimation is a possible solution then. For random/mixed-effects model, some estimators of \eqn{\tau^2}{tau^2} are undefined when there is at least one sampling variance equal to zero. Other estimators may work, but it may still be necessary to switch to unweighted model fitting, especially when the estimate of \eqn{\tau^2}{tau^2} turns out to be zero.
 
 	If you get a \sQuote{singular matrix} error when using the function, then this means that there is a linear relationship between the moderator variables included in the model. For example, two moderators that correlated perfectly would cause this error. Deleting (redundant) moderator variables from the model as needed should solve this problem.
 
-	Finally, some general words of caution about the assumptions underlying the models:
+	Finally, some general words of caution about the assumptions underlying the models are warranted:
 	\itemize{
-	\item The sampling variances (i.e., the \code{vi} values) are treated as if they were known constants. This (usually) implies that the distributions of the test statistics and corresponding confidence intervals are only exact and have nominal coverage when the within-study sample sizes are large (i.e., when the error in the sampling variance estimates is small).
+	\item The sampling variances (i.e., the \code{vi} values) are treated as if they were known constants. This (usually) implies that the distributions of the test statistics and corresponding confidence intervals are only exact and have nominal coverage when the within-study sample sizes are large (i.e., when the error in the sampling variance estimates is small). Certain outcome measures (e.g., the arc-sine transformed risk difference and Fisher's r-to-z transformed correlation coefficient) are based on variance stabilizing transformations that also help to make the assumption of known sampling variances much more reasonable.
 	\item When fitting a mixed/random-effects model, \eqn{\tau^2}{tau^2} is estimated and then treated as a known constant thereafter. This ignores the uncertainty in the estimate of \eqn{\tau^2}{tau^2}. As a consequence, the standard errors of the parameter estimates tend to be too small, yielding test statistics that are too large and confidence intervals that are not wide enough. The Knapp and Hartung (2003) method can be used to counter this problem, yielding test statistics and confidence intervals whose properties are closer to nominal.
-	\item Most effect size measures are not exactly normally distributed as assumed under the various models. However, the normal approximation usually becomes more accurate for most effect size or outcome measures as the within-study sample sizes increase. Therefore, sufficiently large within-study sample sizes are (usually) needed to be certain that the tests and confidence intervals have nominal levels/coverage.
+	\item Most effect size measures are not exactly normally distributed as assumed under the various models. However, the normal approximation usually becomes more accurate for most effect size or outcome measures as the within-study sample sizes increase. Therefore, sufficiently large within-study sample sizes are (usually) needed to be certain that the tests and confidence intervals have nominal levels/coverage. Again, certain outcome measures (e.g., Fisher's r-to-z transformed correlation coefficient) may be preferable from this perspective as well.
 	}
 }
 \author{Wolfgang Viechtbauer; \email{wvb@www.wvbauer.com}; \url{http://www.wvbauer.com/}}
@@ -170,10 +173,13 @@ rma(yi, vi, sei, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i, sd2i,
 ### load BCG vaccine data
 data(dat.bcg)
 
-### calculate log risk rates and corresponding sampling variances
+### calculate log risk ratios and corresponding sampling variances
 dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
 dat.bcg$yi <- dat$yi
 dat.bcg$vi <- dat$vi
+
+### random-effects model
+rma(yi, vi, data=dat.bcg, method="REML")
 
 ### mixed-effects model with two moderators (absolute latitude and publication year)
 rma(yi, vi, mods=cbind(ablat, year), data=dat.bcg, method="REML")

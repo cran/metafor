@@ -55,17 +55,17 @@
 }
 \author{Wolfgang Viechtbauer; \email{wvb@www.wvbauer.com}; \url{http://www.wvbauer.com/}}
 \seealso{
-	\code{\link{forest.rma}}, \code{\link{addpoly}}, \code{\link{addpoly.default}}, \code{\link{addpoly.rma}}
+	\code{\link{forest}}, \code{\link{addpoly}}
 }
 \examples{
 ### load BCG vaccine data
 data(dat.bcg)
 
-### calculate log risk rates and corresponding sampling variances
+### calculate log risk ratios and corresponding sampling variances
 dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
 
-### forest plot of the observed risk rates
+### forest plot of the observed risk ratios
 forest(dat$yi, dat$vi, slab=paste(dat.bcg$author, dat.bcg$year), 
-       atransf=exp, xlab="Risk Rates (log scale)")
+       atransf=exp, xlab="Risk Ratio (log scale)")
 }
 \keyword{hplot}

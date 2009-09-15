@@ -1,8 +1,8 @@
 \name{print.rma.uni.infl}
 \alias{print.rma.uni.infl}
-\title{Print Methods for rma.uni.infl Objects}
+\title{Print Method for rma.uni.infl Objects}
 \description{
-   Print methods for objects of class \code{"rma.uni.infl"}.
+   Print method for objects of class \code{"rma.uni.infl"}.
 }
 \usage{
 \method{print}{rma.uni.infl}(x, digits=x$digits, ...)

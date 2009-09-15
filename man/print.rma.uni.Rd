@@ -26,7 +26,8 @@
 	\itemize{
 	\item the log likelihood, deviance, AIC, and BIC value (when \code{showfit=TRUE}).
 	\item the amount of (residual) heterogeneity in the random/mixed-effects model (i.e., the estimate of \eqn{\tau^2}{tau^2} and its square root). Suppressed for fixed-effects models. For ML and REML estimation, the asymptotic standard error of the estimate of \eqn{\tau^2}{tau^2} is also provided.
-	\item the \eqn{I^2} statistic, indicating the percent of the total variability in the observed outcomes that is estimated to be due to heterogeneity. Only supplied when fitting a random-effects model.
+	\item the \eqn{I^2} statistic estimates (in percent) how much of the total variability in the effect size estimates (which is composed of heterogeneity and sampling variability) can be attributed to heterogeneity among the true effects. Only supplied when fitting a random-effects model.
+	\item the \eqn{H^2} statistic is the ratio of the total amount of variability in the observed outcomes to the amount of sampling variability. Only supplied when fitting a random-effects model.
 	\item the results of the test for (residual) heterogeneity. This is the usual Q-test for heterogeneity when not including moderators in the model and the QE-test for residual heterogeneity when moderators are included.
 	\item the results of the omnibus test of the coefficients in the model (the indices of the coefficients tested are also indicated). Suppressed if the model includes only one coefficient (e.g., only an intercept, like in the fixed- and random-effects model).
 	\item a table with the estimated coefficients, corresponding standard errors, test statistics, p-values, and confidence interval bounds.

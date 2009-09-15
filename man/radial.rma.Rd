@@ -50,15 +50,15 @@
 ### load BCG vaccine data
 data(dat.bcg)
 
-### meta-analysis of the log risk rates using a fixed-effects model
+### meta-analysis of the log risk ratios using a fixed-effects model
 res <- rma(ai=tpos, bi=tneg, ci=cpos, di=cneg, 
            data=dat.bcg, measure="RR", method="FE")
 radial(res)
 
-### line from (0,0) with slope of the log risk rate from the fourth study
+### line from (0,0) with slope of the log risk ratio from the fourth study
 abline(a=0, b=c(-1.44155119))
 
-### meta-analysis of the log risk rates using a random-effects model
+### meta-analysis of the log risk ratios using a random-effects model
 res <- rma(ai=tpos, bi=tneg, ci=cpos, di=cneg, 
            data=dat.bcg, measure="RR", method="REML")
 radial(res)

@@ -26,21 +26,18 @@
 ### load BCG vaccine data
 data(dat.bcg)
 
-### meta-analysis of the log risk rates using a random-effects model
+### meta-analysis of the log risk ratios using a random-effects model
 res1 <- rma(ai=tpos, bi=tneg, ci=cpos, di=cneg, 
             data=dat.bcg, measure="RR", method="ML")
-fitstats(res1)
 
 ### mixed-effects model with two moderators (latitude and publication year)
 res2 <- rma(ai=tpos, bi=tneg, ci=cpos, di=cneg, mods=cbind(ablat, year),
             data=dat.bcg, measure="RR", method="ML")
+
+fitstats(res1)
 fitstats(res2)
 
-### LR-test of the two moderators 
-### note: must use ML to compare models with different fixed effects
-pchisq(fitstats(res1)[2] - fitstats(res2)[2], df=2, lower.tail=FALSE)
-
-### LR-test of the amount of residual heterogeneity 
+### LR-test for residual heterogeneity
 ### note: REML is usually better for testing variance components
 ### note: need to halve the p-value since the test is one-sided
 res2 <- rma(ai=tpos, bi=tneg, ci=cpos, di=cneg, mods=cbind(ablat, year),
