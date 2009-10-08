@@ -1,9 +1,11 @@
 .onLoad <-
 function (lib, pkg) 
 {
-    loadmsg <- "Loading 'metafor' package (version 0.5-4). For an overview \nand introduction to the package please type: help(metafor)."
+    loadmsg <- "Loading 'metafor' package (version 0.5-5). For an overview \nand introduction to the package please type: help(metafor)."
     packageStartupMessage(loadmsg, domain = NULL, appendLF = TRUE)
 }
+.x <-
+2
 addpoly <-
 function (x, ...) 
 UseMethod("addpoly")
@@ -232,7 +234,7 @@ function (x, level = x$level, digits = x$digits, transf = FALSE,
     if (na.act == "na.fail") 
         stop("Missing values in results.")
     out$digits <- digits
-    class(out) <- c("rma.list")
+    class(out) <- c("list.rma")
     return(out)
 }
 cint <-
@@ -344,6 +346,8 @@ function (object, fixed = FALSE, random = TRUE, level = object$level,
             res.random <- rbind(tau2, tau)
             dimnames(res.random)[[1]] <- c("tau^2", "tau")
         }
+        if (x$method == "FE") 
+            res.random[, 1] <- NA
         dimnames(res.random)[[2]] <- c("estimate", "ci.lb", "ci.ub")
     }
     if (fixed) {
@@ -383,14 +387,278 @@ function (object, ...)
     res.table <- data.frame(res.table)
     return(res.table)
 }
+cumul <-
+function (x, ...) 
+UseMethod("cumul")
+cumul.rma.mh <-
+function (x, order = NULL, digits = x$digits, transf = FALSE, 
+    ...) 
+{
+    if (!is.element("rma.mh", class(x))) 
+        stop("Argument 'x' must be an object of class \"rma.mh\".")
+    na.act <- getOption("na.action")
+    if (!is.element(na.act, c("na.omit", "na.exclude", "na.fail"))) 
+        stop("Unknwn 'na.action' specified under options().")
+    if (is.null(order)) 
+        order <- 1:x$k.f
+    ai.f <- x$ai.f[order]
+    bi.f <- x$bi.f[order]
+    ci.f <- x$ci.f[order]
+    di.f <- x$di.f[order]
+    yi.f <- x$yi.f[order]
+    vi.f <- x$vi.f[order]
+    not.na <- x$not.na[order]
+    slab <- x$slab[order]
+    o.warn <- getOption("warn")
+    on.exit(options(warn = o.warn))
+    options(warn = -1)
+    b <- rep(NA, x$k.f)
+    se <- rep(NA, x$k.f)
+    zval <- rep(NA, x$k.f)
+    pval <- rep(NA, x$k.f)
+    ci.lb <- rep(NA, x$k.f)
+    ci.ub <- rep(NA, x$k.f)
+    QE <- rep(NA, x$k.f)
+    QEp <- rep(NA, x$k.f)
+    for (i in (1:x$k.f)[x$not.na]) {
+        res <- try(rma.mh(ai = ai.f[1:i], bi = bi.f[1:i], ci = ci.f[1:i], 
+            di = di.f[1:i], measure = x$measure, add = x$add, 
+            to = x$to, ...), silent = TRUE)
+        if (is.element("try-error", class(res))) 
+            next
+        b[i] <- res$b
+        se[i] <- res$se
+        zval[i] <- res$zval
+        pval[i] <- res$pval
+        ci.lb[i] <- res$ci.lb
+        ci.ub[i] <- res$ci.ub
+        QE[i] <- res$QE
+        QEp[i] <- res$QEp
+    }
+    alpha <- (100 - x$level)/100
+    crit <- qnorm(1 - alpha/2)
+    b[1] <- yi.f[1]
+    se[1] <- sqrt(vi.f[1])
+    zval[1] <- yi.f[1]/se[1]
+    pval[1] <- 2 * pnorm(abs(zval[1]), lower.tail = FALSE)
+    ci.lb[1] <- yi.f[1] - crit * se[1]
+    ci.ub[1] <- yi.f[1] + crit * se[1]
+    QE[1] <- 0
+    QEp[1] <- 1
+    if (transf) {
+        if (x$measure == "OR" || x$measure == "RR") {
+            b <- exp(b)
+            se <- rep(NA, x$k.f)
+            ci.lb <- exp(ci.lb)
+            ci.ub <- exp(ci.ub)
+        }
+    }
+    if (na.act == "na.omit") {
+        out <- list(estimate = b[not.na], se = se[not.na], zval = zval[not.na], 
+            pval = pval[not.na], ci.lb = ci.lb[not.na], ci.ub = ci.ub[not.na], 
+            Q = QE[not.na], Qp = QEp[not.na])
+        out$slab <- slab[not.na]
+    }
+    if (na.act == "na.exclude") {
+        out <- list(estimate = b, se = se, zval = zval, pval = pval, 
+            ci.lb = ci.lb, ci.ub = ci.ub, Q = QE, Qp = QEp)
+        out$slab <- slab
+    }
+    if (na.act == "na.fail") 
+        stop("Missing values in results.")
+    out$digits <- digits
+    out$slab.null <- x$slab.null
+    out$level <- x$level
+    class(out) <- c("list.rma", "cumul.rma")
+    return(out)
+}
+cumul.rma.peto <-
+function (x, order = NULL, digits = x$digits, transf = FALSE, 
+    ...) 
+{
+    if (!is.element("rma.peto", class(x))) 
+        stop("Argument 'x' must be an object of class \"rma.peto\".")
+    na.act <- getOption("na.action")
+    if (!is.element(na.act, c("na.omit", "na.exclude", "na.fail"))) 
+        stop("Unknwn 'na.action' specified under options().")
+    if (is.null(order)) 
+        order <- 1:x$k.f
+    ai.f <- x$ai.f[order]
+    bi.f <- x$bi.f[order]
+    ci.f <- x$ci.f[order]
+    di.f <- x$di.f[order]
+    yi.f <- x$yi.f[order]
+    vi.f <- x$vi.f[order]
+    not.na <- x$not.na[order]
+    slab <- x$slab[order]
+    o.warn <- getOption("warn")
+    on.exit(options(warn = o.warn))
+    options(warn = -1)
+    b <- rep(NA, x$k.f)
+    se <- rep(NA, x$k.f)
+    zval <- rep(NA, x$k.f)
+    pval <- rep(NA, x$k.f)
+    ci.lb <- rep(NA, x$k.f)
+    ci.ub <- rep(NA, x$k.f)
+    QE <- rep(NA, x$k.f)
+    QEp <- rep(NA, x$k.f)
+    for (i in (1:x$k.f)[x$not.na]) {
+        res <- try(rma.peto(ai = ai.f[1:i], bi = bi.f[1:i], ci = ci.f[1:i], 
+            di = di.f[1:i], add = x$add, to = x$to, ...), silent = TRUE)
+        if (is.element("try-error", class(res))) 
+            next
+        b[i] <- res$b
+        se[i] <- res$se
+        zval[i] <- res$zval
+        pval[i] <- res$pval
+        ci.lb[i] <- res$ci.lb
+        ci.ub[i] <- res$ci.ub
+        QE[i] <- res$QE
+        QEp[i] <- res$QEp
+    }
+    alpha <- (100 - x$level)/100
+    crit <- qnorm(1 - alpha/2)
+    b[1] <- yi.f[1]
+    se[1] <- sqrt(vi.f[1])
+    zval[1] <- yi.f[1]/se[1]
+    pval[1] <- 2 * pnorm(abs(zval[1]), lower.tail = FALSE)
+    ci.lb[1] <- yi.f[1] - crit * se[1]
+    ci.ub[1] <- yi.f[1] + crit * se[1]
+    QE[1] <- 0
+    QEp[1] <- 1
+    if (transf) {
+        b <- exp(b)
+        se <- rep(NA, x$k.f)
+        ci.lb <- exp(ci.lb)
+        ci.ub <- exp(ci.ub)
+    }
+    if (na.act == "na.omit") {
+        out <- list(estimate = b[not.na], se = se[not.na], zval = zval[not.na], 
+            pval = pval[not.na], ci.lb = ci.lb[not.na], ci.ub = ci.ub[not.na], 
+            Q = QE[not.na], Qp = QEp[not.na])
+        out$slab <- slab[not.na]
+    }
+    if (na.act == "na.exclude") {
+        out <- list(estimate = b, se = se, zval = zval, pval = pval, 
+            ci.lb = ci.lb, ci.ub = ci.ub, Q = QE, Qp = QEp)
+        out$slab <- slab
+    }
+    if (na.act == "na.fail") 
+        stop("Missing values in results.")
+    out$digits <- digits
+    out$slab.null <- x$slab.null
+    out$level <- x$level
+    class(out) <- c("list.rma", "cumul.rma")
+    return(out)
+}
+cumul.rma.uni <-
+function (x, order = NULL, digits = x$digits, transf = FALSE, 
+    targs = NULL, ...) 
+{
+    if (!is.element("rma.uni", class(x))) 
+        stop("Argument 'x' must be an object of class \"rma.uni\".")
+    na.act <- getOption("na.action")
+    if (!is.element(na.act, c("na.omit", "na.exclude", "na.fail"))) 
+        stop("Unknwn 'na.action' specified under options().")
+    if (!x$int.only) 
+        stop("Method only applicable for models without moderators.")
+    if (is.null(order)) 
+        order <- 1:x$k.f
+    yi.f <- x$yi.f[order]
+    vi.f <- x$vi.f[order]
+    X.f <- cbind(x$X.f[order, ])
+    not.na <- x$not.na[order]
+    slab <- x$slab[order]
+    o.warn <- getOption("warn")
+    on.exit(options(warn = o.warn))
+    options(warn = -1)
+    b <- rep(NA, x$k.f)
+    se <- rep(NA, x$k.f)
+    zval <- rep(NA, x$k.f)
+    pval <- rep(NA, x$k.f)
+    ci.lb <- rep(NA, x$k.f)
+    ci.ub <- rep(NA, x$k.f)
+    QE <- rep(NA, x$k.f)
+    QEp <- rep(NA, x$k.f)
+    tau2 <- rep(NA, x$k.f)
+    I2 <- rep(NA, x$k.f)
+    H2 <- rep(NA, x$k.f)
+    for (i in (1:x$k.f)[not.na]) {
+        res <- try(rma(yi.f[1:i], vi.f[1:i], method = x$method, 
+            weighted = x$weighted, intercept = TRUE, knha = x$knha, 
+            control = x$control, ...), silent = TRUE)
+        if (is.element("try-error", class(res))) 
+            next
+        b[i] <- res$b
+        se[i] <- res$se
+        zval[i] <- res$zval
+        pval[i] <- res$pval
+        ci.lb[i] <- res$ci.lb
+        ci.ub[i] <- res$ci.ub
+        QE[i] <- res$QE
+        QEp[i] <- res$QEp
+        tau2[i] <- res$tau2
+        I2[i] <- res$I2
+        H2[i] <- res$H2
+    }
+    alpha <- (100 - x$level)/100
+    crit <- qnorm(1 - alpha/2)
+    b[1] <- yi.f[1]
+    se[1] <- sqrt(vi.f[1])
+    zval[1] <- yi.f[1]/se[1]
+    pval[1] <- 2 * pnorm(abs(zval[1]), lower.tail = FALSE)
+    ci.lb[1] <- yi.f[1] - crit * se[1]
+    ci.ub[1] <- yi.f[1] + crit * se[1]
+    QE[1] <- 0
+    QEp[1] <- 1
+    tau2[1] <- 0
+    I2[1] <- 0
+    H2[1] <- 1
+    if (is.function(transf)) {
+        if (is.null(targs)) {
+            b <- sapply(b, transf)
+            se <- rep(NA, x$k.f)
+            ci.lb <- sapply(ci.lb, transf)
+            ci.ub <- sapply(ci.ub, transf)
+        }
+        else {
+            b <- sapply(b, transf, targs)
+            se <- rep(NA, x$k.f)
+            ci.lb <- sapply(ci.lb, transf, targs)
+            ci.ub <- sapply(ci.ub, transf, targs)
+        }
+    }
+    if (na.act == "na.omit") {
+        out <- list(estimate = b[not.na], se = se[not.na], zval = zval[not.na], 
+            pvals = pval[not.na], ci.lb = ci.lb[not.na], ci.ub = ci.ub[not.na], 
+            tau2 = tau2[not.na], QE = QE[not.na], Qp = QEp[not.na], 
+            I2 = I2[not.na], H2 = H2[not.na])
+        out$slab <- slab[not.na]
+    }
+    if (na.act == "na.exclude") {
+        out <- list(estimate = b, se = se, zval = zval, pvals = pval, 
+            ci.lb = ci.lb, ci.ub = ci.ub, tau2 = tau2, QE = QE, 
+            Qp = QEp, I2 = I2, H2 = H2)
+        out$slab <- slab
+    }
+    if (na.act == "na.fail") 
+        stop("Missing values in results.")
+    if (x$method == "FE") 
+        out <- out[-c(9, 10, 11)]
+    out$digits <- digits
+    out$slab.null <- x$slab.null
+    out$level <- x$level
+    class(out) <- c("list.rma", "cumul.rma")
+    return(out)
+}
 escalc <-
 function (measure, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i, 
     sd2i, xi, mi, ri, ni, data = NULL, add = 1/2, to = "only0", 
     vtype = "LS") 
 {
     if (!is.element(measure, c("MD", "SMD", "RR", "OR", "PETO", 
-        "RD", "AS", "PR", "PLN", "PLO", "PAS", "PFT", "COR", 
-        "UCOR", "ZCOR"))) 
+        "RD", "AS", "PHI", "YUQ", "YUY", "PR", "PLN", "PLO", 
+        "PAS", "PFT", "COR", "UCOR", "ZCOR"))) 
         stop("Unknown 'measure' specified.")
     if (!is.element(to, c("all", "only0", "if0all", "none"))) 
         stop("Unknown 'to' argument specified.")
@@ -437,7 +705,7 @@ function (measure, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i,
             options(warn = warn.before)
             nti <- (n1i * n2i)/(n1i + n2i)
             yi <- cNm2i * (m1i - m2i)/sqrt(((n1i - 1) * sd1i^2 + 
-                (n2i - 1) * sd2i^2)/(n1i + n2i - 2))
+                (n2i - 1) * sd2i^2)/Nm2i)
             if (vtype == "UB") {
                 vi <- 1/nti + (1 - (Nm2i - 2)/(Nm2i * cNm2i^2)) * 
                   yi^2
@@ -446,12 +714,13 @@ function (measure, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i,
                 vi <- 1/nti + yi^2/(2 * (n1i + n2i))
             }
             if (vtype == "HS") {
-                myi <- sum((n1i + n2i) * yi)/sum(n1i + n2i)
-                vi <- 1/nti + myi^2/(2 * (n1i + n2i))
+                md <- sum((n1i + n2i) * yi)/sum(n1i + n2i)
+                vi <- 1/nti + md^2/(2 * (n1i + n2i))
             }
         }
     }
-    if (is.element(measure, c("RR", "OR", "RD", "AS", "PETO"))) {
+    if (is.element(measure, c("RR", "OR", "RD", "AS", "PETO", 
+        "PHI", "YUQ", "YUY"))) {
         mf.ai <- mf[[match("ai", names(mf))]]
         mf.bi <- mf[[match("bi", names(mf))]]
         mf.ci <- mf[[match("ci", names(mf))]]
@@ -523,6 +792,31 @@ function (measure, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i,
         if (measure == "AS") {
             yi <- asin(sqrt(p1)) - asin(sqrt(p2))
             vi <- 1/(4 * n1i) + 1/(4 * n2i)
+        }
+        if (measure == "PHI") {
+            yi <- (ai * di - bi * ci)/sqrt((ai + bi) * (ci + 
+                di) * (ai + ci) * (bi + di))
+            Ni <- ai + ci + bi + di
+            p1. <- (ai + bi)/Ni
+            p2. <- (ci + di)/Ni
+            p.1 <- (ai + ci)/Ni
+            p.2 <- (bi + di)/Ni
+            vi <- 1/Ni * (1 - yi^2 + yi * (1 + yi^2/2) * (p1. - 
+                p2.) * (p.1 - p.2)/sqrt(p1. * p2. * p.1 * p.2) - 
+                3/4 * yi^2 * ((p1. - p2.)^2/(p1. * p2.) + (p.1 - 
+                  p.2)/(p.1 * p.2)))
+        }
+        if (measure == "YUQ") {
+            ori <- ai * di/(bi * ci)
+            yi <- (ori - 1)/(ori + 1)
+            vi <- 1/4 * (1 - yi^2)^2 * (1/ai + 1/bi + 1/ci + 
+                1/di)
+        }
+        if (measure == "YUY") {
+            ori <- ai * di/(bi * ci)
+            yi <- (sqrt(ori) - 1)/(sqrt(ori) + 1)
+            vi <- 1/16 * (1 - yi^2)^2 * (1/ai + 1/bi + 1/ci + 
+                1/di)
         }
     }
     if (is.element(measure, c("PR", "PLN", "PLO", "PAS", "PFT"))) {
@@ -681,6 +975,35 @@ function (object, ...)
 forest <-
 function (x, ...) 
 UseMethod("forest")
+forest.cumul.rma <-
+function (x, annotate = TRUE, xlim = NULL, alim = NULL, ylim = NULL, 
+    at = NULL, steps = 5, level = x$level, digits = 2, refline = 0, 
+    xlab = NULL, ilab = NULL, ilab.xpos = NULL, ilab.pos = NULL, 
+    transf = FALSE, atransf = FALSE, targs = NULL, addrows = 0, 
+    efac = 1, pch = 15, psize = 1, cex = NULL, cex.lab = NULL, 
+    cex.axis = NULL, ...) 
+{
+    if (!is.element("cumul.rma", class(x))) 
+        stop("Argument 'x' must be an object of class \"cumul.rma\".")
+    na.act <- getOption("na.action")
+    if (!is.element(na.act, c("na.omit", "na.exclude", "na.fail"))) 
+        stop("Unknwn 'na.action' specified under options().")
+    if (x$slab.null) {
+        slab <- paste("+ Study ", x$slab)
+        slab[1] <- paste("Study ", x$slab[1])
+    }
+    else {
+        slab <- paste("+", x$slab)
+        slab[1] <- paste(x$slab[1])
+    }
+    forest.default(x = x$estimate, sei = x$se, annotate = annotate, 
+        xlim = xlim, alim = alim, ylim = ylim, at = at, steps = steps, 
+        level = level, digits = digits, refline = refline, xlab = xlab, 
+        slab = slab, ilab = ilab, ilab.xpos = ilab.xpos, ilab.pos = ilab.pos, 
+        transf = transf, atransf = atransf, targs = targs, addrows = addrows, 
+        efac = efac, pch = pch, psize = psize, cex = cex, cex.lab = cex.lab, 
+        cex.axis = cex.axis, ...)
+}
 forest.default <-
 function (x, vi, sei, annotate = TRUE, xlim = NULL, alim = NULL, 
     ylim = NULL, at = NULL, steps = 5, level = 95, digits = 2, 
@@ -702,6 +1025,8 @@ function (x, vi, sei, annotate = TRUE, xlim = NULL, alim = NULL,
         slab <- paste("Study ", 1:k)
     if (is.vector(ilab)) 
         ilab <- cbind(ilab)
+    if (length(pch) == 1) 
+        pch <- rep(pch, k)
     if (is.null(psize)) {
         wi <- 1/vi
         wi[is.infinite(wi)] <- 2 * max(wi, na.rm = TRUE)
@@ -714,13 +1039,15 @@ function (x, vi, sei, annotate = TRUE, xlim = NULL, alim = NULL,
         if (length(psize) == 1) 
             psize <- rep(psize, k)
     }
-    if (!is.null(subset)) {
-        yi <- yi[subset]
-        vi <- vi[subset]
-        slab <- slab[subset]
-        psize <- psize[subset]
-        ilab <- ilab[subset, , drop = FALSE]
+    if (is.null(subset)) {
+        subset <- k:1
     }
+    yi <- yi[subset]
+    vi <- vi[subset]
+    slab <- slab[subset]
+    psize <- psize[subset]
+    pch <- pch[subset]
+    ilab <- ilab[subset, , drop = FALSE]
     yivi.na <- is.na(cbind(yi, vi))
     if (sum(yivi.na) > 0) {
         not.na <- apply(yivi.na, MARGIN = 1, sum) == 0
@@ -963,6 +1290,8 @@ function (x, annotate = TRUE, addfit = TRUE, xlim = NULL, alim = NULL,
         pred.ci.ub <- temp$ci.ub
     }
     options(na.action = na.act)
+    if (length(pch) == 1) 
+        pch <- rep(pch, k)
     if (is.null(psize)) {
         wi <- 1/vi
         wi[is.infinite(wi)] <- 2 * max(wi, na.rm = TRUE)
@@ -988,19 +1317,29 @@ function (x, annotate = TRUE, addfit = TRUE, xlim = NULL, alim = NULL,
             if (order == "prec") 
                 sort.ids <- order(vi, yi)
             if (order == "resid") 
+                sort.ids <- order(yi - pred, yi)
+            if (order == "rstandard") 
+                sort.ids <- order(rstandard(x)$z, yi)
+            if (order == "abs.resid") 
                 sort.ids <- order(abs(yi - pred), yi)
+            if (order == "abs.rstandard") 
+                sort.ids <- order(abs(rstandard(x)$z), yi)
         }
-        yi <- yi[sort.ids]
-        vi <- vi[sort.ids]
-        X <- X[sort.ids, , drop = FALSE]
-        ids <- ids[sort.ids]
-        slab <- slab[sort.ids]
-        pred <- pred[sort.ids]
-        pred.ci.lb <- pred.ci.lb[sort.ids]
-        pred.ci.ub <- pred.ci.ub[sort.ids]
-        psize <- psize[sort.ids]
-        ilab <- ilab[sort.ids, , drop = FALSE]
     }
+    else {
+        sort.ids <- k:1
+    }
+    yi <- yi[sort.ids]
+    vi <- vi[sort.ids]
+    X <- X[sort.ids, , drop = FALSE]
+    ids <- ids[sort.ids]
+    slab <- slab[sort.ids]
+    pred <- pred[sort.ids]
+    pred.ci.lb <- pred.ci.lb[sort.ids]
+    pred.ci.ub <- pred.ci.ub[sort.ids]
+    psize <- psize[sort.ids]
+    pch <- pch[sort.ids]
+    ilab <- ilab[sort.ids, , drop = FALSE]
     yiviX.na <- is.na(cbind(yi, vi, X))
     if (sum(yiviX.na) > 0) {
         not.na <- apply(yiviX.na, MARGIN = 1, sum) == 0
@@ -1290,8 +1629,6 @@ function (yi, vi, sei, data = NULL, type = "Rosenthal", alpha = 0.05,
     if (!is.element(na.act, c("na.omit", "na.exclude", "na.fail"))) 
         stop("Unknwn 'na.action' specified under options().")
     type <- match.arg(type, c("Rosenthal", "Orwin", "Rosenberg"))
-    if (!is.element(type, c("Rosenthal", "Orwin", "Rosenberg"))) 
-        stop("Unknown 'type' specified.")
     if (is.null(data)) {
         data <- sys.frame(sys.parent())
     }
@@ -1379,8 +1716,7 @@ function (x, xlim = NULL, ylim = NULL, xlab = NULL, ylab = "Standard Error",
 {
     if (!is.element("rma", class(x))) 
         stop("Argument 'x' must be an object of class \"rma\".")
-    if (!is.element(type, c("rstandard", "rstudent"))) 
-        stop("Argument 'type' must be an either 'rstandard' or 'rstudent'.")
+    type <- match.arg(type, c("rstandard", "rstudent"))
     if (x$int.only) {
         if (is.null(refline)) 
             refline <- x$b
@@ -1574,7 +1910,7 @@ function (model, digits = model$digits, ...)
         res <- try(rma(x$yi.f[-i], x$vi.f[-i], mods = cbind(x$X.f[-i, 
             ]), method = x$method, weighted = x$weighted, intercept = FALSE, 
             knha = x$knha, control = x$control, ...), silent = TRUE)
-        if (class(res) == "try-error") 
+        if (is.element("try-error", class(res))) 
             next
         tau2.del[i] <- res$tau2
         Xi <- matrix(x$X.f[i, ], nrow = 1)
@@ -1628,7 +1964,204 @@ function (model, digits = model$digits, ...)
         "cov.r", "tau2.del", "QE.del", "hat", "weight")
     out$inf <- data.frame(out$inf)
     out$dfb <- data.frame(out$dfb)
-    class(out) <- "rma.uni.infl"
+    class(out) <- "infl.rma.uni"
+    return(out)
+}
+leave1out <-
+function (x, ...) 
+UseMethod("leave1out")
+leave1out.rma.mh <-
+function (x, digits = x$digits, transf = FALSE, ...) 
+{
+    if (!is.element("rma.mh", class(x))) 
+        stop("Argument 'x' must be an object of class \"rma.mh\".")
+    na.act <- getOption("na.action")
+    if (!is.element(na.act, c("na.omit", "na.exclude", "na.fail"))) 
+        stop("Unknwn 'na.action' specified under options().")
+    o.warn <- getOption("warn")
+    on.exit(options(warn = o.warn))
+    options(warn = -1)
+    b <- rep(NA, x$k.f)
+    se <- rep(NA, x$k.f)
+    zval <- rep(NA, x$k.f)
+    pval <- rep(NA, x$k.f)
+    ci.lb <- rep(NA, x$k.f)
+    ci.ub <- rep(NA, x$k.f)
+    QE <- rep(NA, x$k.f)
+    QEp <- rep(NA, x$k.f)
+    for (i in (1:x$k.f)[x$not.na]) {
+        res <- try(rma.mh(ai = x$ai.f[-i], bi = x$bi.f[-i], ci = x$ci.f[-i], 
+            di = x$di.f[-i], measure = x$measure, add = x$add, 
+            to = x$to, ...), silent = TRUE)
+        if (is.element("try-error", class(res))) 
+            next
+        b[i] <- res$b
+        se[i] <- res$se
+        zval[i] <- res$zval
+        pval[i] <- res$pval
+        ci.lb[i] <- res$ci.lb
+        ci.ub[i] <- res$ci.ub
+        QE[i] <- res$QE
+        QEp[i] <- res$QEp
+    }
+    if (transf) {
+        if (x$measure == "OR" || x$measure == "RR") {
+            b <- exp(b)
+            se <- rep(NA, x$k.f)
+            ci.lb <- exp(ci.lb)
+            ci.ub <- exp(ci.ub)
+        }
+    }
+    if (na.act == "na.omit") {
+        out <- list(estimate = b[x$not.na], se = se[x$not.na], 
+            zval = zval[x$not.na], pval = pval[x$not.na], ci.lb = ci.lb[x$not.na], 
+            ci.ub = ci.ub[x$not.na], Q = QE[x$not.na], Qp = QEp[x$not.na])
+        out$slab <- x$slab[x$not.na]
+    }
+    if (na.act == "na.exclude") {
+        out <- list(estimate = b, se = se, zval = zval, pval = pval, 
+            ci.lb = ci.lb, ci.ub = ci.ub, Q = QE, Qp = QEp)
+        out$slab <- x$slab
+    }
+    if (na.act == "na.fail") 
+        stop("Missing values in results.")
+    out$digits <- digits
+    class(out) <- c("list.rma")
+    return(out)
+}
+leave1out.rma.peto <-
+function (x, digits = x$digits, transf = FALSE, ...) 
+{
+    if (!is.element("rma.peto", class(x))) 
+        stop("Argument 'x' must be an object of class \"rma.peto\".")
+    na.act <- getOption("na.action")
+    if (!is.element(na.act, c("na.omit", "na.exclude", "na.fail"))) 
+        stop("Unknwn 'na.action' specified under options().")
+    o.warn <- getOption("warn")
+    on.exit(options(warn = o.warn))
+    options(warn = -1)
+    b <- rep(NA, x$k.f)
+    se <- rep(NA, x$k.f)
+    zval <- rep(NA, x$k.f)
+    pval <- rep(NA, x$k.f)
+    ci.lb <- rep(NA, x$k.f)
+    ci.ub <- rep(NA, x$k.f)
+    QE <- rep(NA, x$k.f)
+    QEp <- rep(NA, x$k.f)
+    for (i in (1:x$k.f)[x$not.na]) {
+        res <- try(rma.peto(ai = x$ai.f[-i], bi = x$bi.f[-i], 
+            ci = x$ci.f[-i], di = x$di.f[-i], add = x$add, to = x$to, 
+            ...), silent = TRUE)
+        if (is.element("try-error", class(res))) 
+            next
+        b[i] <- res$b
+        se[i] <- res$se
+        zval[i] <- res$zval
+        pval[i] <- res$pval
+        ci.lb[i] <- res$ci.lb
+        ci.ub[i] <- res$ci.ub
+        QE[i] <- res$QE
+        QEp[i] <- res$QEp
+    }
+    if (transf) {
+        b <- exp(b)
+        se <- rep(NA, x$k.f)
+        ci.lb <- exp(ci.lb)
+        ci.ub <- exp(ci.ub)
+    }
+    if (na.act == "na.omit") {
+        out <- list(estimate = b[x$not.na], se = se[x$not.na], 
+            zval = zval[x$not.na], pval = pval[x$not.na], ci.lb = ci.lb[x$not.na], 
+            ci.ub = ci.ub[x$not.na], Q = QE[x$not.na], Qp = QEp[x$not.na])
+        out$slab <- x$slab[x$not.na]
+    }
+    if (na.act == "na.exclude") {
+        out <- list(estimate = b, se = se, zval = zval, pval = pval, 
+            ci.lb = ci.lb, ci.ub = ci.ub, Q = QE, Qp = QEp)
+        out$slab <- x$slab
+    }
+    if (na.act == "na.fail") 
+        stop("Missing values in results.")
+    out$digits <- digits
+    class(out) <- c("list.rma")
+    return(out)
+}
+leave1out.rma.uni <-
+function (x, digits = x$digits, transf = FALSE, targs = NULL, 
+    ...) 
+{
+    if (!is.element("rma.uni", class(x))) 
+        stop("Argument 'x' must be an object of class \"rma.uni\".")
+    na.act <- getOption("na.action")
+    if (!is.element(na.act, c("na.omit", "na.exclude", "na.fail"))) 
+        stop("Unknwn 'na.action' specified under options().")
+    if (!x$int.only) 
+        stop("Method only applicable for models without moderators.")
+    o.warn <- getOption("warn")
+    on.exit(options(warn = o.warn))
+    options(warn = -1)
+    b <- rep(NA, x$k.f)
+    se <- rep(NA, x$k.f)
+    zval <- rep(NA, x$k.f)
+    pval <- rep(NA, x$k.f)
+    ci.lb <- rep(NA, x$k.f)
+    ci.ub <- rep(NA, x$k.f)
+    QE <- rep(NA, x$k.f)
+    QEp <- rep(NA, x$k.f)
+    tau2 <- rep(NA, x$k.f)
+    I2 <- rep(NA, x$k.f)
+    H2 <- rep(NA, x$k.f)
+    for (i in (1:x$k.f)[x$not.na]) {
+        res <- try(rma(x$yi.f[-i], x$vi.f[-i], method = x$method, 
+            weighted = x$weighted, intercept = TRUE, knha = x$knha, 
+            control = x$control, ...), silent = TRUE)
+        if (is.element("try-error", class(res))) 
+            next
+        b[i] <- res$b
+        se[i] <- res$se
+        zval[i] <- res$zval
+        pval[i] <- res$pval
+        ci.lb[i] <- res$ci.lb
+        ci.ub[i] <- res$ci.ub
+        QE[i] <- res$QE
+        QEp[i] <- res$QEp
+        tau2[i] <- res$tau2
+        I2[i] <- res$I2
+        H2[i] <- res$H2
+    }
+    if (is.function(transf)) {
+        if (is.null(targs)) {
+            b <- sapply(b, transf)
+            se <- rep(NA, x$k.f)
+            ci.lb <- sapply(ci.lb, transf)
+            ci.ub <- sapply(ci.ub, transf)
+        }
+        else {
+            b <- sapply(b, transf, targs)
+            se <- rep(NA, x$k.f)
+            ci.lb <- sapply(ci.lb, transf, targs)
+            ci.ub <- sapply(ci.ub, transf, targs)
+        }
+    }
+    if (na.act == "na.omit") {
+        out <- list(estimate = b[x$not.na], se = se[x$not.na], 
+            zval = zval[x$not.na], pvals = pval[x$not.na], ci.lb = ci.lb[x$not.na], 
+            ci.ub = ci.ub[x$not.na], Q = QE[x$not.na], Qp = QEp[x$not.na], 
+            tau2 = tau2[x$not.na], I2 = I2[x$not.na], H2 = H2[x$not.na])
+        out$slab <- x$slab[x$not.na]
+    }
+    if (na.act == "na.exclude") {
+        out <- list(estimate = b, se = se, zval = zval, pvals = pval, 
+            ci.lb = ci.lb, ci.ub = ci.ub, Q = QE, Qp = QEp, tau2 = tau2, 
+            I2 = I2, H2 = H2)
+        out$slab <- x$slab
+    }
+    if (na.act == "na.fail") 
+        stop("Missing values in results.")
+    if (x$method == "FE") 
+        out <- out[-c(9, 10, 11)]
+    out$digits <- digits
+    class(out) <- c("list.rma")
     return(out)
 }
 logLik.rma <-
@@ -1653,6 +2186,157 @@ function (object, REML = NULL, ...)
         names(out) <- c("ll (ML)")
     }
     return(out)
+}
+plot.infl.rma.uni <-
+function (x, plotdfb = FALSE, dfbnew = FALSE, pch = 21, bg = "black", 
+    bg.infl = "red", col.na = "lightgray", ...) 
+{
+    if (class(x) != "infl.rma.uni") 
+        stop("Argument 'x' must be an object of class \"infl.rma.uni\".")
+    ids <- x$ids
+    lids <- length(ids)
+    not.na <- x$not.na
+    ids.infl <- abs(x$inf$dffits) > 3 * sqrt(x$p/(x$k - x$p)) | 
+        pchisq(x$inf$cook.d, df = x$p) > 0.5 | x$inf$hat > 3 * 
+        x$p/x$k | apply(abs(x$dfb) > 1, 1, any)
+    par.mfrow <- par("mfrow")
+    par(mfrow = c(4, 2))
+    on.exit(par(mfrow = par.mfrow))
+    par.mar <- par("mar")
+    par.mar.adj <- par.mar - c(2, 2, 2, 1)
+    par.mar.adj[par.mar.adj < 1] <- 1
+    par(mar = par.mar.adj)
+    on.exit(par(mar = par.mar), add = TRUE)
+    plot(NA, NA, xlim = c(1, lids), ylim = c(min(x$inf$rstudent, 
+        -2, na.rm = TRUE), max(x$inf$rstudent, 2, na.rm = TRUE)), 
+        xaxt = "n", main = "rstudent", xlab = "", ylab = "", 
+        ...)
+    axis(side = 1, at = 1:lids, label = ids, xlab = "", ...)
+    abline(h = 0, lty = "dashed", ...)
+    abline(h = c(qnorm(0.025), qnorm(0.975)), lty = "dotted", 
+        ...)
+    lines((1:lids)[x$not.na], x$inf$rstudent[x$not.na], col = col.na, 
+        ...)
+    lines(1:lids, x$inf$rstudent, ...)
+    points(1:lids, x$inf$rstudent, pch = pch, bg = bg, ...)
+    points((1:lids)[ids.infl], x$inf$rstudent[ids.infl], bg = bg.infl, 
+        pch = pch, ...)
+    plot(NA, NA, xlim = c(1, lids), ylim = range(x$inf$dffits, 
+        na.rm = TRUE), xaxt = "n", main = "dffits", xlab = "", 
+        ylab = "", ...)
+    axis(side = 1, at = 1:lids, label = ids, xlab = "", ...)
+    abline(h = 0, lty = "dashed", ...)
+    abline(h = 3 * sqrt(x$p/(x$k - x$p)), lty = "dotted", ...)
+    abline(h = -3 * sqrt(x$p/(x$k - x$p)), lty = "dotted", ...)
+    lines((1:lids)[x$not.na], x$inf$dffits[x$not.na], col = col.na, 
+        ...)
+    lines(1:lids, x$inf$dffits, ...)
+    points(1:lids, x$inf$dffits, pch = pch, bg = bg, ...)
+    points((1:lids)[ids.infl], x$inf$dffits[ids.infl], bg = bg.infl, 
+        pch = pch, ...)
+    plot(NA, NA, xlim = c(1, lids), ylim = range(x$inf$cook.d, 
+        na.rm = TRUE), xaxt = "n", main = "cook.d", xlab = "", 
+        ylab = "", ...)
+    axis(side = 1, at = 1:lids, label = ids, xlab = "", ...)
+    abline(h = qchisq(0.5, df = x$p), lty = "dotted", ...)
+    lines((1:lids)[x$not.na], x$inf$cook.d[x$not.na], col = col.na, 
+        ...)
+    lines(1:lids, x$inf$cook.d, ...)
+    points(1:lids, x$inf$cook.d, pch = pch, bg = bg, ...)
+    points((1:lids)[ids.infl], x$inf$cook.d[ids.infl], bg = bg.infl, 
+        pch = pch, ...)
+    plot(NA, NA, xlim = c(1, lids), ylim = range(x$inf$cov.r, 
+        na.rm = TRUE), xaxt = "n", main = "cov.r", xlab = "", 
+        ylab = "", ...)
+    axis(side = 1, at = 1:lids, label = ids, xlab = "", ...)
+    abline(h = 1, lty = "dashed", ...)
+    lines((1:lids)[x$not.na], x$inf$cov.r[x$not.na], col = col.na, 
+        ...)
+    lines(1:lids, x$inf$cov.r, ...)
+    points(1:lids, x$inf$cov.r, pch = pch, bg = bg, ...)
+    points((1:lids)[ids.infl], x$inf$cov.r[ids.infl], bg = bg.infl, 
+        pch = pch, ...)
+    plot(NA, NA, xlim = c(1, lids), ylim = range(x$inf$tau2.del, 
+        na.rm = TRUE), xaxt = "n", main = "tau2.del", xlab = "", 
+        ylab = "", ...)
+    axis(side = 1, at = 1:lids, label = ids, xlab = "", ...)
+    abline(h = x$tau2, lty = "dashed", ...)
+    lines((1:lids)[x$not.na], x$inf$tau2.del[x$not.na], col = col.na, 
+        ...)
+    lines(1:lids, x$inf$tau2.del, ...)
+    points(1:lids, x$inf$tau2.del, pch = pch, bg = bg, ...)
+    points((1:lids)[ids.infl], x$inf$tau2.del[ids.infl], bg = bg.infl, 
+        pch = pch, ...)
+    plot(NA, NA, xlim = c(1, lids), ylim = range(x$inf$QE.del, 
+        na.rm = TRUE), xaxt = "n", main = "QE.del", xlab = "", 
+        ylab = "", ...)
+    axis(side = 1, at = 1:lids, label = ids, xlab = "", ...)
+    abline(h = x$QE, lty = "dashed", ...)
+    lines((1:lids)[x$not.na], x$inf$QE.del[x$not.na], col = col.na, 
+        ...)
+    lines(1:lids, x$inf$QE.del, ...)
+    points(1:lids, x$inf$QE.del, pch = pch, bg = bg, ...)
+    points((1:lids)[ids.infl], x$inf$QE.del[ids.infl], bg = bg.infl, 
+        pch = pch, ...)
+    plot(NA, NA, xlim = c(1, lids), ylim = c(0, max(x$inf$hat, 
+        na.rm = TRUE)), xaxt = "n", main = "hat", xlab = "", 
+        ylab = "", ...)
+    axis(side = 1, at = 1:lids, label = ids, xlab = "", ...)
+    abline(h = x$p/x$k, lty = "dashed", ...)
+    abline(h = 3 * x$p/x$k, lty = "dotted", ...)
+    lines((1:lids)[x$not.na], x$inf$hat[x$not.na], col = col.na, 
+        ...)
+    lines(1:lids, x$inf$hat, ...)
+    points(1:lids, x$inf$hat, pch = pch, bg = bg, ...)
+    points((1:lids)[ids.infl], x$inf$hat[ids.infl], bg = bg.infl, 
+        pch = pch, ...)
+    plot(NA, NA, xlim = c(1, lids), ylim = c(0, max(x$inf$weight, 
+        na.rm = TRUE)), xaxt = "n", main = "weight", xlab = "", 
+        ylab = "", ...)
+    axis(side = 1, at = 1:lids, label = ids, xlab = "", ...)
+    abline(h = 100/x$k, lty = "dashed", ...)
+    lines((1:lids)[x$not.na], x$inf$weight[x$not.na], col = col.na, 
+        ...)
+    lines(1:lids, x$inf$weight, ...)
+    points(1:lids, x$inf$weight, pch = pch, bg = bg, ...)
+    points((1:lids)[ids.infl], x$inf$weight[ids.infl], bg = bg.infl, 
+        pch = pch, ...)
+    if (plotdfb) {
+        if (dfbnew) {
+            dev.new()
+            par.mar <- par("mar")
+            par.mar.adj <- par.mar - c(2, 2, 2, 1)
+            par.mar.adj[par.mar.adj < 1] <- 1
+            par(mar = par.mar.adj)
+            on.exit(par(mar = par.mar), add = TRUE)
+        }
+        else {
+            par.ask <- par("ask")
+            par(ask = TRUE)
+        }
+        par(mfrow = c(x$p, 1))
+        for (i in 1:x$p) {
+            plot(NA, NA, xlim = c(1, lids), ylim = range(x$dfb[, 
+                i], na.rm = TRUE), xaxt = "n", main = paste("dfb: ", 
+                dimnames(x$dfb)[[2]][i]), xlab = "", ylab = "", 
+                ...)
+            axis(side = 1, at = 1:lids, label = ids, xlab = "", 
+                ...)
+            abline(h = 0, lty = "dashed", ...)
+            abline(h = 1, lty = "dotted", ...)
+            abline(h = -1, lty = "dotted", ...)
+            lines((1:lids)[x$not.na], x$dfb[x$not.na, i], col = col.na, 
+                ...)
+            lines(1:lids, x$dfb[, i], ...)
+            points(1:lids, x$dfb[, i], pch = pch, bg = bg, ...)
+            points((1:lids)[ids.infl], x$dfb[ids.infl, i], bg = bg.infl, 
+                pch = pch, ...)
+        }
+        if (!dfbnew) {
+            par(ask = par.ask)
+        }
+    }
+    invisible()
 }
 plot.rma.mh <-
 function (x, qqplot = FALSE, ...) 
@@ -1846,157 +2530,6 @@ function (x, qqplot = FALSE, ...)
     }
     invisible()
 }
-plot.rma.uni.infl <-
-function (x, plotdfb = FALSE, dfbnew = FALSE, pch = 21, bg = "black", 
-    bg.infl = "red", col.na = "lightgray", ...) 
-{
-    if (class(x) != "rma.uni.infl") 
-        stop("Argument 'x' must be an object of class \"rma.uni.infl\".")
-    ids <- x$ids
-    lids <- length(ids)
-    not.na <- x$not.na
-    ids.infl <- abs(x$inf$dffits) > 3 * sqrt(x$p/(x$k - x$p)) | 
-        pchisq(x$inf$cook.d, df = x$p) > 0.5 | x$inf$hat > 3 * 
-        x$p/x$k | apply(abs(x$dfb) > 1, 1, any)
-    par.mfrow <- par("mfrow")
-    par(mfrow = c(4, 2))
-    on.exit(par(mfrow = par.mfrow))
-    par.mar <- par("mar")
-    par.mar.adj <- par.mar - c(2, 2, 2, 1)
-    par.mar.adj[par.mar.adj < 1] <- 1
-    par(mar = par.mar.adj)
-    on.exit(par(mar = par.mar), add = TRUE)
-    plot(NA, NA, xlim = c(1, lids), ylim = c(min(x$inf$rstudent, 
-        -2, na.rm = TRUE), max(x$inf$rstudent, 2, na.rm = TRUE)), 
-        xaxt = "n", main = "rstudent", xlab = "", ylab = "", 
-        ...)
-    axis(side = 1, at = 1:lids, label = ids, xlab = "", ...)
-    abline(h = 0, lty = "dashed", ...)
-    abline(h = c(qnorm(0.025), qnorm(0.975)), lty = "dotted", 
-        ...)
-    lines((1:lids)[x$not.na], x$inf$rstudent[x$not.na], col = col.na, 
-        ...)
-    lines(1:lids, x$inf$rstudent, ...)
-    points(1:lids, x$inf$rstudent, pch = pch, bg = bg, ...)
-    points((1:lids)[ids.infl], x$inf$rstudent[ids.infl], bg = bg.infl, 
-        pch = pch, ...)
-    plot(NA, NA, xlim = c(1, lids), ylim = range(x$inf$dffits, 
-        na.rm = TRUE), xaxt = "n", main = "dffits", xlab = "", 
-        ylab = "", ...)
-    axis(side = 1, at = 1:lids, label = ids, xlab = "", ...)
-    abline(h = 0, lty = "dashed", ...)
-    abline(h = 3 * sqrt(x$p/(x$k - x$p)), lty = "dotted", ...)
-    abline(h = -3 * sqrt(x$p/(x$k - x$p)), lty = "dotted", ...)
-    lines((1:lids)[x$not.na], x$inf$dffits[x$not.na], col = col.na, 
-        ...)
-    lines(1:lids, x$inf$dffits, ...)
-    points(1:lids, x$inf$dffits, pch = pch, bg = bg, ...)
-    points((1:lids)[ids.infl], x$inf$dffits[ids.infl], bg = bg.infl, 
-        pch = pch, ...)
-    plot(NA, NA, xlim = c(1, lids), ylim = range(x$inf$cook.d, 
-        na.rm = TRUE), xaxt = "n", main = "cook.d", xlab = "", 
-        ylab = "", ...)
-    axis(side = 1, at = 1:lids, label = ids, xlab = "", ...)
-    abline(h = qchisq(0.5, df = x$p), lty = "dotted", ...)
-    lines((1:lids)[x$not.na], x$inf$cook.d[x$not.na], col = col.na, 
-        ...)
-    lines(1:lids, x$inf$cook.d, ...)
-    points(1:lids, x$inf$cook.d, pch = pch, bg = bg, ...)
-    points((1:lids)[ids.infl], x$inf$cook.d[ids.infl], bg = bg.infl, 
-        pch = pch, ...)
-    plot(NA, NA, xlim = c(1, lids), ylim = range(x$inf$cov.r, 
-        na.rm = TRUE), xaxt = "n", main = "cov.r", xlab = "", 
-        ylab = "", ...)
-    axis(side = 1, at = 1:lids, label = ids, xlab = "", ...)
-    abline(h = 1, lty = "dashed", ...)
-    lines((1:lids)[x$not.na], x$inf$cov.r[x$not.na], col = col.na, 
-        ...)
-    lines(1:lids, x$inf$cov.r, ...)
-    points(1:lids, x$inf$cov.r, pch = pch, bg = bg, ...)
-    points((1:lids)[ids.infl], x$inf$cov.r[ids.infl], bg = bg.infl, 
-        pch = pch, ...)
-    plot(NA, NA, xlim = c(1, lids), ylim = range(x$inf$tau2.del, 
-        na.rm = TRUE), xaxt = "n", main = "tau2.del", xlab = "", 
-        ylab = "", ...)
-    axis(side = 1, at = 1:lids, label = ids, xlab = "", ...)
-    abline(h = x$tau2, lty = "dashed", ...)
-    lines((1:lids)[x$not.na], x$inf$tau2.del[x$not.na], col = col.na, 
-        ...)
-    lines(1:lids, x$inf$tau2.del, ...)
-    points(1:lids, x$inf$tau2.del, pch = pch, bg = bg, ...)
-    points((1:lids)[ids.infl], x$inf$tau2.del[ids.infl], bg = bg.infl, 
-        pch = pch, ...)
-    plot(NA, NA, xlim = c(1, lids), ylim = range(x$inf$QE.del, 
-        na.rm = TRUE), xaxt = "n", main = "QE.del", xlab = "", 
-        ylab = "", ...)
-    axis(side = 1, at = 1:lids, label = ids, xlab = "", ...)
-    abline(h = x$QE, lty = "dashed", ...)
-    lines((1:lids)[x$not.na], x$inf$QE.del[x$not.na], col = col.na, 
-        ...)
-    lines(1:lids, x$inf$QE.del, ...)
-    points(1:lids, x$inf$QE.del, pch = pch, bg = bg, ...)
-    points((1:lids)[ids.infl], x$inf$QE.del[ids.infl], bg = bg.infl, 
-        pch = pch, ...)
-    plot(NA, NA, xlim = c(1, lids), ylim = c(0, max(x$inf$hat, 
-        na.rm = TRUE)), xaxt = "n", main = "hat", xlab = "", 
-        ylab = "", ...)
-    axis(side = 1, at = 1:lids, label = ids, xlab = "", ...)
-    abline(h = x$p/x$k, lty = "dashed", ...)
-    abline(h = 3 * x$p/x$k, lty = "dotted", ...)
-    lines((1:lids)[x$not.na], x$inf$hat[x$not.na], col = col.na, 
-        ...)
-    lines(1:lids, x$inf$hat, ...)
-    points(1:lids, x$inf$hat, pch = pch, bg = bg, ...)
-    points((1:lids)[ids.infl], x$inf$hat[ids.infl], bg = bg.infl, 
-        pch = pch, ...)
-    plot(NA, NA, xlim = c(1, lids), ylim = c(0, max(x$inf$weight, 
-        na.rm = TRUE)), xaxt = "n", main = "weight", xlab = "", 
-        ylab = "", ...)
-    axis(side = 1, at = 1:lids, label = ids, xlab = "", ...)
-    abline(h = 100/x$k, lty = "dashed", ...)
-    lines((1:lids)[x$not.na], x$inf$weight[x$not.na], col = col.na, 
-        ...)
-    lines(1:lids, x$inf$weight, ...)
-    points(1:lids, x$inf$weight, pch = pch, bg = bg, ...)
-    points((1:lids)[ids.infl], x$inf$weight[ids.infl], bg = bg.infl, 
-        pch = pch, ...)
-    if (plotdfb) {
-        if (dfbnew) {
-            dev.new()
-            par.mar <- par("mar")
-            par.mar.adj <- par.mar - c(2, 2, 2, 1)
-            par.mar.adj[par.mar.adj < 1] <- 1
-            par(mar = par.mar.adj)
-            on.exit(par(mar = par.mar), add = TRUE)
-        }
-        else {
-            par.ask <- par("ask")
-            par(ask = TRUE)
-        }
-        par(mfrow = c(x$p, 1))
-        for (i in 1:x$p) {
-            plot(NA, NA, xlim = c(1, lids), ylim = range(x$dfb[, 
-                i], na.rm = TRUE), xaxt = "n", main = paste("dfb: ", 
-                dimnames(x$dfb)[[2]][i]), xlab = "", ylab = "", 
-                ...)
-            axis(side = 1, at = 1:lids, label = ids, xlab = "", 
-                ...)
-            abline(h = 0, lty = "dashed", ...)
-            abline(h = 1, lty = "dotted", ...)
-            abline(h = -1, lty = "dotted", ...)
-            lines((1:lids)[x$not.na], x$dfb[x$not.na, i], col = col.na, 
-                ...)
-            lines(1:lids, x$dfb[, i], ...)
-            points(1:lids, x$dfb[, i], pch = pch, bg = bg, ...)
-            points((1:lids)[ids.infl], x$dfb[ids.infl, i], bg = bg.infl, 
-                pch = pch, ...)
-        }
-        if (!dfbnew) {
-            par(ask = par.ask)
-        }
-    }
-    invisible()
-}
 predict.rma.uni <-
 function (object, newmods = NULL, level = object$level, digits = object$digits, 
     transf = FALSE, targs = NULL, ...) 
@@ -2101,7 +2634,7 @@ function (object, newmods = NULL, level = object$level, digits = object$digits,
         out$cr.ub <- NULL
     }
     out$digits <- digits
-    class(out) <- c("rma.list")
+    class(out) <- c("list.rma")
     return(out)
 }
 print.anova.rma.uni <-
@@ -2183,6 +2716,33 @@ function (x, digits = x$digits, ...)
     }
     invisible()
 }
+print.infl.rma.uni <-
+function (x, digits = x$digits, ...) 
+{
+    if (class(x) != "infl.rma.uni") 
+        stop("Argument 'x' must be an object of class \"infl.rma.uni\".")
+    inf <- round(x$inf, digits)
+    if (sum(is.na(x$dfb) == FALSE) == 0) {
+        dfb <- x$dfb
+    }
+    else {
+        dfb <- round(x$dfb, digits)
+    }
+    x <- list(inf = inf, dfb = dfb)
+    print(x)
+}
+print.list.rma <-
+function (x, digits = x$digits, ...) 
+{
+    if (!is.element("list.rma", class(x))) 
+        stop("Argument 'x' must be an object of class \"list.rma\".")
+    force(digits)
+    attr(x, "class") <- NULL
+    out <- x[1:(which(names(x) == "slab") - 1)]
+    out <- data.frame(out, row.names = x$slab)
+    out <- apply(out, 2, formatC, digits = digits, format = "f")
+    print(out, quote = FALSE, right = TRUE)
+}
 print.ranktest.rma <-
 function (x, digits = x$digits, ...) 
 {
@@ -2243,18 +2803,6 @@ function (x, digits = x$digits, ...)
             ", df = ", x$dfs, ", p ", pval, "\n\n", sep = "")
     }
     invisible()
-}
-print.rma.list <-
-function (x, digits = x$digits, ...) 
-{
-    if (class(x) != "rma.list") 
-        stop("Argument 'x' must be an object of class \"rma.list\".")
-    force(digits)
-    attr(x, "class") <- NULL
-    out <- x[1:(which(names(x) == "slab") - 1)]
-    out <- data.frame(out, row.names = x$slab)
-    out <- apply(out, 2, round, digits)
-    print(out)
 }
 print.rma.mh <-
 function (x, digits = x$digits, showfit = FALSE, ...) 
@@ -2330,8 +2878,9 @@ function (x, digits = x$digits, showfit = FALSE, ...)
                   pval <- paste("< ", cutoff, sep = "", collapse = "")
                 }
                 cat("Cochran-Mantel-Haenszel Test:     CMH = ", 
-                  formatC(x$CMH, digits, format = "f"), ", df = 1, p-val ", 
-                  pval, "\n", sep = "")
+                  formatC(x$CMH, digits, format = "f"), ", df = 1,", 
+                  paste(rep(" ", nchar(x$k.pos) - 1, collapse = "")), 
+                  " p-val ", pval, "\n", sep = "")
             }
             if (is.na(x$TAp)) {
                 cat("Tarone's Test for Heterogeneity:  Tarone's Test not defined for these data \n\n", 
@@ -2607,28 +3156,12 @@ function (x, digits = x$digits, showfit = FALSE, signif.legend = TRUE,
     }
     invisible()
 }
-print.rma.uni.infl <-
-function (x, digits = x$digits, ...) 
-{
-    if (class(x) != "rma.uni.infl") 
-        stop("Argument 'x' must be an object of class \"rma.uni.infl\".")
-    inf <- round(x$inf, digits)
-    if (sum(is.na(x$dfb) == FALSE) == 0) {
-        dfb <- x$dfb
-    }
-    else {
-        dfb <- round(x$dfb, digits)
-    }
-    x <- list(inf = inf, dfb = dfb)
-    print(x)
-}
 qqnorm.rma.mh <-
 function (y, type = "rstandard", pch = 19, ...) 
 {
     if (!is.element("rma.mh", class(y))) 
         stop("Argument 'y' must be an object of class \"rma.mh\".")
-    if (!is.element(type, c("rstandard", "rstudent"))) 
-        stop("Argument 'type' must be an either 'rstandard' or 'rstudent'.")
+    type <- match.arg(type, c("rstandard", "rstudent"))
     if (type == "rstandard") {
         res <- rstandard(y)
         not.na <- !is.na(res$z)
@@ -2648,8 +3181,7 @@ function (y, type = "rstandard", pch = 19, ...)
 {
     if (!is.element("rma.peto", class(y))) 
         stop("Argument 'y' must be an y of class \"rma.peto\".")
-    if (!is.element(type, c("rstandard", "rstudent"))) 
-        stop("Argument 'type' must be an either 'rstandard' or 'rstudent'.")
+    type <- match.arg(type, c("rstandard", "rstudent"))
     if (type == "rstandard") {
         res <- rstandard(y)
         not.na <- !is.na(res$z)
@@ -2666,12 +3198,12 @@ function (y, type = "rstandard", pch = 19, ...)
 }
 qqnorm.rma.uni <-
 function (y, type = "rstandard", pch = 19, envelope = TRUE, level = y$level, 
-    reps = 1000, smooth = TRUE, bass = 0, ...) 
+    bonferroni = FALSE, reps = 1000, smooth = TRUE, bass = 0, 
+    ...) 
 {
     if (!is.element("rma.uni", class(y))) 
         stop("Argument 'y' must be an y of class \"rma.uni\".")
-    if (!is.element(type, c("rstandard", "rstudent"))) 
-        stop("Argument 'type' must be an either 'rstandard' or 'rstudent'.")
+    type <- match.arg(type, c("rstandard", "rstudent"))
     .invcalc <- function(X, W, k) {
         wX <- sqrt(W) %*% X
         res.qrs <- qr.solve(wX, diag(k))
@@ -2706,8 +3238,14 @@ function (y, type = "rstandard", pch = 19, envelope = TRUE, level = y$level,
         ImH <- diag(x$k) - H
         ei <- ImH %*% dat
         ei <- apply(ei, 2, sort)
-        lb <- apply(ei, 1, quantile, (alpha/2)/x$k)
-        ub <- apply(ei, 1, quantile, 1 - (alpha/2)/x$k)
+        if (bonferroni) {
+            lb <- apply(ei, 1, quantile, (alpha/2)/x$k)
+            ub <- apply(ei, 1, quantile, 1 - (alpha/2)/x$k)
+        }
+        else {
+            lb <- apply(ei, 1, quantile, (alpha/2))
+            ub <- apply(ei, 1, quantile, 1 - (alpha/2))
+        }
         temp <- qqnorm(lb, plot.it = FALSE)
         if (smooth) 
             temp <- supsmu(temp$x, temp$y, bass = bass)
@@ -2989,10 +3527,6 @@ function (x, model = "rma", predictor = "sei", ni = NULL, ...)
         stop("Argument 'x' must be an object of class \"rma\".")
     model <- match.arg(model, c("lm", "rma"))
     predictor <- match.arg(predictor, c("sei", "vi", "ni", "ninv"))
-    if (!is.element(model, c("rma", "lm"))) 
-        stop("Unknown 'model' specified.")
-    if (!is.element(predictor, c("vi", "sei", "ni", "ninv"))) 
-        stop("Unknown 'predictor' specified.")
     yi <- x$yi
     vi <- x$vi
     X <- x$X
@@ -3070,10 +3604,10 @@ function (yi, vi, sei, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i,
     digits = 4, btt = NULL, tau2 = NULL, knha = FALSE, control = list()) 
 {
     if (!is.element(measure, c("GEN", "MD", "SMD", "RR", "OR", 
-        "PETO", "RD", "AS", "PR", "PLN", "PLO", "PAS", "PFT", 
-        "COR", "UCOR", "ZCOR"))) 
+        "PETO", "RD", "AS", "PHI", "YUQ", "YUY", "PR", "PLN", 
+        "PLO", "PAS", "PFT", "COR", "UCOR", "ZCOR"))) 
         stop("Unknown 'measure' specified.")
-    if (!is.element(method, c("FE", "HS", "HE", "DL", 
+    if (!is.element(method, c("FE", "HS", "HE", "DL",
         "SJ", "ML", "REML", "EB"))) 
         stop("Unknown 'method' specified.")
     if (is.null(data)) {
@@ -3106,7 +3640,8 @@ function (yi, vi, sei, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i,
             stop("Length of yi and vi (or sei) is not the same.")
     }
     else {
-        if (is.element(measure, c("RR", "OR", "PETO", "RD", "AS"))) {
+        if (is.element(measure, c("RR", "OR", "PETO", "RD", "AS", 
+            "PHI", "YUQ", "YUY"))) {
             mf.ai <- mf[[match("ai", names(mf))]]
             mf.bi <- mf[[match("bi", names(mf))]]
             mf.ci <- mf[[match("ci", names(mf))]]
@@ -3404,6 +3939,9 @@ function (yi, vi, sei, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i,
         if (!allvipos && weighted) 
             stop("Weighted estimation cannot be used with a fixed-effects\n  model when there are non-positive sampling variances.")
     }
+    if (con$verbose) 
+        cat("Fisher scoring algorithm converged after", iter, 
+            "iterations.", "\n\n")
     if (allvipos) {
         wi <- 1/vi
         W <- diag(wi)
@@ -4028,8 +4566,8 @@ function (yi, vi, sei, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i,
     digits = 4, btt = NULL, tau2 = NULL, knha = FALSE, control = list()) 
 {
     if (!is.element(measure, c("GEN", "MD", "SMD", "RR", "OR", 
-        "PETO", "RD", "AS", "PR", "PLN", "PLO", "PAS", "PFT", 
-        "COR", "UCOR", "ZCOR"))) 
+        "PETO", "RD", "AS", "PHI", "YUQ", "YUY", "PR", "PLN", 
+        "PLO", "PAS", "PFT", "COR", "UCOR", "ZCOR"))) 
         stop("Unknown 'measure' specified.")
     if (!is.element(method, c("FE", "HS", "HE", "DL", 
         "SJ", "ML", "REML", "EB"))) 
@@ -4064,7 +4602,8 @@ function (yi, vi, sei, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i,
             stop("Length of yi and vi (or sei) is not the same.")
     }
     else {
-        if (is.element(measure, c("RR", "OR", "PETO", "RD", "AS"))) {
+        if (is.element(measure, c("RR", "OR", "PETO", "RD", "AS", 
+            "PHI", "YUQ", "YUY"))) {
             mf.ai <- mf[[match("ai", names(mf))]]
             mf.bi <- mf[[match("bi", names(mf))]]
             mf.ci <- mf[[match("ci", names(mf))]]
@@ -4362,6 +4901,9 @@ function (yi, vi, sei, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i,
         if (!allvipos && weighted) 
             stop("Weighted estimation cannot be used with a fixed-effects\n  model when there are non-positive sampling variances.")
     }
+    if (con$verbose) 
+        cat("Fisher scoring algorithm converged after", iter, 
+            "iterations.", "\n\n")
     if (allvipos) {
         wi <- 1/vi
         W <- diag(wi)
@@ -4500,7 +5042,7 @@ function (model, digits = model$digits, ...)
     if (na.act == "na.fail") 
         stop("Missing values in results.")
     out$digits <- digits
-    class(out) <- c("rma.list")
+    class(out) <- c("list.rma")
     return(out)
 }
 rstandard.rma.peto <-
@@ -4528,7 +5070,7 @@ function (model, digits = model$digits, ...)
     if (na.act == "na.fail") 
         stop("Missing values in results.")
     out$digits <- digits
-    class(out) <- c("rma.list")
+    class(out) <- c("list.rma")
     return(out)
 }
 rstandard.rma.uni <-
@@ -4579,7 +5121,7 @@ function (model, digits = model$digits, ...)
     if (na.act == "na.fail") 
         stop("Missing values in results.")
     out$digits <- digits
-    class(out) <- c("rma.list")
+    class(out) <- c("list.rma")
     return(out)
 }
 rstudent.rma.mh <-
@@ -4600,7 +5142,7 @@ function (model, digits = model$digits, ...)
         res <- try(rma.mh(ai = x$ai.f[-i], bi = x$bi.f[-i], ci = x$ci.f[-i], 
             di = x$di.f[-i], measure = x$measure, add = x$add, 
             to = x$to, ...), silent = TRUE)
-        if (class(res) == "try-error") 
+        if (is.element("try-error", class(res))) 
             next
         delpred[i] <- res$b
         vdelpred[i] <- res$vb
@@ -4621,7 +5163,7 @@ function (model, digits = model$digits, ...)
     if (na.act == "na.fail") 
         stop("Missing values in results.")
     out$digits <- digits
-    class(out) <- c("rma.list")
+    class(out) <- c("list.rma")
     return(out)
 }
 rstudent.rma.peto <-
@@ -4642,7 +5184,7 @@ function (model, digits = model$digits, ...)
         res <- try(rma.peto(ai = x$ai.f[-i], bi = x$bi.f[-i], 
             ci = x$ci.f[-i], di = x$di.f[-i], add = x$add, to = x$to, 
             ...), silent = TRUE)
-        if (class(res) == "try-error") 
+        if (is.element("try-error", class(res))) 
             next
         delpred[i] <- res$b
         vdelpred[i] <- res$vb
@@ -4663,7 +5205,7 @@ function (model, digits = model$digits, ...)
     if (na.act == "na.fail") 
         stop("Missing values in results.")
     out$digits <- digits
-    class(out) <- c("rma.list")
+    class(out) <- c("list.rma")
     return(out)
 }
 rstudent.rma.uni <-
@@ -4685,7 +5227,7 @@ function (model, digits = model$digits, ...)
         res <- try(rma(x$yi.f[-i], x$vi.f[-i], mods = cbind(x$X.f[-i, 
             ]), method = x$method, weighted = x$weighted, intercept = FALSE, 
             knha = x$knha, control = x$control, ...), silent = TRUE)
-        if (class(res) == "try-error") 
+        if (is.element("try-error", class(res))) 
             next
         tau2.del[i] <- res$tau2
         Xi <- matrix(x$X.f[i, ], nrow = 1)
@@ -4708,7 +5250,7 @@ function (model, digits = model$digits, ...)
     if (na.act == "na.fail") 
         stop("Missing values in results.")
     out$digits <- digits
-    class(out) <- c("rma.list")
+    class(out) <- c("list.rma")
     return(out)
 }
 summary.rma <-
@@ -4804,8 +5346,7 @@ function (x, estimator = "L0", side = NULL, maxit = 50, verbose = FALSE,
         stop("Argument 'x' must be an object of class \"rma.uni\".")
     if (!x$int.only) 
         stop("Trim-and-fill method only applicable for models without moderators.")
-    if (!is.element(estimator, c("L0", "R0"))) 
-        stop("Argument 'estimator' should be either 'L0' or 'R0'.")
+    estimator <- match.arg(estimator, c("L0", "R0"))
     yi <- x$yi
     vi <- x$vi
     if (is.null(side)) {

@@ -29,7 +29,7 @@
 	For random/mixed-effects models, an approximate credibility interval is also calculated. The interval estimates where \code{level} \% of the true outcomes fall in the hypothetical population of studies. Note that this interval is calculated under the assumption that the value of \eqn{\tau^2}{tau^2} is known (and not estimated). A proper method for calculating a credibility interval that accounts for the uncertainty in the estimate of \eqn{\tau^2}{tau^2} will be implemented in the future.
 }
 \value{
-	An object of class \code{"rma.list"}. The object is a list containing the following components:	
+	An object of class \code{"list.rma"}. The object is a list containing the following components:	
 	\item{pred}{predicted value(s).}
 	\item{se}{corresponding standard error(s).}
 	\item{ci.lb}{lower bound of the confidence interval(s).}
@@ -38,7 +38,7 @@
 	\item{cr.ub}{upper bound of the credibility interval(s) (only random/mixed-effects models).}
 	\item{...}{some additional elements/values.}
 
-	The \code{"rma.list"} object is formated and printed with \code{\link{print.rma.list}}.
+	The \code{"list.rma"} object is formated and printed with \code{\link{print.list.rma}}.
 }
 \note{
 	The predicted values are based only on the fixed effects in the model. Best linear unbiased predictions (BLUPs) that combine the fitted values based on the fixed effects and the estimated contributions of the random effects can be obtained with \code{\link{blup.rma.uni}}.

@@ -50,14 +50,13 @@ data(dat.bcg)
 
 ### calculate log risk ratios and corresponding sampling variances
 dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
-dat.bcg$yi <- dat$yi
-dat.bcg$vi <- dat$vi
+dat <- cbind(dat.bcg, dat)
 
 ### random-effects model 
-res2 <- rma(yi, vi, data=dat.bcg, method="REML")
+res2 <- rma(yi, vi, data=dat, method="REML")
 
 ### mixed-effects model with two moderators (absolute latitude and publication year)
-res1 <- rma(yi, vi, mods=cbind(ablat, year), data=dat.bcg, method="REML")
+res1 <- rma(yi, vi, mods=cbind(ablat, year), data=dat, method="REML")
 
 anova(res1, res2)
 }

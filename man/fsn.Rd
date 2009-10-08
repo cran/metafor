@@ -25,7 +25,7 @@ fsn(yi, vi, sei, data=NULL, type="Rosenthal", alpha=.05,
 	The Rosenberg method calculates the number of studies averaging null results that would have to be added to the given set of observed outcomes to reduce significance level (p-value) of the (weighted) average effect size (based on a fixed-effects model) to a target alpha level (e.g., .05). The method is described in Rosenberg (2005).
 }
 \value{
-	An object of class \code{c("fsn")}. The object is a list containing the following components:
+	An object of class \code{"fsn"}. The object is a list containing the following components:
 	\item{type}{the method used.}
 	\item{fsnum}{the calculated fail-safe N.}
 	\item{alpha}{the target alpha level.}
@@ -55,12 +55,10 @@ data(dat.bcg)
 
 ### calculate log risk ratios and corresponding sampling variances
 dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
-dat.bcg$yi <- dat$yi
-dat.bcg$vi <- dat$vi
+dat <- cbind(dat.bcg, dat)
 
-fsn(yi, vi, data=dat.bcg)
-fsn(yi, vi, data=dat.bcg, type="Orwin")
-fsn(yi, vi, data=dat.bcg, type="Rosenberg")
-
+fsn(yi, vi, data=dat)
+fsn(yi, vi, data=dat, type="Orwin")
+fsn(yi, vi, data=dat, type="Rosenberg")
 }
 \keyword{htest}

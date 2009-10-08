@@ -62,24 +62,22 @@ data(dat.bcg)
 
 ### calculate log risk ratios and corresponding sampling variances
 dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
-dat.bcg$yi <- dat$yi
-dat.bcg$vi <- dat$vi
+dat <- cbind(dat.bcg, dat)
 
 ### random-effects model
-res <- rma(yi, vi, data=dat.bcg, method="FE")
+res <- rma(yi, vi, data=dat, method="FE")
 regtest(res)
 
 res <- rma(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, 
-           data=dat.bcg, method="REML")
+           data=dat, method="REML")
 regtest(res, model="lm", predictor="ni")
 
 res <- rma(measure="PETO", ai=tpos, bi=tneg, ci=cpos, di=cneg, 
-           data=dat.bcg, method="FE")
+           data=dat, method="FE")
 regtest(res, predictor="ninv")
 
 res <- rma(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, 
-           data=dat.bcg, mods=cbind(ablat), method="REML")
+           data=dat, mods=cbind(ablat), method="REML")
 regtest(res, predictor="ninv")
-
 }
 \keyword{htest}

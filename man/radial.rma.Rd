@@ -55,7 +55,7 @@ res <- rma(ai=tpos, bi=tneg, ci=cpos, di=cneg,
            data=dat.bcg, measure="RR", method="FE")
 radial(res)
 
-### line from (0,0) with slope of the log risk ratio from the fourth study
+### line from (0,0) with slope of the log risk ratio from the 4th study
 abline(a=0, b=c(-1.44155119))
 
 ### meta-analysis of the log risk ratios using a random-effects model

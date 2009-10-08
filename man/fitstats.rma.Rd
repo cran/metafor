@@ -36,14 +36,5 @@ res2 <- rma(ai=tpos, bi=tneg, ci=cpos, di=cneg, mods=cbind(ablat, year),
 
 fitstats(res1)
 fitstats(res2)
-
-### LR-test for residual heterogeneity
-### note: REML is usually better for testing variance components
-### note: need to halve the p-value since the test is one-sided
-res2 <- rma(ai=tpos, bi=tneg, ci=cpos, di=cneg, mods=cbind(ablat, year),
-            data=dat.bcg, measure="RR", method="REML")
-res3 <- rma(ai=tpos, bi=tneg, ci=cpos, di=cneg, mods=cbind(ablat, year),
-            data=dat.bcg, measure="RR", method="REML", tau2=0)
-pchisq(fitstats(res3)[2] - fitstats(res2)[2], df=1, lower.tail=FALSE) / 2
 }
 \keyword{models}

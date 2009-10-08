@@ -1,14 +1,14 @@
-\name{print.rma.uni.infl}
-\alias{print.rma.uni.infl}
-\title{Print Method for rma.uni.infl Objects}
+\name{print.infl.rma.uni}
+\alias{print.infl.rma.uni}
+\title{Print Method for infl.rma.uni Objects}
 \description{
-   Print method for objects of class \code{"rma.uni.infl"}.
+   Print method for objects of class \code{"infl.rma.uni"}.
 }
 \usage{
-\method{print}{rma.uni.infl}(x, digits=x$digits, ...)
+\method{print}{infl.rma.uni}(x, digits=x$digits, ...)
 }
 \arguments{
-	\item{x}{an object of class \code{"rma.uni.infl"}.}
+	\item{x}{an object of class \code{"infl.rma.uni"}.}
 	\item{digits}{an integer specifying the number of decimal places to which the printed results should be rounded (the default is to take the value from the object).}
 	\item{...}{other arguments.}
 }

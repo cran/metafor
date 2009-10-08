@@ -1,6 +1,6 @@
 Package: metafor
-Version: 0.5-4
-Date: 2009-09-15
+Version: 0.5-5
+Date: 2009-10-08
 Title: Meta-Analysis Package for R
 Author: Wolfgang Viechtbauer <wvb@wvbauer.com>
 Maintainer: Wolfgang Viechtbauer <wvb@wvbauer.com>
@@ -12,6 +12,6 @@ Description: The metafor package consists of a collection of functions
         Mantel-Haenszel and Peto's method are also implemented.
 License: GPL (>= 2)
 URL: http://www.wvbauer.com/
-Packaged: 2009-09-15 21:26:40 UTC; wv
+Packaged: 2009-10-08 16:18:03 UTC; wolfgang
 Repository: CRAN
-Date/Publication: 2009-09-18 20:25:27
+Date/Publication: 2009-10-08 12:41:35

@@ -37,12 +37,12 @@
 	See also \code{\link{influence.rma.uni}} for other leave-one-out diagnostics that are useful for detecting influential cases in models fitted with the \code{\link{rma.uni}} function.
 }
 \value{
-	Either a vector with the observed residuals (for \code{residuals}) or an object of class \code{"rma.list"}, which is a list containing the following components:	
+	Either a vector with the observed residuals (for \code{residuals}) or an object of class \code{"list.rma"}, which is a list containing the following components:	
 	\item{resid}{observed residuals (for \code{rstandard}) or deleted residuals (for \code{rstudent}).}
 	\item{se}{corresponding standard errors.}
 	\item{z}{standardized residuals (internally standardized for \code{rstandard} or externally standardized for \code{rstudent}).}
 
-	The \code{"rma.list"} object is formated and printed with \code{\link{print.rma.list}}.
+	The \code{"list.rma"} object is formated and printed with \code{\link{print.list.rma}}.
 }
 \note{
 	Right now, the externally standardized residuals are calculated by refitting the model \eqn{k} times. Depending on how large \eqn{k} is, it may take a few moments to finish the calculations. 

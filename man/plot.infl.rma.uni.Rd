@@ -1,15 +1,15 @@
-\name{plot.rma.uni.infl}
-\alias{plot.rma.uni.infl}
-\title{Plot Method for rma.uni.infl Objects}
+\name{plot.infl.rma.uni}
+\alias{plot.infl.rma.uni}
+\title{Plot Method for infl.rma.uni Objects}
 \description{
-   Plot method for objects of class \code{"rma.uni.infl"}.
+   Plot method for objects of class \code{"infl.rma.uni"}.
 }
 \usage{
-\method{plot}{rma.uni.infl}(x, plotdfb=FALSE, dfbnew=FALSE, pch=21, 
+\method{plot}{infl.rma.uni}(x, plotdfb=FALSE, dfbnew=FALSE, pch=21, 
      bg="black", bg.infl="red", col.na="lightgray", ...)
 }
 \arguments{
-	\item{x}{an object of class \code{"rma.uni.infl"}.}
+	\item{x}{an object of class \code{"infl.rma.uni"}.}
 	\item{plotdfb}{logical indicating whether the DFBETAS values should be plotted (default is \code{FALSE}).}
 	\item{dfbnew}{logical indicating whether a new device should be opened for plotting the DFBETAS values (default is \code{FALSE}).}
 	\item{pch}{plotting symbol to use. By default, a filled circle is used. See \code{\link{points}} for other options.}

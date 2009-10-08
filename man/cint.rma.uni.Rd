@@ -20,13 +20,14 @@
 \details{
 	The confidence intervals for the model coefficients are simply the usual Wald-type intervals which are also shown when printing the fitted object or when calling \code{\link{coef.rma}}.
 
-	The confidence interval for the amount of (residual) heterogeneity is obtained via the Q-profile method as described by Hartung and Knapp (2005) and Viechtbauer (2007). The method provides an exact confidence interval for \eqn{\tau^2}{tau^2} in random- and mixed-effects models. The square root of the interval bounds is also returned for easier interpretation. For random-effects models, confidence intervals for \eqn{I^2} and \eqn{H^2} are also provided (Higgins & Thompson, 2002). Since \eqn{I^2} and \eqn{H^2} are just monotonic transformation of \eqn{\tau^2}{tau^2}, the confidence intervals for \eqn{I^2} and \eqn{H^2} are also exact.
+	The confidence interval for the amount of (residual) heterogeneity is obtained iteratively via the Q-profile method as described by Hartung and Knapp (2005) and Viechtbauer (2007). The method provides an exact confidence interval for \eqn{\tau^2}{tau^2} in random- and mixed-effects models. The square root of the interval bounds is also returned for easier interpretation. For random-effects models, confidence intervals for \eqn{I^2} and \eqn{H^2} are also provided (Higgins & Thompson, 2002). Since \eqn{I^2} and \eqn{H^2} are just monotonic transformation of \eqn{\tau^2}{tau^2}, the confidence intervals for \eqn{I^2} and \eqn{H^2} are also exact.
 }
 \value{
 	Either a single data frame or a list with two data frames (named \code{fixed} and \code{random}) with the following elements:
-	\item{estimate}{estimate of the model coefficient or variance component.}
+	\item{estimate}{estimate of the model coefficient or variance component}
 	\item{ci.lb}{lower bound of the confidence interval.}
 	\item{ci.ub}{upper bound of the confidence interval.}
+	For fixed-effects models, the variance component estimates are \code{NA}, but the confidence interval bounds are still provided.
 }
 \note{
 	The iterative algorithm used as part of the Q-profile method makes use of the \code{\link{uniroot}} function. By default, the desired accuracy is set equal to \code{.Machine$double.eps^0.25} and the maximum number of iterations to \code{1000}. The upper bound of the interval searched is set to 50 (which should be large enough for most cases). The desired accuracy (\code{tol}), maximum number of iterations (\code{maxiter}), and upper bound (\code{tau2.max}) can be adjusted with \code{control=list(tol=value, maxiter=value, tau2.max=value)}. One can also adjust the lower bound of the interval searched with \code{control=list(tau2.min=value)} (the default is to take that value from the object, which is 0 by default). You should only play around with this latter value if you know what you are doing.

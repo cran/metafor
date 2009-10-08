@@ -114,13 +114,15 @@ rma(yi, vi, sei, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i, sd2i,
 
 	Predicted/fitted values can be obtained with \code{\link{predict.rma.uni}} and \code{\link{fitted.rma}}. For best linear unbiased predictions, see \code{\link{blup.rma.uni}}.
 
-	The \code{\link{residuals.rma}}, \code{\link{rstandard.rma.uni}}, and \code{\link{rstudent.rma.uni}} functions extract raw and standardized residuals. Additional case diagnostics (e.g., to determine influential studies) can be obtained with the \code{\link{influence.rma.uni}} function.
+	The \code{\link{residuals.rma}}, \code{\link{rstandard.rma.uni}}, and \code{\link{rstudent.rma.uni}} functions extract raw and standardized residuals. Additional case diagnostics (e.g., to determine influential studies) can be obtained with the \code{\link{influence.rma.uni}} function. For models without moderators, leave-one-out diagnostics can also be obtained with \code{\link{leave1out.rma.uni}}.
 
 	A confidence interval for the amount of (residual) heterogeneity in the random/mixed-effects model can be obtained with \code{\link{cint.rma.uni}}.
 
 	Forest, funnel, and radial plots (the latter only for models without moderators) are drawn with \code{\link{forest.rma}}, \code{\link{funnel.rma}}, and \code{\link{radial.rma}}. The \code{\link{qqnorm.rma.uni}} function provides a normal QQ plot of the standardized residuals. One can also just call \code{\link{plot.rma.uni}} on the fitted model object to obtain various plots at once.
 
 	Tests for publication bias (or more accurately, for funnel plot asymmetry) can be obtained with \code{\link{ranktest.rma}} and \code{\link{regtest.rma}}.
+
+	For models without moderators, a cumulative meta-analysis (i.e., adding one obervation at a time) can be obtained with \code{\link{cumul.rma.uni}}.
 
 	Other assessor functions include \code{\link{coef.rma}}, \code{\link{vcov.rma}}, \code{\link{logLik.rma}}, and \code{\link{hatvalues.rma.uni}}.
 }
@@ -175,33 +177,32 @@ data(dat.bcg)
 
 ### calculate log risk ratios and corresponding sampling variances
 dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
-dat.bcg$yi <- dat$yi
-dat.bcg$vi <- dat$vi
+dat <- cbind(dat.bcg, dat)
 
 ### random-effects model
-rma(yi, vi, data=dat.bcg, method="REML")
+rma(yi, vi, data=dat, method="REML")
 
 ### mixed-effects model with two moderators (absolute latitude and publication year)
-rma(yi, vi, mods=cbind(ablat, year), data=dat.bcg, method="REML")
+rma(yi, vi, mods=cbind(ablat, year), data=dat, method="REML")
 
 ### supplying the raw data directly to the function
 rma(ai=tpos, bi=tneg, ci=cpos, di=cneg, mods=cbind(ablat, year), 
-    data=dat.bcg, measure="RR", method="REML")
+    data=dat, measure="RR", method="REML")
 
 ### dummy coding of the allocation factor
-alloc.random     <- ifelse(dat.bcg$alloc == "random",     1, 0)
-alloc.alternate  <- ifelse(dat.bcg$alloc == "alternate",  1, 0)
-alloc.systematic <- ifelse(dat.bcg$alloc == "systematic", 1, 0)
+alloc.random     <- ifelse(dat$alloc == "random",     1, 0)
+alloc.alternate  <- ifelse(dat$alloc == "alternate",  1, 0)
+alloc.systematic <- ifelse(dat$alloc == "systematic", 1, 0)
 
 ### test the allocation factor (in the presence of the other moderators)
 ### note: "alternate" is the reference level of the allocation factor
 ### note: the intercept is the first coefficient, so btt=c(2,3)
 rma(yi, vi, mods=cbind(alloc.random, alloc.systematic, year, ablat), 
-    data=dat.bcg, method="REML", btt=c(2,3))
+    data=dat, method="REML", btt=c(2,3))
 
 ### use model.matrix() to code the factor and set up the design matrix
 ### careful: X already includes the intercept, so need to use intercept=FALSE
-X <- model.matrix(~ factor(alloc) + year + ablat, data=dat.bcg)
-rma(yi, vi, mods=X, intercept=FALSE, data=dat.bcg, method="REML", btt=c(2,3))
+X <- model.matrix(~ factor(alloc) + year + ablat, data=dat)
+rma(yi, vi, mods=X, intercept=FALSE, data=dat, method="REML", btt=c(2,3))
 }
 \keyword{models}

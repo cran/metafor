@@ -54,6 +54,9 @@
 	\item \code{order="fit"}: the studies are ordered by the fitted values,
 	\item \code{order="prec"}: the studies are ordered by their sampling variances,
 	\item \code{order="resid"}: the studies are ordered by the size of their residuals,
+	\item \code{order="rstandard"}: the studies are ordered by the size of their standardized residuals,
+	\item \code{order="abs.resid"}: the studies are ordered by the size of their absolute residuals,
+	\item \code{order="abs.rstandard"}: the studies are ordered by the size of their absolute standardized residuals.
 	} Alternatively, it is possible to set \code{order} equal to a vector with indices giving the desired order.
 
 	Additional summary estimates can also be added to the plot with the \code{\link{addpoly}} function. See the documentation for that function for examples.
@@ -82,21 +85,25 @@ forest(res, transf=exp, alim=c(0,6), steps=4, xlim=c(-8,12),
        xlab="Relative Risk", refline=1)
 forest(res, atransf=exp, at=log(c(.05,.25,1,4,12)), xlim=c(-8,6), 
        xlab="Relative Risk (log scale)", order="prec")
-forest(res, atransf=exp, at=log(c(.05,.25,1,8)), xlim=c(-14,6), 
-       ylim=c(-1.5,15), xlab="Relative Risk (log scale)", order="prec", 
+forest(res, slab=paste(dat.bcg$author, ", ", dat.bcg$year, sep=""), 
+       xlim=c(-14,6), ylim=c(-1.5,15.5), at=log(c(.05,.25,1,4)), 
+       atransf=exp, xlab="Relative Risk (log scale)",
        ilab=cbind(dat.bcg$tpos, dat.bcg$tneg, dat.bcg$cpos, dat.bcg$cneg), 
-       ilab.xpos=c(-8,-7,-5,-4), cex=.7)
-text(c(-8,-7,-5,-4), y=14.5, c("TB+", "TB-", "TB+", "TB-"), cex=.7)
-text(c(-7.5,-4.5), y=15.5, c("Vaccinated", "Control"), cex=.7)
-text(c(10), y=15, c("Observed [95\% CI]"), cex=.7)
+       ilab.xpos=c(-8.5,-7,-5,-3.5), cex=.7)
+text(c(-8.5,-7,-5,-3.5), 14.5, c("TB+", "TB-", "TB+", "TB-"), cex=.7)
+text(c(-7.75,-4.25),     15.5, c("Vaccinated", "Control"),    cex=.7)
+text(-14,                14.5, "Author(s) and Year",   pos=4, cex=.7)
+text(6,                  14.5, "Observed RR [95\% CI]", pos=2, cex=.7)
 
 ### mixed-effects model with absolute latitude in the model
 res <- rma(ai=tpos, bi=tneg, ci=cpos, di=cneg, mods=ablat, slab=paste(author, year),
            data=dat.bcg, measure="RR", method="REML")
 
 ### forest plots with observed and fitted values
-forest(res, xlim=c(-18,10), ylim=c(.5, 15), order="fit", xlab="Log Relative Risk", 
-       ilab=dat.bcg$ablat, ilab.xpos=-6)
-text(-6, y=15, c("Absolute\nLatitude"))
+forest(res, xlim=c(-9,5), order="fit", xlab="Relative Risk (log scale)", cex=.8,
+       ilab=dat.bcg$ablat, ilab.xpos=-4, atransf=exp, at=log(c(.05,.25,1,4)))
+text(-9, 15, "Author(s) and Year", pos=4, cex=.8)
+text(5,  15, "Observed RR [95\% CI]", pos=2, cex=.8)
+text(-4,  15, "Latitude", cex=.8)
 }
 \keyword{hplot}

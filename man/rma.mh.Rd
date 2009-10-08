@@ -57,9 +57,11 @@ rma.mh(ai, bi, ci, di, n1i, n2i, data=NULL,
 
 	The results of the fitted model are neatly formated and printed with the \code{\link{print.rma.mh}} function. If you also want the fit statistics, use \code{\link{summary.rma}} (or use the \code{\link{fitstats.rma}} function to extract them).
 
-	The \code{\link{residuals.rma}}, \code{\link{rstandard.rma.mh}}, and \code{\link{rstudent.rma.mh}} functions extract raw and standardized residuals. 
+	The \code{\link{residuals.rma}}, \code{\link{rstandard.rma.mh}}, and \code{\link{rstudent.rma.mh}} functions extract raw and standardized residuals. Leave-one-out diagnostics can be obtained with \code{\link{leave1out.rma.mh}}.
 
 	Forest, funnel, and radial plots of the individual outcomes can be obtained with \code{\link{forest.rma}}, \code{\link{funnel.rma}}, and \code{\link{radial.rma}}. The \code{\link{qqnorm.rma.mh}} function provides a normal QQ plot of the standardized residuals. One can also just call \code{\link{plot.rma.mh}} on the fitted model object to obtain various plots at once.
+
+	A cumulative meta-analysis (i.e., adding one obervation at a time) can be obtained with \code{\link{cumul.rma.mh}}.
 
 	Other assessor functions include \code{\link{coef.rma}}, \code{\link{vcov.rma}}, and \code{\link{logLik.rma}}.
 }
@@ -71,10 +73,10 @@ rma.mh(ai, bi, ci, di, n1i, n2i, data=NULL,
 ### load BCG vaccine data
 data(dat.bcg)
 
-### meta-analysis of the log odds ratios using the Mantel-Haenszel method
+### meta-analysis of the (log) odds ratios using the Mantel-Haenszel method
 rma.mh(ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg, measure="OR")
 
-### meta-analysis of the log risk ratios using the Mantel-Haenszel method
+### meta-analysis of the (log) risk ratios using the Mantel-Haenszel method
 rma.mh(ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg, measure="RR")
 }
 \keyword{models}

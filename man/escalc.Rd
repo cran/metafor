@@ -47,15 +47,18 @@ escalc(measure, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i, sd2i,
 	group 1 \tab \code{ai} \tab \code{bi} \tab \code{n1i} \cr
 	group 2 \tab \code{ci} \tab \code{di} \tab \code{n2i} \cr
 	}
-	where \code{ai}, \code{bi}, \code{ci}, and \code{di} denote the cell frequencies and \code{n1i} and \code{n2i} the row totals. For example, in a set of RCTs, group 1 and group 2 may refer to the treatment and placebo group, with outcome 1 denoting some event of interest and outcome 2 its complement. In a set of case-control studies, group 1 and group 2 may refer to the group of cases and the group of controls, with outcome 1 denoting, for example, exposure to some risk factor and outcome 2 non-exposure.
+	where \code{ai}, \code{bi}, \code{ci}, and \code{di} denote the cell frequencies and \code{n1i} and \code{n2i} the row totals. For example, in a set of RCTs, group 1 and group 2 may refer to the treatment and placebo group, with outcome 1 denoting some event of interest and outcome 2 its complement. In a set of case-control studies, group 1 and group 2 may refer to the group of cases and the group of controls, with outcome 1 denoting, for example, exposure to some risk factor and outcome 2 non-exposure. The 2x2 table may also be the result of cross-sectional (i.e., multinomial) sampling, so that none of the table margins (except the total sample size) are fixed through the study design.
 
-	Depending on the type of design, a meta-analysis of 2x2 table data can be based on one of several different outcome measures, including the odds ratio, the risk ratio (also called relative risk), the risk difference, and the arc-sine transformed risk difference. For these measures, one needs to supply either \code{ai}, \code{bi}, \code{ci}, and \code{di} or alternatively \code{ai}, \code{ci}, \code{n1i}, and \code{n2i}. Note that the log is taken of the risk and the odds ratio, which helps to make the distribution of these outcome measure closer to normal.
+	Depending on the type of design (sampling method), a meta-analysis of 2x2 table data can be based on one of several different outcome measures, including the odds ratio, the risk ratio (also called relative risk), the risk difference, and the arc-sine transformed risk difference. The phi coefficient, Yule's Q, and Yule's Y are additional measures of association for 2x2 table data (but they may not be the most ideal choices for meta-analyses of such data). For these measures, one needs to supply either \code{ai}, \code{bi}, \code{ci}, and \code{di} or alternatively \code{ai}, \code{ci}, \code{n1i}, and \code{n2i}. Note that the log is taken of the risk and the odds ratio, which makes these outcome measures symmetric about 0 and helps to make the distribution of these outcome measure closer to normal.
 	\itemize{
 	\item \code{"RR"}: The \emph{log relative risk} is equal to the log of \code{(ai/n1i)/(ci/n2i)}.
 	\item \code{"OR"}: The \emph{log odds ratio} is equal to the log of \code{(ai*di)/(bi*di)}.
 	\item \code{"RD"}: The \emph{risk difference} is equal to \code{(ai/n1i)-(ci/n2i)}.
 	\item \code{"AS"}: The \emph{arc-sine transformed risk difference} is equal to \code{asin(sqrt(ai/n1i)) - asin(sqrt(ci/n2i))}. See Ruecker et al. (2009) for a discussion of this and other outcome measures for 2x2 table data.
 	\item \code{"PETO"}: The \emph{log odds ratio estimated with Peto's method} (see Yusuf et al., 1985) is equal to \code{(ai-si*n1i/ni)/((si*ti*n1i*n2i)/(ni^2*(ni-1)))}, where \code{si=ai+ci}, \code{ti=bi+di}, and \code{ni=n1i+n2i}. Note that this measure technically assumes that the true odds ratio is equal to 1 in all tables.
+	\item \code{"PHI"}: The \emph{phi coefficient} is equal to \code{(ai*di-bi*ci)/sqrt(n1i*n2i*si*ti)}, where \code{si=ai+ci} and \code{ti=bi+di}.
+	\item \code{"YUQ"}: \emph{Yule's Q} is equal to \code{(oi-1)/(oi+1)}, where \code{oi} is the odds ratio.
+	\item \code{"YUY"}: \emph{Yule's Y} is equal to \code{(sqrt(oi)-1)/(sqrt(oi)+1)}, where \code{oi} is the odds ratio.
 	} Cell entries with a zero can be problematic, especially for the risk and the odds ratio. Adding a constant to the cells of the 2x2 tables is a common solution to this problem. When \code{to="all"}, the value of \code{add} is added to each cell of the 2x2 tables in all \eqn{k} tables. When \code{to="only0"}, the value of \code{add} is added to each cell of the 2x2 tables only in those tables with at least one cell equal to 0. When \code{to="if0all"}, the value of \code{add} is added to each cell of the 2x2 tables in all \eqn{k} tables, but only when there is at least one 2x2 table with a zero entry. Setting \code{to="none"} or \code{add=0} has the same effect: No adjustment to the observed table frequencies is made. Depending on the outcome measure and the data, this may lead to division by zero inside of the function (when this occurs, the resulting \code{Inf} value is recoded to \code{NA}).
 
 	\bold{Proportions and Transformations Thereof}
@@ -111,9 +114,8 @@ data(dat.bcg)
 ### calculate log risk ratios and corresponding sampling variances
 dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
 
-### add log risk ratios and sampling variances to the dat.bcg data frame
-dat.bcg$yi <- dat$yi
-dat.bcg$vi <- dat$vi
-dat.bcg
+### add log risk ratios and sampling variances to the data frame
+dat <- cbind(dat.bcg, dat)
+dat
 }
 \keyword{datagen}

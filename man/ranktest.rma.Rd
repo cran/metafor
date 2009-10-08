@@ -37,11 +37,10 @@ data(dat.bcg)
 
 ### calculate log risk ratios and corresponding sampling variances
 dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
-dat.bcg$yi <- dat$yi
-dat.bcg$vi <- dat$vi
+dat <- cbind(dat.bcg, dat)
 
 ### random-effects model
-res <- rma(yi, vi, data=dat.bcg, method="REML")
+res <- rma(yi, vi, data=dat, method="REML")
 
 ranktest(res)
 }

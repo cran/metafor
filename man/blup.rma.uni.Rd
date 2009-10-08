@@ -16,14 +16,14 @@
 	\item{...}{other arguments.}
 }
 \value{
-	An object of class \code{"rma.list"}. The object is a list containing the following components:	
+	An object of class \code{"list.rma"}. The object is a list containing the following components:	
 	\item{pred}{predicted values.}
 	\item{se}{corresponding standard errors.}
 	\item{pi.lb}{lower bound of the prediction intervals.}
 	\item{pi.ub}{upper bound of the prediction intervals.}
 	\item{...}{some additional elements/values.}
 
-	The \code{"rma.list"} object is formated and printed with \code{\link{print.rma.list}}.
+	The \code{"list.rma"} object is formated and printed with \code{\link{print.list.rma}}.
 }
 \note{
 	For predicted/fitted values that are based only on the fixed effects of the model, see \code{\link{fitted.rma}} and \code{\link{predict.rma.uni}}.
@@ -51,20 +51,24 @@
 ### load BCG vaccine data
 data(dat.bcg)
 
+### calculate log risk ratios and corresponding sampling variances
+dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
+dat <- cbind(dat.bcg, dat)
+
 ### meta-analysis of the log risk ratios using a random-effects model
-res <- rma(ai=tpos, bi=tneg, ci=cpos, di=cneg, 
-           data=dat.bcg, measure="RR", method="REML")
+res <- rma(yi, vi, data=dat, method="REML")
 blup(res, transf=exp)
 
 ### illustrate shrinkage of BLUPs towards the (estimated) population average
-rri <- exp(escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)$yi)
-blupi <- blup(res, transf=exp)$pred
-plot(NA, NA, xlim=c(.8,2.2), ylim=c(0,2), pch=19, 
-     xaxt="n", bty="n", xlab="", ylab="Relative Risk")
-segments(rep(1,13), rri, rep(2,13), blupi, col="gray")
-points(rep(1,13), rri,   pch=19)
-points(rep(2,13), blupi, pch=19)
-axis(side=1, at=c(1,2), labels=c("Observed Values", "BLUPs"), lwd=0)
-abline(h=predict(res, transf=exp)$pred, lwd=2)
+res <- rma(yi, vi, data=dat)
+blups <- blup(res)$pred
+plot(NA, NA, xlim=c(.8,2.4), ylim=c(-2,0.5), pch=19, 
+     xaxt="n", bty="n", xlab="", ylab="Log Relative Risk")
+segments(rep(1,13), dat$yi, rep(2,13), blups, col="darkgray")
+points(rep(1,13), dat$yi, pch=19)
+points(rep(2,13), blups, pch=19)
+axis(side=1, at=c(1,2), labels=c("Observed\nValues", "BLUPs"), lwd=0)
+segments(.7, res$b, 2.15, res$b, lty="dotted")
+text(2.3, res$b, expression(hat(mu)==-0.71), cex=1)
 }
 \keyword{models}

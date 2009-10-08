@@ -1,3 +1,20 @@
+Changes in metafor version 0.5-5
+
+   o added the phi coefficient (measure="PHI"), Yule's Q ("YUQ"),
+     and Yule's Y ("YUY") as additional measures to the escalc() 
+     function for 2x2 table data 
+   o forest plots now order the studies so that the first study
+     is at the top of the plot and the last study at the bottom
+     (the order can still be set with the order/subset arguments)
+   o added cumul() function for cumulative meta-analyses (with a
+     corresponding forest() method to plot the cumulative results)
+   o added leave1out() function for leave-one-out diagnostics
+   o added option to qqnorm.rma.uni() so that the user can choose
+     whether to apply the Bonferroni correction to the bounds of
+     the pseudo confidence envelope
+   o some internal changes to the class and methods names
+   o some small corrections to the documentation
+
 Changes in metafor version 0.5-4
 
    o corrected the trimfill() function
