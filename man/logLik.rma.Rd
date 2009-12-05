@@ -5,12 +5,12 @@
    The function extracts the (restricted) log likelihood for objects of class \code{"rma"}.
 }
 \usage{
-\method{logLik}{rma}(object, REML=NULL, ...)
+\method{logLik}{rma}(object, REML=NULL, \dots)
 }
 \arguments{
 	\item{object}{an object of class \code{"rma"}.}
 	\item{REML}{logical indicating whether the regular or restricted log likelihood should be returned. When \code{NULL} (default), the regular log likelihood is returned, unless restricted maximum likelihood estimation was used to fit the model.}
-	\item{...}{other arguments.}
+	\item{\dots}{other arguments.}
 }
 \value{
 	The (restricted) log likelihood of the model evaluated at the estimated coefficient(s).

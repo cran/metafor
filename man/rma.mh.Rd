@@ -53,7 +53,7 @@ rma.mh(ai, bi, ci, di, n1i, n2i, data=NULL,
 	\item{k}{number of tables included in the analysis.}
 	\item{yi, vi}{the vector of individual outcomes and corresponding sampling variances.}
 	\item{fit.stats}{a list with the log likelihood, deviance, AIC, and BIC values under the unrestricted and restricted likelihood.}
-	\item{...}{some additional elements/values.}
+	\item{\dots}{some additional elements/values.}
 
 	The results of the fitted model are neatly formated and printed with the \code{\link{print.rma.mh}} function. If you also want the fit statistics, use \code{\link{summary.rma}} (or use the \code{\link{fitstats.rma}} function to extract them).
 

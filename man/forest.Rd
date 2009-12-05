@@ -5,11 +5,11 @@
    The function \code{forest} is generic. It can be used to create forest plots.
 }
 \usage{
-forest(x, ...)
+forest(x, \dots)
 }
 \arguments{
 	\item{x}{either an object of class \code{"rma"}, a vector with the observed effect size or outcomes, or an object of class \code{"cumul.rma"}. See \sQuote{Details}.}
-	\item{...}{other arguments.}
+	\item{\dots}{other arguments.}
 }
 \details{
 	Currently, methods exist for three types of situations.

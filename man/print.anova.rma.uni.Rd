@@ -5,12 +5,12 @@
    Print method for objects of class \code{"anova.rma.uni"}.
 }
 \usage{
-\method{print}{anova.rma.uni}(x, digits=x$digits, ...)
+\method{print}{anova.rma.uni}(x, digits=x$digits, \dots)
 }
 \arguments{
 	\item{x}{an object of class \code{"anova.rma.uni"}.}
 	\item{digits}{an integer specifying the number of decimal places to which the printed results should be rounded (the default is to take the value from the object).}
-	\item{...}{other arguments.}
+	\item{\dots}{other arguments.}
 }
 \details{
 	The output includes:

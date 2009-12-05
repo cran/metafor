@@ -6,7 +6,7 @@
 }
 \usage{
 \method{predict}{rma.uni}(object, newmods=NULL, level=object$level, 
-        digits=object$digits, transf=FALSE, targs=NULL, ...)
+        digits=object$digits, transf=FALSE, targs=NULL, \dots)
 }
 \arguments{
 	\item{object}{an object of class \code{"rma.uni"}.}
@@ -15,7 +15,7 @@
 	\item{digits}{an integer specifying the number of decimal places to which the printed results should be rounded (the default is to take the value from the object).}
 	\item{transf}{an optional argument specifying the name of a function that should be used to transform the predicted values and interval bounds (e.g., \code{transf=exp}). Defaults to \code{FALSE}, which means that no transformation is used.}
 	\item{targs}{optional arguments needed by the function specified under \code{transf}.}
-	\item{...}{other arguments.}
+	\item{\dots}{other arguments.}
 }
 \details{
 	For the fixed-effects model, \code{predict(object)} returns the estimated (average) outcome in the set of studies included in the meta-analysis. This is the same as the estimated intercept in the fixed-effects model.
@@ -36,7 +36,7 @@
 	\item{ci.ub}{upper bound of the confidence interval(s).}
 	\item{cr.lb}{lower bound of the credibility interval(s) (only random/mixed-effects models).}
 	\item{cr.ub}{upper bound of the credibility interval(s) (only random/mixed-effects models).}
-	\item{...}{some additional elements/values.}
+	\item{\dots}{some additional elements/values.}
 
 	The \code{"list.rma"} object is formated and printed with \code{\link{print.list.rma}}.
 }

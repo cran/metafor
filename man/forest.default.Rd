@@ -8,7 +8,7 @@
        slab=NULL, ilab=NULL, ilab.xpos=NULL, ilab.pos=NULL, 
        subset=NULL, transf=FALSE, atransf=FALSE, targs=NULL, 
        addrows=0, efac=1, pch=15, psize=NULL, 
-       cex=NULL, cex.lab=NULL, cex.axis=NULL, ...)
+       cex=NULL, cex.lab=NULL, cex.axis=NULL, \dots)
 }
 \arguments{
 	\item{x}{a vector of length \eqn{k} with the observed effect sizes or outcomes.}
@@ -39,7 +39,7 @@
 	\item{cex}{an optional character and symbol expansion factor. If \code{NULL} (default), the function tries to set this to a sensible value.}
 	\item{cex.lab}{an optional expansion factor for the x axis titel. If \code{NULL} (default), the function tries to set this to a sensible value.}
 	\item{cex.axis}{an optional expansion factor for x axis labels. If \code{NULL} (default), the function tries to set this to a sensible value.}
-	\item{...}{other arguments.}
+	\item{\dots}{other arguments.}
 }
 \details{
 	The plot shows the individual observed effect sizes or outcomes with corresponding confidence intervals.

@@ -11,19 +11,19 @@
    The \code{residuals}, \code{rstandard}, and \code{rstudent} functions can be used to extract residuals, corresponding standard errors, and standardized residuals for models fitted with the \code{\link{rma.uni}}, \code{\link{rma.mh}}, and \code{\link{rma.peto}} functions.
 }
 \usage{
-\method{residuals}{rma}(object, ...)
-\method{rstandard}{rma.uni}(model, digits=model$digits, ...)
-\method{rstandard}{rma.mh}(model, digits=model$digits, ...)
-\method{rstandard}{rma.peto}(model, digits=model$digits, ...)
-\method{rstudent}{rma.uni}(model, digits=model$digits, ...)
-\method{rstudent}{rma.mh}(model, digits=model$digits, ...)
-\method{rstudent}{rma.peto}(model, digits=model$digits, ...)
+\method{residuals}{rma}(object, \dots)
+\method{rstandard}{rma.uni}(model, digits=model$digits, \dots)
+\method{rstandard}{rma.mh}(model, digits=model$digits, \dots)
+\method{rstandard}{rma.peto}(model, digits=model$digits, \dots)
+\method{rstudent}{rma.uni}(model, digits=model$digits, \dots)
+\method{rstudent}{rma.mh}(model, digits=model$digits, \dots)
+\method{rstudent}{rma.peto}(model, digits=model$digits, \dots)
 }
 \arguments{
 	\item{object}{an object of class \code{"rma"} (for \code{residuals}).}
 	\item{model}{an object of class \code{"rma.uni"}, \code{"rma.mh"}, or \code{"rma.peto"} (for \code{rstandard} and \code{rstudent}).}
 	\item{digits}{an integer specifying the number of decimal places to which the printed results should be rounded (the default is to take the value from the object).}
-	\item{...}{other arguments.}
+	\item{\dots}{other arguments.}
 }
 \details{
 	The observed residuals (obtained with \code{residuals}) are simply equal to the \sQuote{observed - fitted} values.

@@ -3,11 +3,11 @@
 \title{Rank Correlation Test for Funnel Plot Asymmetry for rma Objects}
 \description{Rank correlation test for funnel plot asymmetry for objects of class \code{"rma"}.}
 \usage{
-\method{ranktest}{rma}(x, ...)
+\method{ranktest}{rma}(x, \dots)
 }
 \arguments{
 	\item{x}{an object of class \code{"rma"}.}
-	\item{...}{other arguments.}
+	\item{\dots}{other arguments.}
 }
 \details{
 	The function carries out the rank correlation test as described by Begg and Mazumdar (1994). The test can be used to examine whether the observed outcomes and the corresponding sampling variances are correlated. A high correlation would indicate that the funnel plot is asymmetric, which may be a result of publication bias.

@@ -3,7 +3,7 @@
 \title{Trim and Fill Method for rma.uni Objects}
 \description{Apply the trim and fill method to objects of class \code{"rma.uni"}.}
 \usage{
-\method{trimfill}{rma.uni}(x, estimator="L0", side=NULL, maxit=50, verbose=FALSE, ...)
+\method{trimfill}{rma.uni}(x, estimator="L0", side=NULL, maxit=50, verbose=FALSE, \dots)
 }
 \arguments{
 	\item{x}{an object of class \code{"rma.uni"}.}
@@ -11,7 +11,7 @@
 	\item{side}{either \code{"left"}, \code{"right"}, or \code{NULL} indicating on which side of the funnel plot the missing studies should be imputed. If \code{NULL}, the side is chosen within the function depending on the results of Egger's regression test (see \code{\link{regtest}} for details on this test).}
 	\item{maxit}{an integer value indicating the maximum number of iterations to use for the trim and fill method.}
 	\item{verbose}{logical indicating whether information about the evolution of the algorithm should be printed.}
-	\item{...}{other arguments.}
+	\item{\dots}{other arguments.}
 }
 \details{	
 	The trim and fill method is a nonparametric (rank-based) data augmentation technique proposed by Duval and Tweedie (2000a, 2000b; see also Duval, 2005). The method can be used to estimate the number of studies missing from a meta-analysis due to the suppression of the most extreme results on one side of the funnel plot. The method then augments the observed data so that the funnel plot is more symmetric. The trim and fill method can only be used in the context of the fixed- or random-effects model (i.e., in models without moderators). The method should not be regarded as a way of yielding a more "valid" estimate of the overall effect or outcome, but as a way of examining the sensitivity of the results to one particular selection mechanism (i.e., one particular form of publication bias).

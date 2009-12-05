@@ -8,7 +8,7 @@
        slab=NULL, mlab=NULL, ilab=NULL, ilab.xpos=NULL, ilab.pos=NULL, 
        order=NULL, transf=FALSE, atransf=FALSE, targs=NULL, addrows=0, 
        efac=1, pch=15, psize=NULL, col="darkgray", border="darkgray", 
-       cex=NULL, cex.lab=NULL, cex.axis=NULL, ...)
+       cex=NULL, cex.lab=NULL, cex.axis=NULL, \dots)
 }
 \arguments{
 	\item{x}{an object of class \code{"rma"}.}
@@ -41,7 +41,7 @@
 	\item{cex.axis}{an optional expansion factor for x axis labels. If \code{NULL} (default), the function tries to set this to a sensible value.}
 	\item{col}{character string specifying the name of a color to use for the fitted values (\code{"darkgray"} by default).}
 	\item{border}{character string specifying the name of a color to use for the border of the fitted values (\code{"darkgray"} by default).}
-	\item{...}{other arguments.}
+	\item{\dots}{other arguments.}
 }
 \details{
 	The plot shows the individual observed effect sizes or outcomes with corresponding confidence intervals. For fixed- and random-effects models, a polygon is added to the bottom of the forest plot, showing the summary estimate based on the model. For models involving moderators, the fitted values are added to the plot.

@@ -6,9 +6,9 @@
 \description{Function to create normal QQ plots for objects of class \code{"rma.uni"}, \code{"rma.mh"}, and \code{"rma.peto"}.}
 \usage{
 \method{qqnorm}{rma.uni}(y, type="rstandard", pch=19, envelope=TRUE, level=y$level, 
-       bonferroni=FALSE, reps=1000, smooth=TRUE, bass=0, ...)
-\method{qqnorm}{rma.mh}(y, type="rstandard", pch=19, ...)
-\method{qqnorm}{rma.peto}(y, type="rstandard", pch=19, ...)
+       bonferroni=FALSE, reps=1000, smooth=TRUE, bass=0, \dots)
+\method{qqnorm}{rma.mh}(y, type="rstandard", pch=19, \dots)
+\method{qqnorm}{rma.peto}(y, type="rstandard", pch=19, \dots)
 }
 \arguments{
 	\item{y}{an object of class \code{"rma.uni"}, \code{"rma.mh"}, or \code{"rma.peto"}.}
@@ -20,7 +20,7 @@
 	\item{reps}{numerical value indicating the number of iterations to use for simulating the pseudo confidence envelope (default is 1000).}
 	\item{smooth}{logical indicating whether the results from the simulation should be smoothed (default is \code{TRUE}).}
 	\item{bass}{numerical value that controls the degree of smoothing (default is 0).}
-	\item{...}{other arguments.}
+	\item{\dots}{other arguments.}
 }
 \details{
 	The plot shows the theoretical quantiles of a normal distribution on the horizontal axis against the observed quantiles for either the standardized residuals (\code{type="rstandard"}, the default) or the externally standardized residuals (\code{type="rstudent"}) on the vertical axis.

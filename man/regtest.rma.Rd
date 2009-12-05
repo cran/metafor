@@ -3,14 +3,14 @@
 \title{Regression Tests for Funnel Plot Asymmetry for rma Objects}
 \description{The function can be used to carry out various tests for funnel plot asymmetry, including Egger's regression test and variations thereof, for objects of class \code{"rma"}.}
 \usage{
-\method{regtest}{rma}(x, model="rma", predictor="sei", ni=NULL, ...)
+\method{regtest}{rma}(x, model="rma", predictor="sei", ni=NULL, \dots)
 }
 \arguments{
 	\item{x}{an object of class \code{"rma"}.}
 	\item{model}{either \code{"rma"} or \code{"lm"} to indicate the type of model to use for the regression test. See \sQuote{Details}.}
 	\item{predictor}{either \code{"sei"} \code{"vi"}, \code{"ni"}, or \code{"ninv"} to indicate the type of independent variable for the regression test. See \sQuote{Details}.}
 	\item{ni}{the total sample size. Only needed when carrying out a regression test with either \code{predictor="ni"} or \code{predictor="ninv"} and the object \code{x} does not already contain this information.}
-	\item{...}{other arguments.}
+	\item{\dots}{other arguments.}
 }
 \details{
 	Various tests for funnel plot asymmetry have been suggested in the literature, including the rank correlation test by Begg and Mazumdar (1994) and the regression test by Egger et al. (1997). Extensions, modifications, and further developments of the regression test are described (among others) by Macaskill, Walter, and Irwig (2001), Sterne and Egger (2005), Harbord, Egger, and Sterne (2006), Peters et al. (2006), Ruecker, Schwarzer, and Carpenter (2008), and Moreno et al. (2009). The various versions of the regression test differ in terms of the model (either a regular weighted regression with a multiplicative dispersion term or one of the meta-analytic models is used), in terms of the independent variable that the observed outcomes are hypothesized to be related to when publication bias is present (suggested predictors include the standard error, the sampling variance, the total sample size, and the inverse of the total sample size), and in terms of the outcome measure used (e.g., for 2x2 table data, one has the choice between various outcome measures). The idea behind the various tests is the same though: If there is a relationship between the observed outcomes and the chosen predictor, then this usually implies asymmetry in the funnel plot and may be an indication of publication bias.

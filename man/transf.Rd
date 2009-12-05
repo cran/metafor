@@ -10,17 +10,17 @@
 	A set of transformation functions useful for meta-analyses.
 }
 \usage{
-transf.rtoz(x, ...)
-transf.ztor(x, ...)
-transf.logit(x, ...)
-transf.ilogit(x, ...)
-transf.ztor.int(x, targs, ...)
-transf.exp.int(x, targs, ...)
+transf.rtoz(x, \dots)
+transf.ztor(x, \dots)
+transf.logit(x, \dots)
+transf.ilogit(x, \dots)
+transf.ztor.int(x, targs, \dots)
+transf.exp.int(x, targs, \dots)
 }
 \arguments{
 	\item{x}{a vector of values to be transformed.}
 	\item{targs}{a list with additional arguments for the transformation function. See \sQuote{Details}.}
-	\item{...}{other arguments.}
+	\item{\dots}{other arguments.}
 }
 \details{
 	The following transformation functions are currently implemented:
@@ -32,7 +32,7 @@ transf.exp.int(x, targs, ...)
 	\item \code{transf.ztor.int}: integral transformation method for the z-to-r transformation.
 	\item \code{transf.exp.int}: integral transformation method for the exponential transformation.
 	}
-	The integral transformation method for a transformation function \eqn{h(z)} integrates \eqn{h(z) \times f(z)}{h(z) x f(z)} over the limits \code{targs$lower} and \code{targs$upper}, where \eqn{f(z)} is the density of a normal distribution with mean equal to \code{x} and variance equal to \code{targs$tau2}.
+	The integral transformation method for a transformation function \eqn{h(z)} integrates \eqn{h(z) f(z)} over \eqn{z} using the limits \code{targs$lower} and \code{targs$upper}, where \eqn{f(z)} is the density of a normal distribution with mean equal to \code{x} and variance equal to \code{targs$tau2}.
 }
 \value{
 	A vector with the transformed values.

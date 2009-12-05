@@ -5,7 +5,7 @@
 \usage{
 \method{addpoly}{rma}(x, row=-2, level=x$level, digits=2, annotate=TRUE, 
         mlab=NULL, transf=FALSE, atransf=FALSE, targs=NULL, 
-        col="black", efac=1, cex=NULL, ...)
+        col="black", efac=1, cex=NULL, \dots)
 }
 \arguments{
 	\item{x}{an object of class \code{"rma"}.}
@@ -20,7 +20,7 @@
 	\item{col}{color of the polygon that is drawn (default is \code{"black"}).}
 	\item{efac}{vertical expansion factor for the polygon. The default value of 1 should usually work okay.}
 	\item{cex}{an optional symbol expansion factor. If \code{NULL} (default), the function tries to set this to a sensible value.}
-	\item{...}{other arguments.}
+	\item{\dots}{other arguments.}
 }
 \details{
 	The function can be used to add a polygon to an existing forest plot created with the \code{\link{forest}} function. The polygon shows the summary estimate based on a fixed- or random-effects model.

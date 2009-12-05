@@ -5,13 +5,13 @@
    The function provides a full versus reduced model comparison of two objects of class \code{"rma.uni"}. Model fit statistics for the two models are provided. A likelihood ratio test comparing the two models is also performed.
 }
 \usage{
-\method{anova}{rma.uni}(object, object2, digits=object$digits, ...)
+\method{anova}{rma.uni}(object, object2, digits=object$digits, \dots)
 }
 \arguments{
 	\item{object}{an object of class \code{"rma.uni"}.}
 	\item{object2}{an object of class \code{"rma.uni"}.}
 	\item{digits}{an integer specifying the number of decimal places to which the printed results should be rounded (the default is to take the value from the object).}
-	\item{...}{other arguments.}
+	\item{\dots}{other arguments.}
 }
 \details{
 	The two models must be based on the same set of data and should be nested for the likelihood ratio test to make sense.
@@ -42,7 +42,7 @@
 	Viechtbauer, W. (2007) Hypothesis tests for population heterogeneity in meta-analysis. \emph{British Journal of Mathematical and Statistical Psychology}, \bold{60}, 29--60.
 }
 \seealso{
-	\code{\link{rma.uni}}
+	\code{\link{rma.uni}}, \code{\link{print.anova.rma.uni}}
 }
 \examples{
 ### load BCG vaccine data

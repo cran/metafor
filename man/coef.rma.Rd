@@ -5,11 +5,11 @@
    The function extracts the estimated model coefficients, corresponding standard errors, test statistics, p-values, and confidence interval bounds from objects of class \code{"rma"}.
 }
 \usage{
-\method{coef}{rma}(object, ...)
+\method{coef}{rma}(object, \dots)
 }
 \arguments{
 	\item{object}{an object of class \code{"rma"}.}
-	\item{...}{other arguments.}
+	\item{\dots}{other arguments.}
 }
 \value{
 	A data frame with the following elements:

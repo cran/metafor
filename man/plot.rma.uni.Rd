@@ -7,14 +7,14 @@
    Plot method for objects of class \code{"rma.uni"}, \code{"rma.mh"}, and \code{"rma.peto"}.
 }
 \usage{
-\method{plot}{rma.uni}(x, qqplot=FALSE, ...)
-\method{plot}{rma.mh}(x, qqplot=FALSE, ...)
-\method{plot}{rma.peto}(x, qqplot=FALSE, ...)
+\method{plot}{rma.uni}(x, qqplot=FALSE, \dots)
+\method{plot}{rma.mh}(x, qqplot=FALSE, \dots)
+\method{plot}{rma.peto}(x, qqplot=FALSE, \dots)
 }
 \arguments{
 	\item{x}{an object of class \code{"rma.uni"}, \code{"rma.mh"}, or \code{"rma.peto"}.}
 	\item{qqplot}{logical indicating whether a normal QQ plot should be drawn (default is \code{FALSE}).}
-	\item{...}{other arguments.}
+	\item{\dots}{other arguments.}
 }
 \details{
 	Four plots are produced. If the model does not contain any moderators, then a forest plot, funnel plot, radial plot, and a plot of the standardized residuals is provided. If \code{qqplot=TRUE}, the last plot is replaced by a normal QQ plot of the standardized residuals.

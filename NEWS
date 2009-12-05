@@ -1,3 +1,28 @@
+Changes in metafor version 0.5-7
+
+   o added permutest() function for permutation tests
+   o added metafor.news() function to display the NEWS file
+     of the metafor package within R (based on the same idea
+     in the animate package by Yihui Xie)
+   o added some checks for values below machine precision
+   o a bit of code reorganization (nothing that affects how
+     the functions work)
+
+Changes in metafor version 0.5-6
+
+   o small changes to the computation of the DFFITS and DFBETAS 
+     values in the influence() function, so that these statistics 
+     are more in line with their definitions in regular linear 
+     regression models
+   o added option to the plot function for objects returned by
+     influence() to allow plotting the covariance ratios on a 
+     log scale (now the default)
+   o slight adjustments to various print() functions (to catch
+     some errors when certain values were NA)
+   o added a control option to rma() to adjust the step length of
+     the Fisher scoring algorithm by a constant factor (this may
+     be useful when the algorithm does not converge)
+
 Changes in metafor version 0.5-5
 
    o added the phi coefficient (measure="PHI"), Yule's Q ("YUQ"),
@@ -41,7 +66,7 @@ Changes in metafor version 0.5-3
 
 Changes in metafor version 0.5-2
 
-   o added an option in plot.rma.uni.infl() to open a new device 
+   o added an option in plot.infl.rma.uni() to open a new device 
      for plotting the DFBETAS values
    o thanks to Jim Lemon, added a much better method of adjusting 
      the size of the labels, annotations, and symbols in the forest() 

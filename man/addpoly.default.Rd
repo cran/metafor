@@ -5,7 +5,7 @@
 \usage{
 \method{addpoly}{default}(x, vi, sei, row=-1, level=95, digits=2, annotate=TRUE, 
         mlab=NULL, transf=FALSE, atransf=FALSE, targs=NULL, 
-        col="black", efac=1, cex=NULL, ...)
+        col="black", efac=1, cex=NULL, \dots)
 }
 \arguments{
 	\item{x}{a vector with the values at which the polygons should be drawn.}
@@ -22,7 +22,7 @@
 	\item{col}{color of the polygons that are drawn (default is \code{"black"}).}
 	\item{efac}{vertical expansion factor for the polygons. The default value of 1 should usually work okay.}
 	\item{cex}{an optional symbol expansion factor. If \code{NULL} (default), the function tries to set this to a sensible value.}
-	\item{...}{other arguments.}
+	\item{\dots}{other arguments.}
 }
 \details{
 	The function can be used to add one or more polygons to an existing forest plot created with the \code{\link{forest}} function. For example, summary estimates based on a subgrouping of the studies or from models involving moderators can be added to the plot this way. See examples below.

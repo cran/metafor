@@ -2,7 +2,7 @@
 \docType{data}
 \alias{dat.bcg}
 \title{Data for BCG Vaccine Studies}
-\description{Results from 13 clinical trials examining the effectivess of the bacillus Calmette-Guerin (BCG) vaccine for preventing tuberculosis.}
+\description{Results from 13 clinical trials examining the effectiveness of the bacillus Calmette-Guerin (BCG) vaccine for preventing tuberculosis.}
 \usage{dat.bcg}
 \format{The data frame contains the following columns:
 \tabular{lll}{

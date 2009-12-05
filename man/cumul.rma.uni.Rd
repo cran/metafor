@@ -5,7 +5,7 @@
    The function \code{cumul.rma.uni} repeatedly fits the specified model, adding one observation at a time to the model.
 }
 \usage{
-\method{cumul}{rma.uni}(x, order=NULL, digits=x$digits, transf=FALSE, targs=NULL, ...)
+\method{cumul}{rma.uni}(x, order=NULL, digits=x$digits, transf=FALSE, targs=NULL, \dots)
 }
 \arguments{
 	\item{x}{an object of class \code{"rma.uni"}.}
@@ -13,7 +13,7 @@
 	\item{digits}{an integer specifying the number of decimal places to which the printed results should be rounded (the default is to take the value from the object).}
 	\item{transf}{an optional argument specifying the name of a function that should be used to transform the model coefficients and interval bounds (e.g., \code{transf=exp}). Defaults to \code{FALSE}, which means that no transformation is used.}
 	\item{targs}{optional arguments needed by the function specified under \code{transf}.}
-	\item{...}{other arguments.}
+	\item{\dots}{other arguments.}
 }
 \details{
 	The model specified by \code{x} must be a model without moderators (i.e., either a fixed- or a random-effects model).

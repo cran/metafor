@@ -5,7 +5,7 @@
    The function calculates the best linear unbiased predictions (BLUPs) of the true outcomes by combining the fitted values based on the fixed effects and the estimated contributions of the random effects for objects of class \code{"rma.uni"}. Corresponding standard errors and prediction interval bounds are also provided.
 }
 \usage{
-\method{blup}{rma.uni}(x, level=x$level, digits=x$digits, transf=FALSE, targs=NULL, ...)
+\method{blup}{rma.uni}(x, level=x$level, digits=x$digits, transf=FALSE, targs=NULL, \dots)
 }
 \arguments{
 	\item{x}{an object of class \code{"rma.uni"}.}
@@ -13,7 +13,7 @@
 	\item{digits}{an integer specifying the number of decimal places to which the printed results should be rounded (the default is to take the value from the object).}
 	\item{transf}{an optional argument specifying the name of a function that should be used to transform the predicted values and interval bounds (e.g., \code{transf=exp}). Defaults to \code{FALSE}, which means that no transformation is used.}
 	\item{targs}{optional arguments needed by the function specified under \code{transf}.}
-	\item{...}{other arguments.}
+	\item{\dots}{other arguments.}
 }
 \value{
 	An object of class \code{"list.rma"}. The object is a list containing the following components:	
@@ -21,7 +21,7 @@
 	\item{se}{corresponding standard errors.}
 	\item{pi.lb}{lower bound of the prediction intervals.}
 	\item{pi.ub}{upper bound of the prediction intervals.}
-	\item{...}{some additional elements/values.}
+	\item{\dots}{some additional elements/values.}
 
 	The \code{"list.rma"} object is formated and printed with \code{\link{print.list.rma}}.
 }

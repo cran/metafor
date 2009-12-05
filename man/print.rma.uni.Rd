@@ -8,10 +8,10 @@
    Print methods for objects of class \code{"rma.uni"}, \code{"rma.mh"}, and \code{"rma.peto"}.
 }
 \usage{
-\method{print}{rma.uni}(x, digits=x$digits, showfit=FALSE, signif.legend=TRUE, ...)
-\method{print}{rma.mh}(x, digits=x$digits, showfit=FALSE, ...)
-\method{print}{rma.peto}(x, digits=x$digits, showfit=FALSE, ...)
-\method{summary}{rma}(object, digits=object$digits, showfit=TRUE, signif.legend=TRUE, ...)
+\method{print}{rma.uni}(x, digits=x$digits, showfit=FALSE, signif.legend=TRUE, \dots)
+\method{print}{rma.mh}(x, digits=x$digits, showfit=FALSE, \dots)
+\method{print}{rma.peto}(x, digits=x$digits, showfit=FALSE, \dots)
+\method{summary}{rma}(object, digits=object$digits, showfit=TRUE, signif.legend=TRUE, \dots)
 }
 \arguments{
 	\item{x}{an object of class \code{"rma.uni"}, \code{"rma.mh"}, or \code{"rma.peto"} (for \code{print}).}
@@ -19,7 +19,7 @@
 	\item{digits}{an integer specifying the number of decimal places to which the printed results should be rounded (the default is to take the value from the object).}
 	\item{showfit}{logical indicating whether the fit statistics and information criteria should be printed.}
 	\item{signif.legend}{logical indicating whether the legend for the \sQuote{significance stars} should be printed.}
-	\item{...}{other arguments.}
+	\item{\dots}{other arguments.}
 }
 \details{
 	The output includes:

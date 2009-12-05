@@ -6,14 +6,14 @@
    The functions \code{leave1out.rma.mh} and \code{leave1out.rma.peto} repeatedly fit the specified model, leaving out one observation (i.e., 2x2 table) at a time.
 }
 \usage{
-\method{leave1out}{rma.mh}(x, digits=x$digits, transf=FALSE, ...)
-\method{leave1out}{rma.peto}(x, digits=x$digits, transf=FALSE, ...)
+\method{leave1out}{rma.mh}(x, digits=x$digits, transf=FALSE, \dots)
+\method{leave1out}{rma.peto}(x, digits=x$digits, transf=FALSE, \dots)
 }
 \arguments{
 	\item{x}{an object of class \code{"rma.mh"} or \code{"rma.peto"}.}
 	\item{digits}{an integer specifying the number of decimal places to which the printed results should be rounded (the default is to take the value from the object).}
 	\item{transf}{logical indicating whether odds ratios or risk ratios (and the corresponding confidence interval bounds) should be given in the transformed (meaning: raw) units or in terms of log units (the default).}
-	\item{...}{other arguments.}
+	\item{\dots}{other arguments.}
 }
 \value{
 	An object of class \code{"list.rma"}. The object is a list containing the following components:

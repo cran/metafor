@@ -16,7 +16,7 @@ rma(yi, vi, sei, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i, sd2i,
         tau2=NULL, knha=FALSE, control=list())
 }
 \arguments{
-	\item{yi}{vector of length \eqn{k} with the observed effects sizes or outcomes. See \sQuote{Details}.}
+	\item{yi}{vector of length \eqn{k} with the observed effect sizes or outcomes. See \sQuote{Details}.}
 	\item{vi}{vector of length \eqn{k} with the corresponding sampling variances. See \sQuote{Details}.}
 	\item{sei}{vector of length \eqn{k} with the corresponding standard errors. See \sQuote{Details}.}
 	\item{ai}{see below and the documentation of the \code{\link{escalc}} function for more details.}
@@ -47,7 +47,7 @@ rma(yi, vi, sei, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i, sd2i,
 	\item{level}{a numerical value between 0 and 100 specifying the confidence interval level (default is 95).}
 	\item{digits}{an integer specifying the number of decimal places to which the printed results should be rounded (default is 4).}
 	\item{btt}{an optional vector of indices specifying which coefficients to include in the omnibus test of moderators. See \sQuote{Details}.}
-	\item{tau2}{an optional numerical value to specify the amount of (residual) heterogeneity in a random- or mixed-effects model (instead of estimating it). Useful for sensitivity analyses (e.g., for plotting results as a function of \eqn{\tau^2}{tau^2}).}
+	\item{tau2}{an optional numerical value to specify the amount of (residual) heterogeneity in a random- or mixed-effects model (instead of estimating it). Useful for sensitivity analyses (e.g., for plotting results as a function of \eqn{\tau^2}{tau^2}). The default is \code{NULL}, which means that \eqn{\tau^2}{tau^2} is estimated from the data.}
 	\item{knha}{logical specifying whether the method by Knapp and Hartung (2003) should be used for adjusting test statistics and confidence intervals (default is \code{FALSE}). See \sQuote{Details}.}
 	\item{control}{optional list of control values for the iterative estimation algorithms. Defaults to an empty list, which means that default values are defined inside the function. See \sQuote{Note}.}
 }
@@ -108,9 +108,9 @@ rma(yi, vi, sei, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i, sd2i,
 	\item{int.only}{logical that indicates whether the model only includes an intercept.}
 	\item{yi, vi, X}{the vector of outcomes, the corresponding sampling variances, and the design matrix of the model.}
 	\item{fit.stats}{a list with the log likelihood, deviance, AIC, and BIC values under the unrestricted and restricted likelihood.}
-	\item{...}{some additional elements/values.}
+	\item{\dots}{some additional elements/values.}
 
-	The results of the fitted model are neatly formated and printed with the \code{\link{print.rma.uni}} function. If you also want the fit statistics, use \code{\link{summary.rma}} (or use the \code{\link{fitstats.rma}} function to extract them). Full versus reduced model comparisons in terms of fit statistics and likelihoods can be obtained with \code{\link{anova.rma.uni}}.
+	The results of the fitted model are neatly formated and printed with the \code{\link{print.rma.uni}} function. If you also want the fit statistics, use \code{\link{summary.rma}} (or use the \code{\link{fitstats.rma}} function to extract them). Full versus reduced model comparisons in terms of fit statistics and likelihoods can be obtained with \code{\link{anova.rma.uni}}. Permutation tests for the model coefficient(s) can be obtained with \code{\link{permutest.rma.uni}}.
 
 	Predicted/fitted values can be obtained with \code{\link{predict.rma.uni}} and \code{\link{fitted.rma}}. For best linear unbiased predictions, see \code{\link{blup.rma.uni}}.
 
@@ -127,7 +127,7 @@ rma(yi, vi, sei, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i, sd2i,
 	Other assessor functions include \code{\link{coef.rma}}, \code{\link{vcov.rma}}, \code{\link{logLik.rma}}, and \code{\link{hatvalues.rma.uni}}.
 }
 \note{
-	The ML, REML, and EB estimators of \eqn{\tau^2}{tau^2} are obtained via the Fisher scoring algorithm, which is robust to poor starting values and usually converges quickly (Harville, 1977; Jennrich & Sampson, 1976). By default, the starting value is set equal to the value of the Hedges estimator and the algorithm terminates when the change in the estimated value of \eqn{\tau^2}{tau^2} is smaller than \eqn{10^{-5}}{10^(-5)} from one iteration to the next. The maximum number of iterations is 50 by default. A different starting value, threshold, and maximum number of iterations can be specified via the \code{control} argument by setting \code{control=list(tau2.init=value, threshold=value, maxiter=value)}. Information on the evolution of the algorithm is obtained with \code{control=list(verbose=TRUE)}.
+	The ML, REML, and EB estimators of \eqn{\tau^2}{tau^2} are obtained via the Fisher scoring algorithm, which is robust to poor starting values and usually converges quickly (Harville, 1977; Jennrich & Sampson, 1976). By default, the starting value is set equal to the value of the Hedges estimator and the algorithm terminates when the change in the estimated value of \eqn{\tau^2}{tau^2} is smaller than \eqn{10^{-5}}{10^(-5)} from one iteration to the next. The maximum number of iterations is 50 by default. A different starting value, threshold, and maximum number of iterations can be specified via the \code{control} argument by setting \code{control=list(tau2.init=value, threshold=value, maxiter=value)}. The step length of the Fisher scoring algorithm can also be manually adjusted by a desired factor with \code{control=list(stepadj=value)} (values below 1 will reduce the step length). Information on the evolution of the algorithm is obtained with \code{control=list(verbose=TRUE)}.
 
 	All of the heterogeneity estimators except SJ can in principle yield negative estimates for the amount of (residual) heterogeneity. However, negative estimates of \eqn{\tau^2}{tau^2} are outside of the parameter space. For the HS, HE, and DL estimators, negative estimates are therefore truncated to zero. For ML, REML, and EB estimation, the Fisher scoring algorithm makes use of step halving to guarantee a non-negative estimate. For those brave enough to step into risky territory, there is the option to set the lower bound of \eqn{\tau^2}{tau^2} equal to some other value besides zero with \code{control=list(tau2.min=value)}.
 

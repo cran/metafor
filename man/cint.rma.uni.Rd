@@ -6,7 +6,7 @@
 }
 \usage{
 \method{cint}{rma.uni}(object, fixed=FALSE, random=TRUE, level=object$level, 
-     digits=object$digits, control=list(), ...)
+     digits=object$digits, control=list(), \dots)
 }
 \arguments{
 	\item{object}{an object of class \code{"rma.uni"}.}
@@ -15,7 +15,7 @@
 	\item{level}{a numerical value between 0 and 100 specifying the confidence interval level (the default is to take the value from the object).}
 	\item{digits}{an integer specifying the number of decimal places to which the results should be rounded (the default is to take the value from the object).}
 	\item{control}{a list of control values for the iterative algorithm. Defaults to an empty list, which means that default values are defined inside the function. See \sQuote{Note}.}
-	\item{...}{other arguments.}
+	\item{\dots}{other arguments.}
 }
 \details{
 	The confidence intervals for the model coefficients are simply the usual Wald-type intervals which are also shown when printing the fitted object or when calling \code{\link{coef.rma}}.

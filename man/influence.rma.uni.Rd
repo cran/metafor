@@ -5,15 +5,15 @@
    The function calculates various case diagnostics that indicate the influence of deleting one case at a time on the model fit and the fitted/residual values for objects of class \code{"rma.uni"}.
 }
 \usage{
-\method{influence}{rma.uni}(model, digits=model$digits, ...)
+\method{influence}{rma.uni}(model, digits=model$digits, \dots)
 }
 \arguments{
 	\item{model}{an object of class \code{"rma.uni"}.}
 	\item{digits}{an integer specifying the number of decimal places to which the printed results should be rounded (the default is to take the value from the object).}
-	\item{...}{other arguments.}
+	\item{\dots}{other arguments.}
 }
 \details{
-	The following leave-one-out diagnostics are calculated for each case:
+	The following leave-one-out diagnostics are calculated for each study:
 	\itemize{
 	\item externally standardized residual,
 	\item DFFITS value,
@@ -26,30 +26,30 @@
 
 	For details on externally standardized residuals, see \code{\link{rstudent.rma.uni}}.
 
-	For the meta-analytic models underlying the \code{\link{rma.uni}} function, the DFFITS value for the \eqn{i^{th}}{ith} case is here defined as the difference between the predicted value based on the fitted model using the complete dataset and the predicted value based on the fitted model using the dataset with the \eqn{i^{th}}{ith} case removed, divided by the standard error of the predicted value based on the fitted model using the dataset with the \eqn{i^{th}}{ith} case removed.
+	The DFFITS value essentially indicates how many standard deviations the predicted average effect for the \eqn{i^{th}}{ith} study changes after excluding the \eqn{i^{th}}{ith} study from the model fitting.
 
-	Cook's distance is here defined as \eqn{ (\hat{\beta}-\hat{\beta}_{(i)})' \hat{\Sigma}^{-1} (\hat{\beta}-\hat{\beta}_{(i)}) }{(b-b(i))' Sigma^(-1) (b-b(i)) }, where \eqn{\hat{\beta}}{b} is the vector of parameter estimates based on the complete dataset, \eqn{ \hat{\beta}_{(i)} }{b(i)} is the vector of parameter estimates based on the dataset with the \eqn{i^{th}}{ith} case removed, and \eqn{\hat{\Sigma}}{Sigma} is the variance-covariance matrix of the parameter estimates based on the full dataset.
+	Cook's distance can be interpreted as the Mahalanobis distance between the entire set of predicted values once with the \eqn{i^{th}}{ith} study included and once with the \eqn{i^{th}}{ith} study excluded from the model fitting.
+	
+	The covariance ratio is defined as the determinant of the variance-covariance matrix of the parameter estimates based on the dataset with the \eqn{i^{th}}{ith} study removed divided by the determinant of the variance-covariance matrix of the parameter estimates based on the complete dataset. A value below 1 therefore indicates that removal of the \eqn{i^{th}}{ith} study yields more precise estimates of the model coefficients.
 
-	The covariance ratio is defined as the determinant of the variance-covariance matrix of the parameter estimates based on the dataset with the \eqn{i^{th}}{ith} case removed divided by the determinant of the variance-covariance matrix of the parameter estimates based on the complete dataset.
+	The leave-one-out amount of (residual) heterogeneity is the estimated value of \eqn{\tau^2}{tau^2} based on the dataset with the \eqn{i^{th}}{ith} study removed. Note that this is always equal to \code{0} for fixed-effects models.
 
-	The leave-one-out amount of (residual) heterogeneity is the estimated value of \eqn{\tau^2}{tau^2} based on the dataset with the \eqn{i^{th}}{ith} case removed. This is always equal to \code{0} for fixed-effects models.
+	Similarly, the leave-one-out test statistic for the test of (residual) heterogeneity is the value of the test statistic of the test for (residual) heterogeneity calculated based on the dataset with the \eqn{i^{th}}{ith} study removed.
 
-	Similarly, the leave-one-out test statistic for the test of (residual) heterogeneity is the value of the test statistic of the test for (residual) heterogeneity calculated based on the dataset with the \eqn{i^{th}}{ith} case removed.
-
-	Finally, the DFBETAS values for the \eqn{i^{th}}{ith} case are defined as the difference between the parameter estimates based on the complete dataset and the parameter estimates based on the dataset with the \eqn{i^{th}}{ith} case removed, divided by the standard error of the parameter estimates based on the dataset with the \eqn{i^{th}}{ith} case removed.
+	Finally, the DFBETAS value(s) essentially indicate(s) how many standard deviations the estimated coefficient(s) change(s) after excluding the \eqn{i^{th}}{ith} study from the model fitting.
 }
 \value{
 	An object of class \code{"infl.rma.uni"}. The object is a list containing the following components:
 	\item{inf}{A data frame with columns equal to the externally standardized residuals, DFFITS values, Cook's distances, covariance ratios, leave-one-out \eqn{\tau^2}{tau^2} estimates, leave-one-out (residual) heterogeneity test statistics, hat values, and weights.}
 	\item{dfb}{A data frame with columns equal to the DFBETAS values.}
-	\item{...}{some additional elements/values.}
+	\item{\dots}{some additional elements/values.}
 
 	The results are printed with \code{\link{print.infl.rma.uni}} and plotted with \code{\link{plot.infl.rma.uni}}.
 }
 \note{
 	Right now, the leave-one-out diagnostics are calculated by refitting the model \eqn{k} times. Depending on how large \eqn{k} is, it may take a few moments to finish the calculations. There are shortcuts for calculating at least some of these values without refitting the model each time, but these are currently not implemented (and may not exist for all of the leave-one-out diagnostics calculated by the present function).
 
-	It may not be possible to fit the model after deletion of the \eqn{i^{th}}{ith} case from the dataset. This will result in \code{NA} values for that case.
+	It may not be possible to fit the model after deletion of the \eqn{i^{th}}{ith} study from the dataset. This will result in \code{NA} values for that study.
 
 	Certain relationships between the leave-one-out diagnostics and the (internally or externally) standardized residuals (Belsley, Kuh, & Welsch, 1980; Cook & Weisberg, 1982) no longer hold for the meta-analytic models. Maybe there are other relationships. These remain to be determined.
 }

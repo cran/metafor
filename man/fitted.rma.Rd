@@ -5,11 +5,11 @@
    The function calculates the fitted values for objects of class \code{"rma"}.
 }
 \usage{
-\method{fitted}{rma}(object, ...)
+\method{fitted}{rma}(object, \dots)
 }
 \arguments{
 	\item{object}{an object of class \code{"rma"}.}
-	\item{...}{other arguments.}
+	\item{\dots}{other arguments.}
 }
 \value{
 	A vector with the fitted values.

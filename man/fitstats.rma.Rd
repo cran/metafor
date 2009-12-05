@@ -5,12 +5,12 @@
 	The function extracts the log likelihood, deviance, AIC, and BIC values from objects of class \code{"rma"}.
 }
 \usage{
-\method{fitstats}{rma}(x, REML=NULL, ...)
+\method{fitstats}{rma}(x, REML=NULL, \dots)
 }
 \arguments{
 	\item{x}{an object of class \code{"rma"}.}
 	\item{REML}{logical indicating whether the regular or restricted likelihood function should be used to obtain the fit statistics and information criteria. When \code{NULL} (default), the regular likelihood is used, unless restricted maximum likelihood estimation was used to fit the model.}
-	\item{...}{other arguments.}
+	\item{\dots}{other arguments.}
 }
 \value{
 	A column vector with the log likelihood, deviance, AIC, and BIC values.

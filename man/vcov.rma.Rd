@@ -5,11 +5,11 @@
    The function extracts the (estimated) variance-covariance matrix of the fixed effects parameter estimates from objects of class \code{"rma"}.
 }
 \usage{
-\method{vcov}{rma}(object, ...)
+\method{vcov}{rma}(object, \dots)
 }
 \arguments{
 	\item{object}{an object of class \code{"rma"}.}
-	\item{...}{other arguments.}
+	\item{\dots}{other arguments.}
 }
 \value{
 	A matrix corresponding to the variance-covariance matrix.

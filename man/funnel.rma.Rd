@@ -6,7 +6,7 @@
 \method{funnel}{rma}(x, xlim=NULL, ylim=NULL, xlab=NULL, ylab="Standard Error", 
        steps=5, level=x$level, digits=3, addtau2=FALSE, 
        type="rstandard", back="lightgray", shade="white", 
-       hlines="white", refline=NULL, pch=19, pch.fill=21, ...)
+       hlines="white", refline=NULL, pch=19, pch.fill=21, \dots)
 }
 \arguments{
 	\item{x}{an object of class \code{"rma"}.}
@@ -25,7 +25,7 @@
 	\item{refline}{value at which the pseudo confidence interval should be centered. Default is \code{NULL}, which means that the interval is centered at the fixed- or random-effects model estimate when the model does not include moderators and at zero when moderators are included and residuals are plotted.}
 	\item{pch}{plotting symbol to use for the observed effect sizes or outcomes. By default, a solid circle is used. Can be a vector of values. See \code{\link{points}} for other options.}
 	\item{pch.fill}{plotting symbol to use for the effect sizes or outcomes filled in by the trim and fill method. By default, a circle is used. Only relevant when plotting an object created by the \code{\link{trimfill}} function.}
-	\item{...}{other arguments.}
+	\item{\dots}{other arguments.}
 }
 \details{
 	For fixed- and random-effects models (i.e., models not involving moderators), the plot shows the individual observed effect sizes or outcomes on the x axis against the corresponding standard errors (i.e., the square root of the sampling variances) on the y axis. A vertical line indicates the estimate based on the model. A pseudo confidence interval region is drawn around this value with bounds equal to \eqn{\pm 1.96 SE}{+- 1.96 SE}, where \eqn{SE} is the standard error value from the y axis. If \code{addtau2=TRUE}, then the bounds of the pseudo confidence interval region are equal to \eqn{\pm 1.96 \sqrt{SE^2 + \tau^2}}{+- 1.96 sqrt(SE^2 + tau^2)}, where \eqn{\tau^2}{tau^2} is the amount of heterogeneity as estimated by the model.

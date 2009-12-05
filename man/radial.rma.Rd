@@ -6,7 +6,7 @@
 \method{radial}{rma}(x, center=FALSE, xlim=NULL, zlim=NULL, xlab=NULL, zlab=NULL, 
        atz=NULL, aty=NULL, steps=7, level=x$level, digits=2, 
        back="lightgray", transf=FALSE, targs=NULL, pch=19, 
-       arc.res = 100, cex=NULL, ...)
+       arc.res = 100, cex=NULL, \dots)
 }
 \arguments{
 	\item{x}{an object of class \code{"rma"}.}
@@ -26,7 +26,7 @@
 	\item{pch}{plotting symbol. By default, a solid circle is used. See \code{\link{points}} for other options.}
 	\item{arc.res}{integer value specifying the number of line segments to use when drawing the y axis and confidence interval arcs (default is 100).}
 	\item{cex}{an optional character and symbol expansion factor. If \code{NULL} (default), the function tries to set this to a sensible value.}
-	\item{...}{other arguments.}
+	\item{\dots}{other arguments.}
 }
 \details{
 	For a fixed-effects model, the plot shows the inverse of the standard errors on the horizontal axis against the individual observed effect sizes or outcomes standardized by their corresponding standard errors on the vertical axis. Since the vertical axis corresponds to standardized values, it is referred to as the z axis within this function. On the right hand side of the plot, an arc is drawn (referred to as the y axis within this function) corresponding to the individual observed effect sizes or outcomes. A line projected from (0,0) through a particular point within the plot onto this arc indicates the value of the individual observed effect size or outcome for that point.

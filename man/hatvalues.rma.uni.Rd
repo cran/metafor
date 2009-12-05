@@ -5,11 +5,11 @@
    The function extracts the diagonal elements of the hat matrix for objects of class \code{"rma.uni"}.
 }
 \usage{
-\method{hatvalues}{rma.uni}(model, ...)
+\method{hatvalues}{rma.uni}(model, \dots)
 }
 \arguments{
 	\item{model}{an object of class \code{"rma.uni"}.}
-	\item{...}{other arguments.}
+	\item{\dots}{other arguments.}
 }
 \value{
 	A vector with the diagonal elements of the hat matrix.

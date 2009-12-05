@@ -5,11 +5,11 @@
    The function \code{addpoly} is generic. It can be used to add polygons to a forest plot, for example, to indicate summary estimates and fitted/predicted values.
 }
 \usage{
-addpoly(x, ...)
+addpoly(x, \dots)
 }
 \arguments{
 	\item{x}{either an object of class \code{"rma"} or the values at which polygons should be drawn. See \sQuote{Details}.}
-	\item{...}{other arguments.}
+	\item{\dots}{other arguments.}
 }
 \details{
 	Currently, methods exist for two types of situations.

@@ -5,11 +5,11 @@
    The function \code{blup} is generic. It extracts the best linear unbiased predictions (BLUPs) for specific classes of objects. BLUPs combine the fitted values based on the fixed effects in the model and the estimated contributions of the random effects.
 }
 \usage{
-blup(x, ...)
+blup(x, \dots)
 }
 \arguments{
 	\item{x}{an object for which BLUPs are meaningful. See \sQuote{Details}.}
-	\item{...}{other arguments.}
+	\item{\dots}{other arguments.}
 }
 \details{
 	Currently, there is only a specific method for objects of class \code{"rma.uni"} created by the \code{\link{rma.uni}} function. Accordingly, the corresponding method is called \code{\link{blup.rma.uni}}. See the documentation for that function for more details.

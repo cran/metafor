@@ -5,11 +5,11 @@
    The function \code{trimfill} is generic. It can be used to apply the trim and fill method proposed by Duval and Tweedie (2000a, 2000b; see also Duval, 2005) to specific classes of objects.
 }
 \usage{
-trimfill(x, ...)
+trimfill(x, \dots)
 }
 \arguments{
 	\item{x}{an object of class \code{"rma.uni"}.}
-	\item{...}{other arguments.}
+	\item{\dots}{other arguments.}
 }
 \details{
 	Currently, there is only a method for objects of class \code{"rma.uni"} created by the \code{\link{rma.uni}} function. Accordingly, the corresponding method is called \code{\link{trimfill.rma.uni}}. See the documentation for that function for more details.
