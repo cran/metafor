@@ -12,7 +12,7 @@
 	\item{x}{an object of class \code{"infl.rma.uni"}.}
 	\item{plotdfb}{logical indicating whether the DFBETAS values should be plotted (default is \code{FALSE}).}
 	\item{dfbnew}{logical indicating whether a new device should be opened for plotting the DFBETAS values (default is \code{FALSE}). If set to \code{TRUE}, then \code{plotdfb} is automatically set to \code{TRUE} as well.}
-	\item{logcov}{logical indicating whether the covariance ratios should be plotted on a log scale (default is \code{FALSE}).}
+	\item{logcov}{logical indicating whether the covariance ratios should be plotted on a log scale (default is \code{TRUE}).}
 	\item{las}{numeric (\code{0,1,2,3}). Defines style of axis labels (see \code{\link{par}}). The most useful alternative to 0 is 3, so that the x axis labels are drawn vertical to the axis.}
 	\item{pch}{plotting symbol to use. By default, a filled circle is used. See \code{\link{points}} for other options.}
 	\item{bg}{color to use for filling the plotting symbol (default is \code{"black"}).}
@@ -41,7 +41,7 @@
 ### load BCG vaccine data
 data(dat.bcg)
 
-### meta-analysis of the log risk ratios using a mixed-effects model
+### meta-analysis of the log relative risks using a mixed-effects model
 ### with two moderators (absolute latitude and publication year)
 res <- rma(ai=tpos, bi=tneg, ci=cpos, di=cneg, mods=cbind(ablat, year),
            data=dat.bcg, measure="RR", method="REML")

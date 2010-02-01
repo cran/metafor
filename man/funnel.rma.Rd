@@ -4,7 +4,8 @@
 \description{Function to create funnel plots for objects of class \code{"rma"}.}
 \usage{
 \method{funnel}{rma}(x, xlim=NULL, ylim=NULL, xlab=NULL, ylab="Standard Error", 
-       steps=5, level=x$level, digits=3, addtau2=FALSE, 
+       steps=5, at=NULL, atransf=FALSE, targs=NULL, 
+       digits=c(2,3), level=x$level, addtau2=FALSE, 
        type="rstandard", back="lightgray", shade="white", 
        hlines="white", refline=NULL, pch=19, pch.fill=21, \dots)
 }
@@ -12,11 +13,14 @@
 	\item{x}{an object of class \code{"rma"}.}
 	\item{xlim}{x axis limits. Defaults to \code{NULL}, which means that the function tries to set the x axis limits to some sensible values.}
 	\item{ylim}{y axis limits. Defaults to \code{NULL}, which means that the function tries to set the y axis limits to some sensible values.}
-	\item{xlab}{title for the x axis.}
+	\item{xlab}{title for the x axis. If \code{NULL} (default), the function tries to set an appropriate axis title.}
 	\item{ylab}{title for the y axis.}
-	\item{steps}{the number of tick marks and corresponding labels for the y axis (default is 5).}
+	\item{steps}{the number of tick marks for the y axis (default is 5).}
+	\item{at}{position of the x axis tick marks and corresponding labels. Defaults to \code{NULL}, which means that the function tries to set the tick mark positions/labels to some sensible values.}
+	\item{atransf}{an optional argument specifying the name of a function that should be used to transform the x axis labels (e.g., \code{transf=exp}). Defaults to \code{FALSE}, which means that no transformation is used.}
+	\item{targs}{optional arguments needed by the function specified via \code{atransf}.}
+	\item{digits}{integer value specifying the number of decimal places to which the tick mark labels of the x and y axis should be rounded. Can also be a vector of two integers, the first specifying the number of decimal places for the x axis, the second for the y axis labels (default is c(2,3)).}
 	\item{level}{numerical value between 0 and 100 specifying the level of the pseudo confidence interval region (the default is to take the value from the object). May also be a vector of values to obtain multiple regions. See \sQuote{Examples}.}
-	\item{digits}{integer value specifying the number of decimal places to which the tick mark labels on the y axis should be rounded (default is 3).}
 	\item{addtau2}{logical to indicate whether the amount of heterogeneity should be accounted for when drawing the pseudo confidence interval region (default is \code{FALSE}). Ignored when the model includes moderators and residuals are plotted.}
 	\item{type}{either \code{"rstandard"} (default) or \code{"rstudent"} indicating whether the usual or deleted residuals should be used in creating the funnel plot when the model involves moderators. See \sQuote{Details}.}
 	\item{back}{color to use for the background of the plotting region.}
@@ -51,10 +55,15 @@
 ### load BCG vaccine data
 data(dat.bcg)
 
-### meta-analysis of the log risk ratios using a random-effects model
+### meta-analysis of the log relative risks using a random-effects model
 res <- rma(ai=tpos, bi=tneg, ci=cpos, di=cneg, 
            data=dat.bcg, measure="RR", method="REML")
+
+### standard funnel plot
 funnel(res)
+
+### funnel plot with relative risk values on the x axis
+funnel(res, atransf=exp, at=log(c(.12, .25, .5, 1, 2)))
 
 ### contour-enhanced funnel plot centered at 0 (see Peters et al., 2008)
 funnel(res, level=c(90, 95, 99), shade=c("white", "gray", "darkgray"), 

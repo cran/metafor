@@ -19,11 +19,11 @@
 	\item{alim}{the actual x axis limits. Defaults to \code{NULL}, which means that the function tries to set the x axis limits to some sensible values.}
 	\item{ylim}{the y limits of the plot. Defaults to \code{NULL}, which means that the function tries to set the y axis limits to some sensible values.}
 	\item{at}{position of the x axis tick marks and corresponding labels. Defaults to \code{NULL}, which means that the function tries to set the tick mark positions/labels to some sensible values.}
-	\item{steps}{the number of tick marks and corresponding labels for the x axis (default is 5). Ignored when the user specifies the positions via the \code{at} argument.}
+	\item{steps}{the number of tick marks for the x axis (default is 5). Ignored when the user specifies the positions via the \code{at} argument.}
 	\item{level}{numerical value between 0 and 100 specifying the confidence interval level (default is 95).}
-	\item{digits}{integer value specifying the number of decimal places to which the tick mark labels and annotations should be rounded (default is 2).}
+	\item{digits}{integer value specifying the number of decimal places to which the tick mark labels of the x axis and the annotations should be rounded (default is 2).}
 	\item{refline}{value at which a vertical \sQuote{reference} line should be drawn (default is 0). The line can be suppressed by setting this argument to \code{NA}.}
-	\item{xlab}{title for the x axis (\code{NULL} by default, which suppresses the title).}
+	\item{xlab}{title for the x axis. If \code{NULL} (default), the function tries to set an appropriate axis title.}
 	\item{slab}{an optional vector with unique labels for the \eqn{k} studies. Defaults to \code{NULL}, which means that simple labels are created within the function. To suppress labels, set this argument to \code{NA}.}
 	\item{ilab}{an optional vector or matrix of character strings providing additional information about the studies.}
 	\item{ilab.xpos}{numerical value(s) specifying the x axis position(s) of the character vector(s) given via \code{ilab}.}
@@ -35,10 +35,10 @@
 	\item{addrows}{number of extra rows that should be added at the bottom of the forest plot (default is 0).}
 	\item{efac}{vertical expansion factor for arrows, confidence interval limits, and the symbol used to denote summary estimates. The default value of 1 should usually work okay.}
 	\item{pch}{plotting symbol to use for the observed effect sizes or outcomes. By default, a filled square is used. See \code{\link{points}} for other options.}
-	\item{psize}{an optional vector with point sizes for the observed effect sizes or outcomes. Default is \code{NULL}, which means that the point sizes are drawn proportional to the inverse of the sampling variances.}
+	\item{psize}{an optional vector with point sizes for the observed effect sizes or outcomes. Default is \code{NULL}, which means that the point sizes are drawn proportional to the precision of the estimates.}
 	\item{cex}{an optional character and symbol expansion factor. If \code{NULL} (default), the function tries to set this to a sensible value.}
 	\item{cex.lab}{an optional expansion factor for the x axis titel. If \code{NULL} (default), the function tries to set this to a sensible value.}
-	\item{cex.axis}{an optional expansion factor for x axis labels. If \code{NULL} (default), the function tries to set this to a sensible value.}
+	\item{cex.axis}{an optional expansion factor for the x axis labels. If \code{NULL} (default), the function tries to set this to a sensible value.}
 	\item{\dots}{other arguments.}
 }
 \details{
@@ -61,12 +61,11 @@
 ### load BCG vaccine data
 data(dat.bcg)
 
-### calculate log risk ratios and corresponding sampling variances
+### calculate log relative risks and corresponding sampling variances
 dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
 dat <- cbind(dat.bcg, dat)
 
-### forest plot of the observed risk ratios
-forest(dat$yi, dat$vi, slab=paste(dat.bcg$author, dat$year), 
-       atransf=exp, xlab="Risk Ratio (log scale)")
+### forest plot of the observed relative risks
+forest(dat$yi, dat$vi, slab=paste(dat.bcg$author, dat$year), atransf=exp)
 }
 \keyword{hplot}

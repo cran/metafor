@@ -26,9 +26,9 @@
 	The \code{"list.rma"} object is formated and printed with \code{\link{print.list.rma}}.
 }
 \note{
-	For predicted/fitted values that are based only on the fixed effects of the model, see \code{\link{fitted.rma}} and \code{\link{predict.rma.uni}}.
+	For predicted/fitted values that are based only on the fixed effects of the model, see \code{\link{fitted.rma}} and \code{\link{predict.rma}}.
 
-	Fixed-effects models (with or without moderators) do not contain random study effects. The BLUPs for these models will therefore automatically be equal to the usual fitted values, that is, those obtained with \code{\link{fitted.rma}} and \code{\link{predict.rma.uni}}.
+	Fixed-effects models (with or without moderators) do not contain random study effects. The BLUPs for these models will therefore automatically be equal to the usual fitted values, that is, those obtained with \code{\link{fitted.rma}} and \code{\link{predict.rma}}.
 
 	When using the \code{transf} argument, the transformation is applied to the predicted values and the corresponding interval bounds. The standard errors are set equal to \code{NA}.
 
@@ -45,17 +45,17 @@
 	Robinson, G. K. (1991) That BLUP is a good thing: The estimation of random effects. \emph{Statistical Science}, \bold{6}, 15--32.
 }
 \seealso{
-	\code{\link{rma.uni}}, \code{\link{predict.rma.uni}}, \code{\link{fitted.rma}}
+	\code{\link{rma.uni}}, \code{\link{predict.rma}}, \code{\link{fitted.rma}}
 }
 \examples{
 ### load BCG vaccine data
 data(dat.bcg)
 
-### calculate log risk ratios and corresponding sampling variances
+### calculate log relative risks and corresponding sampling variances
 dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
 dat <- cbind(dat.bcg, dat)
 
-### meta-analysis of the log risk ratios using a random-effects model
+### meta-analysis of the log relative risks using a random-effects model
 res <- rma(yi, vi, data=dat, method="REML")
 blup(res, transf=exp)
 

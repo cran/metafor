@@ -12,7 +12,7 @@
 \arguments{
 	\item{x}{an object of class \code{"rma.mh"} or \code{"rma.peto"}.}
 	\item{digits}{an integer specifying the number of decimal places to which the printed results should be rounded (the default is to take the value from the object).}
-	\item{transf}{logical indicating whether odds ratios or risk ratios (and the corresponding confidence interval bounds) should be given in the transformed (meaning: raw) units or in terms of log units (the default).}
+	\item{transf}{logical indicating whether odds ratios or relative risks (and the corresponding confidence interval bounds) should be given in the transformed (meaning: raw) units or in terms of log units (the default).}
 	\item{\dots}{other arguments.}
 }
 \value{
@@ -36,7 +36,7 @@
 ### load BCG vaccine data
 data(dat.bcg)
 
-### meta-analysis of the (log) risk ratios using the Mantel-Haenszel method
+### meta-analysis of the (log) relative risks using the Mantel-Haenszel method
 res <- rma.mh(ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg, measure="RR")
 
 leave1out(res)

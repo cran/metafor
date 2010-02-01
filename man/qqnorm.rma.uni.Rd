@@ -40,13 +40,13 @@
 ### load BCG vaccine data
 data(dat.bcg)
 
-### meta-analysis of the log risk ratios using a random-effects model
+### meta-analysis of the log relative risks using a random-effects model
 res <- rma(ai=tpos, bi=tneg, ci=cpos, di=cneg, 
            data=dat.bcg, measure="RR", method="REML")
 qqnorm(res)
 
 ### mixed-effects model with absolute latitude as a moderator
-res <- rma(ai=tpos, bi=tneg, ci=cpos, di=cneg, mods=ablat, 
+res <- rma(ai=tpos, bi=tneg, ci=cpos, di=cneg, mods=cbind(ablat), 
            measure="RR", data=dat.bcg, method="REML")
 qqnorm(res)
 }

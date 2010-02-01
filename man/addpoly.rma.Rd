@@ -35,14 +35,14 @@
 ### load BCG vaccine data
 data(dat.bcg)
 
-### meta-analysis of the log risk ratios using the Mantel-Haenszel method
+### meta-analysis of the log relative risks using the Mantel-Haenszel method
 res <- rma.mh(ai=tpos, bi=tneg, ci=cpos, di=cneg, slab=paste(author, year),
               data=dat.bcg, measure="RR")
 
-### forest plot of the observer risk ratios with summary estimate
-forest(res, atransf=exp, addrows=1, xlab="Relative Risk (log scale)")
+### forest plot of the observed relative risks with summary estimate
+forest(res, atransf=exp, addrows=1)
 
-### meta-analysis of the log risk ratios using a random-effects model
+### meta-analysis of the log relative risks using a random-effects model
 res <- rma(ai=tpos, bi=tneg, ci=cpos, di=cneg, 
            data=dat.bcg, measure="RR", method="REML")
 

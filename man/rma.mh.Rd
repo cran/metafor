@@ -32,13 +32,13 @@ rma.mh(ai, bi, ci, di, n1i, n2i, data=NULL,
 	}
 	where \code{ai}, \code{bi}, \code{ci}, and \code{di} denote the cell frequencies and \code{n1i} and \code{n2i} the row totals. For example, in a set of RCTs, group 1 and group 2 may refer to the treatment and placebo group, with outcome 1 denoting some event of interest and outcome 2 its complement. In a set of case-control studies, group 1 and group 2 may refer to the group of cases and the group of controls, with outcome 1 denoting, for example, exposure to some risk factor and outcome 2 non-exposure.
 
-	An approach for aggregating 2x2 table data of this type was suggested by Mantel and Haenszel (1959), which can be used in combination with the odds ratio, risk ratio, or risk difference (\code{measure="OR"}, \code{"RR"}, or \code{"RD"}). The Mantel-Haenszel method provides a weighted estimate under a fixed-effects model. The method is particularly advantageous when aggregating a large number of tables with small sample sizes (the so-called sparse data or increasing strata case). When analyzing odds ratios, the Cochran-Mantel-Haenszel test and Tarone's test for heterogeneity are also provided. When analyzing odds ratios and relative risks, the printed results are given both in terms of the log and the raw units (for easier interpretation).
+	An approach for aggregating 2x2 table data of this type was suggested by Mantel and Haenszel (1959), which can be used in combination with the odds ratio, relative risk, or risk difference (\code{measure="OR"}, \code{"RR"}, or \code{"RD"}). The Mantel-Haenszel method provides a weighted estimate under a fixed-effects model. The method is particularly advantageous when aggregating a large number of tables with small sample sizes (the so-called sparse data or increasing strata case). When analyzing odds ratios, the Cochran-Mantel-Haenszel test and Tarone's test for heterogeneity are also provided. When analyzing odds ratios or relative risks, the printed results are given both in terms of the log and the raw units (for easier interpretation).
 
 	The Mantel-Haenszel method itself does not require the calculation of the individual outcome values and directly makes use of the 2x2 table counts. Zero cells are not a problem (except in extreme cases, such as when one of the two outcomes never occurs in any of the tables). Therefore, it is also unnecessary to add some constant to the cell counts when there are zero cells. However, for plotting and various other functions, it is necessary to calculate the individual outcome values for the \eqn{k} tables. Here, zero cells can be problematic, so adding a constant value to the cell counts ensures that all \eqn{k} values can be calculated. The \code{add} and \code{to} arguments are used to specify what value should be added to the 2x2 cell frequencies and under what circumstances when calculating the individual outcome values and when applying the Mantel-Haenszel method.
 }
 \value{
-	An object of class \code{c("rma.mh", "rma")}. The object is a list containing the following components:
-	\item{b}{aggregated log odds ratio, log risk ratio, or risk difference.}
+	An object of class \code{c("rma.mh","rma")}. The object is a list containing the following components:
+	\item{b}{aggregated log odds ratio, log relative risk, or risk difference.}
 	\item{se}{standard error of the aggregated value.}
 	\item{zval}{test statistics of the aggregated value.}
 	\item{pval}{p-value for the test statistic.}
@@ -76,7 +76,7 @@ data(dat.bcg)
 ### meta-analysis of the (log) odds ratios using the Mantel-Haenszel method
 rma.mh(ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg, measure="OR")
 
-### meta-analysis of the (log) risk ratios using the Mantel-Haenszel method
+### meta-analysis of the (log) relative risks using the Mantel-Haenszel method
 rma.mh(ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg, measure="RR")
 }
 \keyword{models}

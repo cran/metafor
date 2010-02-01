@@ -26,7 +26,7 @@
 ### load BCG vaccine data
 data(dat.bcg)
 
-### meta-analysis of the log risk ratios using a random-effects model
+### meta-analysis of the log relative risks using a random-effects model
 res1 <- rma(ai=tpos, bi=tneg, ci=cpos, di=cneg, 
             data=dat.bcg, measure="RR", method="ML")
 

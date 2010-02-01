@@ -19,7 +19,7 @@
 	The model specified by \code{x} must be a model without moderators (i.e., either a fixed- or a random-effects model).
 }
 \value{
-	An object of class \code{c("list.rma", "cumul.rma")}. The object is a list containing the following components:
+	An object of class \code{c("list.rma","cumul.rma")}. The object is a list containing the following components:
 	\item{estimate}{estimated coefficients of the model.}
 	\item{se}{standard errors of the coefficients. \code{NA} if \code{transf} is used to transform the coefficients.}
 	\item{zval}{test statistics of the coefficients.}
@@ -42,13 +42,14 @@
 ### load BCG vaccine data
 data(dat.bcg)
 
-### calculate log risk ratios and corresponding sampling variances
+### calculate log relative risks and corresponding sampling variances
 dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
 dat <- cbind(dat.bcg, dat)
 
 ### random-effects model
 res <- rma(yi, vi, data=dat, method="REML")
 
+### cumulative meta-analysis
 cumul(res, transf=exp, order=order(dat$year))
 }
 \keyword{methods}

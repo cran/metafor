@@ -44,7 +44,7 @@
 ### load BCG vaccine data
 data(dat.bcg)
 
-### calculate log risk ratios and corresponding sampling variances
+### calculate log relative risks and corresponding sampling variances
 dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
 dat <- cbind(dat.bcg, dat)
 

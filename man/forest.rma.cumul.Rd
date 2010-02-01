@@ -16,11 +16,11 @@
 	\item{alim}{the actual x axis limits. Defaults to \code{NULL}, which means that the function tries to set the x axis limits to some sensible values.}
 	\item{ylim}{the y limits of the plot. Defaults to \code{NULL}, which means that the function tries to set the y axis limits to some sensible values.}
 	\item{at}{position of the x axis tick marks and corresponding labels. Defaults to \code{NULL}, which means that the function tries to set the tick mark positions/labels to some sensible values.}
-	\item{steps}{the number of tick marks and corresponding labels for the x axis (default is 5). Ignored when the user specifies the positions via the \code{at} argument.}
+	\item{steps}{the number of tick marks for the x axis (default is 5). Ignored when the user specifies the positions via the \code{at} argument.}
 	\item{level}{numerical value between 0 and 100 specifying the confidence interval level (the default is to take the value from the object).}
-	\item{digits}{integer value specifying the number of decimal places to which the tick mark labels and annotations should be rounded (default is 2).}
+	\item{digits}{integer value specifying the number of decimal places to which the tick mark labels of the x axis and the annotations should be rounded (default is 2).}
 	\item{refline}{value at which a vertical \sQuote{reference} line should be drawn (default is 0). The line can be suppressed by setting this argument to \code{NA}.}
-	\item{xlab}{title for the x axis (\code{NULL} by default, which suppresses the title).}
+	\item{xlab}{title for the x axis. If \code{NULL} (default), the function tries to set an appropriate axis title.}
 	\item{ilab}{an optional vector or matrix of character strings providing additional information about the studies.}
 	\item{ilab.xpos}{vector of numerical value(s) specifying the x axis position(s) of the character vector(s) given via \code{ilab}.}
 	\item{ilab.pos}{integer(s) (either 1, 2, 3, or 4) specifying the alignment of the character vector(s) given via \code{ilab} (2 means right, 4 mean left aligned). The default is to center the labels.}
@@ -33,7 +33,7 @@
 	\item{psize}{an optional vector with point sizes for the observed effect sizes or outcomes. Default is 1.}
 	\item{cex}{an optional character and symbol expansion factor. If \code{NULL} (default), the function tries to set this to a sensible value.}
 	\item{cex.lab}{an optional expansion factor for the x axis titel. If \code{NULL} (default), the function tries to set this to a sensible value.}
-	\item{cex.axis}{an optional expansion factor for x axis labels. If \code{NULL} (default), the function tries to set this to a sensible value.}
+	\item{cex.axis}{an optional expansion factor for the x axis labels. If \code{NULL} (default), the function tries to set this to a sensible value.}
 	\item{\dots}{other arguments.}
 }
 \details{
@@ -52,18 +52,19 @@
 ### load BCG vaccine data
 data(dat.bcg)
 
-### calculate log risk ratios and corresponding sampling variances
+### calculate log relative risks and corresponding sampling variances
 dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
 dat <- cbind(dat.bcg, dat)
 
 ### random-effects model
-res <- rma(yi, vi, data=dat, method="REML")
+res <- rma(yi, vi, data=dat, method="REML", slab=paste(author, ", ", year, sep=""))
 
 x <- cumul(res, order=order(dat$year))
 forest(x)
 
-### meta-analysis of the (log) risk ratios using the Mantel-Haenszel method
-res <- rma.mh(ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg, measure="RR")
+### meta-analysis of the (log) relative risks using the Mantel-Haenszel method
+res <- rma.mh(ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg, 
+              measure="RR", slab=paste(author, ", ", year, sep=""))
 x <- cumul(res, order=order(dat$year))
 forest(x)
 }

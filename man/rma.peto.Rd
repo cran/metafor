@@ -36,7 +36,7 @@ rma.peto(ai, bi, ci, di, n1i, n2i, data=NULL,
 	The method itself does not require the calculation of the individual log odds ratios and directly makes use of the 2x2 table counts. Zero cells are not a problem (except in extreme cases, such as when one of the two outcomes never occurs in any of the tables). Therefore, it is also unnecessary to add some constant to the cell counts when there are zero cells. However, for plotting and various other functions, it is necessary to calculate the individual log odds ratios for the \eqn{k} tables. Here, zero cells can be problematic, so adding a constant value to the cell counts ensures that all \eqn{k} values can be calculated. The \code{add} and \code{to} arguments are used to specify what value should be added to the 2x2 cell frequencies and under what circumstances when calculating the individual log odds ratios and when applying Peto's method.
 }
 \value{
-	An object of class \code{c("rma.peto", "rma")}. The object is a list containing the following components:
+	An object of class \code{c("rma.peto","rma")}. The object is a list containing the following components:
 	\item{b}{aggregated log odds ratio.}
 	\item{se}{standard error of the aggregated value.}
 	\item{zval}{test statistics of the aggregated value.}

@@ -13,8 +13,8 @@
 \bold{tneg}   \tab \code{numeric}   \tab number of TB negative cases in the treated (vaccinated) group \cr
 \bold{cpos}   \tab \code{numeric}   \tab number of TB positive cases in the control group \cr
 \bold{cneg}   \tab \code{numeric}   \tab number of TB negative cases in the control group \cr
-\bold{ablat}  \tab \code{numeric}   \tab absolute latitude where the study was conducted \cr
-\bold{alloc}  \tab \code{character} \tab method of treatment allocation (random, alternate, or systematic)
+\bold{ablat}  \tab \code{numeric}   \tab absolute latitude of the study location (in degrees) \cr
+\bold{alloc}  \tab \code{character} \tab method of treatment allocation (random, alternate, or systematic assignment)
 }
 }
 \details{
@@ -22,9 +22,8 @@
 	\tabular{lcc}{
 	                 \tab TB positive \tab TB negative \cr
 	vaccinated group \tab \code{tpos} \tab \code{tneg} \cr
-	control group    \tab \code{cpos} \tab \code{cneg} \cr
-	}
-	The goal of the meta-analysis was to examine the overall effectiveness of the BCG vaccine for preventing tuberculosis and to examine moderators that may potentially influence the size of the effect.
+	control group    \tab \code{cpos} \tab \code{cneg}
+	} The goal of the meta-analysis was to examine the overall effectiveness of the BCG vaccine for preventing tuberculosis and to examine moderators that may potentially influence the size of the effect.
 
 	The data set has been used in several publications to illustrate meta-analytic methods (see \sQuote{References}).
 }
@@ -40,20 +39,20 @@
 ### load BCG vaccine data
 data(dat.bcg)
 
-### meta-analysis of the log risk ratios using a random-effects model
+### meta-analysis of the log relative risks using a random-effects model
 res <- rma(ai=tpos, bi=tneg, ci=cpos, di=cneg, 
            measure="RR", data=dat.bcg, method="DL")
 res
 
-### average risk ratio with 95\% CI
+### average relative risk with 95\% CI
 predict(res, transf=exp)
 
 ### mixed-effects model with absolute latitude as a moderator
-res <- rma(ai=tpos, bi=tneg, ci=cpos, di=cneg, 
-           mods=ablat, measure="RR", data=dat.bcg, method="DL")
+res <- rma(ai=tpos, bi=tneg, ci=cpos, di=cneg, mods=cbind(ablat), 
+           measure="RR", data=dat.bcg, method="DL")
 res
 
-### predicted average risk ratios for 10-60 degrees absolute latitude
+### predicted average relative risks for 10-60 degrees absolute latitude
 predict(res, newmods=c(10, 20, 30, 40, 50, 60), transf=exp)
 }
 \keyword{datasets}

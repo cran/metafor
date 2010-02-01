@@ -48,15 +48,15 @@
 ### load BCG vaccine data
 data(dat.bcg)
 
-### calculate log risk ratios and corresponding sampling variances
+### calculate log relative risks and corresponding sampling variances
 dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
 dat <- cbind(dat.bcg, dat)
 
 ### random-effects model 
-res2 <- rma(yi, vi, data=dat, method="REML")
+res2 <- rma(yi, vi, data=dat, method="ML")
 
 ### mixed-effects model with two moderators (absolute latitude and publication year)
-res1 <- rma(yi, vi, mods=cbind(ablat, year), data=dat, method="REML")
+res1 <- rma(yi, vi, mods=cbind(ablat, year), data=dat, method="ML")
 
 anova(res1, res2)
 }

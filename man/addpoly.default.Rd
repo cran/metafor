@@ -37,18 +37,18 @@
 ### load BCG vaccine data
 data(dat.bcg)
 
-### meta-analysis of the log risk ratios using a mixed-
-### effects model with absolute latitude as moderator
+### meta-analysis of the log relative risks using a mixed-
+### effects model with absolute latitude as a moderator
 res <- rma(ai=tpos, bi=tneg, ci=cpos, di=cneg, mods=cbind(ablat),
            slab=paste(author, year), data=dat.bcg, measure="RR", method="REML")
 
-### forest plot of the observed risk ratios
-forest(res, addfit=FALSE, atransf=exp, addrows=3, xlab="Relative Risk (log scale)")
+### forest plot of the observed relative risks
+forest(res, addfit=FALSE, atransf=exp, addrows=3)
 
-### predicted log average risk ratios for 10, 30, and 50 degrees absolute latitude
+### predicted log average relative risks for 10, 30, and 50 degrees absolute latitude
 x <- predict(res, newmods=c(10, 30, 50))
 
-### add predicted average risk ratios to forest plot
+### add predicted average relative risks to forest plot
 addpoly(x$pred, sei=x$se, atransf=exp, 
         mlab=c("10 Degrees", "30 Degrees", "50 Degrees"))
 }

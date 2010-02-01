@@ -1,22 +1,22 @@
-\name{vcov.rma}
-\alias{vcov.rma}
-\title{Variance-Covariance Matrix of Parameter Estimates for rma Objects}
+\name{weights.rma.uni}
+\alias{weights.rma.uni}
+\title{Weights for rma.uni Objects}
 \description{
-   The function extracts the (estimated) variance-covariance matrix of the fixed effects parameter estimates from objects of class \code{"rma"}.
+   The function extracts the weights (in \%) given to the observed effects or outcomes during the model fitting from objects of class \code{"rma.uni"}.
 }
 \usage{
-\method{vcov}{rma}(object, \dots)
+\method{weights}{rma.uni}(object, \dots)
 }
 \arguments{
-	\item{object}{an object of class \code{"rma"}.}
+	\item{object}{an object of class \code{"rma.uni"}.}
 	\item{\dots}{other arguments.}
 }
 \value{
-	A matrix corresponding to the variance-covariance matrix.
+	A vector with the weights.
 }
 \author{Wolfgang Viechtbauer; \email{wvb@www.wvbauer.com}; \url{http://www.wvbauer.com/}}
 \seealso{
-	\code{\link{rma.uni}}, \code{\link{rma.mh}}, \code{\link{rma.peto}}
+	\code{\link{rma.uni}}, \code{\link{influence.rma.uni}}
 }
 \examples{
 ### load BCG vaccine data
@@ -26,6 +26,6 @@ data(dat.bcg)
 ### with two moderators (absolute latitude and publication year)
 res <- rma(ai=tpos, bi=tneg, ci=cpos, di=cneg, mods=cbind(ablat, year),
            data=dat.bcg, measure="RR", method="REML")
-vcov(res)
+weights(res)
 }
 \keyword{models}
