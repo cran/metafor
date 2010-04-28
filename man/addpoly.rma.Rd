@@ -36,8 +36,8 @@
 data(dat.bcg)
 
 ### meta-analysis of the log relative risks using the Mantel-Haenszel method
-res <- rma.mh(ai=tpos, bi=tneg, ci=cpos, di=cneg, slab=paste(author, year),
-              data=dat.bcg, measure="RR")
+res <- rma.mh(ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg, 
+              slab=paste(author, year, sep=", "), measure="RR")
 
 ### forest plot of the observed relative risks with summary estimate
 forest(res, atransf=exp, addrows=1)

@@ -49,8 +49,8 @@
 data(dat.bcg)
 
 ### calculate log relative risks and corresponding sampling variances
-dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
-dat <- cbind(dat.bcg, dat)
+dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, 
+              data=dat.bcg, append=TRUE)
 
 ### random-effects model 
 res2 <- rma(yi, vi, data=dat, method="ML")

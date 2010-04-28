@@ -5,8 +5,9 @@
 	The function calculates various effect size and outcome measures that are commonly used in meta-analyses. The corresponding sampling variances are also calculated.
 }
 \usage{
-escalc(measure, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i, sd2i, 
-       xi, mi, ri, ni, data=NULL, add=1/2, to="only0", vtype="LS")
+escalc(measure, ai, bi, ci, di, n1i, n2i, m1i, m2i, 
+       sd1i, sd2i, xi, mi, ri, ni, data=NULL, add=1/2, 
+       to="only0", vtype="LS", append=FALSE)
 }
 \arguments{
 	\item{measure}{a character string indicating which effect size or outcome measure should be calculated. See \sQuote{Details} for possible options and what arguments below should then be specified.}
@@ -28,6 +29,7 @@ escalc(measure, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i, sd2i,
 	\item{add}{See \sQuote{Details}.}
 	\item{to}{See \sQuote{Details}.}
 	\item{vtype}{See \sQuote{Details}.}
+	\item{append}{logical indicating whether the data frame specified via the \code{data} argument (if one has been specified) should be returned together with the effect sizes and sampling variances (default is \code{FALSE}).}
 }
 \details{
 	The argument \code{measure} is a character string specifying which outcome measure should be calculated (see below for the various options), arguments \code{ai} through \code{ni} are used to supply the needed information to calculate the various measures (depending on the outcome measure, different arguments need to be supplied), \code{data} can be used to specify a data frame containing the variables given to the previous arguments, \code{add} and \code{to} are arguments needed when dealing with 2x2 table data that contain cells with zeros, and \code{vtype} is an argument specifying the sampling variance estimate that should be calculated (see below).
@@ -41,10 +43,10 @@ escalc(measure, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i, sd2i,
 	group 2 \tab \code{ci} \tab \code{di} \tab \code{n2i} \cr
 	} where \code{ai}, \code{bi}, \code{ci}, and \code{di} denote the cell frequencies and \code{n1i} and \code{n2i} the row totals. For example, in a set of randomized clinical trials, group 1 and group 2 may refer to the treatment and placebo/control group, with outcome 1 denoting some event of interest (e.g., remission) and outcome 2 its complement. In a set of case-control studies, group 1 and group 2 may refer to the group of cases and the group of controls, with outcome 1 denoting, for example, exposure to some risk factor and outcome 2 non-exposure. The 2x2 table may also be the result of cross-sectional (i.e., multinomial) sampling, so that none of the table margins (except the total sample size \code{n1i+n2i}) are fixed through the study design.
 
-	Depending on the type of design (sampling method), a meta-analysis of 2x2 table data can be based on one of several different outcome measures, including the odds ratio, the relative risk (also called risk ratio), the risk difference, and the arcsine transformed risk difference. The phi coefficient, Yule's Q, and Yule's Y are additional measures of association for 2x2 table data (but they may not be the most ideal choices for meta-analyses of such data). For these measures, one needs to supply either \code{ai}, \code{bi}, \code{ci}, and \code{di} or alternatively \code{ai}, \code{ci}, \code{n1i}, and \code{n2i}. The various options for the \code{measure} argument are then:
+	Depending on the type of design (sampling method), a meta-analysis of 2x2 table data can be based on one of several different outcome measures, including the odds ratio, the relative risk (also called risk ratio), the risk difference, and the arcsine transformed risk difference. The phi coefficient, Yule's Q, and Yule's Y are additional measures of association for 2x2 table data (but they may not be the most ideal choices for meta-analyses of such data). For these measures, one needs to supply either \code{ai}, \code{bi}, \code{ci}, and \code{di} or alternatively \code{ai}, \code{ci}, \code{n1i}, and \code{n2i}. The options for the \code{measure} argument are then:
 	\itemize{
 	\item \code{"RR"}: The \emph{log relative risk} is equal to the log of \code{(ai/n1i)/(ci/n2i)}.
-	\item \code{"OR"}: The \emph{log odds ratio} is equal to the log of \code{(ai*di)/(bi*di)}.
+	\item \code{"OR"}: The \emph{log odds ratio} is equal to the log of \code{(ai*di)/(bi*ci)}.
 	\item \code{"RD"}: The \emph{risk difference} is equal to \code{(ai/n1i)-(ci/n2i)}.
 	\item \code{"AS"}: The \emph{arcsine transformed risk difference} is equal to \code{ asin(sqrt(ai/n1i)) -} \code{asin(sqrt(ci/n2i))}. See Ruecker et al. (2009) for a discussion of this and other outcome measures for 2x2 table data.
 	\item \code{"PETO"}: The \emph{log odds ratio estimated with Peto's method} (see Yusuf et al., 1985) is equal to \code{(ai-si*n1i/ni)/((si*ti*n1i*n2i)/(ni^2*(ni-1)))}, where \code{si=ai+ci}, \code{ti=bi+di}, and \code{ni=n1i+n2i}. Note that this measure technically assumes that the true odds ratio is equal to 1 in all tables.
@@ -68,13 +70,13 @@ escalc(measure, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i, sd2i,
 	Another frequently used outcome measure in meta-analyses is the correlation coefficient, which is used to measure the strength of the (linear) relationship between two quantitative variables. Here, one needs to specify \code{ri}, the vector with the raw correlation coefficients, and \code{ni}, the corresponding sample sizes.
 	\itemize{
 	\item \code{"COR"}: The \emph{raw correlation coefficient} is simply equal to \code{ri} as supplied to the function. When \code{vtype="LS"}, the sampling variances are calculated based on the large sample approximation. Alternatively, an approximation to the unbiased estimates of the sampling variances can be obtained with \code{vtype="UB"} (see Hedges, 1989).	
-	\item \code{"UCOR"}: The \emph{unbiased estimate of the correlation coefficient} is obtained by correcting the raw correlation coefficient for its slight negative bias (based on equation 2.7 in Olkin & Pratt, 1958). Again, \code{vtype="LS"} and \code{vtype="UB"} can be used to choose between the large sample approximations or the approximately unbiased estimates of the sampling variances.
+	\item \code{"UCOR"}: The \emph{unbiased estimate of the correlation coefficient} is obtained by correcting the raw correlation coefficient for its slight negative bias (based on equation 2.7 in Olkin & Pratt, 1958). Again, \code{vtype="LS"} and \code{vtype="UB"} can be used to choose between the large sample approximation or approximately unbiased estimates of the sampling variances.
 	\item \code{"ZCOR"}: Fisher's r-to-z transformation is a variance stabilizing transformation for correlation coefficients with the added benefit of also being a rather effective normalizing transformation (Fisher, 1921). The \emph{Fisher's r-to-z transformed correlation coefficient} is equal to \code{1/2*log((1+ri)/(1-ri))}.
 	}
 
 	\bold{Proportions and Transformations Thereof}
 
-	When the studies provide data for single groups with respect to a dichotomous dependent variable, then the raw proportion, the log and logit transformed proportion, the arcsine transformed proportion, and the Freeman-Tukey double arcsine transformed proportion are useful outcome measures. Here, one needs to specify \code{xi} and \code{ni}, denoting the number of individuals experiencing the event of interest and the total number of individuals, respectively. Instead of specifying \code{ni}, one can use \code{mi} to specify the number of individuals that do not experience the event of interest.
+	When the studies provide data for single groups with respect to a dichotomous dependent variable, then the raw proportion, the logit transformed proportion, the arcsine transformed proportion, and the Freeman-Tukey double arcsine transformed proportion are useful outcome measures (the log transformed proportion is also a possibility, but not frequently used in meta-analyses). Here, one needs to specify \code{xi} and \code{ni}, denoting the number of individuals experiencing the event of interest and the total number of individuals, respectively. Instead of specifying \code{ni}, one can use \code{mi} to specify the number of individuals that do not experience the event of interest.
 	\itemize{
 	\item \code{"PR"}: The \emph{raw proportion} is equal to \code{xi/ni}.
 	\item \code{"PLN"}: The \emph{log transformed proportion} is equal to the log of \code{xi/ni}.
@@ -87,6 +89,7 @@ escalc(measure, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i, sd2i,
 	A data frame with the following elements:
 	\item{yi}{value of the effect size or outcome measure.}
 	\item{vi}{corresponding (estimated) sampling variance.}
+	If \code{append=TRUE} and a data frame was specified via the \code{data} argument, then \code{yi} and \code{vi} are append to this data frame.
 }
 \author{Wolfgang Viechtbauer; \email{wvb@www.wvbauer.com}; \url{http://www.wvbauer.com/}}
 \references{
@@ -114,10 +117,8 @@ escalc(measure, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i, sd2i,
 data(dat.bcg)
 
 ### calculate log relative risks and corresponding sampling variances
-dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
-
-### add log relative risks and sampling variances to the data frame
-dat <- cbind(dat.bcg, dat)
+dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, 
+              data=dat.bcg, append=TRUE)
 dat
 }
 \keyword{datagen}

@@ -1,18 +1,19 @@
-\name{cint.rma.uni}
-\alias{cint.rma.uni}
+\name{confint.rma.uni}
+\alias{confint.rma.uni}
 \title{Confidence Intervals for rma.uni Objects}
 \description{
    The function calculates a confidence interval for the amount of (residual) heterogeneity in random- and mixed-effects models that were fitted with the \code{\link{rma.uni}} function. Confidence intervals for the model coefficients can also be obtained.
 }
 \usage{
-\method{cint}{rma.uni}(object, fixed=FALSE, random=TRUE, level=object$level, 
-     digits=object$digits, control=list(), \dots)
+\method{confint}{rma.uni}(object, parm, level=object$level, fixed=FALSE,
+        random=TRUE, digits=object$digits, control=list(), \dots)
 }
 \arguments{
 	\item{object}{an object of class \code{"rma.uni"}.}
+	\item{parm}{this argument is here for compatability with the generic function \code{\link{confint}}, but is ignored.}
+	\item{level}{a numerical value between 0 and 100 specifying the confidence interval level (the default is to take the value from the object).}
 	\item{fixed}{logical indicating whether confidence intervals for the model coefficients should be returned (default is \code{FALSE}).}
 	\item{random}{logical indicating whether a confidence interval for the amount of (residual) heterogeneity should be returned (default is \code{TRUE}).}
-	\item{level}{a numerical value between 0 and 100 specifying the confidence interval level (the default is to take the value from the object).}
 	\item{digits}{an integer specifying the number of decimal places to which the results should be rounded (the default is to take the value from the object).}
 	\item{control}{a list of control values for the iterative algorithm. Defaults to an empty list, which means that default values are defined inside the function. See \sQuote{Note}.}
 	\item{\dots}{other arguments.}
@@ -34,7 +35,7 @@
 
 	It is possible that the lower and upper confidence interval bounds both fall below zero (or whatever value was chosen for \code{tau2.min}). Since both values then fall outside of the parameter space, the confidence interval then just consists of the null set.
 
-	Usually, the estimate of \eqn{\tau^2}{tau^2} from the random/mixed-effects model will fall within the confidence interval provided by the Q-profile method. However, this is not guaranteed. Depending on the method used to estimate \eqn{\tau^2}{tau^2} and the width of the confidence interval, it can happen in rare cases that the confidence interval does not actually contain the estimate (trying to explain this to reviewers can be tricky). However, uing the empirical Bayes estimator of \eqn{\tau^2}{tau^2} when fitting the model guarantees that the estimate of \eqn{\tau^2}{tau^2} falls within the confidence interval (as long as \code{level} is larger than 26).
+	Usually, the estimate of \eqn{\tau^2}{tau^2} from the random/mixed-effects model will fall within the confidence interval provided by the Q-profile method. However, this is not guaranteed. Depending on the method used to estimate \eqn{\tau^2}{tau^2} and the width of the confidence interval, it can happen in rare cases that the confidence interval does not actually contain the estimate (trying to explain this to reviewers can be tricky). However, uing the empirical Bayes estimator of \eqn{\tau^2}{tau^2} when fitting the model guarantees that the estimate of \eqn{\tau^2}{tau^2} falls within the confidence interval.
 
 	The Q-profile method is exact under the assumptions of the random- and mixed-effects models (i.e., normally distributed observed and true outcomes and known sampling variances). These assumptions are usually only approximately true, turning the confidence interval for \eqn{\tau^2}{tau^2} also into an approximation.
 }
@@ -58,13 +59,13 @@ res <- rma(ai=tpos, bi=tneg, ci=cpos, di=cneg,
            data=dat.bcg, measure="RR", method="REML")
 
 ### confidence interval for the total amount of heterogeneity
-cint(res)
+confint(res)
 
 ### mixed-effects model with absolute latitude in the model
 res <- rma(ai=tpos, bi=tneg, ci=cpos, di=cneg, mods=ablat,
            data=dat.bcg, measure="RR", method="REML")
 
 ### confidence interval for the residual amount of heterogeneity
-cint(res)
+confint(res)
 }
 \keyword{models}

@@ -62,10 +62,10 @@
 data(dat.bcg)
 
 ### calculate log relative risks and corresponding sampling variances
-dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
-dat <- cbind(dat.bcg, dat)
+dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, 
+              data=dat.bcg, append=TRUE)
 
 ### forest plot of the observed relative risks
-forest(dat$yi, dat$vi, slab=paste(dat.bcg$author, dat$year), atransf=exp)
+forest(dat$yi, dat$vi, slab=paste(dat.bcg$author, dat$year, sep=", "), atransf=exp)
 }
 \keyword{hplot}

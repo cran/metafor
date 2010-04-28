@@ -1,26 +1,54 @@
+Changes in metafor version 1.1-0 (2010-04-28; released on CRAN)
+
+   o cint() generic removed and replaced with confint() method
+     for rma.uni objects
+   o slightly improved the code to set the x axis title in the
+     forest() and funnel() functions
+   o added coef() method for objects of class permutest.rma.uni
+   o added 'append' argument to escalc() function
+   o implemented a smarter way to set the number of iterations
+     for permutation tests (i.e., the permutest.rma.uni function 
+     will now switch to an exact test if the number of iterations 
+     required for an exact test is actually smaller than the 
+     requested number of iterations for an approximate test)
+   o changed the way how p-values for individual coefficients are 
+     calculated in permutest.rma.uni to 'two times the one-tailed 
+     area under the permutation distribution' (more consistent 
+     with the way we typically define two-tailed p-values)
+   o added 'retpermdist' argument to permutest.rma.uni() (to
+     return the permutation distributions of the test statistics)
+   o slight improvements to the various transf functions to cope
+     better with some extreme cases
+   o p-values are now calculated in such a way that very small 
+     p-values stored in fitted model objects are no longer 
+     truncated to 0 (the printed results are still truncated 
+     depending on the number of digits specified)
+   o changed the default number of iterations for the ML, REML, 
+     and EB estimators from 50 to 100
+
 Changes in metafor version 1.0-1 (2010-01-28; released on CRAN)
 
-   o version jump in conjunction with publication of paper in 
+   o version jump in conjunction with publication of paper in
      the Journal of Statistical Software describing the package
-   o instead of specifying a design matrix, the user can 
-     now specify a model formula for the mods argument in the 
+   o instead of specifying a design matrix, the user can
+     now specify a model formula for the mods argument in the
      rma() function (e.g., like in the lm() function)
    o permutest() function now allows exact permutation tests
      (but this is only feasible when k is not too large)
-   o forest() function now uses the level argument properly to 
+   o forest() function now uses the level argument properly to
      adjust the CI level of the summary estimate for models
      without moderators (i.e., fixed- and random-effets models)
    o forest() function can now also show the credibility interval
      as a dashed line for a random-effects model
-   o information about the 'measure' used is now passed on to 
-     the forest() and funnel() functions, which try to set an 
+   o information about the 'measure' used is now passed on to
+     the forest() and funnel() functions, which try to set an
      appropriate x axis title accordingly
-   o funnel function now has more arguments (e.g., atransf, at)
-     providing control over the display of the x axis
+   o funnel() function now has more arguments (e.g., atransf, at)
+     providing more control over the display of the x axis
    o predict() function now has its own print method and has a
-     new argument (addx), which adds the values of the moderator 
+     new argument (addx), which adds the values of the moderator
      variables to the returned object (when addx=TRUE)
-   o functions now properly handle the na.action "na.pass" 
+   o functions now properly handle the na.action "na.pass"
      (treated essentially like "na.exclude")
    o added method for weights() function to extract the weights
      used when fitting models with rma.uni()
@@ -38,12 +66,12 @@ Changes in metafor version 0.5-7 (2009-12-06; released on CRAN)
 
 Changes in metafor version 0.5-6 (2009-10-19)
 
-   o small changes to the computation of the DFFITS and DFBETAS 
-     values in the influence() function, so that these statistics 
-     are more in line with their definitions in regular linear 
+   o small changes to the computation of the DFFITS and DFBETAS
+     values in the influence() function, so that these statistics
+     are more in line with their definitions in regular linear
      regression models
    o added option to the plot function for objects returned by
-     influence() to allow plotting the covariance ratios on a 
+     influence() to allow plotting the covariance ratios on a
      log scale (now the default)
    o slight adjustments to various print() functions (to catch
      some errors when certain values were NA)
@@ -54,7 +82,7 @@ Changes in metafor version 0.5-6 (2009-10-19)
 Changes in metafor version 0.5-5 (2009-10-08; released on CRAN)
 
    o added the phi coefficient (measure="PHI"), Yule's Q ("YUQ"),
-     and Yule's Y ("YUY") as additional measures to the escalc() 
+     and Yule's Y ("YUY") as additional measures to the escalc()
      function for 2x2 table data
    o forest plots now order the studies so that the first study
      is at the top of the plot and the last study at the bottom
@@ -74,7 +102,7 @@ Changes in metafor version 0.5-4 (2009-09-18; released on CRAN)
    o improvements to various print functions
    o added a regtest() function for various regression tests of
      funnel plot asymmetry (e.g., Egger's regression test)
-   o made ranktest() generic and added a method for objects of 
+   o made ranktest() generic and added a method for objects of
      class "rma" so that the test can be carried out after fitting
    o added anova() function for full vs reduced model comparisons
      via fit statistics and likelihood ratio tests
@@ -88,21 +116,21 @@ Changes in metafor version 0.5-4 (2009-09-18; released on CRAN)
 Changes in metafor version 0.5-3 (2009-07-31; released on CRAN)
 
    o small changes to some of the examples
-   o added the log transformed proportion (measure="PLN") as another 
-     measure to the escalc() function; changed "PL" to "PLO" for the 
+   o added the log transformed proportion (measure="PLN") as another
+     measure to the escalc() function; changed "PL" to "PLO" for the
      logit (i.e., log odds) transformation for proportions
 
 Changes in metafor version 0.5-2 (2009-07-06)
 
-   o added an option in plot.infl.rma.uni() to open a new device 
+   o added an option in plot.infl.rma.uni() to open a new device
      for plotting the DFBETAS values
-   o thanks to Jim Lemon, added a much better method of adjusting 
-     the size of the labels, annotations, and symbols in the forest() 
+   o thanks to Jim Lemon, added a much better method of adjusting
+     the size of the labels, annotations, and symbols in the forest()
      function when the number of studies is large
 
 Changes in metafor version 0.5-1 (2009-06-14)
 
-   o made some small changes to the documentation (some typos 
+   o made some small changes to the documentation (some typos
      corrected, some confusing points clarified)
 
 First version released on CRAN: 0.5-0 (2009-06-05)

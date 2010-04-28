@@ -40,7 +40,8 @@ data(dat.bcg)
 ### meta-analysis of the log relative risks using a mixed-
 ### effects model with absolute latitude as a moderator
 res <- rma(ai=tpos, bi=tneg, ci=cpos, di=cneg, mods=cbind(ablat),
-           slab=paste(author, year), data=dat.bcg, measure="RR", method="REML")
+           slab=paste(author, year, sep=", "), data=dat.bcg, 
+           measure="RR", method="REML")
 
 ### forest plot of the observed relative risks
 forest(res, addfit=FALSE, atransf=exp, addrows=3)

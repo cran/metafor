@@ -79,7 +79,7 @@ rma(yi, vi, sei, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i, sd2i,
 
 	\bold{Omnibus Test of Parameters}
 
-	For models including moderators, an omnibus test of all the model coefficients is conducted that excludes the intercept (the first coefficient) if it is included in the model. If no intercept is included in the model, then the omnibus test includes all of the coefficients in the model including the first. Alternatively, one can specify the indices of the coefficients to test via the \code{btt} argument. For example, use \code{btt=c(3,4)} to only include the third and fourth coefficient from the model in the test.
+	For models including moderators, an omnibus test of all the model coefficients is conducted that excludes the intercept (the first coefficient) if it is included in the model. If no intercept is included in the model, then the omnibus test includes all of the coefficients in the model including the first. Alternatively, one can manually specify the indices of the coefficients to test via the \code{btt} argument. For example, use \code{btt=c(3,4)} to only include the third and fourth coefficient from the model in the test (if an intercept is included in the model, then it corresponds to the first coefficient in the model).
 
 	\bold{Categorical Moderators}
 
@@ -120,7 +120,7 @@ rma(yi, vi, sei, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i, sd2i,
 
 	The \code{\link{residuals.rma}}, \code{\link{rstandard.rma.uni}}, and \code{\link{rstudent.rma.uni}} functions extract raw and standardized residuals. Additional case diagnostics (e.g., to determine influential studies) can be obtained with the \code{\link{influence.rma.uni}} function. For models without moderators, leave-one-out diagnostics can also be obtained with \code{\link{leave1out.rma.uni}}.
 
-	A confidence interval for the amount of (residual) heterogeneity in the random/mixed-effects model can be obtained with \code{\link{cint.rma.uni}}.
+	A confidence interval for the amount of (residual) heterogeneity in the random/mixed-effects model can be obtained with \code{\link{confint.rma.uni}}.
 
 	Forest, funnel, and radial plots (the latter only for models without moderators) are drawn with \code{\link{forest.rma}}, \code{\link{funnel.rma}}, and \code{\link{radial.rma}}. The \code{\link{qqnorm.rma.uni}} function provides a normal QQ plot of the standardized residuals. One can also just call \code{\link{plot.rma.uni}} on the fitted model object to obtain various plots at once.
 
@@ -131,7 +131,7 @@ rma(yi, vi, sei, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i, sd2i,
 	Other assessor functions include \code{\link{coef.rma}}, \code{\link{vcov.rma}}, \code{\link{logLik.rma}}, \code{\link{hatvalues.rma.uni}}, and \code{\link{weights.rma.uni}}.
 }
 \note{
-	The ML, REML, and EB estimators of \eqn{\tau^2}{tau^2} are obtained via the Fisher scoring algorithm, which is robust to poor starting values and usually converges quickly (Harville, 1977; Jennrich & Sampson, 1976). By default, the starting value is set equal to the value of the Hedges estimator and the algorithm terminates when the change in the estimated value of \eqn{\tau^2}{tau^2} is smaller than \eqn{10^{-5}}{10^(-5)} from one iteration to the next. The maximum number of iterations is 50 by default. A different starting value, threshold, and maximum number of iterations can be specified via the \code{control} argument by setting \code{control=list(tau2.init=value, threshold=value, maxiter=value)}. The step length of the Fisher scoring algorithm can also be manually adjusted by a desired factor with \code{control=list(stepadj=value)} (values below 1 will reduce the step length). Information on the evolution of the algorithm is obtained with \code{control=list(verbose=TRUE)}.
+	While the HS, HE, DL, and SJ estimators of \eqn{\tau^2}{tau^2} are based on closed-form solutions, the ML, REML, and EB estimators must be obtained numerically. For this, the \code{rma()} function makes use of the Fisher scoring algorithm, which is robust to poor starting values and usually converges quickly (Harville, 1977; Jennrich & Sampson, 1976). By default, the starting value is set equal to the value of the Hedges estimator and the algorithm terminates when the change in the estimated value of \eqn{\tau^2}{tau^2} is smaller than \eqn{10^{-5}}{10^(-5)} from one iteration to the next. The maximum number of iterations is 100 by default (which should be sufficient in most cases). A different starting value, threshold, and maximum number of iterations can be specified via the \code{control} argument by setting \code{control=list(tau2.init=value, threshold=value, maxiter=value)} when calling the \code{rma()} function. The step length of the Fisher scoring algorithm can also be manually adjusted by a desired factor with \code{control=list(stepadj=value)} (values below 1 will reduce the step length). Information on the evolution of the algorithm is obtained with \code{control=list(verbose=TRUE)}.
 
 	All of the heterogeneity estimators except SJ can in principle yield negative estimates for the amount of (residual) heterogeneity. However, negative estimates of \eqn{\tau^2}{tau^2} are outside of the parameter space. For the HS, HE, and DL estimators, negative estimates are therefore truncated to zero. For ML, REML, and EB estimation, the Fisher scoring algorithm makes use of step halving to guarantee a non-negative estimate. For those brave enough to step into risky territory, there is the option to set the lower bound of \eqn{\tau^2}{tau^2} equal to some other value besides zero with \code{control=list(tau2.min=value)}.
 
@@ -180,8 +180,8 @@ rma(yi, vi, sei, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i, sd2i,
 data(dat.bcg)
 
 ### calculate log relative risks and corresponding sampling variances
-dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
-dat <- cbind(dat.bcg, dat)
+dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, 
+              data=dat.bcg, append=TRUE)
 
 ### random-effects model
 rma(yi, vi, data=dat, method="REML")

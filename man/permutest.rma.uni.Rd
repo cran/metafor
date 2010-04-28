@@ -5,32 +5,40 @@
    The function carries out permutation tests for objects of class \code{"rma.uni"}.
 }
 \usage{
-\method{permutest}{rma.uni}(x, exact=FALSE, iter=1000, progbar=TRUE, digits=x$digits, \dots)
+\method{permutest}{rma.uni}(x, exact=FALSE, iter=1000, progbar=TRUE, 
+          retpermdist=FALSE, digits=x$digits, \dots)
 }
 \arguments{
 	\item{x}{an object of class \code{"rma.uni"}.}
 	\item{exact}{logical indicating whether an exact permutation test should be carried out or not (default is \code{FALSE}). See \sQuote{Details}.}
 	\item{iter}{integer to specify the number of iterations for the permutation test when not doing an exact test (default is 1000 iterations).}
 	\item{progbar}{logical indicating whether a progress bar should be shown (default is \code{TRUE}).}
+	\item{retpermdist}{logical indicating whether the permutation distributions of the test statistics should also be returned (default is \code{FALSE}).}
 	\item{digits}{an integer specifying the number of decimal places to which the printed results should be rounded (the default is to take the value from the object).}
 	\item{\dots}{other arguments.}
 }
 \details{
-	For models without moderators, the permutation test is carried out by permuting the signs of the observed effect sizes or outcomes. The p-value of the permutation test is then the proportion of times that the test statistic under the permuted data is more extreme than under the actually observed data. See Follmann and Proschan (1999) for more details.
+	For models without moderators, the permutation test is carried out by permuting the signs of the observed effect sizes or outcomes. The (two-sided) p-value of the permutation test is then equal to two times the proportion of times that the test statistic under the permuted data is more extreme than under the actually observed data. See Follmann and Proschan (1999) for more details.
 
-	For models with moderators, the permutation test is carried out by permuting the rows of the design matrix. The p-value for a particular model coefficient is then equal to the proportion of times that the test statistic for the coefficient under the permuted data is more extreme than under the actually observed data. Similarly, for the omnibus test, the p-value is the proportion of times that the test statistic for the omnibus test is more extreme than the actually observed one. See Higgins and Thompson (2004) for more details.
+	For models with moderators, the permutation test is carried out by permuting the rows of the design matrix. The (two-sided) p-value for a particular model coefficient is then equal to two times the proportion of times that the test statistic for the coefficient under the permuted data is more extreme than under the actually observed data. Similarly, for the omnibus test, the p-value is the proportion of times that the test statistic for the omnibus test is more extreme than the actually observed one. See Higgins and Thompson (2004) for more details.
 
 	If \code{exact=TRUE}, the function will try to carry out an exact permutation test. An exact permutation test requires fitting the model to each possible permutation once. However, the number of possible permutations increases rapidly with the number of outcomes/studies (i.e., \eqn{k}), especially with respect to the possible number of permutations of the design matrix. For example, for \eqn{k=5}, there are only 120 possible permutations of the design matrix (32 possible permutations of the signs). For \eqn{k=8}, there are already 40,320 (256). And for \eqn{k=10}, there are 3,628,800 (1024). Therefore, going through all possible permutations may become infeasible.
 
 	Instead of using an exact permutation test, one can set \code{exact=FALSE}. In that case, the function approximates the exact permutation-based p-value(s) by going through a smaller number (as specified by the \code{iter} argument) of random permutations. Therefore, running the function twice on the same data will then yield (slightly) different p-values. Setting \code{iter} sufficiently large ensures that the results become stable.
+
+	If \code{exact=FALSE} and \code{iter} is actually larger than the number of iterations required for an exact permutation test, then an exact test will be carried out.
+	
+	Also, the function will terminate with an error if the number of iterations is too large.
 }
 \value{
 	An object of class \code{"permutest.rma.uni"}. The object is a list containing the following components:	
 	\item{pval}{p-value(s) based on the permutation test.}
 	\item{QMp}{p-value for the omnibus test of coefficients based on the permutation test.}
+	\item{zval.perm}{values of the test statistics of the coefficients under the various permutations (only when \code{retpermdist=TRUE}).}
+	\item{QM.perm}{values of the test statistic for the omnibus test of coefficients under the various permutations (only when \code{retpermdist=TRUE}).}
 	\item{\dots}{some additional elements/values are passed on.}
 
-	The results are formated and printed with the \code{\link{print.permutest.rma.uni}} function.
+	The results are formated and printed with the \code{\link{print.permutest.rma.uni}} function. One can also use \code{\link{coef.permutest.rma.uni}} to obtain the table with the model coefficients, corresponding standard errors, test statistics, p-values, and confidence interval bounds.
 }
 \author{Wolfgang Viechtbauer; \email{wvb@www.wvbauer.com}; \url{http://www.wvbauer.com/}}
 \references{
@@ -46,20 +54,40 @@
 data(dat.bcg)
 
 ### calculate log relative risks and corresponding sampling variances
-dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
-dat <- cbind(dat.bcg, dat)
+dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, 
+              data=dat.bcg, append=TRUE)
 
 ### random-effects model
 res <- rma(yi, vi, data=dat, method="REML")
 
 ### permutation test (approximate and exact)
-\dontrun{permutest(res)}
-\dontrun{permutest(res, exact=TRUE)}
+\dontrun{
+
+permutest(res)
+permutest(res, exact=TRUE)
+}
 
 ### mixed-effects model with two moderators (absolute latitude and publication year)
-res1 <- rma(yi, vi, mods=cbind(ablat, year), data=dat, method="REML")
+res <- rma(yi, vi, mods=cbind(ablat, year), data=dat, method="REML")
 
-### permutation test (only approximate; exact not feasible)
-\dontrun{permutest(res)}
+### permutation test (approximate only; exact not feasible)
+\dontrun{
+
+permres <- permutest(res, iter=10000, retpermdist=TRUE)
+permres
+
+### histogram of permutation distribution for absolute latitude
+### dashed horizontal line: the observed value of the test statistic
+### red curve:  standard normal density
+### blue curve: kernel density estimate of the permutation distribution
+### note that the tail area under the permutation distribution is larger 
+### than under a standard normal density (hence, the larger p-value)
+hist(permres$zval.perm[,2], breaks=120, freq=FALSE, xlim=c(-5,5), ylim=c(0,.4),
+     main="Permutation Distribution", xlab="Value of Test Statistic")
+abline(v=res$zval[2], lwd=2, lty="dashed")
+abline(v=0, lwd=2)
+curve(dnorm, from=-5, to=5, add=TRUE, lwd=2, col=rgb(1,0,0,alpha=.7))
+lines(density(permres$zval.perm[,2]), lwd=2, col=rgb(0,0,1,alpha=.7))
+}
 }
 \keyword{models}

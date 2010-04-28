@@ -53,18 +53,18 @@
 data(dat.bcg)
 
 ### calculate log relative risks and corresponding sampling variances
-dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
-dat <- cbind(dat.bcg, dat)
+dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, 
+              data=dat.bcg, append=TRUE)
 
 ### random-effects model
-res <- rma(yi, vi, data=dat, method="REML", slab=paste(author, ", ", year, sep=""))
+res <- rma(yi, vi, data=dat, method="REML", slab=paste(author, year, sep=", "))
 
 x <- cumul(res, order=order(dat$year))
 forest(x)
 
 ### meta-analysis of the (log) relative risks using the Mantel-Haenszel method
 res <- rma.mh(ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg, 
-              measure="RR", slab=paste(author, ", ", year, sep=""))
+              measure="RR", slab=paste(author, year, sep=", "))
 x <- cumul(res, order=order(dat$year))
 forest(x)
 }

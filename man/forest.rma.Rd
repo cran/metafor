@@ -81,15 +81,15 @@
 data(dat.bcg)
 
 ### meta-analysis of the log relative risks using a random-effects model
-res <- rma(ai=tpos, bi=tneg, ci=cpos, di=cneg, slab=paste(author, year),
-           data=dat.bcg, measure="RR", method="REML")
+res <- rma(ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg, measure="RR", 
+           slab=paste(author, year, sep=", "), method="REML")
 
 ### several forest plots illustrating the use of various arguments
 forest(res)
 forest(res, order=order(dat.bcg$ablat))
 forest(res, transf=exp, alim=c(0,6), steps=4, xlim=c(-8,12), refline=1)
 forest(res, atransf=exp, at=log(c(.05,.25,1,4,12)), xlim=c(-8,6), order="prec")
-forest(res, slab=paste(dat.bcg$author, ", ", dat.bcg$year, sep=""), 
+forest(res, slab=paste(dat.bcg$author, dat.bcg$year, sep=", "), 
        xlim=c(-14,6), ylim=c(-1.5,15.5), at=log(c(.05,.25,1,4)), atransf=exp, 
        ilab=cbind(dat.bcg$tpos, dat.bcg$tneg, dat.bcg$cpos, dat.bcg$cneg), 
        ilab.xpos=c(-8.5,-7,-5,-3.5), cex=.7)
@@ -99,8 +99,8 @@ text(-14,                14.5, "Author(s) and Year",   pos=4,  cex=.7)
 text(6,                  14.5, "Observed RR [95\% CI]", pos=2, cex=.7)
 
 ### mixed-effects model with absolute latitude in the model
-res <- rma(ai=tpos, bi=tneg, ci=cpos, di=cneg, mods=ablat, slab=paste(author, year),
-           data=dat.bcg, measure="RR", method="REML")
+res <- rma(ai=tpos, bi=tneg, ci=cpos, di=cneg, mods=ablat, data=dat.bcg, 
+           measure="RR", method="REML", slab=paste(author, year, sep=", "))
 
 ### forest plots with observed and fitted values
 forest(res, xlim=c(-9,5), order="fit", cex=.8, ilab=dat.bcg$ablat, 

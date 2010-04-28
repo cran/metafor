@@ -38,7 +38,7 @@ function (X, W, k)
 .onLoad <-
 function (lib, pkg) 
 {
-    loadmsg <- "Loading 'metafor' package (version 1.0-1). For an overview \nand introduction to the package please type: help(metafor)."
+    loadmsg <- "Loading 'metafor' package (version 1.1-0). For an overview \nand introduction to the package please type: help(metafor)."
     packageStartupMessage(loadmsg, domain = NULL, appendLF = TRUE)
 }
 .QE.func <-
@@ -84,8 +84,8 @@ function (x, vi, sei, row = -1, level = 95, digits = 2, annotate = TRUE,
     }
     k <- length(yi)
     alpha <- (100 - level)/100
-    ci.lb <- yi - qnorm(1 - alpha/2) * sqrt(vi)
-    ci.ub <- yi + qnorm(1 - alpha/2) * sqrt(vi)
+    ci.lb <- yi - qnorm(alpha/2, lower.tail = FALSE) * sqrt(vi)
+    ci.ub <- yi + qnorm(alpha/2, lower.tail = FALSE) * sqrt(vi)
     yi.ut <- yi
     ci.lb.ut <- ci.lb
     ci.ub.ut <- ci.ub
@@ -243,10 +243,10 @@ function (x, level = x$level, digits = x$digits, transf = FALSE,
         stop("Unknwn 'na.action' specified under options().")
     alpha <- (100 - level)/100
     if (!x$knha) {
-        crit <- qnorm(1 - alpha/2)
+        crit <- qnorm(alpha/2, lower.tail = FALSE)
     }
     else {
-        crit <- qt(1 - alpha/2, df = x$k - x$p)
+        crit <- qt(alpha/2, df = x$k - x$p, lower.tail = FALSE)
     }
     pred <- rep(NA, x$k.f)
     vpred <- rep(NA, x$k.f)
@@ -289,20 +289,47 @@ function (x, level = x$level, digits = x$digits, transf = FALSE,
     class(out) <- c("list.rma")
     return(out)
 }
-cint <-
+coef.permutest.rma.uni <-
 function (object, ...) 
-UseMethod("cint")
-cint.rma.uni <-
-function (object, fixed = FALSE, random = TRUE, level = object$level, 
-    digits = object$digits, control = list(), ...) 
+{
+    if (!is.element("permutest.rma.uni", class(object))) 
+        stop("Argument 'object' must be an object of class \"permutest.rma.uni\".")
+    x <- object
+    res.table <- cbind(x$b, x$se, x$zval, x$pval, x$ci.lb, x$ci.ub)
+    dimnames(res.table)[[2]] <- c("estimate", "se", "zval", "pval", 
+        "ci.lb", "ci.ub")
+    if (x$knha) 
+        dimnames(res.table)[[2]][3] <- c("tval")
+    res.table <- data.frame(res.table)
+    return(res.table)
+}
+coef.rma <-
+function (object, ...) 
+{
+    if (!is.element("rma", class(object))) 
+        stop("Argument 'object' must be an object of class \"rma\".")
+    x <- object
+    res.table <- cbind(x$b, x$se, x$zval, x$pval, x$ci.lb, x$ci.ub)
+    dimnames(res.table)[[2]] <- c("estimate", "se", "zval", "pval", 
+        "ci.lb", "ci.ub")
+    if (is.element("rma.uni", class(x)) && x$knha) {
+        dimnames(res.table)[[2]][3] <- c("tval")
+    }
+    res.table <- data.frame(res.table)
+    return(res.table)
+}
+confint.rma.uni <-
+function (object, parm, level = object$level, fixed = FALSE, 
+    random = TRUE, digits = object$digits, control = list(), 
+    ...) 
 {
     if (!is.element("rma.uni", class(object))) 
         stop("Argument 'object' must be an object of class \"rma.uni\".")
     x <- object
     if (random) {
         alpha <- (100 - level)/100
-        crit.u <- qchisq(1 - alpha/2, x$k - x$p)
-        crit.l <- qchisq(alpha/2, x$k - x$p)
+        crit.u <- qchisq(alpha/2, x$k - x$p, lower.tail = FALSE)
+        crit.l <- qchisq(alpha/2, x$k - x$p, lower.tail = TRUE)
         con <- list(tol = .Machine$double.eps^0.25, maxiter = 1000, 
             tau2.min = x$control$tau2.min, tau2.max = 50, verbose = FALSE)
         con[pmatch(names(control), names(con))] <- control
@@ -394,10 +421,10 @@ function (object, fixed = FALSE, random = TRUE, level = object$level,
     if (fixed) {
         alpha <- (100 - level)/100
         if (x$knha) {
-            crit <- qt(1 - alpha/2, df = x$k - x$p)
+            crit <- qt(alpha/2, df = x$k - x$p, lower.tail = FALSE)
         }
         else {
-            crit <- qnorm(1 - alpha/2)
+            crit <- qnorm(alpha/2, lower.tail = FALSE)
         }
         ci.lb <- c(x$b - crit * x$se)
         ci.ub <- c(x$b + crit * x$se)
@@ -412,21 +439,6 @@ function (object, fixed = FALSE, random = TRUE, level = object$level,
         return(data.frame(res.fixed))
     if (random) 
         return(data.frame(res.random))
-}
-coef.rma <-
-function (object, ...) 
-{
-    if (!is.element("rma", class(object))) 
-        stop("Argument 'object' must be an object of class \"rma\".")
-    x <- object
-    res.table <- cbind(x$b, x$se, x$zval, x$pval, x$ci.lb, x$ci.ub)
-    dimnames(res.table)[[2]] <- c("estimate", "se", "zval", "pval", 
-        "ci.lb", "ci.ub")
-    if (is.element("rma.uni", class(x)) && x$knha) {
-        dimnames(res.table)[[2]][3] <- c("tval")
-    }
-    res.table <- data.frame(res.table)
-    return(res.table)
 }
 cumul <-
 function (x, ...) 
@@ -478,7 +490,7 @@ function (x, order = NULL, digits = x$digits, transf = FALSE,
         QEp[i] <- res$QEp
     }
     alpha <- (100 - x$level)/100
-    crit <- qnorm(1 - alpha/2)
+    crit <- qnorm(alpha/2, lower.tail = FALSE)
     b[1] <- yi.f[1]
     se[1] <- sqrt(vi.f[1])
     zval[1] <- yi.f[1]/se[1]
@@ -511,6 +523,7 @@ function (x, order = NULL, digits = x$digits, transf = FALSE,
     out$digits <- digits
     out$slab.null <- x$slab.null
     out$level <- x$level
+    out$measure <- x$measure
     if (x$measure == "GEN") {
         attr(out$estimate, "measure") <- "GEN"
     }
@@ -566,7 +579,7 @@ function (x, order = NULL, digits = x$digits, transf = FALSE,
         QEp[i] <- res$QEp
     }
     alpha <- (100 - x$level)/100
-    crit <- qnorm(1 - alpha/2)
+    crit <- qnorm(alpha/2, lower.tail = FALSE)
     b[1] <- yi.f[1]
     se[1] <- sqrt(vi.f[1])
     zval[1] <- yi.f[1]/se[1]
@@ -597,6 +610,7 @@ function (x, order = NULL, digits = x$digits, transf = FALSE,
     out$digits <- digits
     out$slab.null <- x$slab.null
     out$level <- x$level
+    out$measure <- x$measure
     if (x$measure == "GEN") {
         attr(out$estimate, "measure") <- "GEN"
     }
@@ -658,7 +672,7 @@ function (x, order = NULL, digits = x$digits, transf = FALSE,
         H2[i] <- res$H2
     }
     alpha <- (100 - x$level)/100
-    crit <- qnorm(1 - alpha/2)
+    crit <- qnorm(alpha/2, lower.tail = FALSE)
     b[1] <- yi.f[1]
     se[1] <- sqrt(vi.f[1])
     zval[1] <- yi.f[1]/se[1]
@@ -704,6 +718,7 @@ function (x, order = NULL, digits = x$digits, transf = FALSE,
     out$digits <- digits
     out$slab.null <- x$slab.null
     out$level <- x$level
+    out$measure <- x$measure
     if (x$measure == "GEN") {
         attr(out$estimate, "measure") <- "GEN"
     }
@@ -716,7 +731,7 @@ function (x, order = NULL, digits = x$digits, transf = FALSE,
 escalc <-
 function (measure, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i, 
     sd2i, xi, mi, ri, ni, data = NULL, add = 1/2, to = "only0", 
-    vtype = "LS") 
+    vtype = "LS", append = FALSE) 
 {
     if (!is.element(measure, c("MD", "SMD", "RR", "OR", "PETO", 
         "RD", "AS", "PHI", "YUQ", "YUY", "PR", "PLN", "PLO", 
@@ -726,6 +741,7 @@ function (measure, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i,
         stop("Unknown 'to' argument specified.")
     if (!is.element(vtype, c("UB", "LS", "HS"))) 
         stop("Unknown 'vtype' argument specified.")
+    no.data <- is.null(data)
     if (is.null(data)) {
         data <- sys.frame(sys.parent())
     }
@@ -983,7 +999,12 @@ function (measure, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i,
         yi[is.inf] <- NA
         vi[is.inf] <- NA
     }
-    dat <- data.frame(cbind(yi, vi))
+    if (!no.data && append == TRUE) {
+        dat <- data.frame(data, cbind(yi, vi))
+    }
+    else {
+        dat <- data.frame(cbind(yi, vi))
+    }
     attr(dat$yi, "measure") <- measure
     return(dat)
 }
@@ -1055,6 +1076,8 @@ function (x, annotate = TRUE, xlim = NULL, alim = NULL, ylim = NULL,
         stop("Unknwn 'na.action' specified under options().")
     transf.char <- deparse(substitute(transf))
     atransf.char <- deparse(substitute(atransf))
+    if (transf.char != "FALSE" && atransf.char != "FALSE") 
+        stop("Use either 'transf' or 'atransf' to specify a transformation (not both).")
     yi <- x$estimate
     if (is.null(attributes(yi)$measure)) {
         measure <- "GEN"
@@ -1110,8 +1133,8 @@ function (x, annotate = TRUE, xlim = NULL, alim = NULL, ylim = NULL,
     }
     k <- length(yi)
     alpha <- (100 - level)/100
-    ci.lb <- yi - qnorm(1 - alpha/2) * sqrt(vi)
-    ci.ub <- yi + qnorm(1 - alpha/2) * sqrt(vi)
+    ci.lb <- yi - qnorm(alpha/2, lower.tail = FALSE) * sqrt(vi)
+    ci.ub <- yi + qnorm(alpha/2, lower.tail = FALSE) * sqrt(vi)
     if (is.function(transf)) {
         if (is.null(targs)) {
             yi <- sapply(yi, transf)
@@ -1221,70 +1244,161 @@ function (x, annotate = TRUE, xlim = NULL, alim = NULL, ylim = NULL,
     axis(side = 1, at = at, labels = at.lab, cex.axis = cex.axis, 
         ...)
     if (is.null(xlab)) {
-        xlab <- "Observed Outcome"
-        if (measure == "GEN") 
-            xlab <- "Overall Estimate"
+        xlab <- "Overall Estimate"
         if (measure == "OR" || measure == "PETO") {
-            xlab <- "Log Odds Ratio"
-            if (atransf.char == "exp" || atransf.char == "transf.exp.int") 
-                xlab <- "Odds Ratio (log scale)"
-            if (transf.char == "exp" || transf.char == "transf.exp.int") 
-                xlab <- "Odds Ratio"
+            if (transf.char == "FALSE" && atransf.char == "FALSE") {
+                xlab <- "Log Odds Ratio"
+            }
+            else {
+                xlab <- "Transformed Log Odds Ratio"
+                if (atransf.char == "exp" || atransf.char == 
+                  "transf.exp.int") 
+                  xlab <- "Odds Ratio (log scale)"
+                if (transf.char == "exp" || transf.char == "transf.exp.int") 
+                  xlab <- "Odds Ratio"
+            }
         }
         if (measure == "RR") {
-            xlab <- "Log Relative Risk"
-            if (atransf.char == "exp" || atransf.char == "transf.exp.int") 
-                xlab <- "Relative Risk (log scale)"
-            if (transf.char == "exp" || transf.char == "transf.exp.int") 
-                xlab <- "Relative Risk"
+            if (transf.char == "FALSE" && atransf.char == "FALSE") {
+                xlab <- "Log Relative Risk"
+            }
+            else {
+                xlab <- "Transformed Log Relative Risk"
+                if (atransf.char == "exp" || atransf.char == 
+                  "transf.exp.int") 
+                  xlab <- "Relative Risk (log scale)"
+                if (transf.char == "exp" || transf.char == "transf.exp.int") 
+                  xlab <- "Relative Risk"
+            }
         }
-        if (measure == "RD") 
-            xlab <- "Risk Difference"
-        if (measure == "AS") 
-            xlab <- "Arcsine Transformed Risk Difference"
-        if (measure == "PHI") 
-            xlab <- "Phi Coefficient"
-        if (measure == "YUQ") 
-            xlab <- "Yule's Q"
-        if (measure == "YUY") 
-            xlab <- "Yule's Y"
-        if (measure == "MD") 
-            xlab <- "Mean Difference"
-        if (measure == "SMD") 
-            xlab <- "Standardized Mean Difference"
-        if (measure == "COR" || measure == "UCOR") 
-            xlab <- "Correlation Coefficient"
+        if (measure == "RD") {
+            if (transf.char == "FALSE" && atransf.char == "FALSE") {
+                xlab <- "Risk Difference"
+            }
+            else {
+                xlab <- "Transformed Risk Difference"
+            }
+        }
+        if (measure == "AS") {
+            if (transf.char == "FALSE" && atransf.char == "FALSE") {
+                xlab <- "Arcsine Transformed Risk Difference"
+            }
+            else {
+                xlab <- "Transformed Arcsine Transformed Risk Difference"
+            }
+        }
+        if (measure == "PHI") {
+            if (transf.char == "FALSE" && atransf.char == "FALSE") {
+                xlab <- "Phi Coefficient"
+            }
+            else {
+                xlab <- "Transformed Phi Coefficient"
+            }
+        }
+        if (measure == "YUQ") {
+            if (transf.char == "FALSE" && atransf.char == "FALSE") {
+                xlab <- "Yule's Q"
+            }
+            else {
+                xlab <- "Transformed Yule's Q"
+            }
+        }
+        if (measure == "YUY") {
+            if (transf.char == "FALSE" && atransf.char == "FALSE") {
+                xlab <- "Yule's Y"
+            }
+            else {
+                xlab <- "Transformed Yule's Y"
+            }
+        }
+        if (measure == "MD") {
+            if (transf.char == "FALSE" && atransf.char == "FALSE") {
+                xlab <- "Mean Difference"
+            }
+            else {
+                xlab <- "Transformed Mean Difference"
+            }
+        }
+        if (measure == "SMD") {
+            if (transf.char == "FALSE" && atransf.char == "FALSE") {
+                xlab <- "Standardized Mean Difference"
+            }
+            else {
+                xlab <- "Transformed Standardized Mean Difference"
+            }
+        }
+        if (measure == "COR" || measure == "UCOR") {
+            if (transf.char == "FALSE" && atransf.char == "FALSE") {
+                xlab <- "Correlation Coefficient"
+            }
+            else {
+                xlab <- "Transformed Correlation Coefficient"
+            }
+        }
         if (measure == "ZCOR") {
-            xlab <- "Transformed Correlation Coefficient"
-            if (atransf.char == "transf.ztor" || atransf.char == 
-                "transf.ztor.int") 
-                xlab <- "Correlation Coefficient"
-            if (transf.char == "transf.ztor" || transf.char == 
-                "transf.ztor.int") 
-                xlab <- "Correlation Coefficient"
+            if (transf.char == "FALSE" && atransf.char == "FALSE") {
+                xlab <- "Fisher's z Transformed Correlation Coefficient"
+            }
+            else {
+                xlab <- "Transformed Fisher's z Transformed Correlation Coefficient"
+                if (atransf.char == "transf.ztor" || atransf.char == 
+                  "transf.ztor.int") 
+                  xlab <- "Correlation Coefficient"
+                if (transf.char == "transf.ztor" || transf.char == 
+                  "transf.ztor.int") 
+                  xlab <- "Correlation Coefficient"
+            }
         }
-        if (measure == "PR") 
-            xlab <- "Proportion"
-        if (measure == "PLN") {
-            xlab <- "Log Transformed Proportion"
-            if (atransf.char == "exp" || atransf.char == "transf.exp.int") 
-                xlab <- "Proportion (log scale)"
-            if (transf.char == "exp" || transf.char == "transf.exp.int") 
+        if (measure == "PR") {
+            if (transf.char == "FALSE" && atransf.char == "FALSE") {
                 xlab <- "Proportion"
+            }
+            else {
+                xlab <- "Transformed Proportion"
+            }
+        }
+        if (measure == "PLN") {
+            if (transf.char == "FALSE" && atransf.char == "FALSE") {
+                xlab <- "Log Proportion"
+            }
+            else {
+                xlab <- "Transformed Log Proportion"
+                if (atransf.char == "exp" || atransf.char == 
+                  "transf.exp.int") 
+                  xlab <- "Proportion (log scale)"
+                if (transf.char == "exp" || transf.char == "transf.exp.int") 
+                  xlab <- "Proportion"
+            }
         }
         if (measure == "PLO") {
-            xlab <- "Log Odds"
-            if (atransf.char == "transf.ilogit" || atransf.char == 
-                "transf.ilogit.int") 
-                xlab <- "Proportion (logit scale)"
-            if (transf.char == "transf.ilogit" || transf.char == 
-                "transf.ilogit.int") 
-                xlab <- "Proportion"
+            if (transf.char == "FALSE" && atransf.char == "FALSE") {
+                xlab <- "Log Odds"
+            }
+            else {
+                xlab <- "Transformed Log Odds"
+                if (atransf.char == "exp" || atransf.char == 
+                  "transf.exp.int") 
+                  xlab <- "Proportion (logit scale)"
+                if (transf.char == "exp" || transf.char == "transf.exp.int") 
+                  xlab <- "Proportion"
+            }
         }
-        if (measure == "PAS") 
-            xlab <- "Arcsine Transformed Proportion"
-        if (measure == "PFT") 
-            xlab <- "Double Arcsine Transformed Proportion"
+        if (measure == "PAS") {
+            if (transf.char == "FALSE" && atransf.char == "FALSE") {
+                xlab <- "Arcsine Transformed Proportion"
+            }
+            else {
+                xlab <- "Transformed Arcsine Transformed Proportion"
+            }
+        }
+        if (measure == "PFT") {
+            if (transf.char == "FALSE" && atransf.char == "FALSE") {
+                xlab <- "Double Arcsine Transformed Proportion"
+            }
+            else {
+                xlab <- "Transformed Double Arcsine Transformed Proportion"
+            }
+        }
     }
     if (!is.null(xlab)) 
         mtext(xlab, side = 1, at = min(at) + (max(at) - min(at))/2, 
@@ -1385,6 +1499,8 @@ function (x, vi, sei, annotate = TRUE, xlim = NULL, alim = NULL,
         stop("Unknwn 'na.action' specified under options().")
     transf.char <- deparse(substitute(transf))
     atransf.char <- deparse(substitute(atransf))
+    if (transf.char != "FALSE" && atransf.char != "FALSE") 
+        stop("Use either 'transf' or 'atransf' to specify a transformation (not both).")
     yi <- x
     if (is.null(attributes(yi)$measure)) {
         measure <- "GEN"
@@ -1438,8 +1554,8 @@ function (x, vi, sei, annotate = TRUE, xlim = NULL, alim = NULL,
     }
     k <- length(yi)
     alpha <- (100 - level)/100
-    ci.lb <- yi - qnorm(1 - alpha/2) * sqrt(vi)
-    ci.ub <- yi + qnorm(1 - alpha/2) * sqrt(vi)
+    ci.lb <- yi - qnorm(alpha/2, lower.tail = FALSE) * sqrt(vi)
+    ci.ub <- yi + qnorm(alpha/2, lower.tail = FALSE) * sqrt(vi)
     if (is.function(transf)) {
         if (is.null(targs)) {
             yi <- sapply(yi, transf)
@@ -1551,66 +1667,159 @@ function (x, vi, sei, annotate = TRUE, xlim = NULL, alim = NULL,
     if (is.null(xlab)) {
         xlab <- "Observed Outcome"
         if (measure == "OR" || measure == "PETO") {
-            xlab <- "Log Odds Ratio"
-            if (atransf.char == "exp" || atransf.char == "transf.exp.int") 
-                xlab <- "Odds Ratio (log scale)"
-            if (transf.char == "exp" || transf.char == "transf.exp.int") 
-                xlab <- "Odds Ratio"
+            if (transf.char == "FALSE" && atransf.char == "FALSE") {
+                xlab <- "Log Odds Ratio"
+            }
+            else {
+                xlab <- "Transformed Log Odds Ratio"
+                if (atransf.char == "exp" || atransf.char == 
+                  "transf.exp.int") 
+                  xlab <- "Odds Ratio (log scale)"
+                if (transf.char == "exp" || transf.char == "transf.exp.int") 
+                  xlab <- "Odds Ratio"
+            }
         }
         if (measure == "RR") {
-            xlab <- "Log Relative Risk"
-            if (atransf.char == "exp" || atransf.char == "transf.exp.int") 
-                xlab <- "Relative Risk (log scale)"
-            if (transf.char == "exp" || transf.char == "transf.exp.int") 
-                xlab <- "Relative Risk"
+            if (transf.char == "FALSE" && atransf.char == "FALSE") {
+                xlab <- "Log Relative Risk"
+            }
+            else {
+                xlab <- "Transformed Log Relative Risk"
+                if (atransf.char == "exp" || atransf.char == 
+                  "transf.exp.int") 
+                  xlab <- "Relative Risk (log scale)"
+                if (transf.char == "exp" || transf.char == "transf.exp.int") 
+                  xlab <- "Relative Risk"
+            }
         }
-        if (measure == "RD") 
-            xlab <- "Risk Difference"
-        if (measure == "AS") 
-            xlab <- "Arcsine Transformed Risk Difference"
-        if (measure == "PHI") 
-            xlab <- "Phi Coefficient"
-        if (measure == "YUQ") 
-            xlab <- "Yule's Q"
-        if (measure == "YUY") 
-            xlab <- "Yule's Y"
-        if (measure == "MD") 
-            xlab <- "Mean Difference"
-        if (measure == "SMD") 
-            xlab <- "Standardized Mean Difference"
-        if (measure == "COR" || measure == "UCOR") 
-            xlab <- "Correlation Coefficient"
+        if (measure == "RD") {
+            if (transf.char == "FALSE" && atransf.char == "FALSE") {
+                xlab <- "Risk Difference"
+            }
+            else {
+                xlab <- "Transformed Risk Difference"
+            }
+        }
+        if (measure == "AS") {
+            if (transf.char == "FALSE" && atransf.char == "FALSE") {
+                xlab <- "Arcsine Transformed Risk Difference"
+            }
+            else {
+                xlab <- "Transformed Arcsine Transformed Risk Difference"
+            }
+        }
+        if (measure == "PHI") {
+            if (transf.char == "FALSE" && atransf.char == "FALSE") {
+                xlab <- "Phi Coefficient"
+            }
+            else {
+                xlab <- "Transformed Phi Coefficient"
+            }
+        }
+        if (measure == "YUQ") {
+            if (transf.char == "FALSE" && atransf.char == "FALSE") {
+                xlab <- "Yule's Q"
+            }
+            else {
+                xlab <- "Transformed Yule's Q"
+            }
+        }
+        if (measure == "YUY") {
+            if (transf.char == "FALSE" && atransf.char == "FALSE") {
+                xlab <- "Yule's Y"
+            }
+            else {
+                xlab <- "Transformed Yule's Y"
+            }
+        }
+        if (measure == "MD") {
+            if (transf.char == "FALSE" && atransf.char == "FALSE") {
+                xlab <- "Mean Difference"
+            }
+            else {
+                xlab <- "Transformed Mean Difference"
+            }
+        }
+        if (measure == "SMD") {
+            if (transf.char == "FALSE" && atransf.char == "FALSE") {
+                xlab <- "Standardized Mean Difference"
+            }
+            else {
+                xlab <- "Transformed Standardized Mean Difference"
+            }
+        }
+        if (measure == "COR" || measure == "UCOR") {
+            if (transf.char == "FALSE" && atransf.char == "FALSE") {
+                xlab <- "Correlation Coefficient"
+            }
+            else {
+                xlab <- "Transformed Correlation Coefficient"
+            }
+        }
         if (measure == "ZCOR") {
-            xlab <- "Transformed Correlation Coefficient"
-            if (atransf.char == "transf.ztor" || atransf.char == 
-                "transf.ztor.int") 
-                xlab <- "Correlation Coefficient"
-            if (transf.char == "transf.ztor" || transf.char == 
-                "transf.ztor.int") 
-                xlab <- "Correlation Coefficient"
+            if (transf.char == "FALSE" && atransf.char == "FALSE") {
+                xlab <- "Fisher's z Transformed Correlation Coefficient"
+            }
+            else {
+                xlab <- "Transformed Fisher's z Transformed Correlation Coefficient"
+                if (atransf.char == "transf.ztor" || atransf.char == 
+                  "transf.ztor.int") 
+                  xlab <- "Correlation Coefficient"
+                if (transf.char == "transf.ztor" || transf.char == 
+                  "transf.ztor.int") 
+                  xlab <- "Correlation Coefficient"
+            }
         }
-        if (measure == "PR") 
-            xlab <- "Proportion"
-        if (measure == "PLN") {
-            xlab <- "Log Transformed Proportion"
-            if (atransf.char == "exp" || atransf.char == "transf.exp.int") 
-                xlab <- "Proportion (log scale)"
-            if (transf.char == "exp" || transf.char == "transf.exp.int") 
+        if (measure == "PR") {
+            if (transf.char == "FALSE" && atransf.char == "FALSE") {
                 xlab <- "Proportion"
+            }
+            else {
+                xlab <- "Transformed Proportion"
+            }
+        }
+        if (measure == "PLN") {
+            if (transf.char == "FALSE" && atransf.char == "FALSE") {
+                xlab <- "Log Proportion"
+            }
+            else {
+                xlab <- "Transformed Log Proportion"
+                if (atransf.char == "exp" || atransf.char == 
+                  "transf.exp.int") 
+                  xlab <- "Proportion (log scale)"
+                if (transf.char == "exp" || transf.char == "transf.exp.int") 
+                  xlab <- "Proportion"
+            }
         }
         if (measure == "PLO") {
-            xlab <- "Log Odds"
-            if (atransf.char == "transf.ilogit" || atransf.char == 
-                "transf.ilogit.int") 
-                xlab <- "Proportion (logit scale)"
-            if (transf.char == "transf.ilogit" || transf.char == 
-                "transf.ilogit.int") 
-                xlab <- "Proportion"
+            if (transf.char == "FALSE" && atransf.char == "FALSE") {
+                xlab <- "Log Odds"
+            }
+            else {
+                xlab <- "Transformed Log Odds"
+                if (atransf.char == "exp" || atransf.char == 
+                  "transf.exp.int") 
+                  xlab <- "Proportion (logit scale)"
+                if (transf.char == "exp" || transf.char == "transf.exp.int") 
+                  xlab <- "Proportion"
+            }
         }
-        if (measure == "PAS") 
-            xlab <- "Arcsine Transformed Proportion"
-        if (measure == "PFT") 
-            xlab <- "Double Arcsine Transformed Proportion"
+        if (measure == "PAS") {
+            if (transf.char == "FALSE" && atransf.char == "FALSE") {
+                xlab <- "Arcsine Transformed Proportion"
+            }
+            else {
+                xlab <- "Transformed Arcsine Transformed Proportion"
+            }
+        }
+        if (measure == "PFT") {
+            if (transf.char == "FALSE" && atransf.char == "FALSE") {
+                xlab <- "Double Arcsine Transformed Proportion"
+            }
+            else {
+                xlab <- "Transformed Double Arcsine Transformed Proportion"
+            }
+        }
     }
     if (!is.null(xlab)) 
         mtext(xlab, side = 1, at = min(at) + (max(at) - min(at))/2, 
@@ -1715,6 +1924,8 @@ function (x, annotate = TRUE, addfit = TRUE, addcred = FALSE,
         stop("Unknwn 'na.action' specified under options().")
     transf.char <- deparse(substitute(transf))
     atransf.char <- deparse(substitute(atransf))
+    if (transf.char != "FALSE" && atransf.char != "FALSE") 
+        stop("Use either 'transf' or 'atransf' to specify a transformation (not both).")
     yi <- x$yi.f
     vi <- x$vi.f
     X <- x$X.f
@@ -1810,8 +2021,8 @@ function (x, annotate = TRUE, addfit = TRUE, addcred = FALSE,
     }
     k <- length(yi)
     alpha <- (100 - level)/100
-    ci.lb <- yi - qnorm(1 - alpha/2) * sqrt(vi)
-    ci.ub <- yi + qnorm(1 - alpha/2) * sqrt(vi)
+    ci.lb <- yi - qnorm(alpha/2, lower.tail = FALSE) * sqrt(vi)
+    ci.ub <- yi + qnorm(alpha/2, lower.tail = FALSE) * sqrt(vi)
     if (is.function(transf)) {
         if (is.null(targs)) {
             yi <- sapply(yi, transf)
@@ -2009,66 +2220,159 @@ function (x, annotate = TRUE, addfit = TRUE, addcred = FALSE,
     if (is.null(xlab)) {
         xlab <- "Observed Outcome"
         if (x$measure == "OR" || x$measure == "PETO") {
-            xlab <- "Log Odds Ratio"
-            if (atransf.char == "exp" || atransf.char == "transf.exp.int") 
-                xlab <- "Odds Ratio (log scale)"
-            if (transf.char == "exp" || transf.char == "transf.exp.int") 
-                xlab <- "Odds Ratio"
+            if (transf.char == "FALSE" && atransf.char == "FALSE") {
+                xlab <- "Log Odds Ratio"
+            }
+            else {
+                xlab <- "Transformed Log Odds Ratio"
+                if (atransf.char == "exp" || atransf.char == 
+                  "transf.exp.int") 
+                  xlab <- "Odds Ratio (log scale)"
+                if (transf.char == "exp" || transf.char == "transf.exp.int") 
+                  xlab <- "Odds Ratio"
+            }
         }
         if (x$measure == "RR") {
-            xlab <- "Log Relative Risk"
-            if (atransf.char == "exp" || atransf.char == "transf.exp.int") 
-                xlab <- "Relative Risk (log scale)"
-            if (transf.char == "exp" || transf.char == "transf.exp.int") 
-                xlab <- "Relative Risk"
+            if (transf.char == "FALSE" && atransf.char == "FALSE") {
+                xlab <- "Log Relative Risk"
+            }
+            else {
+                xlab <- "Transformed Log Relative Risk"
+                if (atransf.char == "exp" || atransf.char == 
+                  "transf.exp.int") 
+                  xlab <- "Relative Risk (log scale)"
+                if (transf.char == "exp" || transf.char == "transf.exp.int") 
+                  xlab <- "Relative Risk"
+            }
         }
-        if (x$measure == "RD") 
-            xlab <- "Risk Difference"
-        if (x$measure == "AS") 
-            xlab <- "Arcsine Transformed Risk Difference"
-        if (x$measure == "PHI") 
-            xlab <- "Phi Coefficient"
-        if (x$measure == "YUQ") 
-            xlab <- "Yule's Q"
-        if (x$measure == "YUY") 
-            xlab <- "Yule's Y"
-        if (x$measure == "MD") 
-            xlab <- "Mean Difference"
-        if (x$measure == "SMD") 
-            xlab <- "Standardized Mean Difference"
-        if (x$measure == "COR" || x$measure == "UCOR") 
-            xlab <- "Correlation Coefficient"
+        if (x$measure == "RD") {
+            if (transf.char == "FALSE" && atransf.char == "FALSE") {
+                xlab <- "Risk Difference"
+            }
+            else {
+                xlab <- "Transformed Risk Difference"
+            }
+        }
+        if (x$measure == "AS") {
+            if (transf.char == "FALSE" && atransf.char == "FALSE") {
+                xlab <- "Arcsine Transformed Risk Difference"
+            }
+            else {
+                xlab <- "Transformed Arcsine Transformed Risk Difference"
+            }
+        }
+        if (x$measure == "PHI") {
+            if (transf.char == "FALSE" && atransf.char == "FALSE") {
+                xlab <- "Phi Coefficient"
+            }
+            else {
+                xlab <- "Transformed Phi Coefficient"
+            }
+        }
+        if (x$measure == "YUQ") {
+            if (transf.char == "FALSE" && atransf.char == "FALSE") {
+                xlab <- "Yule's Q"
+            }
+            else {
+                xlab <- "Transformed Yule's Q"
+            }
+        }
+        if (x$measure == "YUY") {
+            if (transf.char == "FALSE" && atransf.char == "FALSE") {
+                xlab <- "Yule's Y"
+            }
+            else {
+                xlab <- "Transformed Yule's Y"
+            }
+        }
+        if (x$measure == "MD") {
+            if (transf.char == "FALSE" && atransf.char == "FALSE") {
+                xlab <- "Mean Difference"
+            }
+            else {
+                xlab <- "Transformed Mean Difference"
+            }
+        }
+        if (x$measure == "SMD") {
+            if (transf.char == "FALSE" && atransf.char == "FALSE") {
+                xlab <- "Standardized Mean Difference"
+            }
+            else {
+                xlab <- "Transformed Standardized Mean Difference"
+            }
+        }
+        if (x$measure == "COR" || x$measure == "UCOR") {
+            if (transf.char == "FALSE" && atransf.char == "FALSE") {
+                xlab <- "Correlation Coefficient"
+            }
+            else {
+                xlab <- "Transformed Correlation Coefficient"
+            }
+        }
         if (x$measure == "ZCOR") {
-            xlab <- "Transformed Correlation Coefficient"
-            if (atransf.char == "transf.ztor" || atransf.char == 
-                "transf.ztor.int") 
-                xlab <- "Correlation Coefficient"
-            if (transf.char == "transf.ztor" || transf.char == 
-                "transf.ztor.int") 
-                xlab <- "Correlation Coefficient"
+            if (transf.char == "FALSE" && atransf.char == "FALSE") {
+                xlab <- "Fisher's z Transformed Correlation Coefficient"
+            }
+            else {
+                xlab <- "Transformed Fisher's z Transformed Correlation Coefficient"
+                if (atransf.char == "transf.ztor" || atransf.char == 
+                  "transf.ztor.int") 
+                  xlab <- "Correlation Coefficient"
+                if (transf.char == "transf.ztor" || transf.char == 
+                  "transf.ztor.int") 
+                  xlab <- "Correlation Coefficient"
+            }
         }
-        if (x$measure == "PR") 
-            xlab <- "Proportion"
-        if (x$measure == "PLN") {
-            xlab <- "Log Transformed Proportion"
-            if (atransf.char == "exp" || atransf.char == "transf.exp.int") 
-                xlab <- "Proportion (log scale)"
-            if (transf.char == "exp" || transf.char == "transf.exp.int") 
+        if (x$measure == "PR") {
+            if (transf.char == "FALSE" && atransf.char == "FALSE") {
                 xlab <- "Proportion"
+            }
+            else {
+                xlab <- "Transformed Proportion"
+            }
+        }
+        if (x$measure == "PLN") {
+            if (transf.char == "FALSE" && atransf.char == "FALSE") {
+                xlab <- "Log Proportion"
+            }
+            else {
+                xlab <- "Transformed Log Proportion"
+                if (atransf.char == "exp" || atransf.char == 
+                  "transf.exp.int") 
+                  xlab <- "Proportion (log scale)"
+                if (transf.char == "exp" || transf.char == "transf.exp.int") 
+                  xlab <- "Proportion"
+            }
         }
         if (x$measure == "PLO") {
-            xlab <- "Log Odds"
-            if (atransf.char == "transf.ilogit" || atransf.char == 
-                "transf.ilogit.int") 
-                xlab <- "Proportion (logit scale)"
-            if (transf.char == "transf.ilogit" || transf.char == 
-                "transf.ilogit.int") 
-                xlab <- "Proportion"
+            if (transf.char == "FALSE" && atransf.char == "FALSE") {
+                xlab <- "Log Odds"
+            }
+            else {
+                xlab <- "Transformed Log Odds"
+                if (atransf.char == "exp" || atransf.char == 
+                  "transf.exp.int") 
+                  xlab <- "Proportion (logit scale)"
+                if (transf.char == "exp" || transf.char == "transf.exp.int") 
+                  xlab <- "Proportion"
+            }
         }
-        if (x$measure == "PAS") 
-            xlab <- "Arcsine Transformed Proportion"
-        if (x$measure == "PFT") 
-            xlab <- "Double Arcsine Transformed Proportion"
+        if (x$measure == "PAS") {
+            if (transf.char == "FALSE" && atransf.char == "FALSE") {
+                xlab <- "Arcsine Transformed Proportion"
+            }
+            else {
+                xlab <- "Transformed Arcsine Transformed Proportion"
+            }
+        }
+        if (x$measure == "PFT") {
+            if (transf.char == "FALSE" && atransf.char == "FALSE") {
+                xlab <- "Double Arcsine Transformed Proportion"
+            }
+            else {
+                xlab <- "Transformed Double Arcsine Transformed Proportion"
+            }
+        }
     }
     if (!is.null(xlab)) 
         mtext(xlab, side = 1, at = min(at) + (max(at) - min(at))/2, 
@@ -2195,7 +2499,7 @@ function (yi, vi, sei, data = NULL, type = "Rosenthal", alpha = 0.05,
         zi <- yi/sqrt(vi)
         z.avg <- abs(sum(zi)/sqrt(k))
         pval <- pnorm(z.avg, lower.tail = FALSE)
-        fsnum <- ceiling(max(0, k * (z.avg/qnorm(1 - alpha))^2 - 
+        fsnum <- ceiling(max(0, k * (z.avg/qnorm(alpha, lower.tail = FALSE))^2 - 
             k))
         meanes <- NA
         target <- NA
@@ -2219,8 +2523,9 @@ function (yi, vi, sei, data = NULL, type = "Rosenthal", alpha = 0.05,
         wi <- 1/vi
         meanes <- sum(wi * yi)/sum(wi)
         zval <- meanes/sqrt(1/sum(wi))
-        w.p <- (sum(wi * yi)/qnorm(1 - alpha/2))^2 - sum(wi)
-        pval <- 2 * (1 - pnorm(abs(zval)))
+        w.p <- (sum(wi * yi)/qnorm(alpha/2, lower.tail = FALSE))^2 - 
+            sum(wi)
+        pval <- 2 * pnorm(abs(zval), lower.tail = FALSE)
         fsnum <- ceiling(max(0, k * w.p/sum(wi)))
         target <- NA
     }
@@ -2256,72 +2561,148 @@ function (x, xlim = NULL, ylim = NULL, xlab = NULL, ylab = "Standard Error",
         if (is.null(xlab)) {
             xlab <- "Observed Outcome"
             if (x$measure == "OR" || x$measure == "PETO") {
-                if (atransf.char == "exp" || atransf.char == 
-                  "transf.exp.int") {
-                  xlab <- "Odds Ratio (log scale)"
+                if (atransf.char == "FALSE") {
+                  xlab <- "Log Odds Ratio"
                 }
                 else {
-                  xlab <- "Log Odds Ratio"
+                  xlab <- "Transformed Log Odds Ratio"
+                  if (atransf.char == "exp" || atransf.char == 
+                    "transf.exp.int") 
+                    xlab <- "Odds Ratio (log scale)"
                 }
             }
             if (x$measure == "RR") {
-                if (atransf.char == "exp" || atransf.char == 
-                  "transf.exp.int") {
-                  xlab <- "Relative Risk (log scale)"
-                }
-                else {
+                if (atransf.char == "FALSE") {
                   xlab <- "Log Relative Risk"
                 }
+                else {
+                  xlab <- "Transformed Log Relative Risk"
+                  if (atransf.char == "exp" || atransf.char == 
+                    "transf.exp.int") 
+                    xlab <- "Relative Risk (log scale)"
+                }
             }
-            if (x$measure == "RD") 
-                xlab <- "Risk Difference"
-            if (x$measure == "AS") 
-                xlab <- "Arcsine Transformed Risk Difference"
-            if (x$measure == "PHI") 
-                xlab <- "Phi Coefficient"
-            if (x$measure == "YUQ") 
-                xlab <- "Yule's Q"
-            if (x$measure == "YUY") 
-                xlab <- "Yule's Y"
-            if (x$measure == "MD") 
-                xlab <- "Mean Difference"
-            if (x$measure == "SMD") 
-                xlab <- "Standardized Mean Difference"
-            if (x$measure == "COR" || x$measure == "UCOR") 
-                xlab <- "Correlation Coefficient"
-            if (x$measure == "ZCOR") {
-                if (atransf.char == "transf.ztor" || atransf.char == 
-                  "transf.ztor.int") {
+            if (x$measure == "RD") {
+                if (atransf.char == "FALSE") {
+                  xlab <- "Risk Difference"
+                }
+                else {
+                  xlab <- "Transformed Risk Difference"
+                }
+            }
+            if (x$measure == "AS") {
+                if (atransf.char == "FALSE") {
+                  xlab <- "Arcsine Transformed Risk Difference"
+                }
+                else {
+                  xlab <- "Transformed Arcsine Transformed Risk Difference"
+                }
+            }
+            if (x$measure == "PHI") {
+                if (atransf.char == "FALSE") {
+                  xlab <- "Phi Coefficient"
+                }
+                else {
+                  xlab <- "Transformed Phi Coefficient"
+                }
+            }
+            if (x$measure == "YUQ") {
+                if (atransf.char == "FALSE") {
+                  xlab <- "Yule's Q"
+                }
+                else {
+                  xlab <- "Transformed Yule's Q"
+                }
+            }
+            if (x$measure == "YUY") {
+                if (atransf.char == "FALSE") {
+                  xlab <- "Yule's Y"
+                }
+                else {
+                  xlab <- "Transformed Yule's Y"
+                }
+            }
+            if (x$measure == "MD") {
+                if (atransf.char == "FALSE") {
+                  xlab <- "Mean Difference"
+                }
+                else {
+                  xlab <- "Transformed Mean Difference"
+                }
+            }
+            if (x$measure == "SMD") {
+                if (atransf.char == "FALSE") {
+                  xlab <- "Standardized Mean Difference"
+                }
+                else {
+                  xlab <- "Transformed Standardized Mean Difference"
+                }
+            }
+            if (x$measure == "COR" || x$measure == "UCOR") {
+                if (atransf.char == "FALSE") {
                   xlab <- "Correlation Coefficient"
                 }
                 else {
                   xlab <- "Transformed Correlation Coefficient"
                 }
             }
-            if (x$measure == "PR") 
-                xlab <- "Proportion"
-            if (x$measure == "PLN") {
-                if (atransf.char == "exp" || atransf.char == 
-                  "transf.exp.int") {
-                  xlab <- "Proportion (log scale)"
+            if (x$measure == "ZCOR") {
+                if (atransf.char == "FALSE") {
+                  xlab <- "Fisher's z Transformed Correlation Coefficient"
                 }
                 else {
-                  xlab <- "Log Transformed Proportion"
+                  xlab <- "Transformed Fisher's z Transformed Correlation Coefficient"
+                  if (atransf.char == "transf.ztor" || atransf.char == 
+                    "transf.ztor.int") 
+                    xlab <- "Correlation Coefficient"
+                }
+            }
+            if (x$measure == "PR") {
+                if (atransf.char == "FALSE") {
+                  xlab <- "Proportion"
+                }
+                else {
+                  xlab <- "Transformed Proportion"
+                }
+            }
+            if (x$measure == "PLN") {
+                if (atransf.char == "FALSE") {
+                  xlab <- "Log Proportion"
+                }
+                else {
+                  xlab <- "Transformed Log Proportion"
+                  if (atransf.char == "exp" || atransf.char == 
+                    "transf.exp.int") 
+                    xlab <- "Proportion (log scale)"
                 }
             }
             if (x$measure == "PLO") {
-                if (atransf.char == "transf.ilogit" || atransf.char == 
-                  "transf.ilogit.int") {
-                  xlab <- "Proportion (logit scale)"
-                }
-                else {
+                if (atransf.char == "FALSE") {
                   xlab <- "Log Odds"
                 }
+                else {
+                  xlab <- "Transformed Log Odds"
+                  if (atransf.char == "transf.ilogit" || atransf.char == 
+                    "transf.ilogit.int") 
+                    xlab <- "Proportion (logit scale)"
+                }
             }
-            if (x$measure == "PAS") 
-                xlab <- "Arcsine Transformed Proportion"
-            if (x$measure == "PFT") 
-                xlab <- "Double Arcsine Transformed Proportion"
+            if (x$measure == "PAS") {
+                if (atransf.char == "FALSE") {
+                  xlab <- "Arcsine Transformed Proportion"
+                }
+                else {
+                  xlab <- "Transformed Arcsine Transformed Proportion"
+                }
+            }
+            if (x$measure == "PFT") {
+                if (atransf.char == "FALSE") {
+                  xlab <- "Double Arcsine Transformed Proportion"
+                }
+                else {
+                  xlab <- "Transformed Double Arcsine Transformed Proportion"
+                }
+            }
         }
     }
     else {
@@ -2350,14 +2731,14 @@ function (x, xlim = NULL, ylim = NULL, xlab = NULL, ylab = "Standard Error",
     }
     alpha <- (100 - level)/100
     alpha.min <- min(alpha)
-    x.lb.bot <- refline - qnorm(1 - alpha.min/2) * sqrt(ylim[2]^2 + 
-        tau2)
-    x.ub.bot <- refline + qnorm(1 - alpha.min/2) * sqrt(ylim[2]^2 + 
-        tau2)
-    x.lb.top <- refline - qnorm(1 - alpha.min/2) * sqrt(ylim[1]^2 + 
-        tau2)
-    x.ub.top <- refline + qnorm(1 - alpha.min/2) * sqrt(ylim[1]^2 + 
-        tau2)
+    x.lb.bot <- refline - qnorm(alpha.min/2, lower.tail = FALSE) * 
+        sqrt(ylim[2]^2 + tau2)
+    x.ub.bot <- refline + qnorm(alpha.min/2, lower.tail = FALSE) * 
+        sqrt(ylim[2]^2 + tau2)
+    x.lb.top <- refline - qnorm(alpha.min/2, lower.tail = FALSE) * 
+        sqrt(ylim[1]^2 + tau2)
+    x.ub.top <- refline + qnorm(alpha.min/2, lower.tail = FALSE) * 
+        sqrt(ylim[1]^2 + tau2)
     if (is.null(xlim)) {
         xlim <- c(min(x.lb.bot, min(yi)), max(x.ub.bot, max(yi)))
         rxlim <- xlim[2] - xlim[1]
@@ -2388,14 +2769,14 @@ function (x, xlim = NULL, ylim = NULL, xlab = NULL, ylab = "Standard Error",
     ylim[2] <- ylim[2] + (rylim * 0.1)
     if (x$method == "FE") {
         for (m in avals:1) {
-            x.lb.bot <- refline - qnorm(1 - alpha[m]/2) * sqrt(ylim[2]^2 + 
-                tau2)
-            x.ub.bot <- refline + qnorm(1 - alpha[m]/2) * sqrt(ylim[2]^2 + 
-                tau2)
-            x.lb.top <- refline - qnorm(1 - alpha[m]/2) * sqrt(ylim[1]^2 + 
-                tau2)
-            x.ub.top <- refline + qnorm(1 - alpha[m]/2) * sqrt(ylim[1]^2 + 
-                tau2)
+            x.lb.bot <- refline - qnorm(alpha[m]/2, lower.tail = FALSE) * 
+                sqrt(ylim[2]^2 + tau2)
+            x.ub.bot <- refline + qnorm(alpha[m]/2, lower.tail = FALSE) * 
+                sqrt(ylim[2]^2 + tau2)
+            x.lb.top <- refline - qnorm(alpha[m]/2, lower.tail = FALSE) * 
+                sqrt(ylim[1]^2 + tau2)
+            x.ub.top <- refline + qnorm(alpha[m]/2, lower.tail = FALSE) * 
+                sqrt(ylim[1]^2 + tau2)
             polygon(c(x.lb.bot, x.lb.top, x.ub.top, x.ub.bot), 
                 c(max(sei) - ylim[2], max(sei) - ylim[1], max(sei) - 
                   ylim[1], max(sei) - ylim[2]), border = NA, 
@@ -2411,10 +2792,10 @@ function (x, xlim = NULL, ylim = NULL, xlab = NULL, ylab = "Standard Error",
     else {
         for (m in avals:1) {
             vi.vals <- seq(ylim[1]^2, ylim[2]^2, length = 100)
-            ci.left <- refline - qnorm(1 - alpha[m]/2) * sqrt(vi.vals + 
-                tau2)
-            ci.right <- refline + qnorm(1 - alpha[m]/2) * sqrt(vi.vals + 
-                tau2)
+            ci.left <- refline - qnorm(alpha[m]/2, lower.tail = FALSE) * 
+                sqrt(vi.vals + tau2)
+            ci.right <- refline + qnorm(alpha[m]/2, lower.tail = FALSE) * 
+                sqrt(vi.vals + tau2)
             lvi <- length(vi.vals)
             polygon(c(ci.left[lvi:1], ci.right), c(max(sei) - 
                 sqrt(vi.vals)[lvi:1], max(sei) - sqrt(vi.vals)), 
@@ -2782,13 +3163,13 @@ function (x, digits = x$digits, transf = FALSE, targs = NULL,
     }
     if (na.act == "na.omit") {
         out <- list(estimate = b[x$not.na], se = se[x$not.na], 
-            zval = zval[x$not.na], pvals = pval[x$not.na], ci.lb = ci.lb[x$not.na], 
+            zval = zval[x$not.na], pval = pval[x$not.na], ci.lb = ci.lb[x$not.na], 
             ci.ub = ci.ub[x$not.na], Q = QE[x$not.na], Qp = QEp[x$not.na], 
             tau2 = tau2[x$not.na], I2 = I2[x$not.na], H2 = H2[x$not.na])
         out$slab <- x$slab[x$not.na]
     }
     if (na.act == "na.exclude" || na.act == "na.pass") {
-        out <- list(estimate = b, se = se, zval = zval, pvals = pval, 
+        out <- list(estimate = b, se = se, zval = zval, pval = pval, 
             ci.lb = ci.lb, ci.ub = ci.ub, Q = QE, Qp = QEp, tau2 = tau2, 
             I2 = I2, H2 = H2)
         out$slab <- x$slab
@@ -2834,24 +3215,24 @@ permutest <-
 function (x, ...) 
 UseMethod("permutest")
 permutest.rma.uni <-
-function (x, exact = FALSE, iter = 1000, progbar = TRUE, digits = x$digits, 
-    ...) 
+function (x, exact = FALSE, iter = 1000, progbar = TRUE, retpermdist = FALSE, 
+    digits = x$digits, ...) 
 {
     if (!is.element("rma.uni", class(x))) 
         stop("Argument 'x' must be an object of class \"rma.uni\".")
-    if (exact) {
-        if (x$int.only) {
-            iter <- 2^x$k
-            if (progbar) 
-                cat("Running ", iter, " iterations for exact permutation test.\n", 
-                  sep = "")
-        }
-        else {
-            iter <- factorial(x$k)
-            if (progbar) 
-                cat("Running ", iter, " iterations for exact permutation test.\n", 
-                  sep = "")
-        }
+    if (x$int.only) {
+        exact.iter <- 2^x$k
+    }
+    else {
+        exact.iter <- exp(lfactorial(x$k))
+    }
+    if (exact || (exact.iter <= iter)) {
+        iter <- exact.iter
+        if (iter == Inf) 
+            stop("Too many iterations required for exact permutation test.\n")
+        if (progbar) 
+            cat("Running ", iter, " iterations for exact permutation test.\n", 
+                sep = "")
     }
     else {
         if (progbar) 
@@ -2863,7 +3244,6 @@ function (x, exact = FALSE, iter = 1000, progbar = TRUE, digits = x$digits,
     if (x$int.only) {
         zval.perm <- rep(NA, iter)
         QM.perm <- rep(NA, iter)
-        zval.orig.abs <- abs(x$zval)
         if (exact) {
             signmat <- .gensigns(x$k)
             for (i in 1:iter) {
@@ -2872,8 +3252,8 @@ function (x, exact = FALSE, iter = 1000, progbar = TRUE, digits = x$digits,
                   control = x$control, btt = 1, ...), silent = FALSE)
                 if (is.element("try-error", class(res))) 
                   next
-                zval.perm[i] <- abs(res$zval) > zval.orig.abs
-                QM.perm[i] <- res$QM > x$QM
+                zval.perm[i] <- res$zval
+                QM.perm[i] <- res$QM
                 if (progbar) 
                   setTxtProgressBar(pbar, i)
             }
@@ -2887,20 +3267,25 @@ function (x, exact = FALSE, iter = 1000, progbar = TRUE, digits = x$digits,
                   control = x$control, btt = 1, ...), silent = FALSE)
                 if (is.element("try-error", class(res))) 
                   next
-                zval.perm[i] <- abs(res$zval) > zval.orig.abs
-                QM.perm[i] <- res$QM > x$QM
+                zval.perm[i] <- res$zval
+                QM.perm[i] <- res$QM
                 i <- i + 1
                 if (progbar) 
                   setTxtProgressBar(pbar, i)
             }
         }
-        pval <- mean(zval.perm, na.rm = TRUE)
-        QMp <- mean(QM.perm, na.rm = TRUE)
+        if (x$zval > 0) {
+            pval <- 2 * mean(zval.perm > x$zval, na.rm = TRUE)
+        }
+        else {
+            pval <- 2 * mean(zval.perm < x$zval, na.rm = TRUE)
+        }
+        pval[pval > 1] <- 1
+        QMp <- mean(QM.perm > x$QM, na.rm = TRUE)
     }
     else {
         zval.perm <- matrix(NA, nrow = iter, ncol = x$p)
         QM.perm <- rep(NA, iter)
-        zval.orig.abs <- abs(x$zval)
         if (exact) {
             permmat <- .genperms(x$k)
             for (i in 1:iter) {
@@ -2910,8 +3295,8 @@ function (x, exact = FALSE, iter = 1000, progbar = TRUE, digits = x$digits,
                   btt = x$btt, ...), silent = FALSE)
                 if (is.element("try-error", class(res))) 
                   next
-                zval.perm[i, ] <- abs(res$zval) > zval.orig.abs
-                QM.perm[i] <- res$QM > x$QM
+                zval.perm[i, ] <- res$zval
+                QM.perm[i] <- res$QM
                 if (progbar) 
                   setTxtProgressBar(pbar, i)
             }
@@ -2925,15 +3310,25 @@ function (x, exact = FALSE, iter = 1000, progbar = TRUE, digits = x$digits,
                   btt = x$btt, ...), silent = FALSE)
                 if (is.element("try-error", class(res))) 
                   next
-                zval.perm[i, ] <- abs(res$zval) > zval.orig.abs
-                QM.perm[i] <- res$QM > x$QM
+                zval.perm[i, ] <- res$zval
+                QM.perm[i] <- res$QM
                 i <- i + 1
                 if (progbar) 
                   setTxtProgressBar(pbar, i)
             }
         }
-        pval <- apply(zval.perm, 2, mean, na.rm = TRUE)
-        QMp <- mean(QM.perm, na.rm = TRUE)
+        pval <- rep(NA, x$p)
+        for (j in 1:x$p) {
+            if (x$zval[j] > 0) {
+                pval[j] <- 2 * mean(zval.perm[, j] > x$zval[j], 
+                  na.rm = TRUE)
+            }
+            else {
+                pval[j] <- 2 * mean(zval.perm[, j] < x$zval[j], 
+                  na.rm = TRUE)
+            }
+        }
+        QMp <- mean(QM.perm > x$QM, na.rm = TRUE)
     }
     if (progbar) 
         close(pbar)
@@ -2941,6 +3336,11 @@ function (x, exact = FALSE, iter = 1000, progbar = TRUE, digits = x$digits,
         ci.lb = x$ci.lb, ci.ub = x$ci.ub, QM = x$QM, k = x$k, 
         p = x$p, btt = x$btt, m = x$m, knha = x$knha, int.only = x$int.only, 
         digits = digits)
+    if (retpermdist) {
+        out$QM.perm <- QM.perm
+        out$zval.perm <- data.frame(zval.perm)
+        names(out$zval.perm) <- colnames(x$X)
+    }
     class(out) <- "permutest.rma.uni"
     return(out)
 }
@@ -3330,10 +3730,10 @@ function (object, newmods = NULL, addx = FALSE, level = object$level,
     x <- object
     alpha <- (100 - level)/100
     if (x$knha) {
-        crit <- qt(1 - alpha/2, df = x$k - x$p)
+        crit <- qt(alpha/2, df = x$k - x$p, lower.tail = FALSE)
     }
     else {
-        crit <- qnorm(1 - alpha/2)
+        crit <- qnorm(alpha/2, lower.tail = FALSE)
     }
     if (x$int.only && !is.null(newmods)) 
         stop("Cannot specify new moderator values for models without moderators.")
@@ -3892,16 +4292,17 @@ function (x, digits = x$digits, showfit = FALSE, signif.legend = TRUE,
         if (x$int.only) {
             if (x$method == "ML" || x$method == "REML") {
                 cat("tau^2 (estimate of total amount of heterogeneity): ", 
-                  formatC(x$tau2, digits = ifelse(x$tau2 <= .Machine$double.eps * 
-                    10, 0, digits), format = "f"), " (SE = ", 
-                  ifelse(is.na(x$se.tau2), NA, formatC(x$se.tau2, 
+                  formatC(x$tau2, digits = ifelse(abs(x$tau2) <= 
+                    .Machine$double.eps * 10, 0, digits), format = "f"), 
+                  " (SE = ", ifelse(is.na(x$se.tau2), NA, formatC(x$se.tau2, 
                     digits = digits, format = "f")), ")", "\n", 
                   sep = "")
             }
             else {
                 cat("tau^2 (estimate of total amount of heterogeneity): ", 
-                  formatC(x$tau2, digits = ifelse(x$tau2 <= .Machine$double.eps * 
-                    10, 0, digits), format = "f"), "\n", sep = "")
+                  formatC(x$tau2, digits = ifelse(abs(x$tau2) <= 
+                    .Machine$double.eps * 10, 0, digits), format = "f"), 
+                  "\n", sep = "")
             }
             cat("tau (sqrt of the estimate of total heterogeneity): ", 
                 ifelse(x$tau2 >= 0, formatC(sqrt(x$tau2), digits = ifelse(x$tau2 <= 
@@ -3917,16 +4318,17 @@ function (x, digits = x$digits, showfit = FALSE, signif.legend = TRUE,
         else {
             if (x$method == "ML" || x$method == "REML") {
                 cat("tau^2 (estimate of residual amount of heterogeneity): ", 
-                  formatC(x$tau2, digits = ifelse(x$tau2 <= .Machine$double.eps * 
-                    10, 0, digits), format = "f"), " (SE = ", 
-                  ifelse(is.na(x$se.tau2), NA, formatC(x$se.tau2, 
+                  formatC(x$tau2, digits = ifelse(abs(x$tau2) <= 
+                    .Machine$double.eps * 10, 0, digits), format = "f"), 
+                  " (SE = ", ifelse(is.na(x$se.tau2), NA, formatC(x$se.tau2, 
                     digits = digits, format = "f")), ")", "\n", 
                   sep = "")
             }
             else {
                 cat("tau^2 (estimate of residual amount of heterogeneity): ", 
-                  formatC(x$tau2, digits = ifelse(x$tau2 <= .Machine$double.eps * 
-                    10, 0, digits), format = "f"), "\n", sep = "")
+                  formatC(x$tau2, digits = ifelse(abs(x$tau2) <= 
+                    .Machine$double.eps * 10, 0, digits), format = "f"), 
+                  "\n", sep = "")
             }
             cat("tau (sqrt of the estimate of residual heterogeneity): ", 
                 ifelse(x$tau2 >= 0, formatC(sqrt(x$tau2), digits = ifelse(x$tau2 <= 
@@ -4112,14 +4514,14 @@ function (y, type = "rstandard", pch = 19, envelope = TRUE, level = y$level,
             lb <- apply(ei, 1, quantile, (alpha/2))
             ub <- apply(ei, 1, quantile, 1 - (alpha/2))
         }
-        temp <- qqnorm(lb, plot.it = FALSE)
+        temp.lb <- qqnorm(lb, plot.it = FALSE)
         if (smooth) 
-            temp <- supsmu(temp$x, temp$y, bass = bass)
-        lines(temp$x, temp$y, lty = "dotted", ...)
-        temp <- qqnorm(ub, plot.it = FALSE)
+            temp.lb <- supsmu(temp.lb$x, temp.lb$y, bass = bass)
+        lines(temp.lb$x, temp.lb$y, lty = "dotted", ...)
+        temp.ub <- qqnorm(ub, plot.it = FALSE)
         if (smooth) 
-            temp <- supsmu(temp$x, temp$y, bass = bass)
-        lines(temp$x, temp$y, lty = "dotted", ...)
+            temp.ub <- supsmu(temp.ub$x, temp.ub$y, bass = bass)
+        lines(temp.ub$x, temp.ub$y, lty = "dotted", ...)
     }
     invisible()
 }
@@ -4731,7 +5133,7 @@ function (yi, vi, sei, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i,
     bntt <- setdiff(1:p, btt)
     m <- length(btt)
     con <- list(tau2.init = NULL, tau2.min = 0, tau2.max = 50, 
-        threshold = 10^-5, maxit = 50, stepadj = 1, verbose = FALSE)
+        threshold = 10^-5, maxit = 100, stepadj = 1, verbose = FALSE)
     con[pmatch(names(control), names(con))] <- control
     se.tau2 <- I2 <- H2 <- QE <- QEp <- NA
     s2w <- 1
@@ -4929,14 +5331,14 @@ function (yi, vi, sei, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i,
     zval <- c(b/se)
     if (knha) {
         QM <- QM/m
-        QMp <- 1 - pf(QM, df1 = m, df2 = k - p)
-        pval <- 2 * (1 - pt(abs(zval), df = k - p))
-        crit <- qt(1 - alpha/2, df = k - p)
+        QMp <- pf(QM, df1 = m, df2 = k - p, lower.tail = FALSE)
+        pval <- 2 * pt(abs(zval), df = k - p, lower.tail = FALSE)
+        crit <- qt(alpha/2, df = k - p, lower.tail = FALSE)
     }
     else {
-        QMp <- 1 - pchisq(QM, df = m)
-        pval <- 2 * (1 - pnorm(abs(zval)))
-        crit <- qnorm(1 - alpha/2)
+        QMp <- pchisq(QM, df = m, lower.tail = FALSE)
+        pval <- 2 * pnorm(abs(zval), lower.tail = FALSE)
+        crit <- qnorm(alpha/2, lower.tail = FALSE)
     }
     ci.lb <- c(b - crit * se)
     ci.ub <- c(b + crit * se)
@@ -5147,9 +5549,11 @@ function (ai, bi, ci, di, n1i, n2i, data = NULL, slab = NULL,
             se <- sqrt(1/2 * (sum(Pi * Ri)/R^2 + sum(Pi * Si + 
                 Qi * Ri)/(R * S) + sum(Qi * Si)/S^2))
             zval <- b/se
-            pval <- 2 * (1 - pnorm(abs(zval)))
-            ci.lb <- b - qnorm(1 - alpha/2) * se
-            ci.ub <- b + qnorm(1 - alpha/2) * se
+            pval <- 2 * pnorm(abs(zval), lower.tail = FALSE)
+            ci.lb <- b - qnorm(alpha/2, lower.tail = FALSE) * 
+                se
+            ci.ub <- b + qnorm(alpha/2, lower.tail = FALSE) * 
+                se
         }
         names(b) <- "intrcpt"
         vb <- matrix(se^2, dimnames = list("intrcpt", "intrcpt"))
@@ -5222,9 +5626,11 @@ function (ai, bi, ci, di, n1i, n2i, data = NULL, slab = NULL,
             se <- sqrt(sum(((n1i/Ni) * (n2i/Ni) * (ai + ci) - 
                 (ai/Ni) * ci))/(R * S))
             zval <- b/se
-            pval <- 2 * (1 - pnorm(abs(zval)))
-            ci.lb <- b - qnorm(1 - alpha/2) * se
-            ci.ub <- b + qnorm(1 - alpha/2) * se
+            pval <- 2 * pnorm(abs(zval), lower.tail = FALSE)
+            ci.lb <- b - qnorm(alpha/2, lower.tail = FALSE) * 
+                se
+            ci.ub <- b + qnorm(alpha/2, lower.tail = FALSE) * 
+                se
         }
         names(b) <- "intrcpt"
         vb <- matrix(se^2, dimnames = list("intrcpt", "intrcpt"))
@@ -5235,9 +5641,9 @@ function (ai, bi, ci, di, n1i, n2i, data = NULL, slab = NULL,
         se <- sqrt(sum(((ai/Ni^2) * bi * (n2i^2/n1i) + (ci/Ni^2) * 
             di * (n1i^2/n2i)))/sum(n1i * (n2i/Ni))^2)
         zval <- b/se
-        pval <- 2 * (1 - pnorm(abs(zval)))
-        ci.lb <- b - qnorm(1 - alpha/2) * se
-        ci.ub <- b + qnorm(1 - alpha/2) * se
+        pval <- 2 * pnorm(abs(zval), lower.tail = FALSE)
+        ci.lb <- b - qnorm(alpha/2, lower.tail = FALSE) * se
+        ci.ub <- b + qnorm(alpha/2, lower.tail = FALSE) * se
         names(b) <- "intrcpt"
         vb <- matrix(se^2, dimnames = list("intrcpt", "intrcpt"))
         CO <- COp <- CMH <- CMHp <- BD <- BDp <- TA <- TAp <- k.pos <- NA
@@ -5442,9 +5848,9 @@ function (ai, bi, ci, di, n1i, n2i, data = NULL, slab = NULL,
     b <- sum(ai - Ei)/sumVi
     se <- sqrt(1/sumVi)
     zval <- b/se
-    pval <- 2 * (1 - pnorm(abs(zval)))
-    ci.lb <- b - qnorm(1 - alpha/2) * se
-    ci.ub <- b + qnorm(1 - alpha/2) * se
+    pval <- 2 * pnorm(abs(zval), lower.tail = FALSE)
+    ci.lb <- b - qnorm(alpha/2, lower.tail = FALSE) * se
+    ci.ub <- b + qnorm(alpha/2, lower.tail = FALSE) * se
     names(b) <- "intrcpt"
     vb <- matrix(se^2, dimnames = list("intrcpt", "intrcpt"))
     wi <- 1/vi
@@ -5756,7 +6162,7 @@ function (yi, vi, sei, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i,
     bntt <- setdiff(1:p, btt)
     m <- length(btt)
     con <- list(tau2.init = NULL, tau2.min = 0, tau2.max = 50, 
-        threshold = 10^-5, maxit = 50, stepadj = 1, verbose = FALSE)
+        threshold = 10^-5, maxit = 100, stepadj = 1, verbose = FALSE)
     con[pmatch(names(control), names(con))] <- control
     se.tau2 <- I2 <- H2 <- QE <- QEp <- NA
     s2w <- 1
@@ -5954,14 +6360,14 @@ function (yi, vi, sei, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i,
     zval <- c(b/se)
     if (knha) {
         QM <- QM/m
-        QMp <- 1 - pf(QM, df1 = m, df2 = k - p)
-        pval <- 2 * (1 - pt(abs(zval), df = k - p))
-        crit <- qt(1 - alpha/2, df = k - p)
+        QMp <- pf(QM, df1 = m, df2 = k - p, lower.tail = FALSE)
+        pval <- 2 * pt(abs(zval), df = k - p, lower.tail = FALSE)
+        crit <- qt(alpha/2, df = k - p, lower.tail = FALSE)
     }
     else {
-        QMp <- 1 - pchisq(QM, df = m)
-        pval <- 2 * (1 - pnorm(abs(zval)))
-        crit <- qnorm(1 - alpha/2)
+        QMp <- pchisq(QM, df = m, lower.tail = FALSE)
+        pval <- 2 * pnorm(abs(zval), lower.tail = FALSE)
+        crit <- qnorm(alpha/2, lower.tail = FALSE)
     }
     ci.lb <- c(b - crit * se)
     ci.ub <- c(b + crit * se)
@@ -6250,15 +6656,12 @@ function (object, digits = object$digits, showfit = TRUE, signif.legend = TRUE,
 transf.exp.int <-
 function (x, targs = NULL, ...) 
 {
-    if (is.null(targs$tau2)) {
+    if (is.null(targs$tau2)) 
         targs$tau2 <- 0
-    }
-    if (is.null(targs$lower)) {
-        targs$lower <- -5 * sqrt(targs$tau2)
-    }
-    if (is.null(targs$upper)) {
-        targs$lower <- +5 * sqrt(targs$tau2)
-    }
+    if (is.null(targs$lower)) 
+        targs$lower <- x - 5 * sqrt(targs$tau2)
+    if (is.null(targs$upper)) 
+        targs$upper <- x + 5 * sqrt(targs$tau2)
     toint <- function(zval, x, tau2) {
         exp(zval) * dnorm(zval, mean = x, sd = sqrt(tau2))
     }
@@ -6266,7 +6669,7 @@ function (x, targs = NULL, ...)
         integrate(toint, lower = lower, upper = upper, x = x, 
             tau2 = tau2)$value
     }
-    z <- sapply(x, FUN = cfunc, tau2 = targs$tau2, lower = targs$lower, 
+    z <- mapply(x, FUN = cfunc, tau2 = targs$tau2, lower = targs$lower, 
         upper = targs$upper)
     return(z)
 }
@@ -6279,15 +6682,12 @@ function (x, ...)
 transf.ilogit.int <-
 function (x, targs = NULL, ...) 
 {
-    if (is.null(targs$tau2)) {
+    if (is.null(targs$tau2)) 
         targs$tau2 <- 0
-    }
-    if (is.null(targs$lower)) {
-        targs$lower <- -5 * sqrt(targs$tau2)
-    }
-    if (is.null(targs$upper)) {
-        targs$lower <- +5 * sqrt(targs$tau2)
-    }
+    if (is.null(targs$lower)) 
+        targs$lower <- x - 5 * sqrt(targs$tau2)
+    if (is.null(targs$upper)) 
+        targs$upper <- x + 5 * sqrt(targs$tau2)
     toint <- function(zval, x, tau2) {
         exp(zval)/(1 + exp(zval)) * dnorm(zval, mean = x, sd = sqrt(tau2))
     }
@@ -6295,7 +6695,7 @@ function (x, targs = NULL, ...)
         integrate(toint, lower = lower, upper = upper, x = x, 
             tau2 = tau2)$value
     }
-    z <- sapply(x, FUN = cfunc, tau2 = targs$tau2, lower = targs$lower, 
+    z <- mapply(x, FUN = cfunc, tau2 = targs$tau2, lower = targs$lower, 
         upper = targs$upper)
     return(z)
 }
@@ -6315,31 +6715,30 @@ transf.ztor <-
 function (x, ...) 
 {
     z <- (exp(2 * x) - 1)/(exp(2 * x) + 1)
-    z[x == -Inf] <- -1
-    z[x == Inf] <- 1
+    z[is.nan(z) & (x < 0)] <- -1
+    z[is.nan(z) & (x > 0)] <- 1
     return(z)
 }
 transf.ztor.int <-
 function (x, targs = NULL, ...) 
 {
-    if (is.null(targs$tau2)) {
+    if (is.null(targs$tau2)) 
         targs$tau2 <- 0
-    }
-    if (is.null(targs$lower)) {
-        targs$lower <- -5 * sqrt(targs$tau2)
-    }
-    if (is.null(targs$upper)) {
-        targs$lower <- +5 * sqrt(targs$tau2)
-    }
+    if (is.null(targs$lower)) 
+        targs$lower <- x - 5 * sqrt(targs$tau2)
+    if (is.null(targs$upper)) 
+        targs$upper <- x + 5 * sqrt(targs$tau2)
     toint <- function(zval, x, tau2) {
-        (exp(2 * zval) - 1)/(exp(2 * zval) + 1) * dnorm(zval, 
-            mean = x, sd = sqrt(tau2))
+        z <- (exp(2 * zval) - 1)/(exp(2 * zval) + 1)
+        z[is.nan(z) & (zval < 0)] <- -1
+        z[is.nan(z) & (zval > 0)] <- 1
+        z * dnorm(zval, mean = x, sd = sqrt(tau2))
     }
     cfunc <- function(x, tau2, lower, upper) {
         integrate(toint, lower = lower, upper = upper, x = x, 
             tau2 = tau2)$value
     }
-    z <- sapply(x, FUN = cfunc, tau2 = targs$tau2, lower = targs$lower, 
+    z <- mapply(x, FUN = cfunc, tau2 = targs$tau2, lower = targs$lower, 
         upper = targs$upper)
     return(z)
 }
@@ -6402,11 +6801,11 @@ function (x, estimator = "L0", side = NULL, maxit = 50, verbose = FALSE,
         }
         k0 <- max(0, k0)
         if (verbose) 
-            cat("Iteration:", iter, "\tk0 =", k0, "\t  b =", 
-                b, "\n")
+            cat("Iteration:", iter, "\tmissing =", k0, "\t  b =", 
+                ifelse(side == "right", -1 * b, b), "\n")
         if (k0 <= 0) {
             cat("Estimated number of missing studies on the", 
-                side, "side is zero.\n\n")
+                side, "side is zero.\n")
             stop
         }
     }
