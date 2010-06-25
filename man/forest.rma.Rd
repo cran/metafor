@@ -3,11 +3,11 @@
 \title{Forest Plots for rma Objects}
 \description{Function to create forest plots for objects of class \code{"rma"}.}
 \usage{
-\method{forest}{rma}(x, annotate=TRUE, addfit=TRUE, addcred=FALSE,
+\method{forest}{rma}(x, annotate=TRUE, addfit=TRUE, addcred=FALSE, showweight=FALSE,
        xlim=NULL, alim=NULL, ylim=NULL, at=NULL, steps=5, 
        level=x$level, digits=2, refline=0, xlab=NULL, 
        slab=NULL, mlab=NULL, ilab=NULL, ilab.xpos=NULL, ilab.pos=NULL, 
-       order=NULL, transf=FALSE, atransf=FALSE, targs=NULL, addrows=0, 
+       order=NULL, transf=FALSE, atransf=FALSE, targs=NULL, rows=NULL, 
        efac=1, pch=15, psize=NULL, col="darkgray", border="darkgray", 
        cex=NULL, cex.lab=NULL, cex.axis=NULL, \dots)
 }
@@ -16,6 +16,7 @@
 	\item{annotate}{logical specifying whether annotations should be added to the plot (default is \code{TRUE}).}
 	\item{addfit}{logical specifying whether the summary estimate (for models without moderators) or fitted values (for models with moderators) should be added to the plot. See \sQuote{Details}.}
 	\item{addcred}{logical specifying whether the bounds of the credibility interval should be added to the plot. See \sQuote{Details}.}
+	\item{showweight}{logical specifying whether the annotations should also include the weights given to the observed effects or outcomes during the model fitting (default is \code{FALSE}).}
 	\item{xlim}{horizontal limits of the plot region. Defaults to \code{NULL}, which means that the function tries to set the horizontal plot limits to some sensible values.}
 	\item{alim}{the actual x axis limits. Defaults to \code{NULL}, which means that the function tries to set the x axis limits to some sensible values.}
 	\item{ylim}{the y limits of the plot. Defaults to \code{NULL}, which means that the function tries to set the y axis limits to some sensible values.}
@@ -34,9 +35,9 @@
 	\item{transf}{an optional argument specifying the name of a function that should be used to transform the observed effect sizes, summary estimates, fitted values, and confidence interval bounds (e.g., \code{transf=exp}). Defaults to \code{FALSE}, which means that no transformation is used.}
 	\item{atransf}{an optional argument specifying the name of a function that should be used to transform the x axis labels and annotations (e.g., \code{transf=exp}). Defaults to \code{FALSE}, which means that no transformation is used.}
 	\item{targs}{optional arguments needed by the function specified via \code{transf} or \code{atransf}.}
-	\item{addrows}{number of extra rows that should be added at the bottom of the forest plot (default is 0).}
+	\item{rows}{an optional vector specifying the rows (or more generally, the horizontal positions) for plotting the outcomes. Defaults to \code{NULL}, which means that the function sets this value automatically. Can also be a single value specifying the row (horizontal position) of the first outcome (the remaining outcomes are then plotted below this starting row).}
 	\item{efac}{vertical expansion factor for arrows, confidence interval limits, and the symbol used to denote summary estimates. The default value of 1 should usually work okay.}
-	\item{pch}{plotting symbol to use for the observed effect sizes or outcomes. By default, a filled square is used. See \code{\link{points}} for other options.}
+	\item{pch}{plotting symbol to use for the observed effect sizes or outcomes. By default, a filled square is used. See \code{\link{points}} for other options. Can also be a vector of values.}
 	\item{psize}{an optional vector with point sizes for the observed effect sizes or outcomes. Default is \code{NULL}, which means that the point sizes are drawn proportional to the precision of the estimates.}
 	\item{cex}{an optional character and symbol expansion factor. If \code{NULL} (default), the function tries to set this to a sensible value.}
 	\item{cex.lab}{an optional expansion factor for the x axis titel. If \code{NULL} (default), the function tries to set this to a sensible value.}
@@ -63,7 +64,7 @@
 	\item \code{order="rstandard"}: the studies are ordered by the size of their standardized residuals,
 	\item \code{order="abs.resid"}: the studies are ordered by the size of their absolute residuals,
 	\item \code{order="abs.rstandard"}: the studies are ordered by the size of their absolute standardized residuals.
-	} Alternatively, it is possible to set \code{order} equal to a vector with indices giving the desired order.
+	} Alternatively, it is also possible to set \code{order} equal to a vector with indices specifying the desired order (see examples below).
 
 	Additional summary estimates can also be added to the plot with the \code{\link{addpoly}} function. See the documentation for that function for examples.
 }
@@ -88,25 +89,53 @@ res <- rma(ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg, measure="RR",
 forest(res)
 forest(res, order=order(dat.bcg$ablat))
 forest(res, transf=exp, alim=c(0,6), steps=4, xlim=c(-8,12), refline=1)
-forest(res, atransf=exp, at=log(c(.05,.25,1,4,12)), xlim=c(-8,6), order="prec")
+forest(res, atransf=exp, at=log(c(.05,.25,1,4,20)), xlim=c(-8,8), 
+       order="prec", showweight=TRUE, cex=.8)
+
+### forest plot with extra annotations
 forest(res, slab=paste(dat.bcg$author, dat.bcg$year, sep=", "), 
-       xlim=c(-14,6), ylim=c(-1.5,15.5), at=log(c(.05,.25,1,4)), atransf=exp, 
+       xlim=c(-16, 6), at=log(c(.05, .25, 1, 4)), atransf=exp,
        ilab=cbind(dat.bcg$tpos, dat.bcg$tneg, dat.bcg$cpos, dat.bcg$cneg), 
-       ilab.xpos=c(-8.5,-7,-5,-3.5), cex=.7)
-text(c(-8.5,-7,-5,-3.5), 14.5, c("TB+", "TB-", "TB+", "TB-"),  cex=.7)
-text(c(-7.75,-4.25),     15.5, c("Vaccinated", "Control"),     cex=.7)
-text(-14,                14.5, "Author(s) and Year",   pos=4,  cex=.7)
-text(6,                  14.5, "Observed RR [95\% CI]", pos=2, cex=.7)
+       ilab.xpos=c(-9.5,-8,-6,-4.5), cex=.75)
+op <- par(cex=.75, font=2)
+text(c(-9.5,-8,-6,-4.5), 15, c("TB+", "TB-", "TB+", "TB-"))
+text(c(-8.75,-5.25),     16, c("Vaccinated", "Control"))
+text(-16,                15, "Author(s) and Year",     pos=4)
+text(6,                  15, "Relative Risk [95\% CI]", pos=2)
+par(op)
 
 ### mixed-effects model with absolute latitude in the model
 res <- rma(ai=tpos, bi=tneg, ci=cpos, di=cneg, mods=ablat, data=dat.bcg, 
            measure="RR", method="REML", slab=paste(author, year, sep=", "))
 
-### forest plots with observed and fitted values
+### forest plot with observed and fitted values
 forest(res, xlim=c(-9,5), order="fit", cex=.8, ilab=dat.bcg$ablat, 
        ilab.xpos=-4, atransf=exp, at=log(c(.05,.25,1,4)))
+op <- par(font=2)
 text(-9, 15, "Author(s) and Year",    pos=4, cex=.8)
-text( 5, 15, "Observed RR [95\% CI]", pos=2, cex=.8)
+text( 5, 15, "Observed RR [95\% CI]",  pos=2, cex=.8)
 text(-4, 15, "Latitude",                     cex=.8)
+par(op)
+
+### forest plot with subgrouping of studies
+res <- rma(ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg, measure="RR", 
+           slab=paste(author, year, sep=", "), method="REML")
+forest(res, slab=paste(dat.bcg$author, dat.bcg$year, sep=", "), 
+       xlim=c(-16, 6), at=log(c(.05, .25, 1, 4)), atransf=exp,
+       ilab=cbind(dat.bcg$tpos, dat.bcg$tneg, dat.bcg$cpos, dat.bcg$cneg), 
+       ilab.xpos=c(-9.5,-8,-6,-4.5), cex=.75, ylim=c(-1, 21), 
+       order=order(dat.bcg$alloc), rows=c(1:2,5:11,14:17))
+op <- par(cex=.75, font=4)
+text(-16, c(18,12,3), c("Systematic Allcoation", "Random Allocation", 
+                        "Alternate Allocation"), pos=4)
+par(cex=.75, font=2)
+text(c(-9.5,-8,-6,-4.5), 20, c("TB+", "TB-", "TB+", "TB-"))
+text(c(-8.75,-5.25),     21, c("Vaccinated", "Control"))
+text(-16,                20, "Author(s) and Year",     pos=4)
+text(6,                  20, "Relative Risk [95\% CI]", pos=2)
+par(op)
+
+### see also addpoly.default function for an example where summaries
+### for the three subgroups are added to such a forest plot
 }
 \keyword{hplot}

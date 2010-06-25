@@ -3,6 +3,8 @@
 \alias{transf.ztor}
 \alias{transf.logit}
 \alias{transf.ilogit}
+\alias{transf.arcsin}
+\alias{transf.iarcsin}
 \alias{transf.ztor.int}
 \alias{transf.exp.int}
 \alias{transf.ilogit.int}
@@ -15,6 +17,8 @@ transf.rtoz(x, \dots)
 transf.ztor(x, \dots)
 transf.logit(x, \dots)
 transf.ilogit(x, \dots)
+transf.arcsin(x, \dots)
+transf.iarcsin(x, \dots)
 transf.ztor.int(x, targs, \dots)
 transf.exp.int(x, targs, \dots)
 transf.ilogit.int(x, targs, \dots)
@@ -31,6 +35,8 @@ transf.ilogit.int(x, targs, \dots)
 	\item \code{transf.ztor}: inverse of the Fisher's r-to-z transformation.
 	\item \code{transf.logit}: logit (log odds) transformation.
 	\item \code{transf.ilogit}: inverse of the logit transformation.
+	\item \code{transf.arcsin}: arcsine transformation.
+	\item \code{transf.iarcsin}: inverse of the arcsine transformation.
 	\item \code{transf.ztor.int}: integral transformation method for the z-to-r transformation.
 	\item \code{transf.exp.int}: integral transformation method for the exponential transformation.
 	\item \code{transf.ilogit.int}: integral transformation method for the inverse of the logit transformation.

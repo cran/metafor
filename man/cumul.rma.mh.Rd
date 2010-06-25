@@ -24,8 +24,8 @@
 	\item{pval}{p-values for the test statistics.}
 	\item{ci.lb}{lower bounds of the confidence intervals for the coefficients.}
 	\item{ci.ub}{upper bounds of the confidence intervals for the coefficients.}
-	\item{Q}{test statistics for the tests of heterogeneity.}
-	\item{Qp}{p-values for the tests of heterogeneity.}
+	\item{QE}{test statistics for the tests of heterogeneity.}
+	\item{QEp}{p-values for the tests of heterogeneity.}
 
 	The object is formated and printed with \code{\link{print.list.rma}}. A forest plot showing the results from the cumulative meta-analysis can be obtained with \code{\link{forest.cumul.rma}}.
 }

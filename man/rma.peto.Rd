@@ -3,7 +3,7 @@
 \title{Meta-Analysis via Peto's Method}
 \description{Function to fit a fixed-effects model for data from 2x2 tables via Peto's method.}
 \usage{
-rma.peto(ai, bi, ci, di, n1i, n2i, data=NULL, 
+rma.peto(ai, bi, ci, di, n1i, n2i, data, 
          slab=NULL, subset=NULL, 
          add=c(1/2,0), to=c("only0","none"), level=95, digits=4)
 }

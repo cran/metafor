@@ -5,12 +5,12 @@
 \description{Function to fit the meta-analytic fixed- and random-effects models with or without moderators via the general linear (mixed-effects) model. See the documentation of the \pkg{\link{metafor-package}} for more details on these models.}
 \usage{
 rma.uni(yi, vi, sei, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i, sd2i, 
-        xi, mi, ri, ni, mods=NULL, data=NULL, intercept=TRUE, slab=NULL, 
+        xi, mi, ri, ni, mods=NULL, data, intercept=TRUE, slab=NULL, 
         subset=NULL, measure="GEN", add=1/2, to="only0", vtype="LS", 
         method="REML", weighted=TRUE, level=95, digits=4, btt=NULL, 
         tau2=NULL, knha=FALSE, control=list())
 rma(yi, vi, sei, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i, sd2i, 
-        xi, mi, ri, ni, mods=NULL, data=NULL, intercept=TRUE, slab=NULL, 
+        xi, mi, ri, ni, mods=NULL, data, intercept=TRUE, slab=NULL, 
         subset=NULL, measure="GEN", add=1/2, to="only0", vtype="LS", 
         method="REML", weighted=TRUE, level=95, digits=4, btt=NULL, 
         tau2=NULL, knha=FALSE, control=list())

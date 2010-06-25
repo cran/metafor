@@ -9,7 +9,7 @@
 }
 \arguments{
 	\item{x}{an object of class \code{"rma"}.}
-	\item{row}{integer specifying the row number where the polygon should be placed (default is -2).}
+	\item{row}{value specifying the row (or more generally, the horizontal position) for plotting the polygon (default is \code{-2}).}
 	\item{level}{a numerical value between 0 and 100 specifying the confidence interval level (the default is to take the value from the object).}
 	\item{digits}{integer value specifying the number of decimal places to which the annotations should be rounded (default is 2).}
 	\item{annotate}{logical specifying whether annotations for the summary estimate should be added to the plot (default is \code{TRUE}).}
@@ -40,7 +40,7 @@ res <- rma.mh(ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg,
               slab=paste(author, year, sep=", "), measure="RR")
 
 ### forest plot of the observed relative risks with summary estimate
-forest(res, atransf=exp, addrows=1)
+forest(res, atransf=exp, ylim=c(-2.5,16))
 
 ### meta-analysis of the log relative risks using a random-effects model
 res <- rma(ai=tpos, bi=tneg, ci=cpos, di=cneg, 

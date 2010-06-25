@@ -18,9 +18,9 @@
 	\item{\dots}{other arguments.}
 }
 \details{
-	For models without moderators, the permutation test is carried out by permuting the signs of the observed effect sizes or outcomes. The (two-sided) p-value of the permutation test is then equal to two times the proportion of times that the test statistic under the permuted data is more extreme than under the actually observed data. See Follmann and Proschan (1999) for more details.
+	For models without moderators, the permutation test is carried out by permuting the signs of the observed effect sizes or outcomes. The (two-sided) p-value of the permutation test is then equal to two times the proportion of times that the test statistic under the permuted data is as extreme or more extreme than under the actually observed data. See Follmann and Proschan (1999) for more details.
 
-	For models with moderators, the permutation test is carried out by permuting the rows of the design matrix. The (two-sided) p-value for a particular model coefficient is then equal to two times the proportion of times that the test statistic for the coefficient under the permuted data is more extreme than under the actually observed data. Similarly, for the omnibus test, the p-value is the proportion of times that the test statistic for the omnibus test is more extreme than the actually observed one. See Higgins and Thompson (2004) for more details.
+	For models with moderators, the permutation test is carried out by permuting the rows of the design matrix. The (two-sided) p-value for a particular model coefficient is then equal to two times the proportion of times that the test statistic for the coefficient under the permuted data is as extreme or more extreme than under the actually observed data. Similarly, for the omnibus test, the p-value is the proportion of times that the test statistic for the omnibus test is as extreme or more extreme than the actually observed one. See Higgins and Thompson (2004) for more details.
 
 	If \code{exact=TRUE}, the function will try to carry out an exact permutation test. An exact permutation test requires fitting the model to each possible permutation once. However, the number of possible permutations increases rapidly with the number of outcomes/studies (i.e., \eqn{k}), especially with respect to the possible number of permutations of the design matrix. For example, for \eqn{k=5}, there are only 120 possible permutations of the design matrix (32 possible permutations of the signs). For \eqn{k=8}, there are already 40,320 (256). And for \eqn{k=10}, there are 3,628,800 (1024). Therefore, going through all possible permutations may become infeasible.
 
@@ -29,6 +29,8 @@
 	If \code{exact=FALSE} and \code{iter} is actually larger than the number of iterations required for an exact permutation test, then an exact test will be carried out.
 	
 	Also, the function will terminate with an error if the number of iterations is too large.
+
+	Finally, it is important to note that the p-values obtained with permutation tests cannot reach conventional levels of statistical significance (i.e., \eqn{\leq .05}) when \eqn{k} is very small. In particular, for models without moderators, the smallest possible (two-sided) p-value is .0625 when \eqn{k=5} and .03125 when \eqn{k=6}. Therefore, \eqn{k} must be at least equal to 6 to reject the null hypothesis at \eqn{\alpha=.05}. For models with moderators, the smallest possible (two-sided) p-value for a particular model coefficient is .08333 when \eqn{k=4} and .01667 when \eqn{k=5}. Therefore, \eqn{k} must be at least equal to 5 to reject the null hypothesis at \eqn{\alpha=.05}.
 }
 \value{
 	An object of class \code{"permutest.rma.uni"}. The object is a list containing the following components:	

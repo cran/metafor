@@ -3,11 +3,12 @@
 \title{Forest Plots}
 \description{Function to create forest plots for a given set of data.}
 \usage{
-\method{forest}{default}(x, vi, sei, annotate=TRUE, xlim=NULL, alim=NULL, ylim=NULL, 
-       at=NULL, steps=5, level=95, digits=2, refline=0, xlab=NULL, 
+\method{forest}{default}(x, vi, sei, annotate=TRUE, showweight=FALSE,
+       xlim=NULL, alim=NULL, ylim=NULL, at=NULL, steps=5, 
+       level=95, digits=2, refline=0, xlab=NULL, 
        slab=NULL, ilab=NULL, ilab.xpos=NULL, ilab.pos=NULL, 
        subset=NULL, transf=FALSE, atransf=FALSE, targs=NULL, 
-       addrows=0, efac=1, pch=15, psize=NULL, 
+       rows=NULL, efac=1, pch=15, psize=NULL, 
        cex=NULL, cex.lab=NULL, cex.axis=NULL, \dots)
 }
 \arguments{
@@ -15,6 +16,7 @@
 	\item{vi}{a vector of length \eqn{k} with the corresponding sampling variances.}
 	\item{sei}{a vector of length \eqn{k} with the corresponding standard errors.\cr(note: only one of the two, \code{vi} or \code{sei}, needs to be specified)}
 	\item{annotate}{logical specifying whether annotations should be added to the plot (default is \code{TRUE}).}
+	\item{showweight}{logical specifying whether the annotations should also include inverse variance weights (default is \code{FALSE}).}
 	\item{xlim}{horizontal limits of the plot region. Defaults to \code{NULL}, which means that the function tries to set the horizontal plot limits to some sensible values.}
 	\item{alim}{the actual x axis limits. Defaults to \code{NULL}, which means that the function tries to set the x axis limits to some sensible values.}
 	\item{ylim}{the y limits of the plot. Defaults to \code{NULL}, which means that the function tries to set the y axis limits to some sensible values.}
@@ -32,9 +34,9 @@
 	\item{transf}{an optional argument specifying the name of a function that should be used to transform the observed effect sizes and corresponding confidence interval bounds (e.g., \code{transf=exp}). Defaults to \code{FALSE}, which means that no transformation is used.}
 	\item{atransf}{an optional argument specifying the name of a function that should be used to transform the x axis labels and annotations (e.g., \code{transf=exp}). Defaults to \code{FALSE}, which means that no transformation is used.}
 	\item{targs}{optional arguments needed by the function specified via \code{transf} or \code{atransf}.}
-	\item{addrows}{number of extra rows that should be added at the bottom of the forest plot (default is 0).}
+	\item{rows}{an optional vector specifying the rows (or more generally, the horizontal positions) for plotting the outcomes. Defaults to \code{NULL}, which means that the function sets this value automatically. Can also be a single value specifying the row (horizontal position) of the first outcome (the remaining outcomes are then plotted below this starting row).}
 	\item{efac}{vertical expansion factor for arrows, confidence interval limits, and the symbol used to denote summary estimates. The default value of 1 should usually work okay.}
-	\item{pch}{plotting symbol to use for the observed effect sizes or outcomes. By default, a filled square is used. See \code{\link{points}} for other options.}
+	\item{pch}{plotting symbol to use for the observed effect sizes or outcomes. By default, a filled square is used. See \code{\link{points}} for other options. Can also be a vector of values.}
 	\item{psize}{an optional vector with point sizes for the observed effect sizes or outcomes. Default is \code{NULL}, which means that the point sizes are drawn proportional to the precision of the estimates.}
 	\item{cex}{an optional character and symbol expansion factor. If \code{NULL} (default), the function tries to set this to a sensible value.}
 	\item{cex.lab}{an optional expansion factor for the x axis titel. If \code{NULL} (default), the function tries to set this to a sensible value.}
@@ -66,6 +68,8 @@ dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg,
               data=dat.bcg, append=TRUE)
 
 ### forest plot of the observed relative risks
-forest(dat$yi, dat$vi, slab=paste(dat.bcg$author, dat$year, sep=", "), atransf=exp)
+forest(dat$yi, dat$vi, slab=paste(dat$author, dat$year, sep=", "), atransf=exp)
+
+### see also examples for the forest.rma function
 }
 \keyword{hplot}

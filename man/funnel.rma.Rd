@@ -27,7 +27,7 @@
 	\item{shade}{color to use for shading the pseudo confidence interval region. When \code{level} is a vector of values, different shading colors can be specified for each region.}
 	\item{hlines}{color of the horizontal reference lines.}
 	\item{refline}{value at which the pseudo confidence interval should be centered. Default is \code{NULL}, which means that the interval is centered at the fixed- or random-effects model estimate when the model does not include moderators and at zero when moderators are included and residuals are plotted.}
-	\item{pch}{plotting symbol to use for the observed effect sizes or outcomes. By default, a solid circle is used. Can be a vector of values. See \code{\link{points}} for other options.}
+	\item{pch}{plotting symbol to use for the observed effect sizes or outcomes. By default, a solid circle is used. Can also be a vector of values. See \code{\link{points}} for other options.}
 	\item{pch.fill}{plotting symbol to use for the effect sizes or outcomes filled in by the trim and fill method. By default, a circle is used. Only relevant when plotting an object created by the \code{\link{trimfill}} function.}
 	\item{\dots}{other arguments.}
 }

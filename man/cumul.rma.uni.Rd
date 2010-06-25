@@ -26,8 +26,8 @@
 	\item{pval}{p-values for the test statistics.}
 	\item{ci.lb}{lower bounds of the confidence intervals for the coefficients.}
 	\item{ci.ub}{upper bounds of the confidence intervals for the coefficients.}
-	\item{Q}{test statistics for the tests of heterogeneity.}
-	\item{Qp}{p-values for the tests of heterogeneity.}
+	\item{QE}{test statistics for the tests of heterogeneity.}
+	\item{QEp}{p-values for the tests of heterogeneity.}
 	\item{tau2}{estimated amounts of (residual) heterogeneity (only for random-effects models).}
 	\item{I2}{values of \eqn{I^2} (only for random-effects models).}
 	\item{H2}{values of \eqn{H^2} (only for random-effects models).}

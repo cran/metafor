@@ -3,7 +3,7 @@
 \title{Fail-Safe N}
 \description{Function to calculate the fail-safe N.}
 \usage{
-fsn(yi, vi, sei, data=NULL, type="Rosenthal", alpha=.05, 
+fsn(yi, vi, sei, data, type="Rosenthal", alpha=.05, 
     target=NULL, digits=4, subset=NULL)
 }
 \arguments{
