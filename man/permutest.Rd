@@ -15,6 +15,9 @@ permutest(x, \dots)
 	Currently, there is only a method for objects of class \code{"rma.uni"} created by the \code{\link{rma.uni}} function. Accordingly, the corresponding method is called \code{\link{permutest.rma.uni}}. See the documentation for that function for more details.
 }
 \author{Wolfgang Viechtbauer; \email{wvb@www.wvbauer.com}; \url{http://www.wvbauer.com/}}
+\references{
+	Good, P. I. (2009). \emph{Permutation, parametric, and bootstrap tests of hypotheses} (3rd ed.). New York: Springer.
+}
 \seealso{
 	\code{\link{permutest.rma.uni}}
 }

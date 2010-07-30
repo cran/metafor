@@ -25,6 +25,9 @@
 	If the number of studies is large, the forest plot may become quite impossible to read.
 }
 \author{Wolfgang Viechtbauer; \email{wvb@www.wvbauer.com}; \url{http://www.wvbauer.com/}}
+\references{
+	Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \url{http://www.jstatsoft.org/v36/i03/}.
+}
 \seealso{
 	\code{\link{forest}}, \code{\link{funnel}}, \code{\link{radial}}, \code{\link{qqnorm.rma.uni}}
 }

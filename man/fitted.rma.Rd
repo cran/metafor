@@ -20,6 +20,9 @@
 	For objects not involving moderators, the fitted values are all identical to the estimated value of the model intercept.
 }
 \author{Wolfgang Viechtbauer; \email{wvb@www.wvbauer.com}; \url{http://www.wvbauer.com/}}
+\references{
+	Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \url{http://www.jstatsoft.org/v36/i03/}.
+}
 \seealso{
 	\code{\link{predict.rma}}, \code{\link{blup.rma.uni}}
 }

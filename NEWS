@@ -1,4 +1,17 @@
+Changes in Version 1.4-0 (2010-07-30; released on CRAN)
+
+   o added citation info; see: citation("metafor")
+
+   o metafor package now depends on nlme package
+
+   o added extractor functions for the AIC, BIC, and deviance
+
+   o some updates to the documentation
+
+
 Changes in Version 1.3-0 (2010-06-25; released on CRAN)
+
+   o metafor package now depends on Formula package
 
    o made escalc() generic and implemented a default and a
      formula interface

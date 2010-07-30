@@ -37,11 +37,13 @@
 }
 \author{Wolfgang Viechtbauer; \email{wvb@www.wvbauer.com}; \url{http://www.wvbauer.com/}}
 \references{
-	Galbraith, R. F. (1988) Graphical display of estimates having differing standard errors. \emph{Technometrics}, \bold{30}, 271--281.
+	Galbraith, R. F. (1988). Graphical display of estimates having differing standard errors. \emph{Technometrics}, \bold{30}, 271--281.
 
-	Galbraith, R. F. (1988) A note on graphical presentation of estimated odds ratios from several clinical trials. \emph{Statistics in Medicine}, \bold{7}, 889--894.
+	Galbraith, R. F. (1988). A note on graphical presentation of estimated odds ratios from several clinical trials. \emph{Statistics in Medicine}, \bold{7}, 889--894.
 
 	Galbraith, R. F (1994). Some applications of radial plots. \emph{Journal of the American Statistical Association}, \bold{89}, 1232--1242.
+
+	Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \url{http://www.jstatsoft.org/v36/i03/}.
 }
 \seealso{
 	\code{\link{rma.uni}}, \code{\link{rma.mh}}, \code{\link{rma.peto}}, 

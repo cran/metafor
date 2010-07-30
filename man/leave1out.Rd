@@ -15,6 +15,11 @@ leave1out(x, \dots)
 	Currently, there are methods for handling objects of class \code{"rma.uni"}, \code{"rma.mh"}, and \code{"rma.peto"} with the \code{leave1out} function. Accordingly, the corresponding methods are called \code{\link{leave1out.rma.uni}}, \code{\link{leave1out.rma.mh}}, and \code{\link{leave1out.rma.peto}}. See the documentation for those functions for more details.
 }
 \author{Wolfgang Viechtbauer; \email{wvb@www.wvbauer.com}; \url{http://www.wvbauer.com/}}
+\references{
+	Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \url{http://www.jstatsoft.org/v36/i03/}.
+
+	Viechtbauer, W. & Cheung, M. W.-L. (in press). Outlier and influence diagnostics for meta-analysis. \emph{Research Synthesis Methods}.
+}
 \seealso{
 	\code{\link{leave1out.rma.uni}}, \code{\link{leave1out.rma.mh}}, \code{\link{leave1out.rma.peto}}
 }

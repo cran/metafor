@@ -31,7 +31,9 @@
 }
 \author{Wolfgang Viechtbauer; \email{wvb@www.wvbauer.com}; \url{http://www.wvbauer.com/}}
 \references{
-	Cook, R. D. & Weisberg, S. (1982) \emph{Residuals and influence in regression}. London: Chapman and Hall.
+	Cook, R. D. & Weisberg, S. (1982). \emph{Residuals and influence in regression}. London: Chapman and Hall.
+
+	Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \url{http://www.jstatsoft.org/v36/i03/}.
 }
 \seealso{
 	\code{\link{rma.uni}}, \code{\link{rma.mh}}, \code{\link{rma.peto}}

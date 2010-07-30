@@ -40,11 +40,13 @@ fsn(yi, vi, sei, data, type="Rosenthal", alpha=.05,
 }
 \author{Wolfgang Viechtbauer; \email{wvb@www.wvbauer.com}; \url{http://www.wvbauer.com/}}
 \references{
-	Rosenthal, R. (1979) The "file drawer problem" and tolerance for null results. \emph{Psychological Bulletin}, \bold{86}, 638--641.
+	Rosenthal, R. (1979). The "file drawer problem" and tolerance for null results. \emph{Psychological Bulletin}, \bold{86}, 638--641.
 
-	Orwin, R. G. (1983) A fail-safe N for effect size in meta-analysis. \emph{Journal of Educational Statistics}, \bold{8}, 157--159.
+	Orwin, R. G. (1983). A fail-safe N for effect size in meta-analysis. \emph{Journal of Educational Statistics}, \bold{8}, 157--159.
 
-	Rosenberg, M. S. (2005) The file-drawer problem revisited: A general weighted method for calculating fail-safe numbers in meta-analysis. \emph{Evolution}, \bold{59}, 464--468.
+	Rosenberg, M. S. (2005). The file-drawer problem revisited: A general weighted method for calculating fail-safe numbers in meta-analysis. \emph{Evolution}, \bold{59}, 464--468.
+
+	Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \url{http://www.jstatsoft.org/v36/i03/}.
 }
 \seealso{
 	\code{\link{ranktest}}, \code{\link{trimfill}}

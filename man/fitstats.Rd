@@ -5,10 +5,10 @@
    The function \code{fitstats} is generic. It extracts the log likelihood, deviance, and information criteria (e.g., AIC and BIC) for suitable objects.
 }
 \usage{
-fitstats(x, \dots)
+fitstats(object, \dots)
 }
 \arguments{
-	\item{x}{an object for which fit statistics and information criteria can be calculated. See \sQuote{Details}.}
+	\item{object}{an object for which fit statistics and information criteria can be calculated. See \sQuote{Details}.}
 	\item{\dots}{other arguments.}
 }
 \details{

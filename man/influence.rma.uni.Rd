@@ -55,11 +55,15 @@
 }
 \author{Wolfgang Viechtbauer; \email{wvb@www.wvbauer.com}; \url{http://www.wvbauer.com/}}
 \references{
-	Belsley, D. A., Kuh, E. & Welsch, R. E. (1980) \emph{Regression diagnostics}. New York: Wiley.
+	Belsley, D. A., Kuh, E. & Welsch, R. E. (1980). \emph{Regression diagnostics}. New York: Wiley.
 
-	Cook, R. D. & Weisberg, S. (1982) \emph{Residuals and influence in regression}. London: Chapman and Hall.
+	Cook, R. D. & Weisberg, S. (1982). \emph{Residuals and influence in regression}. London: Chapman and Hall.
 
-	Hedges, L. V. & Olkin, I. (1985) \emph{Statistical methods for meta-analysis}. San Diego, CA: Academic Press.
+	Hedges, L. V. & Olkin, I. (1985). \emph{Statistical methods for meta-analysis}. San Diego, CA: Academic Press.
+
+	Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \url{http://www.jstatsoft.org/v36/i03/}.
+
+	Viechtbauer, W. & Cheung, M. W.-L. (in press). Outlier and influence diagnostics for meta-analysis. \emph{Research Synthesis Methods}.
 }
 \seealso{
 	\code{\link{print.infl.rma.uni}}, \code{\link{plot.infl.rma.uni}}, \code{\link{rstudent.rma.uni}}, \code{\link{hatvalues.rma.uni}}

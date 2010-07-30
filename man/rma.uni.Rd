@@ -124,11 +124,11 @@ rma(yi, vi, sei, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i, sd2i,
 
 	Forest, funnel, and radial plots (the latter only for models without moderators) are drawn with \code{\link{forest.rma}}, \code{\link{funnel.rma}}, and \code{\link{radial.rma}}. The \code{\link{qqnorm.rma.uni}} function provides a normal QQ plot of the standardized residuals. One can also just call \code{\link{plot.rma.uni}} on the fitted model object to obtain various plots at once.
 
-	Tests for publication bias (or more accurately, for funnel plot asymmetry) can be obtained with \code{\link{ranktest.rma}} and \code{\link{regtest.rma}}.
+	Tests for publication bias (or more accurately, for funnel plot asymmetry) can be obtained with \code{\link{ranktest.rma}} and \code{\link{regtest.rma}}. For models without moderators, the \code{\link{trimfill.rma.uni}} method can be used to carry out a trim and fill analysis.
 
 	For models without moderators, a cumulative meta-analysis (i.e., adding one obervation at a time) can be obtained with \code{\link{cumul.rma.uni}}.
 
-	Other assessor functions include \code{\link{coef.rma}}, \code{\link{vcov.rma}}, \code{\link{logLik.rma}}, \code{\link{hatvalues.rma.uni}}, and \code{\link{weights.rma.uni}}.
+	Other assessor functions include \code{\link{coef.rma}}, \code{\link{vcov.rma}}, \code{\link{logLik.rma}}, \code{\link{deviance.rma}}, \code{\link{AIC.rma}}, \code{\link{BIC.rma}}, \code{\link{hatvalues.rma.uni}}, and \code{\link{weights.rma.uni}}.
 }
 \note{
 	While the HS, HE, DL, and SJ estimators of \eqn{\tau^2}{tau^2} are based on closed-form solutions, the ML, REML, and EB estimators must be obtained numerically. For this, the \code{rma()} function makes use of the Fisher scoring algorithm, which is robust to poor starting values and usually converges quickly (Harville, 1977; Jennrich & Sampson, 1976). By default, the starting value is set equal to the value of the Hedges estimator and the algorithm terminates when the change in the estimated value of \eqn{\tau^2}{tau^2} is smaller than \eqn{10^{-5}}{10^(-5)} from one iteration to the next. The maximum number of iterations is 100 by default (which should be sufficient in most cases). A different starting value, threshold, and maximum number of iterations can be specified via the \code{control} argument by setting \code{control=list(tau2.init=value, threshold=value, maxiter=value)} when calling the \code{rma()} function. The step length of the Fisher scoring algorithm can also be manually adjusted by a desired factor with \code{control=list(stepadj=value)} (values below 1 will reduce the step length). Information on the evolution of the algorithm is obtained with \code{control=list(verbose=TRUE)}.
@@ -150,30 +150,32 @@ rma(yi, vi, sei, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i, sd2i,
 }
 \author{Wolfgang Viechtbauer; \email{wvb@www.wvbauer.com}; \url{http://www.wvbauer.com/}}
 \references{
-	DerSimonian, R. & Laird, N. (1986) Meta-analysis in clinical trials. \emph{Controlled Clinical Trials}, \bold{7}, 177--188.
+	DerSimonian, R. & Laird, N. (1986). Meta-analysis in clinical trials. \emph{Controlled Clinical Trials}, \bold{7}, 177--188.
 
-	Harville, D. A. (1977) Maximum likelihood approaches to variance component estimation and to related problems. \emph{Journal of the American Statistical Association}, \bold{72}, 320--338.
+	Harville, D. A. (1977). Maximum likelihood approaches to variance component estimation and to related problems. \emph{Journal of the American Statistical Association}, \bold{72}, 320--338.
 	
-	Hedges, L. V. (1983) A random effects model for effect sizes. \emph{Psychological Bulletin}, \bold{93}, 388--395.
+	Hedges, L. V. (1983). A random effects model for effect sizes. \emph{Psychological Bulletin}, \bold{93}, 388--395.
 
-	Hedges, L. V. & Olkin, I. (1985) \emph{Statistical methods for meta-analysis}. San Diego, CA: Academic Press.
+	Hedges, L. V. & Olkin, I. (1985). \emph{Statistical methods for meta-analysis}. San Diego, CA: Academic Press.
 
 	Hunter, J. E. & Schmidt, F. L. (1990). \emph{Methods of meta-analysis: Correcting error and bias in
 	research findings}. Newbury Park, CA: Sage.
 
-	Jennrich, R. I. & Sampson, P. F. (1976) Newton-Raphson and related algorithms for maximum likelihood variance component estimation. \emph{Technometrics}, \bold{18}, 11--17.
+	Jennrich, R. I. & Sampson, P. F. (1976). Newton-Raphson and related algorithms for maximum likelihood variance component estimation. \emph{Technometrics}, \bold{18}, 11--17.
 
-	Knapp, G. & Hartung, J. (2003) Improved tests for a random effects meta-regression with a single covariate. \emph{Statistics in Medicine}, \bold{22}, 2693--2710.
+	Knapp, G. & Hartung, J. (2003). Improved tests for a random effects meta-regression with a single covariate. \emph{Statistics in Medicine}, \bold{22}, 2693--2710.
 
-	Morris, C. N. (1983) Parametric Empirical Bayes inference: Theory and applications (with discussion). \emph{Journal of the American Statistical Association}, \bold{78}, 47--65.
+	Morris, C. N. (1983). Parametric Empirical Bayes inference: Theory and applications (with discussion). \emph{Journal of the American Statistical Association}, \bold{78}, 47--65.
 
-	Raudenbush, S. W. (2009) Analyzing effect sizes: Random effects models. In H. C. Cooper, L. V. Hedges & J. C. Valentine (Eds.), \emph{The handbook of research synthesis and meta-analysis} (2nd ed., pp. 295--315). New York: Russell Sage Foundation.
+	Raudenbush, S. W. (2009). Analyzing effect sizes: Random effects models. In H. C. Cooper, L. V. Hedges & J. C. Valentine (Eds.), \emph{The handbook of research synthesis and meta-analysis} (2nd ed., pp. 295--315). New York: Russell Sage Foundation.
 
-	Sidik, K. & Jonkman, J. N. (2005a) A note on variance estimation in random effects meta-regression. \emph{Journal of Biopharmaceutical Statistics}, \bold{15}, 823--838.
+	Sidik, K. & Jonkman, J. N. (2005a). A note on variance estimation in random effects meta-regression. \emph{Journal of Biopharmaceutical Statistics}, \bold{15}, 823--838.
 
-	Sidik, K. & Jonkman, J. N. (2005b) Simple heterogeneity variance estimation for meta-analysis. \emph{Journal of the Royal Statistical Society, Series C}, \bold{54}, 367--384.
+	Sidik, K. & Jonkman, J. N. (2005b). Simple heterogeneity variance estimation for meta-analysis. \emph{Journal of the Royal Statistical Society, Series C}, \bold{54}, 367--384.
 
-	Viechtbauer, W. (2005) Bias and efficiency of meta-analytic variance estimators in the random-effects model. \emph{Journal of Educational and Behavioral Statistics}, \bold{30}, 261--293.
+	Viechtbauer, W. (2005). Bias and efficiency of meta-analytic variance estimators in the random-effects model. \emph{Journal of Educational and Behavioral Statistics}, \bold{30}, 261--293.
+
+	Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \url{http://www.jstatsoft.org/v36/i03/}.
 }
 \examples{
 ### load BCG vaccine data

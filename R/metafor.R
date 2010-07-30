@@ -47,7 +47,7 @@ function (X, W, k)
 .onLoad <-
 function (lib, pkg) 
 {
-    loadmsg <- "Loading 'metafor' package (version 1.3-0). For an overview \nand introduction to the package please type: help(metafor)."
+    loadmsg <- "Loading 'metafor' package (version 1.4-0). For an overview \nand introduction to the package please type: help(metafor)."
     packageStartupMessage(loadmsg, domain = NULL, appendLF = TRUE)
 }
 .QE.func <-
@@ -183,6 +183,24 @@ function (x, row = -2, level = x$level, digits = 2, annotate = TRUE,
         annotate = annotate, mlab = mlab, transf = transf, atransf = atransf, 
         col = col, targs = targs, efac = efac, cex = cex, ...)
 }
+AIC.rma <-
+function (object, ..., k = 2) 
+{
+    if (!is.element("rma", class(object))) 
+        stop("Argument 'object' must be an object of class \"rma\".")
+    if (length(list(...))) {
+        object <- list(object, ...)
+        val <- lapply(object, logLik)
+        val <- as.data.frame(t(sapply(val, function(el) c(attr(el, 
+            "df"), AIC(el, k = k)))))
+        names(val) <- c("df", "AIC")
+        Call <- match.call()
+        Call$k <- NULL
+        row.names(val) <- as.character(Call[-1L])
+        val
+    }
+    else AIC(logLik(object), k = k)
+}
 anova.rma.uni <-
 function (object, object2, digits = object$digits, ...) 
 {
@@ -246,6 +264,13 @@ function (object, object2, digits = object$digits, ...)
         "method", "digits")
     class(res) <- c("anova.rma.uni")
     return(res)
+}
+BIC.rma <-
+function (object, ...) 
+{
+    if (!is.element("rma", class(object))) 
+        stop("Argument 'object' must be an object of class \"rma\".")
+    BIC(logLik(object))
 }
 blup <-
 function (x, ...) 
@@ -748,6 +773,27 @@ function (x, order = NULL, digits = x$digits, transf = FALSE,
     class(out) <- c("list.rma", "cumul.rma")
     return(out)
 }
+deviance.rma <-
+function (object, REML, ...) 
+{
+    if (!is.element("rma", class(object))) 
+        stop("Argument 'object' must be an object of class \"rma\".")
+    if (missing(REML)) {
+        if (object$method == "REML") {
+            REML <- TRUE
+        }
+        else {
+            REML <- FALSE
+        }
+    }
+    if (REML) {
+        val <- object$fit.stats$REML[2]
+    }
+    else {
+        val <- object$fit.stats$ML[2]
+    }
+    return(val)
+}
 escalc <-
 function (measure, formula, ...) 
 {
@@ -1161,15 +1207,15 @@ function (measure, formula, weights, data, add = 1/2, to = "only0",
     }
 }
 fitstats <-
-function (x, ...) 
+function (object, ...) 
 UseMethod("fitstats")
 fitstats.rma <-
-function (x, REML = NULL, ...) 
+function (object, REML = NULL, ...) 
 {
-    if (!is.element("rma", class(x))) 
-        stop("Argument 'x' must be an object of class \"rma\".")
+    if (!is.element("rma", class(object))) 
+        stop("Argument 'object' must be an object of class \"rma\".")
     if (is.null(REML)) {
-        if (x$method == "REML") {
+        if (object$method == "REML") {
             REML <- TRUE
         }
         else {
@@ -1177,13 +1223,13 @@ function (x, REML = NULL, ...)
         }
     }
     if (REML) {
-        out <- cbind(x$fit.stats$REML)
+        out <- cbind(object$fit.stats$REML)
         dimnames(out)[[1]] <- c("Log-Likelihood: ", "Deviance (-2RLL): ", 
             "AIC: ", "BIC: ")
         dimnames(out)[[2]] <- c("REML")
     }
     else {
-        out <- cbind(x$fit.stats$ML)
+        out <- cbind(object$fit.stats$ML)
         dimnames(out)[[1]] <- c("Log-Likelihood: ", "Deviance (-2LL): ", 
             "AIC: ", "BIC: ")
         dimnames(out)[[2]] <- c("ML")
@@ -1620,7 +1666,7 @@ function (x, annotate = TRUE, xlim = NULL, alim = NULL, ylim = NULL,
     }
     text(xlim[1], rows, slab, pos = 4, cex = cex, ...)
     if (!is.null(ilab)) {
-        for (l in 1:dim(ilab)[2]) {
+        for (l in 1:NCOL(ilab)) {
             text(ilab.xpos[l], rows, ilab[, l], pos = ilab.pos[l], 
                 cex = cex, ...)
         }
@@ -2084,7 +2130,7 @@ function (x, vi, sei, annotate = TRUE, showweight = FALSE, xlim = NULL,
     }
     text(xlim[1], rows, slab, pos = 4, cex = cex, ...)
     if (!is.null(ilab)) {
-        for (l in 1:dim(ilab)[2]) {
+        for (l in 1:NCOL(ilab)) {
             text(ilab.xpos[l], rows, ilab[, l], pos = ilab.pos[l], 
                 cex = cex, ...)
         }
@@ -2662,7 +2708,7 @@ function (x, annotate = TRUE, addfit = TRUE, addcred = FALSE,
     }
     text(xlim[1], rows, slab, pos = 4, cex = cex, ...)
     if (!is.null(ilab)) {
-        for (l in 1:dim(ilab)[2]) {
+        for (l in 1:NCOL(ilab)) {
             text(ilab.xpos[l], rows, ilab[, l], pos = ilab.pos[l], 
                 cex = cex, ...)
         }
@@ -4066,7 +4112,7 @@ function (object, newmods = NULL, addx = FALSE, level = object$level,
                 X.new <- rbind(newmods)
             }
             else {
-                k.new <- dim(newmods)[1]
+                k.new <- NROW(newmods)
                 X.new <- cbind(newmods)
             }
         }
@@ -5139,10 +5185,10 @@ function (x, model = "rma", predictor = "sei", ni = NULL, ...)
             ...)
         zval <- res$zval[p + 1]
         pval <- res$pval[p + 1]
-        dfs <- ifelse(x$knha == TRUE, res$k - res$p, NA)
+        dfs <- ifelse(x$knha, res$k - res$p, NA)
     }
     else {
-        if (dim(X)[2] >= x$k) 
+        if (NCOL(X) >= x$k) 
             stop("Too few observations to carry out test.")
         res <- lm(yi ~ X - 1, weights = 1/vi)
         res <- summary(res)
@@ -5391,7 +5437,7 @@ function (yi, vi, sei, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i,
         X <- mods
         X.f <- mods.f
     }
-    p <- dim(X)[2]
+    p <- NCOL(X)
     if (method == "FE") {
         if (p > k) {
             stop("The number of parameters to be estimated is larger than the number of observations.")
@@ -6457,7 +6503,7 @@ function (yi, vi, sei, ai, bi, ci, di, n1i, n2i, m1i, m2i, sd1i,
         X <- mods
         X.f <- mods.f
     }
-    p <- dim(X)[2]
+    p <- NCOL(X)
     if (method == "FE") {
         if (p > k) {
             stop("The number of parameters to be estimated is larger than the number of observations.")

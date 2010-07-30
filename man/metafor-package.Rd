@@ -44,16 +44,18 @@
 	Please post any questions about the package to the R-help mailing list (\url{https://stat.ethz.ch/mailman/listinfo/r-help}). Make sure you first read and follow the posting guide (\url{http://www.r-project.org/posting-guide.html}). To make sure that my mail filter catches your post, include the package name (i.e., \sQuote{metafor}) in your post.
 }
 \references{
-	Cooper, H. C., Hedges, L. V. & Valentine, J. C. (Eds.) (2009) \emph{The handbook of research synthesis and meta-analysis} (2nd ed.). New York: Russell Sage Foundation.
+	Cooper, H. C., Hedges, L. V. & Valentine, J. C. (Eds.) (2009). \emph{The handbook of research synthesis and meta-analysis} (2nd ed.). New York: Russell Sage Foundation.
 
-	Hedges, L. V. & Olkin, I. (1985) \emph{Statistical methods for meta-analysis}. San Diego, CA: Academic Press.
+	Hedges, L. V. & Olkin, I. (1985). \emph{Statistical methods for meta-analysis}. San Diego, CA: Academic Press.
 
-	Hedges, L. V. & Vevea, J. L. (1998) Fixed- and random-effects models in meta-analysis. \emph{Psychological Methods}, \bold{3}, 486--504.
+	Hedges, L. V. & Vevea, J. L. (1998). Fixed- and random-effects models in meta-analysis. \emph{Psychological Methods}, \bold{3}, 486--504.
 
 	Laird, N. M. & Mosteller, F (1990). Some statistical methods for combining experimental results. \emph{International Journal of Technology Assessment in Health Care}, \bold{6}, 5--30.
 
-	Mantel, N. & Haenszel, W. (1959) Statistical aspects of the analysis of data from retrospective studies of disease. \emph{Journal of the National Cancer Institute}, \bold{22}, 719--748.
+	Mantel, N. & Haenszel, W. (1959). Statistical aspects of the analysis of data from retrospective studies of disease. \emph{Journal of the National Cancer Institute}, \bold{22}, 719--748.
 
-	Yusuf, S., Peto, R., Lewis, J., Collins, R. & Sleight, P. (1985) Beta blockade during and after myocardial infarction: An overview of the randomized trials. \emph{Progress in Cardiovascular Disease}, \bold{27}, 335--371.
+	Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \url{http://www.jstatsoft.org/v36/i03/}.
+
+	Yusuf, S., Peto, R., Lewis, J., Collins, R. & Sleight, P. (1985). Beta blockade during and after myocardial infarction: An overview of the randomized trials. \emph{Progress in Cardiovascular Disease}, \bold{27}, 335--371.
 }
 \keyword{package}

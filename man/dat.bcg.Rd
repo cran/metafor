@@ -2,7 +2,7 @@
 \docType{data}
 \alias{dat.bcg}
 \title{Data for BCG Vaccine Studies}
-\description{Results from 13 clinical trials examining the effectiveness of the bacillus Calmette-Guerin (BCG) vaccine for preventing tuberculosis.}
+\description{Results from 13 clinical trials examining the effectiveness of the Bacillus Calmette-Guerin (BCG) vaccine for preventing tuberculosis.}
 \usage{dat.bcg}
 \format{The data frame contains the following columns:
 \tabular{lll}{
@@ -28,12 +28,14 @@
 	The data set has been used in several publications to illustrate meta-analytic methods (see \sQuote{References}).
 }
 \source{
-	Colditz, G. A., Brewer, T. F., Berkey, C. S., Wilson, M. E., Burdick, E., Fineberg, H. V. & Mosteller, F. (1994) Efficacy of BCG vaccine in the prevention of tuberculosis: Meta-analysis of the published literature. \emph{Journal of the American Medical Association}, \bold{271}, 698--702.
+	Colditz, G. A., Brewer, T. F., Berkey, C. S., Wilson, M. E., Burdick, E., Fineberg, H. V. & Mosteller, F. (1994). Efficacy of BCG vaccine in the prevention of tuberculosis: Meta-analysis of the published literature. \emph{Journal of the American Medical Association}, \bold{271}, 698--702.
 }
 \references{
 	Berkey, C. S., Hoaglin, D. C., Mosteller, F. & Colditz, G. A. (1995). A random-effects regression model for meta-analysis. \emph{Statistics in Medicine}, \bold{14}, 395--411.
 
 	van Houwelingen, H. C., Arends, L. R. & Stijnen, T. (2002). Advanced methods in meta-analysis: Multivariate approach and meta-regression. \emph{Statistics in Medicine}, \bold{21}, 589--624.
+
+	Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \url{http://www.jstatsoft.org/v36/i03/}.
 }
 \examples{
 ### load BCG vaccine data
