@@ -1,4 +1,47 @@
+Changes in Version 1.5-0 (2010-12-15; released on CRAN)
+
+   o the metafor package now has its own project website 
+     at http://www.metafor-project.org/
+
+   o added labbe() function to create L’Abbe plots
+
+   o the forest.default() and addpoly.default() functions
+     now allow the user to directly specify the lower and 
+     upper confidence interval bounds (this can be useful
+     when the CI bounds have been calculated with other
+     methods/functions)
+
+   o added the incidence rate for a single group and for two
+     groups (and transformations thereof) as possible outcome 
+     measures to the escalc() and rma.uni() functions
+
+   o added the incidence rate ratio as a possible outcome
+     measure to the rma.mh() function
+
+   o added transformation functions related to incidence 
+     rates
+
+   o added the Freeman-Tukey double arcsine transformation
+     and its inverse to the transformation functions
+
+   o added some additional error checking for out-of-range
+     p-values in the permutest.rma.uni() function
+
+   o added some additional checking for out-of-range values
+     in several transformation functions
+
+   o added confint() methods for rma.mh and rma.peto objects
+     (only for completeness sake; print already provides CIs)
+
+   o added new datasets (dat.warfarin, dat.los, dat.empint)
+
+   o some improvements to the documentation
+
+
 Changes in Version 1.4-0 (2010-07-30; released on CRAN)
+
+   o the package has now been published in the Journal of 
+     Statistical Software (http://www.jstatsoft.org/v36/i03/)
 
    o added citation info; see: citation("metafor")
 
@@ -33,7 +76,7 @@ Changes in Version 1.2-0 (2010-05-18)
      permutation tests" (see notes for previous version below) 
      now actually works like it is supposed to
 
-   o the permutest.rma.uni function now provides more sensible
+   o the permutest.rma.uni() function now provides more sensible
      results when k is very small; the documentation for the 
      function has also been updated with some notes about the 
      use of permutations tests under those circumstances
@@ -53,9 +96,9 @@ Changes in Version 1.2-0 (2010-05-18)
    o cumul() functions not showing all of the output columns
      when using fixed-effects models has been corrected
 
-   o weights.rma.uni function now handles NAs appropriately
+   o weights.rma.uni() function now handles NAs appropriately
 
-   o weights.rma.mh and weights.rma.peto functions added
+   o weights.rma.mh() and weights.rma.peto() functions added
 
    o logLik.rma() function now behaves more like other logLik() 
      functions (such as logLik.lm() and logLik.lme())
@@ -71,24 +114,24 @@ Changes in Version 1.1-0 (2010-04-28; released on CRAN)
 
    o added coef() method for objects of class permutest.rma.uni
 
-   o added 'append' argument to escalc() function
+   o added append argument to escalc() function
 
    o implemented a smarter way to set the number of iterations
-     for permutation tests (i.e., the permutest.rma.uni function 
+     for permutation tests (i.e., the permutest.rma.uni() function 
      will now switch to an exact test if the number of iterations 
      required for an exact test is actually smaller than the 
      requested number of iterations for an approximate test)
 
    o changed the way how p-values for individual coefficients are 
-     calculated in permutest.rma.uni to 'two times the one-tailed 
+     calculated in permutest.rma.uni() to 'two times the one-tailed 
      area under the permutation distribution' (more consistent 
      with the way we typically define two-tailed p-values)
 
-   o added 'retpermdist' argument to permutest.rma.uni() (to
-     return the permutation distributions of the test statistics)
+   o added retpermdist argument to permutest.rma.uni() to
+     return the permutation distributions of the test statistics
 
-   o slight improvements to the various transf functions to cope
-     better with some extreme cases
+   o slight improvements to the various transformation functions to 
+     cope better with some extreme cases
 
    o p-values are now calculated in such a way that very small 
      p-values stored in fitted model objects are no longer 
@@ -101,8 +144,9 @@ Changes in Version 1.1-0 (2010-04-28; released on CRAN)
 
 Changes in Version 1.0-1 (2010-01-28; released on CRAN)
 
-   o version jump in conjunction with publication of paper in
-     the Journal of Statistical Software describing the package
+   o version jump in conjunction with the upcoming publication 
+     of a paper in the Journal of Statistical Software describing 
+     the package
 
    o instead of specifying a design matrix, the user can
      now specify a model formula for the mods argument in the
@@ -118,7 +162,7 @@ Changes in Version 1.0-1 (2010-01-28; released on CRAN)
    o forest() function can now also show the credibility interval
      as a dashed line for a random-effects model
 
-   o information about the 'measure' used is now passed on to
+   o information about the measure used is now passed on to
      the forest() and funnel() functions, which try to set an
      appropriate x axis title accordingly
 
@@ -179,7 +223,7 @@ Changes in Version 0.5-5 (2009-10-08; released on CRAN)
 
    o forest plots now order the studies so that the first study
      is at the top of the plot and the last study at the bottom
-     (the order can still be set with the order/subset arguments)
+     (the order can still be set with the order or subset argument)
 
    o added cumul() function for cumulative meta-analyses (with a
      corresponding forest() method to plot the cumulative results)

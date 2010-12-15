@@ -14,7 +14,11 @@ funnel(x, \dots)
 \details{
 	Currently, there is only a method for handling objects of class \code{"rma"} with the \code{funnel} function. Accordingly, the corresponding method is called \code{\link{funnel.rma}}. See the documentation for that function for more details.
 }
-\author{Wolfgang Viechtbauer; \email{wvb@www.wvbauer.com}; \url{http://www.wvbauer.com/}}
+\author{
+	Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr
+	project homepage: \url{http://www.metafor-project.org/} \cr
+	author homepage: \url{http://www.wvbauer.com/}
+}
 \references{
 	Light, R. J. & Pillemer, D. B. (1984). \emph{Summing up: The science of reviewing research}. Cambridge, MA: Harvard University Press.
 

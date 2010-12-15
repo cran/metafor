@@ -17,7 +17,14 @@ fitstats(object, \dots)
 \value{
 	Log likelihood, deviance, AIC, and BIC values either under the regular or restricted likelihood.
 }
-\author{Wolfgang Viechtbauer; \email{wvb@www.wvbauer.com}; \url{http://www.wvbauer.com/}}
+\author{
+	Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr
+	project homepage: \url{http://www.metafor-project.org/} \cr
+	author homepage: \url{http://www.wvbauer.com/}
+}
+\references{
+	Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \url{http://www.jstatsoft.org/v36/i03/}.
+}
 \seealso{
 	\code{\link{fitstats.rma}}
 }

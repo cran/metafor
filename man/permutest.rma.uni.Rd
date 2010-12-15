@@ -42,7 +42,11 @@
 
 	The results are formated and printed with the \code{\link{print.permutest.rma.uni}} function. One can also use \code{\link{coef.permutest.rma.uni}} to obtain the table with the model coefficients, corresponding standard errors, test statistics, p-values, and confidence interval bounds.
 }
-\author{Wolfgang Viechtbauer; \email{wvb@www.wvbauer.com}; \url{http://www.wvbauer.com/}}
+\author{
+	Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr
+	project homepage: \url{http://www.metafor-project.org/} \cr
+	author homepage: \url{http://www.wvbauer.com/}
+}
 \references{
 	Follmann, D. A. & Proschan, M. A. (1999). Valid inference in random effects meta-analysis. \emph{Biometrics}, \bold{55}, 732--737.
 

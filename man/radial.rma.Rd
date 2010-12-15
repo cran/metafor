@@ -5,7 +5,7 @@
 \usage{
 \method{radial}{rma}(x, center=FALSE, xlim=NULL, zlim=NULL, xlab=NULL, zlab=NULL, 
        atz=NULL, aty=NULL, steps=7, level=x$level, digits=2, 
-       back="lightgray", transf=FALSE, targs=NULL, pch=19, 
+       back="lightgray", transf=FALSE, targs, pch=19, 
        arc.res = 100, cex=NULL, \dots)
 }
 \arguments{
@@ -35,7 +35,11 @@
 
 	If the model contains moderators, the function returns an error.
 }
-\author{Wolfgang Viechtbauer; \email{wvb@www.wvbauer.com}; \url{http://www.wvbauer.com/}}
+\author{
+	Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr
+	project homepage: \url{http://www.metafor-project.org/} \cr
+	author homepage: \url{http://www.wvbauer.com/}
+}
 \references{
 	Galbraith, R. F. (1988). Graphical display of estimates having differing standard errors. \emph{Technometrics}, \bold{30}, 271--281.
 

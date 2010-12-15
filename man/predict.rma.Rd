@@ -5,8 +5,8 @@
    The function calculates predicted values, corresponding standard errors, confidence intervals, and (approximate) credibility intervals for objects of class \code{"rma"}.
 }
 \usage{
-\method{predict}{rma}(object, newmods=NULL, addx=FALSE, level=object$level, 
-        digits=object$digits, transf=FALSE, targs=NULL, \dots)
+\method{predict}{rma}(object, newmods, addx=FALSE, level=object$level, 
+        digits=object$digits, transf=FALSE, targs, \dots)
 }
 \arguments{
 	\item{object}{an object of class \code{"rma"}.}
@@ -49,11 +49,15 @@
 
 	The normal distribution is used to calculate the confidence/credibility intervals. When the model was fitted with the Knapp and Hartung (2003) method (i.e., \code{knha=TRUE} in the \code{\link{rma.uni}} function), then the t-distribution with \eqn{k-p} degrees of freedom is used.
 }
-\author{Wolfgang Viechtbauer; \email{wvb@www.wvbauer.com}; \url{http://www.wvbauer.com/}}
+\author{
+	Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr
+	project homepage: \url{http://www.metafor-project.org/} \cr
+	author homepage: \url{http://www.wvbauer.com/}
+}
 \references{
 	Hedges, L. V. & Olkin, I. (1985). \emph{Statistical methods for meta-analysis}. San Diego, CA: Academic Press.
 
-	Raudenbush, S. W. (2009). Analyzing effect sizes: Random effects models. In H. C. Cooper, L. V. Hedges & J. C. Valentine (Eds.), \emph{The handbook of research synthesis and meta-analysis} (2nd ed., pp. 295--315). New York: Russell Sage Foundation.
+	Raudenbush, S. W. (2009). Analyzing effect sizes: Random effects models. In H. C. Cooper, L. V. Hedges, & J. C. Valentine (Eds.), \emph{The handbook of research synthesis and meta-analysis} (2nd ed., pp. 295--315). New York: Russell Sage Foundation.
 
 	Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \url{http://www.jstatsoft.org/v36/i03/}.
 }

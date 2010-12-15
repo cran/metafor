@@ -7,7 +7,7 @@
        xlim=NULL, alim=NULL, ylim=NULL, at=NULL, steps=5, 
        level=x$level, digits=2, refline=0, xlab=NULL, 
        slab=NULL, mlab=NULL, ilab=NULL, ilab.xpos=NULL, ilab.pos=NULL, 
-       order=NULL, transf=FALSE, atransf=FALSE, targs=NULL, rows=NULL, 
+       order=NULL, transf=FALSE, atransf=FALSE, targs, rows=NULL, 
        efac=1, pch=15, psize=NULL, col="darkgray", border="darkgray", 
        cex=NULL, cex.lab=NULL, cex.axis=NULL, \dots)
 }
@@ -73,7 +73,11 @@
 
 	If the horizontal plot and/or x axis limits are set by the user, then the horizontal plot limits (\code{xlim}) must be at least as wide as the x axis limits (\code{alim}). Moreover, the x axis limits must encompass the observed effect sizes or outcomes. These restrictions are enforced inside the function.
 }
-\author{Wolfgang Viechtbauer; \email{wvb@www.wvbauer.com}; \url{http://www.wvbauer.com/}}
+\author{
+	Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr
+	project homepage: \url{http://www.metafor-project.org/} \cr
+	author homepage: \url{http://www.wvbauer.com/}
+}
 \references{
 	Lewis, S. & Clarke, M. (2001). Forest plots: Trying to see the wood and the trees. \emph{British Medical Journal}, \bold{322}, 1479--1480.
 

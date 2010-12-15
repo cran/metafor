@@ -3,11 +3,12 @@
 \title{Forest Plots}
 \description{Function to create forest plots for a given set of data.}
 \usage{
-\method{forest}{default}(x, vi, sei, annotate=TRUE, showweight=FALSE,
+\method{forest}{default}(x, vi, sei, ci.lb, ci.ub, 
+       annotate=TRUE, showweight=FALSE,
        xlim=NULL, alim=NULL, ylim=NULL, at=NULL, steps=5, 
        level=95, digits=2, refline=0, xlab=NULL, 
        slab=NULL, ilab=NULL, ilab.xpos=NULL, ilab.pos=NULL, 
-       subset=NULL, transf=FALSE, atransf=FALSE, targs=NULL, 
+       subset=NULL, transf=FALSE, atransf=FALSE, targs, 
        rows=NULL, efac=1, pch=15, psize=NULL, 
        cex=NULL, cex.lab=NULL, cex.axis=NULL, \dots)
 }
@@ -15,6 +16,8 @@
 	\item{x}{a vector of length \eqn{k} with the observed effect sizes or outcomes.}
 	\item{vi}{a vector of length \eqn{k} with the corresponding sampling variances.}
 	\item{sei}{a vector of length \eqn{k} with the corresponding standard errors.\cr(note: only one of the two, \code{vi} or \code{sei}, needs to be specified)}
+	\item{ci.lb}{a vector of length \eqn{k} with the corresponding lower confidence intervals bounds. Not needed if \code{vi} or \code{sei} is specified. See \sQuote{Details}.}
+	\item{ci.ub}{a vector of length \eqn{k} with the corresponding upper confidence intervals bounds. Not needed if \code{vi} or \code{sei} is specified. See \sQuote{Details}.}
 	\item{annotate}{logical specifying whether annotations should be added to the plot (default is \code{TRUE}).}
 	\item{showweight}{logical specifying whether the annotations should also include inverse variance weights (default is \code{FALSE}).}
 	\item{xlim}{horizontal limits of the plot region. Defaults to \code{NULL}, which means that the function tries to set the horizontal plot limits to some sensible values.}
@@ -31,7 +34,7 @@
 	\item{ilab.xpos}{numerical value(s) specifying the x axis position(s) of the character vector(s) given via \code{ilab}.}
 	\item{ilab.pos}{integer(s) (either 1, 2, 3, or 4) specifying the alignment of the character vector(s) given via \code{ilab} (2 means right, 4 mean left aligned). The default is to center the labels.}
 	\item{subset}{an optional vector indicating the subset of studies that should be used for the plot. This can be a logical vector of length \eqn{k} or a numeric vector indicating the indices of the observations to include. Note that this argument can also be used for reordering the studies.}
-	\item{transf}{an optional argument specifying the name of a function that should be used to transform the observed effect sizes and corresponding confidence interval bounds (e.g., \code{transf=exp}). Defaults to \code{FALSE}, which means that no transformation is used.}
+	\item{transf}{an optional argument specifying the name of a function that should be used to transform the observed effect sizes or outcomes and corresponding confidence interval bounds (e.g., \code{transf=exp}). Defaults to \code{FALSE}, which means that no transformation is used.}
 	\item{atransf}{an optional argument specifying the name of a function that should be used to transform the x axis labels and annotations (e.g., \code{transf=exp}). Defaults to \code{FALSE}, which means that no transformation is used.}
 	\item{targs}{optional arguments needed by the function specified via \code{transf} or \code{atransf}.}
 	\item{rows}{an optional vector specifying the rows (or more generally, the horizontal positions) for plotting the outcomes. Defaults to \code{NULL}, which means that the function sets this value automatically. Can also be a single value specifying the row (horizontal position) of the first outcome (the remaining outcomes are then plotted below this starting row).}
@@ -44,9 +47,9 @@
 	\item{\dots}{other arguments.}
 }
 \details{
-	The plot shows the individual observed effect sizes or outcomes with corresponding confidence intervals.
+	The plot shows the individual observed effect sizes or outcomes with corresponding confidence intervals. To use the function, one should specify the observed effect sizes or outcomes (via the \code{x} argument) together with the corresponding sampling variances (via the \code{vi} argument) or with the corresponding standard errors (via the \code{sei} argument). Alternatively, one can specify the observed effect sizes or outcomes together with the corresponding confidence interval bounds (via the \code{ci.lb} and \code{ci.ub} arguments).
 
-	With the \code{transf} argument, the observed effect sizes and corresponding confidence interval bounds can be transformed with an arbitrary function. For example, if log odds ratios are provided to the function, then one could use \code{transf=exp} to obtain a forest plot showing the odds ratios. Alternatively, one can use the \code{atransf} argument to transform the x axis labels and annotations. The examples below illustrate the use of these arguments.
+	With the \code{transf} argument, the observed effect sizes or outcomes and corresponding confidence interval bounds can be transformed with an arbitrary function. For example, if log odds ratios are provided to the function, then one could use \code{transf=exp} to obtain a forest plot showing the odds ratios. Alternatively, one can use the \code{atransf} argument to transform the x axis labels and annotations. The examples below illustrate the use of these arguments.
 
 	Summary estimates can also be added to the plot with the \code{\link{addpoly}} function. See the documentation for that function for examples.
 }
@@ -55,7 +58,11 @@
 
 	If the horizontal plot and/or x axis limits are set by the user, then the horizontal plot limits (\code{xlim}) must be at least as wide as the x axis limits (\code{alim}). Moreover, the x axis limits must encompass the observed effect sizes or outcomes. These restrictions are enforced inside the function.
 }
-\author{Wolfgang Viechtbauer; \email{wvb@www.wvbauer.com}; \url{http://www.wvbauer.com/}}
+\author{
+	Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr
+	project homepage: \url{http://www.metafor-project.org/} \cr
+	author homepage: \url{http://www.wvbauer.com/}
+}
 \references{
 	Lewis, S. & Clarke, M. (2001). Forest plots: Trying to see the wood and the trees. \emph{British Medical Journal}, \bold{322}, 1479--1480.
 
@@ -72,8 +79,16 @@ data(dat.bcg)
 dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, 
               data=dat.bcg, append=TRUE)
 
+### forest plot of the observed log relative risks
+forest(dat$yi, dat$vi)
+
 ### forest plot of the observed relative risks
-forest(dat$yi, dat$vi, slab=paste(dat$author, dat$year, sep=", "), atransf=exp)
+forest(dat$yi, dat$vi, slab=paste(dat$author, dat$year, sep=", "), transf=exp, 
+       alim=c(0,2), steps=5, xlim=c(-2,3.5), refline=1)
+
+### forest plot of the observed relative risks
+forest(dat$yi, dat$vi, slab=paste(dat$author, dat$year, sep=", "), atransf=exp,
+       at=log(c(.05,.25,1,4,20)), xlim=c(-10,8))
 
 ### see also examples for the forest.rma function
 }

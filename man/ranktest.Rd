@@ -14,7 +14,11 @@ ranktest(x, \dots)
 \details{
 	Currently, there is only a method for handling objects of class \code{"rma"} with the \code{ranktest} function. Accordingly, the corresponding method is called \code{\link{ranktest.rma}}. See the documentation for that function for more details.
 }
-\author{Wolfgang Viechtbauer; \email{wvb@www.wvbauer.com}; \url{http://www.wvbauer.com/}}
+\author{
+	Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr
+	project homepage: \url{http://www.metafor-project.org/} \cr
+	author homepage: \url{http://www.wvbauer.com/}
+}
 \references{
 	Begg, C. B. & Mazumdar, M. (1994). Operating characteristics of a rank correlation test for publication bias. \emph{Biometrics}, \bold{50}, 1088--1101.
 

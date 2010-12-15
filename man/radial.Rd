@@ -16,7 +16,11 @@ galbraith(x, \dots)
 \details{
 	Currently, there is only a method for handling objects of class \code{"rma"} with the \code{radial} function. Accordingly, the corresponding method is called \code{\link{radial.rma}}. See the documentation for that function for more details.
 }
-\author{Wolfgang Viechtbauer; \email{wvb@www.wvbauer.com}; \url{http://www.wvbauer.com/}}
+\author{
+	Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr
+	project homepage: \url{http://www.metafor-project.org/} \cr
+	author homepage: \url{http://www.wvbauer.com/}
+}
 \references{
 	Galbraith, R. F. (1988). Graphical display of estimates having differing standard errors. \emph{Technometrics}, \bold{30}, 271--281.
 

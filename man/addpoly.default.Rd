@@ -3,14 +3,17 @@
 \title{Add Polygons to Forest Plot}
 \description{Function to add one or more polygons to a forest plot.}
 \usage{
-\method{addpoly}{default}(x, vi, sei, rows=-1, level=95, digits=2, annotate=TRUE, 
-        mlab=NULL, transf=FALSE, atransf=FALSE, targs=NULL, 
+\method{addpoly}{default}(x, vi, sei, ci.lb, ci.ub, 
+        rows=-1, level=95, digits=2, annotate=TRUE, 
+        mlab=NULL, transf=FALSE, atransf=FALSE, targs, 
         col="black", efac=1, cex=NULL, \dots)
 }
 \arguments{
 	\item{x}{a vector with the values at which the polygons should be drawn.}
 	\item{vi}{a vector with the corresponding variances.}
 	\item{sei}{a vector with the corresponding standard errors.\cr(note: only one of the two, \code{vi} or \code{sei}, needs to be specified)}
+	\item{ci.lb}{a vector with the corresponding lower confidence intervals bounds. Not needed if \code{vi} or \code{sei} is specified. See \sQuote{Details}.}
+	\item{ci.ub}{a vector with the corresponding upper confidence intervals bounds. Not needed if \code{vi} or \code{sei} is specified. See \sQuote{Details}.}
 	\item{rows}{a vector specifying the rows (or more generally, the horizontal positions) for plotting the polygons (defaults is \code{-1}). Can also be a single value specifying the row (horizontal position) of the first polygon (the remaining polygons are then plotted below this starting row).}
 	\item{level}{a numerical value between 0 and 100 specifying the confidence interval level (default is 95).}
 	\item{digits}{integer value specifying the number of decimal places to which the annotations should be rounded (default is 2).}
@@ -27,9 +30,15 @@
 \details{
 	The function can be used to add one or more polygons to an existing forest plot created with the \code{\link{forest}} function. For example, summary estimates based on a subgrouping of the studies or from models involving moderators can be added to the plot this way. See examples below.
 
+	To use the function, one should specify the values at which the polygons should be drawn (via the \code{x} argument) together with the corresponding variances (via the \code{vi} argument) or with the corresponding standard errors (via the \code{sei} argument). Alternatively, one can specify the values at which the polygons should be drawn together with the corresponding confidence interval bounds (via the \code{ci.lb} and \code{ci.ub} arguments).
+
 	The arguments \code{transf}, \code{atransf}, \code{efac}, and \code{cex} should always be set equal to the same values used to create the forest plot.
 }
-\author{Wolfgang Viechtbauer; \email{wvb@www.wvbauer.com}; \url{http://www.wvbauer.com/}}
+\author{
+	Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr
+	project homepage: \url{http://www.metafor-project.org/} \cr
+	author homepage: \url{http://www.wvbauer.com/}
+}
 \references{
 	Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \url{http://www.jstatsoft.org/v36/i03/}.
 }
@@ -49,7 +58,7 @@ res <- rma(ai=tpos, bi=tneg, ci=cpos, di=cneg, mods=cbind(ablat),
 ### forest plot of the observed relative risks
 forest(res, addfit=FALSE, atransf=exp, ylim=c(-3.5,16))
 
-### predicted log average relative risks for 10, 30, and 50 degrees absolute latitude
+### predicted average log relative risk for 10, 30, and 50 degrees absolute latitude
 x <- predict(res, newmods=c(10, 30, 50))
 
 ### add predicted average relative risks to forest plot

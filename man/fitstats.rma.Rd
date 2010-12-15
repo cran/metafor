@@ -9,7 +9,7 @@
 	Functions to extract the log likelihood, deviance, AIC, and BIC values from objects of class \code{"rma"}.
 }
 \usage{
-\method{fitstats}{rma}(object, REML=NULL, \dots)
+\method{fitstats}{rma}(object, REML, \dots)
 \method{logLik}{rma}(object, REML, \dots)
 \method{deviance}{rma}(object, REML, \dots)
 \method{AIC}{rma}(object, \dots, k=2)
@@ -33,9 +33,13 @@
 	For \code{BIC.rma}, a numeric value with the corresponding BIC.
 }
 \note{
-	When a random/mixed-effects model is fitted, \eqn{\tau^2}{tau^2} is counted as an additional parameter in the calculation of the AIC and BIC.
+	When a random/mixed-effects model is fitted, \eqn{\tau^2}{tau^2} is counted as an additional parameter in the calculation of the AIC and BIC. Also, the fixed effects are counted as parameters in the calculation of the AIC and BIC even when using REML estimation.
 }
-\author{Wolfgang Viechtbauer; \email{wvb@www.wvbauer.com}; \url{http://www.wvbauer.com/}}
+\author{
+	Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr
+	project homepage: \url{http://www.metafor-project.org/} \cr
+	author homepage: \url{http://www.wvbauer.com/}
+}
 \references{
 	Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \url{http://www.jstatsoft.org/v36/i03/}.
 }

@@ -1,15 +1,19 @@
 \name{confint.rma.uni}
 \alias{confint.rma.uni}
-\title{Confidence Intervals for rma.uni Objects}
+\alias{confint.rma.mh}
+\alias{confint.rma.peto}
+\title{Confidence Intervals for rma Objects}
 \description{
    The function calculates a confidence interval for the amount of (residual) heterogeneity in random- and mixed-effects models that were fitted with the \code{\link{rma.uni}} function. Confidence intervals for the model coefficients can also be obtained.
 }
 \usage{
 \method{confint}{rma.uni}(object, parm, level=object$level, fixed=FALSE,
-        random=TRUE, digits=object$digits, control=list(), \dots)
+        random=TRUE, digits=object$digits, control, \dots)
+\method{confint}{rma.mh}(object, parm, level=object$level, digits=object$digits, \dots)
+\method{confint}{rma.peto}(object, parm, level=object$level, digits=object$digits, \dots)
 }
 \arguments{
-	\item{object}{an object of class \code{"rma.uni"}.}
+	\item{object}{an object of class \code{"rma.uni"}, \code{"rma.mh"}, or \code{"rma.peto"}.}
 	\item{parm}{this argument is here for compatability with the generic function \code{\link{confint}}, but is ignored.}
 	\item{level}{a numerical value between 0 and 100 specifying the confidence interval level (the default is to take the value from the object).}
 	\item{fixed}{logical indicating whether confidence intervals for the model coefficients should be returned (default is \code{FALSE}).}
@@ -19,13 +23,13 @@
 	\item{\dots}{other arguments.}
 }
 \details{
-	The confidence intervals for the model coefficients are simply the usual Wald-type intervals which are also shown when printing the fitted object or when calling \code{\link{coef.rma}}.
+	The confidence intervals for the model coefficients are simply the usual Wald-type intervals which are also shown when printing the fitted object.
 
 	The confidence interval for the amount of (residual) heterogeneity is obtained iteratively via the Q-profile method as described by Hartung and Knapp (2005) and Viechtbauer (2007). The method provides an exact confidence interval for \eqn{\tau^2}{tau^2} in random- and mixed-effects models. The square root of the interval bounds is also returned for easier interpretation. For random-effects models, confidence intervals for \eqn{I^2} and \eqn{H^2} are also provided (Higgins & Thompson, 2002). Since \eqn{I^2} and \eqn{H^2} are just monotonic transformation of \eqn{\tau^2}{tau^2}, the confidence intervals for \eqn{I^2} and \eqn{H^2} are also exact.
 }
 \value{
 	Either a single data frame or a list with two data frames (named \code{fixed} and \code{random}) with the following elements:
-	\item{estimate}{estimate of the model coefficient or variance component}
+	\item{estimate}{estimate of the model coefficient or variance component.}
 	\item{ci.lb}{lower bound of the confidence interval.}
 	\item{ci.ub}{upper bound of the confidence interval.}
 	For fixed-effects models, the variance component estimates are \code{NA}, but the confidence interval bounds are still provided.
@@ -39,15 +43,23 @@
 
 	The Q-profile method is exact under the assumptions of the random- and mixed-effects models (i.e., normally distributed observed and true outcomes and known sampling variances). These assumptions are usually only approximately true, turning the confidence interval for \eqn{\tau^2}{tau^2} also into an approximation.
 }
-\author{Wolfgang Viechtbauer; \email{wvb@www.wvbauer.com}; \url{http://www.wvbauer.com/}}
+\author{
+	Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr
+	project homepage: \url{http://www.metafor-project.org/} \cr
+	author homepage: \url{http://www.wvbauer.com/}
+}
 \references{
 	Hartung, J. & Knapp, G. (2005). On confidence intervals for the among-group variance in the one-way random effects model with unequal error variances. \emph{Journal of Statistical Planning and Inference}, \bold{127}, 157--177.
 
 	Higgins, J. P. T. & Thompson, S. G. (2002). Quantifying heterogeneity in a meta-analysis. \emph{Statistics in Medicine}, \bold{21}, 1539--1558.
 
+	Mantel, N. & Haenszel, W. (1959). Statistical aspects of the analysis of data from retrospective studies of disease. \emph{Journal of the National Cancer Institute}, \bold{22}, 719--748.
+
 	Viechtbauer, W. (2007). Confidence intervals for the amount of heterogeneity in meta-analysis. \emph{Statistics in Medicine}, \bold{26}, 37--52.
 
 	Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \url{http://www.jstatsoft.org/v36/i03/}.
+
+	Yusuf, S., Peto, R., Lewis, J., Collins, R., & Sleight, P. (1985). Beta blockade during and after myocardial infarction: An overview of the randomized trials. \emph{Progress in Cardiovascular Disease}, \bold{27}, 335--371.
 }
 \seealso{
 	\code{\link{rma.uni}}

@@ -6,7 +6,7 @@
 \method{forest}{cumul.rma}(x, annotate=TRUE, xlim=NULL, alim=NULL, 
        ylim=NULL, at=NULL, steps=5, level=x$level, digits=2, refline=0, 
        xlab=NULL, ilab=NULL, ilab.xpos=NULL, ilab.pos=NULL, transf=FALSE, 
-       atransf=FALSE, targs=NULL, rows=NULL, efac=1, pch=15, psize=1, 
+       atransf=FALSE, targs, rows=NULL, efac=1, pch=15, psize=1, 
        cex=NULL, cex.lab=NULL, cex.axis=NULL, \dots)
 }
 \arguments{
@@ -44,11 +44,15 @@
 
 	If the horizontal plot and/or x axis limits are set by the user, then the horizontal plot limits (\code{xlim}) must be at least as wide as the x axis limits (\code{alim}). Moreover, the x axis limits must encompass the observed effect sizes or outcomes. These restrictions are enforced inside the function.
 }
-\author{Wolfgang Viechtbauer; \email{wvb@www.wvbauer.com}; \url{http://www.wvbauer.com/}}
+\author{
+	Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr
+	project homepage: \url{http://www.metafor-project.org/} \cr
+	author homepage: \url{http://www.wvbauer.com/}
+}
 \references{
 	Chalmers, T. C. & Lau, J. (1993). Meta-analytic stimulus for changes in clinical trials. \emph{Statistical Methods in Medical Research}, \bold{2}, 161--172.
 
-	Lau, J., Schmid, C. H. & Chalmers, T. C. (1995). Cumulative meta-analysis of clinical trials builds evidence for exemplary medical care. \emph{Journal of Clinical Epidemiology}, \bold{48}, 45--57.
+	Lau, J., Schmid, C. H., & Chalmers, T. C. (1995). Cumulative meta-analysis of clinical trials builds evidence for exemplary medical care. \emph{Journal of Clinical Epidemiology}, \bold{48}, 45--57.
 
 	Lewis, S. & Clarke, M. (2001). Forest plots: Trying to see the wood and the trees. \emph{British Medical Journal}, \bold{322}, 1479--1480.
 

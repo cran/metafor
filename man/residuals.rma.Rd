@@ -49,7 +49,11 @@
 
 	It may not be possible to fit the model after deletion of the \eqn{i^{th}}{ith} case from the dataset. This will result in \code{NA} values for that case when calling \code{rstudent}.
 }
-\author{Wolfgang Viechtbauer; \email{wvb@www.wvbauer.com}; \url{http://www.wvbauer.com/}}
+\author{
+	Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr
+	project homepage: \url{http://www.metafor-project.org/} \cr
+	author homepage: \url{http://www.wvbauer.com/}
+}
 \references{
 	Hedges, L. V. & Olkin, I. (1985). \emph{Statistical methods for meta-analysis}. San Diego, CA: Academic Press.
 

@@ -29,7 +29,11 @@
 
 	For objects of class \code{"rma.uni"}, it is also possible to add a pseudo confidence envelope to the plot. The envelope is created based on the quantiles of sets of pseudo residuals simulated from the given model (for details, see Cook & Weisberg, 1982). The number of sets simulated can be controlled with the \code{reps} argument. When \code{smooth=TRUE}, the simulated bounds are smoothed with Friedman's SuperSmoother (see \code{\link{supsmu}}). The \code{bass} argument can be set to a number between 0 and 10, with higher numbers indicating increasing smoothness. If \code{bonferroni=TRUE}, the envelope bounds are Bonferroni corrected, so that the envelope can be regarded as a confidence region for all \eqn{k} residuals simultaneously. The default however is \code{bonferroni=FALSE}, which makes the plot more sensitive to deviations from normality.
 }
-\author{Wolfgang Viechtbauer; \email{wvb@www.wvbauer.com}; \url{http://www.wvbauer.com/}}
+\author{
+	Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr
+	project homepage: \url{http://www.metafor-project.org/} \cr
+	author homepage: \url{http://www.wvbauer.com/}
+}
 \references{
 	Cook, R. D. & Weisberg, S. (1982). \emph{Residuals and influence in regression}. London: Chapman and Hall.
 

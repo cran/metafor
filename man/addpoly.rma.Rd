@@ -4,7 +4,7 @@
 \description{Function to add a polygon to a forest plot showing the summary estimate with correspondong confidence interval based on an object of class \code{"rma"}.}
 \usage{
 \method{addpoly}{rma}(x, row=-2, level=x$level, digits=2, annotate=TRUE, 
-        mlab=NULL, transf=FALSE, atransf=FALSE, targs=NULL, 
+        mlab=NULL, transf=FALSE, atransf=FALSE, targs, 
         col="black", efac=1, cex=NULL, \dots)
 }
 \arguments{
@@ -27,7 +27,11 @@
 	
 	The arguments \code{transf}, \code{atransf}, \code{efac}, and \code{cex} should always be set equal to the same values used to create the forest plot.
 }
-\author{Wolfgang Viechtbauer; \email{wvb@www.wvbauer.com}; \url{http://www.wvbauer.com/}}
+\author{
+	Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr
+	project homepage: \url{http://www.metafor-project.org/} \cr
+	author homepage: \url{http://www.wvbauer.com/}
+}
 \references{
 	Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \url{http://www.jstatsoft.org/v36/i03/}.
 }

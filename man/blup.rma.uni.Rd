@@ -5,7 +5,7 @@
    The function calculates the best linear unbiased predictions (BLUPs) of the true outcomes by combining the fitted values based on the fixed effects and the estimated contributions of the random effects for objects of class \code{"rma.uni"}. Corresponding standard errors and prediction interval bounds are also provided.
 }
 \usage{
-\method{blup}{rma.uni}(x, level=x$level, digits=x$digits, transf=FALSE, targs=NULL, \dots)
+\method{blup}{rma.uni}(x, level=x$level, digits=x$digits, transf=FALSE, targs, \dots)
 }
 \arguments{
 	\item{x}{an object of class \code{"rma.uni"}.}
@@ -36,7 +36,11 @@
 
 	To be precise, it should be noted that the function actually calculates empirical BLUPs (EBLUPs), since the predicted values are a function of the estimated value of \eqn{\tau^2}{tau^2}.
 }
-\author{Wolfgang Viechtbauer; \email{wvb@www.wvbauer.com}; \url{http://www.wvbauer.com/}}
+\author{
+	Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr
+	project homepage: \url{http://www.metafor-project.org/} \cr
+	author homepage: \url{http://www.wvbauer.com/}
+}
 \references{
 	Kackar, R. N. & Harville, D. A. (1981). Unbiasedness of two-stage estimation and prediction procedures for mixed linear models. Communications in Statistics, Theory and Methods, \bold{10}, 1249--1261.
 

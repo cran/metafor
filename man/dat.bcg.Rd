@@ -1,7 +1,7 @@
 \name{dat.bcg}
 \docType{data}
 \alias{dat.bcg}
-\title{Data for BCG Vaccine Studies}
+\title{Studies on the Effectiveness of the BCG Vaccine for Preventing Tuberculosis}
 \description{Results from 13 clinical trials examining the effectiveness of the Bacillus Calmette-Guerin (BCG) vaccine for preventing tuberculosis.}
 \usage{dat.bcg}
 \format{The data frame contains the following columns:
@@ -25,15 +25,15 @@
 	control group    \tab \code{cpos} \tab \code{cneg}
 	} The goal of the meta-analysis was to examine the overall effectiveness of the BCG vaccine for preventing tuberculosis and to examine moderators that may potentially influence the size of the effect.
 
-	The data set has been used in several publications to illustrate meta-analytic methods (see \sQuote{References}).
+	The dataset has been used in several publications to illustrate meta-analytic methods (see \sQuote{References}).
 }
 \source{
-	Colditz, G. A., Brewer, T. F., Berkey, C. S., Wilson, M. E., Burdick, E., Fineberg, H. V. & Mosteller, F. (1994). Efficacy of BCG vaccine in the prevention of tuberculosis: Meta-analysis of the published literature. \emph{Journal of the American Medical Association}, \bold{271}, 698--702.
+	Colditz, G. A., Brewer, T. F., Berkey, C. S., Wilson, M. E., Burdick, E., Fineberg, H. V., & Mosteller, F. (1994). Efficacy of BCG vaccine in the prevention of tuberculosis: Meta-analysis of the published literature. \emph{Journal of the American Medical Association}, \bold{271}, 698--702.
 }
 \references{
-	Berkey, C. S., Hoaglin, D. C., Mosteller, F. & Colditz, G. A. (1995). A random-effects regression model for meta-analysis. \emph{Statistics in Medicine}, \bold{14}, 395--411.
+	Berkey, C. S., Hoaglin, D. C., Mosteller, F., & Colditz, G. A. (1995). A random-effects regression model for meta-analysis. \emph{Statistics in Medicine}, \bold{14}, 395--411.
 
-	van Houwelingen, H. C., Arends, L. R. & Stijnen, T. (2002). Advanced methods in meta-analysis: Multivariate approach and meta-regression. \emph{Statistics in Medicine}, \bold{21}, 589--624.
+	van Houwelingen, H. C., Arends, L. R., & Stijnen, T. (2002). Advanced methods in meta-analysis: Multivariate approach and meta-regression. \emph{Statistics in Medicine}, \bold{21}, 589--624.
 
 	Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \url{http://www.jstatsoft.org/v36/i03/}.
 }
@@ -41,20 +41,30 @@
 ### load BCG vaccine data
 data(dat.bcg)
 
-### meta-analysis of the log relative risks using a random-effects model
-res <- rma(ai=tpos, bi=tneg, ci=cpos, di=cneg, 
-           measure="RR", data=dat.bcg, method="DL")
+### calculate log relative risks and corresponding sampling variances
+dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, 
+              data=dat.bcg, append=TRUE)
+dat
+
+### random-effects model
+res <- rma(yi, vi, data=dat)
 res
 
 ### average relative risk with 95\% CI
 predict(res, transf=exp)
 
-### mixed-effects model with absolute latitude as a moderator
-res <- rma(ai=tpos, bi=tneg, ci=cpos, di=cneg, mods=cbind(ablat), 
-           measure="RR", data=dat.bcg, method="DL")
+### mixed-effects model with absolute latitude and publication year as moderators
+res <- rma(yi, vi, mods=cbind(ablat, year), data=dat, method="REML")
 res
 
 ### predicted average relative risks for 10-60 degrees absolute latitude
-predict(res, newmods=c(10, 20, 30, 40, 50, 60), transf=exp)
+### holding the publication year constant at 1970
+predict(res, newmods=cbind(seq(from=10, to=60, by=10), 1970), transf=exp)
+
+### note: the interpretation of the results is difficult because absolute
+### latitude and publication year are strongly correlated (the more recent
+### studies were conducted closer to the equator)
+plot(dat$ablat, dat$year)
+cor(dat$ablat, dat$year)
 }
 \keyword{datasets}

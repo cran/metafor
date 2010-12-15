@@ -1,7 +1,7 @@
 citHeader("To cite metafor in publications use:")
 
 citEntry(entry = "Article",
-  title        = "Conducting Meta-Analyses in {R} with the {metafor} Package",
+  title        = "Conducting meta-analyses in {R} with the {metafor} package",
   author       = personList(as.person("Wolfgang Viechtbauer")),
   journal      = "Journal of Statistical Software",
   year         = "2010",
@@ -12,7 +12,7 @@ citEntry(entry = "Article",
 
   textVersion  =
   paste("Wolfgang Viechtbauer (2010).",
-        "Conducting Meta-Analyses in R with the metafor Package.",
+        "Conducting meta-analyses in R with the metafor package.",
         "Journal of Statistical Software, 36(3), 1-48.",
         "URL http://www.jstatsoft.org/v36/i03/.")
 )

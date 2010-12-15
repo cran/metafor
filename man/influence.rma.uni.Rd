@@ -53,9 +53,13 @@
 
 	Certain relationships between the leave-one-out diagnostics and the (internally or externally) standardized residuals (Belsley, Kuh, & Welsch, 1980; Cook & Weisberg, 1982) no longer hold for the meta-analytic models. Maybe there are other relationships. These remain to be determined.
 }
-\author{Wolfgang Viechtbauer; \email{wvb@www.wvbauer.com}; \url{http://www.wvbauer.com/}}
+\author{
+	Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr
+	project homepage: \url{http://www.metafor-project.org/} \cr
+	author homepage: \url{http://www.wvbauer.com/}
+}
 \references{
-	Belsley, D. A., Kuh, E. & Welsch, R. E. (1980). \emph{Regression diagnostics}. New York: Wiley.
+	Belsley, D. A., Kuh, E., & Welsch, R. E. (1980). \emph{Regression diagnostics}. New York: Wiley.
 
 	Cook, R. D. & Weisberg, S. (1982). \emph{Residuals and influence in regression}. London: Chapman and Hall.
 
@@ -77,5 +81,6 @@ data(dat.bcg)
 res <- rma(ai=tpos, bi=tneg, ci=cpos, di=cneg, mods=cbind(ablat, year),
            data=dat.bcg, measure="RR", method="REML")
 influence(res)
+plot(influence(res))
 }
 \keyword{models}

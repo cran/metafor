@@ -6,8 +6,8 @@
 	The functions \code{leave1out.rma.mh} and \code{leave1out.rma.peto} repeatedly fit the specified model, adding one observation (i.e., 2x2 table) at a time to the model.
 }
 \usage{
-\method{cumul}{rma.mh}(x, order=NULL, digits=x$digits, transf=FALSE, \dots)
-\method{cumul}{rma.peto}(x, order=NULL, digits=x$digits, transf=FALSE, \dots)
+\method{cumul}{rma.mh}(x, order, digits=x$digits, transf=FALSE, \dots)
+\method{cumul}{rma.peto}(x, order, digits=x$digits, transf=FALSE, \dots)
 }
 \arguments{
 	\item{x}{an object of class \code{"rma.mh"} or \code{"rma.peto"}.}
@@ -29,11 +29,15 @@
 
 	The object is formated and printed with \code{\link{print.list.rma}}. A forest plot showing the results from the cumulative meta-analysis can be obtained with \code{\link{forest.cumul.rma}}.
 }
-\author{Wolfgang Viechtbauer; \email{wvb@www.wvbauer.com}; \url{http://www.wvbauer.com/}}
+\author{
+	Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr
+	project homepage: \url{http://www.metafor-project.org/} \cr
+	author homepage: \url{http://www.wvbauer.com/}
+}
 \references{
 	Chalmers, T. C. & Lau, J. (1993). Meta-analytic stimulus for changes in clinical trials. \emph{Statistical Methods in Medical Research}, \bold{2}, 161--172.
 
-	Lau, J., Schmid, C. H. & Chalmers, T. C. (1995). Cumulative meta-analysis of clinical trials builds evidence for exemplary medical care. \emph{Journal of Clinical Epidemiology}, \bold{48}, 45--57.
+	Lau, J., Schmid, C. H., & Chalmers, T. C. (1995). Cumulative meta-analysis of clinical trials builds evidence for exemplary medical care. \emph{Journal of Clinical Epidemiology}, \bold{48}, 45--57.
 
 	Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \url{http://www.jstatsoft.org/v36/i03/}.
 }

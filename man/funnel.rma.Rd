@@ -4,7 +4,7 @@
 \description{Function to create funnel plots for objects of class \code{"rma"}.}
 \usage{
 \method{funnel}{rma}(x, xlim=NULL, ylim=NULL, xlab=NULL, ylab="Standard Error", 
-       steps=5, at=NULL, atransf=FALSE, targs=NULL, 
+       steps=5, at=NULL, atransf=FALSE, targs, 
        digits=c(2,3), level=x$level, addtau2=FALSE, 
        type="rstandard", back="lightgray", shade="white", 
        hlines="white", refline=NULL, pch=19, pch.fill=21, \dots)
@@ -40,11 +40,15 @@
 
 	The arguments \code{back}, \code{shade}, and \code{hlines} can be set to \code{NULL} to suppress the shading and the horizontal reference lines.
 }
-\author{Wolfgang Viechtbauer; \email{wvb@www.wvbauer.com}; \url{http://www.wvbauer.com/}}
+\author{
+	Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr
+	project homepage: \url{http://www.metafor-project.org/} \cr
+	author homepage: \url{http://www.wvbauer.com/}
+}
 \references{
 	Light, R. J. & Pillemer, D. B. (1984). \emph{Summing up: The science of reviewing research}. Cambridge, MA: Harvard University Press.
 
-	Peters, J. L., Sutton, A. J., Jones, D. R., Abrams, K. R. & Rushton, L. (2008). Contour-enhanced meta-analysis funnel plots help distinguish publication bias from other causes of asymmetry. \emph{Journal of Clinical Epidemiology}, \bold{61}, 991--996.
+	Peters, J. L., Sutton, A. J., Jones, D. R., Abrams, K. R., & Rushton, L. (2008). Contour-enhanced meta-analysis funnel plots help distinguish publication bias from other causes of asymmetry. \emph{Journal of Clinical Epidemiology}, \bold{61}, 991--996.
 
 	Sterne, J. A. C. & Egger, M. (2001). Funnel plots for detecting bias in meta-analysis: Guidelines on choice of axis. \emph{Journal of Clinical Epidemiology}, \bold{54}, 1046--1055.
 
