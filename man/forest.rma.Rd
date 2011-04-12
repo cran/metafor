@@ -29,7 +29,7 @@
 	\item{slab}{an optional vector with unique labels for the \eqn{k} studies. Defaults to \code{NULL}, which means that the labels are either taken from the object (if study labels were specified) or simple labels are created within the function. To suppress labels, set this argument to \code{NA}.}
 	\item{mlab}{an optional character string giving a label to the summary estimate from a fixed- or random-effects model. Defaults to \code{NULL}, which means that the label is created within the function.}
 	\item{ilab}{an optional vector or matrix of character strings providing additional information about the studies.}
-	\item{ilab.xpos}{vector of numerical value(s) specifying the x axis position(s) of the character vector(s) given via \code{ilab}.}
+	\item{ilab.xpos}{vector of numerical value(s) specifying the x axis position(s) of the character vector(s) given via \code{ilab} (must be specified if \code{ilab} is not \code{NULL}).}
 	\item{ilab.pos}{integer(s) (either 1, 2, 3, or 4) specifying the alignment of the character vector(s) given via \code{ilab} (2 means right, 4 mean left aligned). The default is to center the labels.}
 	\item{order}{an optional character string specifying how the studies should be ordered. See \sQuote{Details}.}
 	\item{transf}{an optional argument specifying the name of a function that should be used to transform the observed effect sizes, summary estimates, fitted values, and confidence interval bounds (e.g., \code{transf=exp}). Defaults to \code{FALSE}, which means that no transformation is used.}
@@ -53,7 +53,7 @@
 
 	For models involving moderators, the fitted value for each study is added as a polygon to the plot. With the \code{col} and \code{border} arguments, one can change the (border) color of these polygons.
 
-	With the \code{transf} argument, the observed effect sizes, summary estimate, fitted values, and interval bounds can be transformed with an arbitrary function. For example, when analyzing log odds ratios, one could use \code{transf=exp} to obtain a forest plot showing the odds ratios. Alternatively, one can use the \code{atransf} argument to transform the x axis labels and annotations. The examples below illustrate the use of these arguments.
+	With the \code{transf} argument, the observed effect sizes, summary estimate, fitted values, and interval bounds can be transformed with an arbitrary function. For example, when analyzing log odds ratios, one could use \code{transf=exp} to obtain a forest plot showing the odds ratios. Alternatively, one can use the \code{atransf} argument to transform the x axis labels and annotations (e.g., \code{atransf=exp}). The examples below illustrate the use of these arguments.
 
 	The studies can be reordered with the \code{order} argument:
 	\itemize{

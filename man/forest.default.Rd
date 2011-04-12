@@ -31,7 +31,7 @@
 	\item{xlab}{title for the x axis. If \code{NULL} (default), the function tries to set an appropriate axis title.}
 	\item{slab}{an optional vector with unique labels for the \eqn{k} studies. Defaults to \code{NULL}, which means that simple labels are created within the function. To suppress labels, set this argument to \code{NA}.}
 	\item{ilab}{an optional vector or matrix of character strings providing additional information about the studies.}
-	\item{ilab.xpos}{numerical value(s) specifying the x axis position(s) of the character vector(s) given via \code{ilab}.}
+	\item{ilab.xpos}{numerical value(s) specifying the x axis position(s) of the character vector(s) given via \code{ilab} (must be specified if \code{ilab} is not \code{NULL}).}
 	\item{ilab.pos}{integer(s) (either 1, 2, 3, or 4) specifying the alignment of the character vector(s) given via \code{ilab} (2 means right, 4 mean left aligned). The default is to center the labels.}
 	\item{subset}{an optional vector indicating the subset of studies that should be used for the plot. This can be a logical vector of length \eqn{k} or a numeric vector indicating the indices of the observations to include. Note that this argument can also be used for reordering the studies.}
 	\item{transf}{an optional argument specifying the name of a function that should be used to transform the observed effect sizes or outcomes and corresponding confidence interval bounds (e.g., \code{transf=exp}). Defaults to \code{FALSE}, which means that no transformation is used.}
@@ -49,12 +49,12 @@
 \details{
 	The plot shows the individual observed effect sizes or outcomes with corresponding confidence intervals. To use the function, one should specify the observed effect sizes or outcomes (via the \code{x} argument) together with the corresponding sampling variances (via the \code{vi} argument) or with the corresponding standard errors (via the \code{sei} argument). Alternatively, one can specify the observed effect sizes or outcomes together with the corresponding confidence interval bounds (via the \code{ci.lb} and \code{ci.ub} arguments).
 
-	With the \code{transf} argument, the observed effect sizes or outcomes and corresponding confidence interval bounds can be transformed with an arbitrary function. For example, if log odds ratios are provided to the function, then one could use \code{transf=exp} to obtain a forest plot showing the odds ratios. Alternatively, one can use the \code{atransf} argument to transform the x axis labels and annotations. The examples below illustrate the use of these arguments.
+	With the \code{transf} argument, the observed effect sizes or outcomes and corresponding confidence interval bounds can be transformed with an arbitrary function. For example, if log odds ratios are provided to the function, then one could use \code{transf=exp} to obtain a forest plot showing the odds ratios. Alternatively, one can use the \code{atransf} argument to transform the x axis labels and annotations (e.g., \code{atransf=exp}). The examples below illustrate the use of these arguments.
 
 	Summary estimates can also be added to the plot with the \code{\link{addpoly}} function. See the documentation for that function for examples.
 }
 \note{
-	The function tries to set some sensible values for the optional arguments, but it may be necessary to tweak these in certain circumstances. In particular, if the number of studies is quite large, the labels, annotations, and symbols may become quite small and impossible to read. Stretching the plot window vertically may then provide a more readable figure (you will have to call the function again after the stretching, so that the label/symbol sizes are properly adjusted).
+	The function tries to set some sensible values for the optional arguments, but it may be necessary to tweak these in certain circumstances. In particular, if the number of studies is very large, the labels, annotations, and symbols may become quite small and impossible to read. Stretching the plot window vertically may then provide a more readable figure (you will have to call the function again after the stretching, so that the label/symbol sizes are properly adjusted).
 
 	If the horizontal plot and/or x axis limits are set by the user, then the horizontal plot limits (\code{xlim}) must be at least as wide as the x axis limits (\code{alim}). Moreover, the x axis limits must encompass the observed effect sizes or outcomes. These restrictions are enforced inside the function.
 }

@@ -14,18 +14,18 @@
 }
 }
 \details{
-	The 160 studies provide data in terms of the correlation between employment interview performance and actual job performance. In addition, the interview type and the interview structure are indicated. 
-	
-	McDaniel et al. (1994) explain the interview type and structure variables as follows. "Questions in situational interviews [...] focus on the individual's ability to project what his or her behavior would be in a given situation. [...] Job-related interviews are those in which the interviewer is a personnel officer or hiring authority and the questions attempt to assess past behaviors and job-related information, but most questions are not considered situational. Psychological interviews are conducted by a psychologist, and the questions are intended to assess personal traits, such as dependability." In structured interviews, "the questions and acceptable responses were specified in advance and the responses were rated for appropriateness of content. [...] Unstructured interviews gather applicant information in a less systematic manner than do structured interviews. Although the questions may be specified in advance, they usually are not, and there is seldom a formalized scoring guide. Also, all persons being interviewed are not typically asked the same questions."
-	
-	The goal of the meta-analysis was to examine the overall criterion-related validity of employment interviews and to examine whether the validity depends on the type and structure of the interview.
+   The 160 studies provide data in terms of the correlation between employment interview performance and actual job performance. In addition, the interview type and the interview structure are indicated. 
+   
+   McDaniel et al. (1994) describe the interview type and structure variables as follows. "Questions in situational interviews [...] focus on the individual's ability to project what his or her behavior would be in a given situation. [...] Job-related interviews are those in which the interviewer is a personnel officer or hiring authority and the questions attempt to assess past behaviors and job-related information, but most questions are not considered situational. Psychological interviews are conducted by a psychologist, and the questions are intended to assess personal traits, such as dependability." In structured interviews, "the questions and acceptable responses were specified in advance and the responses were rated for appropriateness of content. [...] Unstructured interviews gather applicant information in a less systematic manner than do structured interviews. Although the questions may be specified in advance, they usually are not, and there is seldom a formalized scoring guide. Also, all persons being interviewed are not typically asked the same questions."
+   
+   The goal of the meta-analysis was to examine the overall criterion-related validity of employment interviews and to examine whether the validity depends on the type and structure of the interview.
 
-	The data contained in this dataset were obtained from Table A.2 in Rothstein, Sutton, & Borenstein (2005, p. 325-329). Note that the \code{type} and \code{struct} variables contain some \code{NA}s.
+   The data contained in this dataset were obtained from Table A.2 in Rothstein, Sutton, & Borenstein (2005, p. 325-329). Note that the \code{type} and \code{struct} variables contain some \code{NA}s.
 }
 \source{
-	McDaniel, M. A., Whetzel, D. L., Schmidt, F. L., & Maurer, S. D. (1994). The validity of employment interviews: A comprehensive review and meta-analysis. \emph{Journal of Applied Psychology}, \bold{79}, 599--616.
+   McDaniel, M. A., Whetzel, D. L., Schmidt, F. L., & Maurer, S. D. (1994). The validity of employment interviews: A comprehensive review and meta-analysis. \emph{Journal of Applied Psychology}, \bold{79}, 599--616.
 
-	Rothstein, H. R., Sutton, A. J., & Borenstein, M. (Eds.). (2005). \emph{Publication bias in meta-analysis: Prevention, assessment, and adjustments}. Chichester, England: Wiley.
+   Rothstein, H. R., Sutton, A. J., & Borenstein, M. (Eds.). (2005). \emph{Publication bias in meta-analysis: Prevention, assessment, and adjustments}. Chichester, England: Wiley.
 }
 \examples{
 ### load empint data

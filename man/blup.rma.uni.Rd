@@ -34,7 +34,7 @@
 
 	The normal distribution is used to calculate the prediction intervals. When the model was fitted with the Knapp and Hartung (2003) method (i.e., \code{knha=TRUE} in the \code{\link{rma.uni}} function), then the t-distribution with \eqn{k-p} degrees of freedom is used.
 
-	To be precise, it should be noted that the function actually calculates empirical BLUPs (EBLUPs), since the predicted values are a function of the estimated value of \eqn{\tau^2}{tau^2}.
+	To be precise, it should be noted that the function actually calculates empirical BLUPs (eBLUPs), since the predicted values are a function of the estimated value of \eqn{\tau^2}{tau^2}.
 }
 \author{
 	Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr

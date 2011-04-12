@@ -32,7 +32,7 @@ rma.mh(ai, bi, ci, di, n1i, n2i,
 \details{
 	When the outcome measure is either the odds ratio (measure=\code{"OR"}), relative risk (\code{measure="RR"}), or risk difference (\code{measure="RD"}), the studies are assumed to provide data in terms of 2x2 tables of the form:
 	\tabular{lccc}{
-	        \tab outcome 1 \tab outcome 2 \tab total \cr
+	        \tab outcome 1 \tab outcome 2 \tab total      \cr
 	group 1 \tab \code{ai} \tab \code{bi} \tab \code{n1i} \cr
 	group 2 \tab \code{ci} \tab \code{di} \tab \code{n2i}
 	} where \code{ai}, \code{bi}, \code{ci}, and \code{di} denote the cell frequencies and \code{n1i} and \code{n2i} the row totals. For example, in a set of randomized clinical trials (RCTs) or cohort studies, group 1 and group 2 may refer to the treatment (exposed) and placebo/control (not exposed) group, with outcome 1 denoting some event of interest (e.g., death) and outcome 2 its complement. In a set of case-control studies, group 1 and group 2 may refer to the group of cases and the group of controls, with outcome 1 denoting, for example, exposure to some risk factor and outcome 2 non-exposure. For these outcome measures, one needs to specify either \code{ai}, \code{bi}, \code{ci}, and \code{di} or alternatively \code{ai}, \code{ci}, \code{n1i}, and \code{n2i}. 
@@ -40,7 +40,7 @@ rma.mh(ai, bi, ci, di, n1i, n2i,
 	Alternatively, when the outcome measure is the incidence rate ratio (\code{measure="IRR"}), the studies are assumed to provide data in terms of tables of the form:
 	\tabular{lcc}{
 			  \tab cases      \tab person-time \cr
-	group 1 \tab \code{x1i} \tab \code{t1i} \cr
+	group 1 \tab \code{x1i} \tab \code{t1i}  \cr
 	group 2 \tab \code{x2i} \tab \code{t2i}
 	} where \code{x1i} and \code{x2i} denote the number of cases in the first and the second group, respectively, and \code{t1i} and \code{t2i} the corresponding total person-times at risk.
 

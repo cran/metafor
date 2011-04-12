@@ -22,7 +22,7 @@
 	\item the leave-one-out amount of (residual) heterogeneity,
 	\item the leave-one-out test statistic for the test of (residual) heterogeneity, and 
 	\item DFBETAS value(s).
-	} The diagonal elements of the hat matrix and the weights (in \%) given to the observed effects or outcomes during the model fitting are also provided (the hat values and weights are the same for models without moderators, but will differ once moderators are included).
+	} The diagonal elements of the hat matrix and the weights (in \%) given to the observed effects or outcomes during the model fitting are also provided (except for their scaling, the hat values and weights are the same for models without moderators, but will differ when moderators are included).
 
 	For details on externally standardized residuals, see \code{\link{rstudent.rma.uni}}.
 
@@ -67,7 +67,7 @@
 
 	Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \url{http://www.jstatsoft.org/v36/i03/}.
 
-	Viechtbauer, W. & Cheung, M. W.-L. (in press). Outlier and influence diagnostics for meta-analysis. \emph{Research Synthesis Methods}.
+	Viechtbauer, W. & Cheung, M. W.-L. (2010). Outlier and influence diagnostics for meta-analysis. \emph{Research Synthesis Methods}, \bold{1}, 112--125.
 }
 \seealso{
 	\code{\link{print.infl.rma.uni}}, \code{\link{plot.infl.rma.uni}}, \code{\link{rstudent.rma.uni}}, \code{\link{hatvalues.rma.uni}}

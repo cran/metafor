@@ -17,10 +17,10 @@
 }
 }
 \details{
-	The 9 studies provide data in terms of the mean length of the hospital stay (in days) of stroke patients under specialized care and under conventional/routine (non-specialist) care. The goal of the meta-analysis was to examine the hypothesis whether specialist stroke unit care will result in a shorter length of hospitalization compared to routine management.
+   The 9 studies provide data in terms of the mean length of the hospital stay (in days) of stroke patients under specialized care and under conventional/routine (non-specialist) care. The goal of the meta-analysis was to examine the hypothesis whether specialist stroke unit care will result in a shorter length of hospitalization compared to routine management.
 }
 \source{
-	Normand, S. T. (1999). Meta-analysis: Formulating, evaluating, combining, and reporting. \emph{Statistics in Medicine}, \bold{18}, 321--359.
+   Normand, S. T. (1999). Meta-analysis: Formulating, evaluating, combining, and reporting. \emph{Statistics in Medicine}, \bold{18}, 321--359.
 }
 \examples{
 ### load los data
@@ -37,7 +37,12 @@ res
 
 ### meta-analysis of standardized mean differences using a random-effects model
 res <- rma(m1i=m1i, sd1i=sd1i, n1i=n1i, m2i=m2i, sd2i=sd2i, n2i=n2i,
-           measure="SMD", data=dat.los)
+           measure="SMD", data=dat.los, slab=source)
 res
+
+### draw forest plot
+forest(res, xlim=c(-7,5), alim=c(-3,1))
+text(-7, 11, "Study/Source",          pos=4)
+text( 5, 11, "Observed SMD [95\% CI]", pos=2)
 }
 \keyword{datasets}

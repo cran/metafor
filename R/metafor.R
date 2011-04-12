@@ -47,7 +47,7 @@ function (X, W, k)
 .onLoad <-
 function (lib, pkg) 
 {
-    loadmsg <- "Loading 'metafor' package (version 1.5-0). For an overview \nand introduction to the package please type: help(metafor)."
+    loadmsg <- "Loading 'metafor' package (version 1.6-0). For an overview \nand introduction to the package please type: help(metafor)."
     packageStartupMessage(loadmsg, domain = NULL, appendLF = TRUE)
 }
 .QE.func <-
@@ -175,6 +175,18 @@ function (measure, transf.char, atransf.char, gentype)
         }
         else {
             xlab <- "Transformed Standardized Mean Difference"
+        }
+    }
+    if (measure == "ROM") {
+        if (transf.char == "FALSE" && atransf.char == "FALSE") {
+            xlab <- "Log Ratio of Means"
+        }
+        else {
+            xlab <- "Transformed Log Ratio of Means"
+            if (atransf.char == "exp" || atransf.char == "transf.exp.int") 
+                xlab <- "Ratio of Means (log scale)"
+            if (transf.char == "exp" || transf.char == "transf.exp.int") 
+                xlab <- "Ratio of Means"
         }
     }
     if (measure == "COR" || measure == "UCOR") {
@@ -463,8 +475,7 @@ function (object, ..., k = 2)
     if (!is.element("rma", class(object))) 
         stop("Argument 'object' must be an object of class \"rma\".")
     if (length(list(...))) {
-        object <- list(object, ...)
-        val <- lapply(object, logLik)
+        val <- lapply(list(object, ...), logLik)
         val <- as.data.frame(t(sapply(val, function(el) c(attr(el, 
             "df"), AIC(el, k = k)))))
         names(val) <- c("df", "AIC")
@@ -1159,12 +1170,12 @@ function (measure, formula, ai, bi, ci, di, n1i, n2i, x1i, x2i,
 {
     if (!is.element(measure, c("RR", "OR", "PETO", "RD", "AS", 
         "PHI", "YUQ", "YUY", "IRR", "IRD", "IRSD", "MD", "SMD", 
-        "COR", "UCOR", "ZCOR", "PR", "PLN", "PLO", "PAS", "PFT", 
-        "IR", "IRLN", "IRS", "IRFT"))) 
+        "ROM", "COR", "UCOR", "ZCOR", "PR", "PLN", "PLO", "PAS", 
+        "PFT", "IR", "IRLN", "IRS", "IRFT"))) 
         stop("Unknown 'measure' specified.")
     if (!is.element(to, c("all", "only0", "if0all", "none"))) 
         stop("Unknown 'to' argument specified.")
-    if (!is.element(vtype, c("UB", "LS", "HS"))) 
+    if (!is.element(vtype, c("UB", "LS", "HO"))) 
         stop("Unknown 'vtype' argument specified.")
     if (missing(data)) 
         data <- NULL
@@ -1326,7 +1337,7 @@ function (measure, formula, ai, bi, ci, di, n1i, n2i, x1i, x2i,
             vi <- 1/(4 * t1i) + 1/(4 * t2i)
         }
     }
-    if (is.element(measure, c("MD", "SMD"))) {
+    if (is.element(measure, c("MD", "SMD", "ROM"))) {
         mf.m1i <- mf[[match("m1i", names(mf))]]
         mf.m2i <- mf[[match("m2i", names(mf))]]
         mf.sd1i <- mf[[match("sd1i", names(mf))]]
@@ -1356,7 +1367,7 @@ function (measure, formula, ai, bi, ci, di, n1i, n2i, x1i, x2i,
             options(warn = -1)
             cNm2i <- cNm2ifunc(Nm2i)
             options(warn = warn.before)
-            nti <- (n1i * n2i)/(n1i + n2i)
+            nti <- (as.double(n1i) * as.double(n2i))/(n1i + n2i)
             yi <- cNm2i * (m1i - m2i)/sqrt(((n1i - 1) * sd1i^2 + 
                 (n2i - 1) * sd2i^2)/Nm2i)
             if (vtype == "UB") {
@@ -1366,10 +1377,14 @@ function (measure, formula, ai, bi, ci, di, n1i, n2i, x1i, x2i,
             if (vtype == "LS") {
                 vi <- 1/nti + yi^2/(2 * (n1i + n2i))
             }
-            if (vtype == "HS") {
+            if (vtype == "HO") {
                 md <- sum((n1i + n2i) * yi)/sum(n1i + n2i)
                 vi <- 1/nti + md^2/(2 * (n1i + n2i))
             }
+        }
+        if (measure == "ROM") {
+            yi <- log(m1i/m2i)
+            vi <- (1/n1i) * (sd1i/m1i)^2 + (1/n2i) * (sd2i/m2i)^2
         }
     }
     if (is.element(measure, c("COR", "UCOR", "ZCOR"))) {
@@ -1386,9 +1401,9 @@ function (measure, formula, ai, bi, ci, di, n1i, n2i, x1i, x2i,
                   48 * (1 - ri^2)^4/(ni * (ni + 2) * (ni + 4)))
             }
             if (vtype == "LS") {
-                vi <- (1 - ri^2)^2/(ni - 1)
+                vi <- (1 - yi^2)^2/(ni - 1)
             }
-            if (vtype == "HS") {
+            if (vtype == "HO") {
                 mr <- sum(ni * ri)/sum(ni)
                 vi <- (1 - mr^2)^2/(ni - 1)
             }
@@ -1404,7 +1419,7 @@ function (measure, formula, ai, bi, ci, di, n1i, n2i, x1i, x2i,
             if (vtype == "LS") {
                 vi <- (1 - yi^2)^2/(ni - 1)
             }
-            if (vtype == "HS") {
+            if (vtype == "HO") {
                 mr <- sum(ni * yi)/sum(ni)
                 vi <- (1 - mr^2)^2/(ni - 1)
             }
@@ -1446,15 +1461,33 @@ function (measure, formula, ai, bi, ci, di, n1i, n2i, x1i, x2i,
         pri <- xi/ni
         if (measure == "PR") {
             yi <- pri
-            vi <- pri * (1 - pri)/ni
+            if (vtype == "LS") {
+                vi <- pri * (1 - pri)/ni
+            }
+            if (vtype == "HO") {
+                mp <- sum(xi)/sum(ni)
+                vi <- mp * (1 - mp)/ni
+            }
         }
         if (measure == "PLN") {
             yi <- log(pri)
-            vi <- 1/xi - 1/ni
+            if (vtype == "LS") {
+                vi <- 1/xi - 1/ni
+            }
+            if (vtype == "HO") {
+                mp <- sum(xi)/sum(ni)
+                vi <- 1/(mp * ni) - 1/ni
+            }
         }
         if (measure == "PLO") {
             yi <- log(pri/(1 - pri))
-            vi <- 1/xi + 1/mi
+            if (vtype == "LS") {
+                vi <- 1/xi + 1/mi
+            }
+            if (vtype == "HO") {
+                mp <- sum(xi)/sum(ni)
+                vi <- 1/(mp * ni) + 1/((1 - mp) * ni)
+            }
         }
         if (measure == "PAS") {
             yi <- asin(sqrt(pri))
@@ -1527,8 +1560,8 @@ function (measure, formula, weights, data, add = 1/2, to = "only0",
 {
     if (!is.element(measure, c("RR", "OR", "PETO", "RD", "AS", 
         "PHI", "YUQ", "YUY", "IRR", "IRD", "IRSD", "MD", "SMD", 
-        "COR", "UCOR", "ZCOR", "PR", "PLN", "PLO", "PAS", "PFT", 
-        "IR", "IRLN", "IRS", "IRFT"))) 
+        "ROM", "COR", "UCOR", "ZCOR", "PR", "PLN", "PLO", "PAS", 
+        "PFT", "IR", "IRLN", "IRS", "IRFT"))) 
         stop("Unknown 'measure' specified.")
     na.act <- getOption("na.action")
     options(na.action = "na.pass")
@@ -1619,7 +1652,7 @@ function (measure, formula, weights, data, add = 1/2, to = "only0",
             t1i = t1i, t2i = t2i, add = add, to = to, vtype = vtype, 
             append = "FALSE"))
     }
-    if (is.element(measure, c("MD", "SMD"))) {
+    if (is.element(measure, c("MD", "SMD", "ROM"))) {
         if (is.null(weights)) 
             stop("Must specify the 'weights' argument.")
         if (length(lhs) != 2) 
@@ -1999,6 +2032,10 @@ function (x, annotate = TRUE, xlim = NULL, alim = NULL, ylim = NULL,
     }
     text(xlim[1], rows, slab, pos = 4, cex = cex, ...)
     if (!is.null(ilab)) {
+        if (is.null(ilab.xpos)) 
+            stop("Must specify 'ilab.xpos' argument when adding information with 'ilab'.")
+        if (length(ilab.xpos) != dim(ilab)[2]) 
+            stop("Number of 'ilab' columns does not match length of 'ilab.xpos' argument.")
         for (l in 1:NCOL(ilab)) {
             text(ilab.xpos[l], rows, ilab[, l], pos = ilab.pos[l], 
                 cex = cex, ...)
@@ -2346,6 +2383,10 @@ function (x, vi, sei, ci.lb, ci.ub, annotate = TRUE, showweight = FALSE,
     }
     text(xlim[1], rows, slab, pos = 4, cex = cex, ...)
     if (!is.null(ilab)) {
+        if (is.null(ilab.xpos)) 
+            stop("Must specify 'ilab.xpos' argument when adding information with 'ilab'.")
+        if (length(ilab.xpos) != dim(ilab)[2]) 
+            stop("Number of 'ilab' columns does not match length of 'ilab.xpos' argument.")
         for (l in 1:NCOL(ilab)) {
             text(ilab.xpos[l], rows, ilab[, l], pos = ilab.pos[l], 
                 cex = cex, ...)
@@ -2773,6 +2814,10 @@ function (x, annotate = TRUE, addfit = TRUE, addcred = FALSE,
     }
     text(xlim[1], rows, slab, pos = 4, cex = cex, ...)
     if (!is.null(ilab)) {
+        if (is.null(ilab.xpos)) 
+            stop("Must specify 'ilab.xpos' argument when adding information with 'ilab'.")
+        if (length(ilab.xpos) != dim(ilab)[2]) 
+            stop("Number of 'ilab' columns does not match length of 'ilab.xpos' argument.")
         for (l in 1:NCOL(ilab)) {
             text(ilab.xpos[l], rows, ilab[, l], pos = ilab.pos[l], 
                 cex = cex, ...)
@@ -3098,7 +3143,7 @@ function (x, xlim = NULL, ylim = NULL, xlab = NULL, ylab = "Standard Error",
     else {
         at.lab <- formatC(at.lab, digits = digits[1], format = "f")
     }
-    axis(side = 1, at = at, lab = at.lab, ...)
+    axis(side = 1, at = at, labels = at.lab, ...)
     points(yi, max(sei) - sei, pch = pch, ...)
     if (is.element("rma.uni.trimfill", class(x))) {
         points(yi[x$fill == 1], max(sei) - sei[x$fill == 1], 
@@ -3557,10 +3602,12 @@ function (x, xlim = NULL, ylim = NULL, xlab = NULL, ylab = NULL,
             }
         }
     }
-    plot(dat.c$yi, dat.t$yi, xlim = xlim, ylim = ylim, xlab = xlab, 
-        ylab = ylab, cex = psize, pch = pch, bg = bg, ...)
+    plot(NA, NA, xlim = xlim, ylim = ylim, xlab = xlab, ylab = ylab, 
+        cex = psize, pch = pch, bg = bg, ...)
     abline(a = 0, b = 1, ...)
     lines(c.vals, t.vals, lty = "dashed", ...)
+    points(dat.c$yi, dat.t$yi, cex = psize, pch = pch, bg = bg, 
+        ...)
     invisible()
 }
 leave1out <-
@@ -3970,7 +4017,7 @@ function (x, plotdfb = FALSE, dfbnew = FALSE, logcov = TRUE,
         -2, na.rm = TRUE), max(x$inf$rstudent, 2, na.rm = TRUE)), 
         xaxt = "n", main = "rstudent", xlab = "", ylab = "", 
         las = las, ...)
-    axis(side = 1, at = 1:lids, label = ids, xlab = "", las = las, 
+    axis(side = 1, at = 1:lids, labels = ids, xlab = "", las = las, 
         ...)
     abline(h = 0, lty = "dashed", ...)
     abline(h = c(qnorm(0.025), qnorm(0.975)), lty = "dotted", 
@@ -3984,7 +4031,7 @@ function (x, plotdfb = FALSE, dfbnew = FALSE, logcov = TRUE,
     plot(NA, NA, xlim = c(1, lids), ylim = range(x$inf$dffits, 
         na.rm = TRUE), xaxt = "n", main = "dffits", xlab = "", 
         ylab = "", las = las, ...)
-    axis(side = 1, at = 1:lids, label = ids, xlab = "", las = las, 
+    axis(side = 1, at = 1:lids, labels = ids, xlab = "", las = las, 
         ...)
     abline(h = 0, lty = "dashed", ...)
     abline(h = 3 * sqrt(x$p/(x$k - x$p)), lty = "dotted", ...)
@@ -3998,7 +4045,7 @@ function (x, plotdfb = FALSE, dfbnew = FALSE, logcov = TRUE,
     plot(NA, NA, xlim = c(1, lids), ylim = range(x$inf$cook.d, 
         na.rm = TRUE), xaxt = "n", main = "cook.d", xlab = "", 
         ylab = "", las = las, ...)
-    axis(side = 1, at = 1:lids, label = ids, xlab = "", las = las, 
+    axis(side = 1, at = 1:lids, labels = ids, xlab = "", las = las, 
         ...)
     abline(h = qchisq(0.5, df = x$p), lty = "dotted", ...)
     lines((1:lids)[x$not.na], x$inf$cook.d[x$not.na], col = col.na, 
@@ -4011,8 +4058,8 @@ function (x, plotdfb = FALSE, dfbnew = FALSE, logcov = TRUE,
         plot(NA, NA, xlim = c(1, lids), ylim = range(x$inf$cov.r, 
             na.rm = TRUE), xaxt = "n", main = "cov.r", xlab = "", 
             ylab = "", log = "y", las = las, ...)
-        axis(side = 1, at = 1:lids, label = ids, xlab = "", las = las, 
-            ...)
+        axis(side = 1, at = 1:lids, labels = ids, xlab = "", 
+            las = las, ...)
         abline(h = 1, lty = "dashed", ...)
         lines((1:lids)[x$not.na], x$inf$cov.r[x$not.na], col = col.na, 
             ...)
@@ -4025,8 +4072,8 @@ function (x, plotdfb = FALSE, dfbnew = FALSE, logcov = TRUE,
         plot(NA, NA, xlim = c(1, lids), ylim = range(x$inf$cov.r, 
             na.rm = TRUE), xaxt = "n", main = "cov.r", xlab = "", 
             ylab = "", las = las, ...)
-        axis(side = 1, at = 1:lids, label = ids, xlab = "", las = las, 
-            ...)
+        axis(side = 1, at = 1:lids, labels = ids, xlab = "", 
+            las = las, ...)
         abline(h = 1, lty = "dashed", ...)
         lines((1:lids)[x$not.na], x$inf$cov.r[x$not.na], col = col.na, 
             ...)
@@ -4038,7 +4085,7 @@ function (x, plotdfb = FALSE, dfbnew = FALSE, logcov = TRUE,
     plot(NA, NA, xlim = c(1, lids), ylim = range(x$inf$tau2.del, 
         na.rm = TRUE), xaxt = "n", main = "tau2.del", xlab = "", 
         ylab = "", las = las, ...)
-    axis(side = 1, at = 1:lids, label = ids, xlab = "", las = las, 
+    axis(side = 1, at = 1:lids, labels = ids, xlab = "", las = las, 
         ...)
     abline(h = x$tau2, lty = "dashed", ...)
     lines((1:lids)[x$not.na], x$inf$tau2.del[x$not.na], col = col.na, 
@@ -4050,7 +4097,7 @@ function (x, plotdfb = FALSE, dfbnew = FALSE, logcov = TRUE,
     plot(NA, NA, xlim = c(1, lids), ylim = range(x$inf$QE.del, 
         na.rm = TRUE), xaxt = "n", main = "QE.del", xlab = "", 
         ylab = "", las = las, ...)
-    axis(side = 1, at = 1:lids, label = ids, xlab = "", las = las, 
+    axis(side = 1, at = 1:lids, labels = ids, xlab = "", las = las, 
         ...)
     abline(h = x$QE, lty = "dashed", ...)
     lines((1:lids)[x$not.na], x$inf$QE.del[x$not.na], col = col.na, 
@@ -4062,7 +4109,7 @@ function (x, plotdfb = FALSE, dfbnew = FALSE, logcov = TRUE,
     plot(NA, NA, xlim = c(1, lids), ylim = c(0, max(x$inf$hat, 
         na.rm = TRUE)), xaxt = "n", main = "hat", xlab = "", 
         ylab = "", las = las, ...)
-    axis(side = 1, at = 1:lids, label = ids, xlab = "", las = las, 
+    axis(side = 1, at = 1:lids, labels = ids, xlab = "", las = las, 
         ...)
     abline(h = x$p/x$k, lty = "dashed", ...)
     abline(h = 3 * x$p/x$k, lty = "dotted", ...)
@@ -4075,7 +4122,7 @@ function (x, plotdfb = FALSE, dfbnew = FALSE, logcov = TRUE,
     plot(NA, NA, xlim = c(1, lids), ylim = c(0, max(x$inf$weight, 
         na.rm = TRUE)), xaxt = "n", main = "weight", xlab = "", 
         ylab = "", las = las, ...)
-    axis(side = 1, at = 1:lids, label = ids, xlab = "", las = las, 
+    axis(side = 1, at = 1:lids, labels = ids, xlab = "", las = las, 
         ...)
     abline(h = 100/x$k, lty = "dashed", ...)
     lines((1:lids)[x$not.na], x$inf$weight[x$not.na], col = col.na, 
@@ -4105,7 +4152,7 @@ function (x, plotdfb = FALSE, dfbnew = FALSE, logcov = TRUE,
                 i], na.rm = TRUE), xaxt = "n", main = paste("dfb: ", 
                 dimnames(x$dfb)[[2]][i]), xlab = "", ylab = "", 
                 las = las, ...)
-            axis(side = 1, at = 1:lids, label = ids, xlab = "", 
+            axis(side = 1, at = 1:lids, labels = ids, xlab = "", 
                 las = las, ...)
             abline(h = 0, lty = "dashed", ...)
             abline(h = 1, lty = "dotted", ...)
@@ -4163,7 +4210,7 @@ function (x, qqplot = FALSE, ...)
         lines((1:k)[not.na], z[not.na], col = "lightgray", ...)
         lines(1:k, z, ...)
         points(1:k, z, pch = 21, bg = "black", ...)
-        axis(side = 1, at = 1:k, label = ids, ...)
+        axis(side = 1, at = 1:k, labels = ids, ...)
         abline(h = 0, lty = "dashed", ...)
         abline(h = c(qnorm(0.025), qnorm(0.975)), lty = "dotted", 
             ...)
@@ -4211,7 +4258,7 @@ function (x, qqplot = FALSE, ...)
         lines((1:k)[not.na], z[not.na], col = "lightgray", ...)
         lines(1:k, z, ...)
         points(1:k, z, pch = 21, bg = "black", ...)
-        axis(side = 1, at = 1:k, label = ids, ...)
+        axis(side = 1, at = 1:k, labels = ids, ...)
         abline(h = 0, lty = "dashed", ...)
         abline(h = c(qnorm(0.025), qnorm(0.975)), lty = "dotted", 
             ...)
@@ -4261,7 +4308,7 @@ function (x, qqplot = FALSE, ...)
                 ...)
             lines(1:k, z, ...)
             points(1:k, z, pch = 21, bg = "black", ...)
-            axis(side = 1, at = 1:k, label = ids, ...)
+            axis(side = 1, at = 1:k, labels = ids, ...)
             abline(h = 0, lty = "dashed", ...)
             abline(h = c(qnorm(0.025), qnorm(0.975)), lty = "dotted", 
                 ...)
@@ -4309,7 +4356,7 @@ function (x, qqplot = FALSE, ...)
                 ...)
             lines(1:k, z, ...)
             points(1:k, z, pch = 21, bg = "black", ...)
-            axis(side = 1, at = 1:k, label = ids, ...)
+            axis(side = 1, at = 1:k, labels = ids, ...)
             abline(h = 0, lty = "dashed", ...)
             abline(h = c(qnorm(0.025), qnorm(0.975)), lty = "dotted", 
                 ...)
@@ -4917,7 +4964,7 @@ function (x, digits = x$digits, showfit = FALSE, signif.legend = TRUE,
             cat("I^2 (% of total variability due to heterogeneity): ", 
                 ifelse(is.na(x$I2), NA, formatC(x$I2, digits = 2, 
                   format = "f")), "%", "\n", sep = "")
-            cat("H^2 (total variability / within-study variance):   ", 
+            cat("H^2 (total variability / sampling variability):    ", 
                 ifelse(is.na(x$H2), NA, formatC(x$H2, digits = 2, 
                   format = "f")), sep = "")
         }
@@ -5487,8 +5534,8 @@ function (yi, vi, sei, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i,
 {
     if (!is.element(measure, c("GEN", "RR", "OR", "PETO", "RD", 
         "AS", "PHI", "YUQ", "YUY", "IRR", "IRD", "IRSD", "MD", 
-        "SMD", "COR", "UCOR", "ZCOR", "PR", "PLN", "PLO", "PAS", 
-        "PFT", "IR", "IRLN", "IRS", "IRFT"))) 
+        "SMD", "ROM", "COR", "UCOR", "ZCOR", "PR", "PLN", "PLO", 
+        "PAS", "PFT", "IR", "IRLN", "IRS", "IRFT"))) 
         stop("Unknown 'measure' specified.")
     if (!is.element(method, c("FE", "HS", "HE", "DL", "SJ", "ML", 
         "REML", "EB"))) 
@@ -5565,7 +5612,7 @@ function (yi, vi, sei, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i,
             if (length(to) > 1) 
                 to <- to[1]
             dat <- escalc(measure, ai = ai, bi = bi, ci = ci, 
-                di = di, add = add, to = to)
+                di = di, add = add, to = to, vtype = vtype)
         }
         if (is.element(measure, c("IRR", "IRD", "IRSD"))) {
             mf.x1i <- mf[[match("x1i", names(mf))]]
@@ -5582,9 +5629,9 @@ function (yi, vi, sei, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i,
             if (length(to) > 1) 
                 to <- to[1]
             dat <- escalc(measure, x1i = x1i, x2i = x2i, t1i = t1i, 
-                t2i = t2i, add = add, to = to)
+                t2i = t2i, add = add, to = to, vtype = vtype)
         }
-        if (is.element(measure, c("MD", "SMD"))) {
+        if (is.element(measure, c("MD", "SMD", "ROM"))) {
             mf.m1i <- mf[[match("m1i", names(mf))]]
             mf.m2i <- mf[[match("m2i", names(mf))]]
             mf.sd1i <- mf[[match("sd1i", names(mf))]]
@@ -5625,7 +5672,7 @@ function (yi, vi, sei, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i,
             if (length(to) > 1) 
                 to <- to[1]
             dat <- escalc(measure, xi = xi, mi = mi, add = add, 
-                to = to)
+                to = to, vtype = vtype)
         }
         if (is.element(measure, c("IR", "IRLN", "IRS", "IRFT"))) {
             mf.xi <- mf[[match("xi", names(mf))]]
@@ -5638,7 +5685,7 @@ function (yi, vi, sei, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i,
             if (length(to) > 1) 
                 to <- to[1]
             dat <- escalc(measure, xi = xi, ti = ti, add = add, 
-                to = to)
+                to = to, vtype = vtype)
         }
         if (is.element(measure, c("GEN"))) 
             stop("Specify the desired outcome measure via the 'measure' argument.")
@@ -6050,11 +6097,11 @@ function (yi, vi, sei, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i,
     }
     ci.lb <- c(b - crit * se)
     ci.ub <- c(b + crit * se)
-    ll.ML <- -1/2 * (k) * log(2 * get("pi", pos = "package:base")) - 
-        1/2 * sum(log(vi + tau2)) - 1/2 * RSS.f
-    ll.REML <- -1/2 * (k - p) * log(2 * get("pi", pos = "package:base")) - 
-        1/2 * sum(log(vi + tau2)) - 1/2 * determinant(crossprod(X, 
-        W) %*% X, logarithm = TRUE)$modulus - 1/2 * RSS.f
+    ll.ML <- -1/2 * (k) * log(2 * base::pi) - 1/2 * sum(log(vi + 
+        tau2)) - 1/2 * RSS.f
+    ll.REML <- -1/2 * (k - p) * log(2 * base::pi) - 1/2 * sum(log(vi + 
+        tau2)) - 1/2 * determinant(crossprod(X, W) %*% X, logarithm = TRUE)$modulus - 
+        1/2 * RSS.f
     dev.ML <- -2 * ll.ML
     dev.REML <- -2 * ll.REML
     AIC.ML <- -2 * ll.ML + 2 * (p + ifelse(method == "FE", 0, 
@@ -6504,10 +6551,10 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, measure = "OR",
     else {
         QEp <- 1
     }
-    ll.ML <- -1/2 * (k.yi) * log(2 * get("pi", pos = "package:base")) - 
-        1/2 * sum(log(vi)) - 1/2 * QE
-    ll.REML <- -1/2 * (k.yi - 1) * log(2 * get("pi", pos = "package:base")) - 
-        1/2 * sum(log(vi)) - 1/2 * log(sum(wi)) - 1/2 * QE
+    ll.ML <- -1/2 * (k.yi) * log(2 * base::pi) - 1/2 * sum(log(vi)) - 
+        1/2 * QE
+    ll.REML <- -1/2 * (k.yi - 1) * log(2 * base::pi) - 1/2 * 
+        sum(log(vi)) - 1/2 * log(sum(wi)) - 1/2 * QE
     dev.ML <- -2 * ll.ML
     dev.REML <- -2 * ll.REML
     AIC.ML <- -2 * ll.ML + 2
@@ -6719,10 +6766,10 @@ function (ai, bi, ci, di, n1i, n2i, data, slab, subset, add = c(1/2,
     else {
         QEp <- 1
     }
-    ll.ML <- -1/2 * (k.yi) * log(2 * get("pi", pos = "package:base")) - 
-        1/2 * sum(log(vi)) - 1/2 * QE
-    ll.REML <- -1/2 * (k.yi - 1) * log(2 * get("pi", pos = "package:base")) - 
-        1/2 * sum(log(vi)) - 1/2 * log(sum(wi)) - 1/2 * QE
+    ll.ML <- -1/2 * (k.yi) * log(2 * base::pi) - 1/2 * sum(log(vi)) - 
+        1/2 * QE
+    ll.REML <- -1/2 * (k.yi - 1) * log(2 * base::pi) - 1/2 * 
+        sum(log(vi)) - 1/2 * log(sum(wi)) - 1/2 * QE
     dev.ML <- -2 * ll.ML
     dev.REML <- -2 * ll.REML
     AIC.ML <- -2 * ll.ML + 2
@@ -6769,8 +6816,8 @@ function (yi, vi, sei, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i,
 {
     if (!is.element(measure, c("GEN", "RR", "OR", "PETO", "RD", 
         "AS", "PHI", "YUQ", "YUY", "IRR", "IRD", "IRSD", "MD", 
-        "SMD", "COR", "UCOR", "ZCOR", "PR", "PLN", "PLO", "PAS", 
-        "PFT", "IR", "IRLN", "IRS", "IRFT"))) 
+        "SMD", "ROM", "COR", "UCOR", "ZCOR", "PR", "PLN", "PLO", 
+        "PAS", "PFT", "IR", "IRLN", "IRS", "IRFT"))) 
         stop("Unknown 'measure' specified.")
     if (!is.element(method, c("FE", "HS", "HE", "DL", "SJ", "ML", 
         "REML", "EB"))) 
@@ -6847,7 +6894,7 @@ function (yi, vi, sei, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i,
             if (length(to) > 1) 
                 to <- to[1]
             dat <- escalc(measure, ai = ai, bi = bi, ci = ci, 
-                di = di, add = add, to = to)
+                di = di, add = add, to = to, vtype = vtype)
         }
         if (is.element(measure, c("IRR", "IRD", "IRSD"))) {
             mf.x1i <- mf[[match("x1i", names(mf))]]
@@ -6864,9 +6911,9 @@ function (yi, vi, sei, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i,
             if (length(to) > 1) 
                 to <- to[1]
             dat <- escalc(measure, x1i = x1i, x2i = x2i, t1i = t1i, 
-                t2i = t2i, add = add, to = to)
+                t2i = t2i, add = add, to = to, vtype = vtype)
         }
-        if (is.element(measure, c("MD", "SMD"))) {
+        if (is.element(measure, c("MD", "SMD", "ROM"))) {
             mf.m1i <- mf[[match("m1i", names(mf))]]
             mf.m2i <- mf[[match("m2i", names(mf))]]
             mf.sd1i <- mf[[match("sd1i", names(mf))]]
@@ -6907,7 +6954,7 @@ function (yi, vi, sei, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i,
             if (length(to) > 1) 
                 to <- to[1]
             dat <- escalc(measure, xi = xi, mi = mi, add = add, 
-                to = to)
+                to = to, vtype = vtype)
         }
         if (is.element(measure, c("IR", "IRLN", "IRS", "IRFT"))) {
             mf.xi <- mf[[match("xi", names(mf))]]
@@ -6920,7 +6967,7 @@ function (yi, vi, sei, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i,
             if (length(to) > 1) 
                 to <- to[1]
             dat <- escalc(measure, xi = xi, ti = ti, add = add, 
-                to = to)
+                to = to, vtype = vtype)
         }
         if (is.element(measure, c("GEN"))) 
             stop("Specify the desired outcome measure via the 'measure' argument.")
@@ -7332,11 +7379,11 @@ function (yi, vi, sei, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i,
     }
     ci.lb <- c(b - crit * se)
     ci.ub <- c(b + crit * se)
-    ll.ML <- -1/2 * (k) * log(2 * get("pi", pos = "package:base")) - 
-        1/2 * sum(log(vi + tau2)) - 1/2 * RSS.f
-    ll.REML <- -1/2 * (k - p) * log(2 * get("pi", pos = "package:base")) - 
-        1/2 * sum(log(vi + tau2)) - 1/2 * determinant(crossprod(X, 
-        W) %*% X, logarithm = TRUE)$modulus - 1/2 * RSS.f
+    ll.ML <- -1/2 * (k) * log(2 * base::pi) - 1/2 * sum(log(vi + 
+        tau2)) - 1/2 * RSS.f
+    ll.REML <- -1/2 * (k - p) * log(2 * base::pi) - 1/2 * sum(log(vi + 
+        tau2)) - 1/2 * determinant(crossprod(X, W) %*% X, logarithm = TRUE)$modulus - 
+        1/2 * RSS.f
     dev.ML <- -2 * ll.ML
     dev.REML <- -2 * ll.REML
     AIC.ML <- -2 * ll.ML + 2 * (p + ifelse(method == "FE", 0, 
@@ -7707,7 +7754,7 @@ function (xi, ni, ...)
 transf.ipft.hm <-
 function (xi, targs, ...) 
 {
-    ni <- 1/(mean(1/targs$ni))
+    ni <- 1/(mean(1/targs$ni, na.rm = TRUE))
     zi <- 1/2 * (1 - sign(cos(2 * xi)) * sqrt(1 - (sin(2 * xi) + 
         (sin(2 * xi) - 1/sin(2 * xi))/ni)^2))
     zi <- ifelse(is.nan(zi), NA, zi)
@@ -7847,7 +7894,6 @@ function (x, side, estimator = "L0", maxit = 50, verbose = FALSE,
         if (k0 <= 0) {
             cat("Estimated number of missing studies on the", 
                 side, "side is zero.\n")
-            stop
         }
     }
     if (k0 > 0) {
@@ -7865,6 +7911,8 @@ function (x, side, estimator = "L0", maxit = 50, verbose = FALSE,
         res <- rma(yi.fill, vi.fill, intercept = TRUE, method = x$method, 
             weighted = x$weighted, ...)
         res$fill <- c(rep(0, k), rep(1, k0))
+        res$k0 <- k0
+        res$side <- side
         class(res) <- c("rma.uni.trimfill", class(res))
         res$ids <- c(x$ids, (x$k.f + 1):(x$k.f + k0))
         if (x$slab.null) {
@@ -7876,6 +7924,14 @@ function (x, side, estimator = "L0", maxit = 50, verbose = FALSE,
             res$slab <- c(x$slab, paste("Filled", 1:k0))
             res$slab.null <- FALSE
         }
+        return(res)
+    }
+    else {
+        res <- x
+        res$fill <- c(rep(0, k), rep(1, k0))
+        res$k0 <- k0
+        res$side <- side
+        class(res) <- c("rma.uni.trimfill", class(res))
         return(res)
     }
 }

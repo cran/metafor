@@ -22,7 +22,7 @@
 	\item{refline}{value at which a vertical \sQuote{reference} line should be drawn (default is 0). The line can be suppressed by setting this argument to \code{NA}.}
 	\item{xlab}{title for the x axis. If \code{NULL} (default), the function tries to set an appropriate axis title.}
 	\item{ilab}{an optional vector or matrix of character strings providing additional information about the studies.}
-	\item{ilab.xpos}{vector of numerical value(s) specifying the x axis position(s) of the character vector(s) given via \code{ilab}.}
+	\item{ilab.xpos}{vector of numerical value(s) specifying the x axis position(s) of the character vector(s) given via \code{ilab} (must be specified if \code{ilab} is not \code{NULL}).}
 	\item{ilab.pos}{integer(s) (either 1, 2, 3, or 4) specifying the alignment of the character vector(s) given via \code{ilab} (2 means right, 4 mean left aligned). The default is to center the labels.}
 	\item{transf}{an optional argument specifying the name of a function that should be used to transform the observed effect sizes, summary estimates, fitted values, and confidence interval bounds (e.g., \code{transf=exp}). Defaults to \code{FALSE}, which means that no transformation is used.}
 	\item{atransf}{an optional argument specifying the name of a function that should be used to transform the x axis labels and annotations (e.g., \code{transf=exp}). Defaults to \code{FALSE}, which means that no transformation is used.}

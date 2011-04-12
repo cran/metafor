@@ -29,7 +29,7 @@
 	\item Any DFBETAS value is larger than \eqn{1}.
 	}
 
-	These cut-offs are also indicated in the plot with horizontal reference lines. In addition, on the plot of the externally standardized residuals, horizontal reference lines are drawn at -1.96, 0, and 1.96. On the plot of the hat values, a horizontal reference line is drawn at \eqn{p/k}. Since the sum of the hat values is equal to \eqn{p}, the value \eqn{p/k} indicates equal hat values for all \eqn{k} studies. Finally, on the plot of weights, a horizontal reference line is drawn at \eqn{100/k}, corresponding to the value for equal weights (in \%) for all \eqn{k} studies. Note that all weights will automatically be equal to each other when using unweighted model fitting. Also, except for their scaling, the hat values and weights will be equal to each other in models without moderators.
+	These cut-offs are also indicated in the plot with horizontal reference lines. In addition, on the plot of the externally standardized residuals, horizontal reference lines are drawn at -1.96, 0, and 1.96. On the plot of the hat values, a horizontal reference line is drawn at \eqn{p/k}. Since the sum of the hat values is equal to \eqn{p}, the value \eqn{p/k} indicates equal hat values for all \eqn{k} studies. Finally, on the plot of weights, a horizontal reference line is drawn at \eqn{100/k}, corresponding to the value for equal weights (in \%) for all \eqn{k} studies. Note that all weights will automatically be equal to each other when using unweighted model fitting. Also, the hat values will be equal to the weights values (except for their scaling) in models without moderators.
 
 	The chosen cut-offs are (somewhat) arbitrary. Substantively informed judgment should always be used when examining the influence of each study on the results.
 }
@@ -41,7 +41,7 @@
 \references{
 	Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \url{http://www.jstatsoft.org/v36/i03/}.
 
-	Viechtbauer, W. & Cheung, M. W.-L. (in press). Outlier and influence diagnostics for meta-analysis. \emph{Research Synthesis Methods}.
+	Viechtbauer, W. & Cheung, M. W.-L. (2010). Outlier and influence diagnostics for meta-analysis. \emph{Research Synthesis Methods}, \bold{1}, 112--125.
 }
 \seealso{
 	\code{\link{influence.rma.uni}}

@@ -55,7 +55,7 @@ transf.ilogit.int(xi, targs, \dots)
 	\item \code{transf.ipft}: inverse of the Freeman-Tukey (double arcsine) transformation for proportions. See Miller (1978).
 	\item \code{transf.ipft.hm}: inverse of the Freeman-Tukey (double arcsine) transformation for proportions using the harmonic mean of the sample sizes for the back-transformation. See Miller (1978). The sample sizes are specified via the \code{targs} argument (the list element should be called \code{ni}).
 	\item \code{transf.isqrt}: inverse of the square-root transformation (i.e., function to square a number).
-	\item \code{transf.irft}: Freeman-Tukey transformation for incidence rates. See Freeman & Tukey (1950). The \code{xi} argument is used to specify the incidence rates and the \code{ni} argument the corresponding person-time at risk.
+	\item \code{transf.irft}: Freeman-Tukey transformation for incidence rates. See Freeman & Tukey (1950). The \code{xi} argument is used to specify the incidence rates and the \code{ti} argument the corresponding person-time at risk.
 	\item \code{transf.iirft}: inverse of the Freeman-Tukey transformation for incidence rates.
 	\item \code{transf.ztor.int}: integral transformation method for the z-to-r transformation.
 	\item \code{transf.exp.int}: integral transformation method for the exponential transformation.

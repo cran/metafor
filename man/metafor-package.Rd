@@ -64,7 +64,7 @@
 
 	Hedges, L. V. & Vevea, J. L. (1998). Fixed- and random-effects models in meta-analysis. \emph{Psychological Methods}, \bold{3}, 486--504.
 
-	Laird, N. M. & Mosteller, F (1990). Some statistical methods for combining experimental results. \emph{International Journal of Technology Assessment in Health Care}, \bold{6}, 5--30.
+	Laird, N. M. & Mosteller, F. (1990). Some statistical methods for combining experimental results. \emph{International Journal of Technology Assessment in Health Care}, \bold{6}, 5--30.
 
 	Mantel, N. & Haenszel, W. (1959). Statistical aspects of the analysis of data from retrospective studies of disease. \emph{Journal of the National Cancer Institute}, \bold{22}, 719--748.
 

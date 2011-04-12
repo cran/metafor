@@ -25,7 +25,7 @@
 
 	For models including one or more moderators, \code{predict(object)} returns the estimated (average) outcomes for values of the moderator(s) equal to those of the \eqn{k} studies included in the meta-analysis (i.e., the fitted values for the \eqn{k} studies).
 
-	For models including \eqn{q} moderator variables, new moderator values for \eqn{l} new studies can be specified by setting \code{newmods} equal to an \eqn{l \times q}{l x q} matrix with the corresponding new moderator values. An example is shown below.
+	For models including \eqn{q} moderator variables, new moderator values for \eqn{k_new} new studies can be specified by setting \code{newmods} equal to an \eqn{k_new \times q}{k_new x q} matrix with the corresponding new moderator values. Examples are shown below.
 
 	For random/mixed-effects models, an approximate credibility interval is also calculated. The interval estimates where \code{level} \% of the true outcomes fall in the hypothetical population of studies. Note that this interval is calculated under the assumption that the value of \eqn{\tau^2}{tau^2} is known (and not estimated). A proper method for calculating a credibility interval that accounts for the uncertainty in the estimate of \eqn{\tau^2}{tau^2} will be implemented in the future.
 }
@@ -90,6 +90,6 @@ res <- rma(ai=tpos, bi=tneg, ci=cpos, di=cneg, mods=cbind(ablat, year),
            measure="RR", data=dat.bcg, method="REML")
 
 ### predicted average relative risks for 10 and 60 degrees latitude in 1950 and 1980
-predict(res, newmods=cbind(c(10,60,10,60),c(1950,1950,1980,1980)), transf=exp)
+predict(res, newmods=cbind(c(10,60,10,60),c(1950,1950,1980,1980)), transf=exp, addx=TRUE)
 }
 \keyword{models}

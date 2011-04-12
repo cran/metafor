@@ -1,6 +1,6 @@
 Package: metafor
-Version: 1.5-0
-Date: 2010-12-15
+Version: 1.6-0
+Date: 2011-04-12
 Title: Meta-Analysis Package for R
 Author: Wolfgang Viechtbauer <wvb@metafor-project.org>
 Maintainer: Wolfgang Viechtbauer <wvb@metafor-project.org>
@@ -9,12 +9,12 @@ Description: The metafor package consists of a collection of functions
         functions to calculate various effect size or outcome measures,
         fit fixed-, random-, and mixed-effects models to such data,
         carry out moderator and meta-regression analyses, and create
-        various types of meta-analytical plots. For meta-analyses of
-        2x2 table data, the Mantel-Haenszel and Peto's method are also
-        implemented.
-Depends: R (>= 2.12.0), stats, Formula, nlme
+        various types of meta-analytical plots (e.g., forest, funnel,
+        radial, and L'Abbe plots). For meta-analyses of 2x2 table data,
+        the Mantel-Haenszel and Peto's method are also implemented.
+Depends: R (>= 2.12.2), stats, nlme, Formula
 License: GPL-2
 URL: http://www.metafor-project.org/
-Packaged: 2010-12-15 16:04:19 UTC; Wolfgang Viechtbauer
+Packaged: 2011-04-12 16:53:47 UTC; Wolfgang Viechtbauer
 Repository: CRAN
-Date/Publication: 2010-12-16 09:31:15
+Date/Publication: 2011-04-13 07:25:54

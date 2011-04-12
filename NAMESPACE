@@ -1,7 +1,11 @@
 exportPattern("^[^\\.]")
 
 import(stats)
-importFrom(nlme, BIC)
+#importFrom(nlme, BIC)
+#if (!exists("BIC", where=asNamespace("stats"))) {
+if (!exists("BIC", where=asNamespace("stats"), inherits=FALSE)) {
+   importFrom(nlme, BIC)
+}
 
 S3method(addpoly, default)
 S3method(addpoly, rma)

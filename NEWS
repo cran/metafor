@@ -1,3 +1,27 @@
+Changes in Version 1.6-0 (2011-04-12; released on CRAN)
+
+   o trimfill.rma() now returns a proper object even when
+     the number of missing studies is estimated to be zero
+
+   o added the (log transformed) ratio of means as a
+     possible outcome measure to the escalc() and rma.uni()
+     functions
+
+   o added new dataset (dat.co2) to illustrate the use of
+     the ratio of means outcome measure
+
+   o some additional error checking in the various forest
+     functions (especially when using the ilab argument)
+
+   o in labbe.rma(), the solid and dashed lines are now 
+     drawn behind (and not on top of) the points
+
+   o slight change to transf.ipft.hm() so that missing
+     values in targs$ni are ignored
+
+   o some improvements to the documentation
+
+
 Changes in Version 1.5-0 (2010-12-15; released on CRAN)
 
    o the metafor package now has its own project website 
