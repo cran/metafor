@@ -12,22 +12,22 @@
 \method{weights}{rma.peto}(object, \dots)
 }
 \arguments{
-	\item{object}{an object of class \code{"rma.uni"}, \code{"rma.mh"}, or \code{"rma.peto"}.}
-	\item{\dots}{other arguments.}
+   \item{object}{an object of class \code{"rma.uni"}, \code{"rma.mh"}, or \code{"rma.peto"}.}
+   \item{\dots}{other arguments.}
 }
 \value{
-	A vector with the weights.
+   A vector with the weights.
 }
 \author{
-	Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr
-	project homepage: \url{http://www.metafor-project.org/} \cr
-	author homepage: \url{http://www.wvbauer.com/}
+   Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr
+   package homepage: \url{http://www.metafor-project.org/} \cr
+   author homepage: \url{http://www.wvbauer.com/}
 }
 \references{
-	Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \url{http://www.jstatsoft.org/v36/i03/}.
+   Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \url{http://www.jstatsoft.org/v36/i03/}.
 }
 \seealso{
-	\code{\link{rma.uni}}, \code{\link{rma.mh}}, \code{\link{rma.peto}}, \code{\link{influence.rma.uni}}
+   \code{\link{rma.uni}}, \code{\link{rma.mh}}, \code{\link{rma.peto}}, \code{\link{influence.rma.uni}}
 }
 \examples{
 ### load BCG vaccine data
@@ -35,7 +35,7 @@ data(dat.bcg)
 
 ### meta-analysis of the log relative risks using a mixed-effects model
 ### with two moderators (absolute latitude and publication year)
-res <- rma(ai=tpos, bi=tneg, ci=cpos, di=cneg, mods=cbind(ablat, year),
+res <- rma(ai=tpos, bi=tneg, ci=cpos, di=cneg, mods = ~ ablat + year,
            data=dat.bcg, measure="RR", method="REML")
 weights(res)
 }

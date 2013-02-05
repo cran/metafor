@@ -8,23 +8,23 @@
 leave1out(x, \dots)
 }
 \arguments{
-	\item{x}{an object of class \code{"rma.uni"}, \code{"rma.mh"}, or \code{"rma.peto"}.}
-	\item{\dots}{other arguments.}
+   \item{x}{an object of class \code{"rma.uni"}, \code{"rma.mh"}, or \code{"rma.peto"}.}
+   \item{\dots}{other arguments.}
 }
 \details{
-	Currently, there are methods for handling objects of class \code{"rma.uni"}, \code{"rma.mh"}, and \code{"rma.peto"} with the \code{leave1out} function. Accordingly, the corresponding methods are called \code{\link{leave1out.rma.uni}}, \code{\link{leave1out.rma.mh}}, and \code{\link{leave1out.rma.peto}}. See the documentation for those functions for more details.
+   Currently, there are methods for handling objects of class \code{"rma.uni"}, \code{"rma.mh"}, and \code{"rma.peto"} with the \code{leave1out} function. Accordingly, the corresponding methods are called \code{\link{leave1out.rma.uni}}, \code{\link{leave1out.rma.mh}}, and \code{\link{leave1out.rma.peto}}. See the documentation for those functions for more details.
 }
 \author{
-	Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr
-	project homepage: \url{http://www.metafor-project.org/} \cr
-	author homepage: \url{http://www.wvbauer.com/}
+   Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr
+   package homepage: \url{http://www.metafor-project.org/} \cr
+   author homepage: \url{http://www.wvbauer.com/}
 }
 \references{
-	Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \url{http://www.jstatsoft.org/v36/i03/}.
+   Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \url{http://www.jstatsoft.org/v36/i03/}.
 
-	Viechtbauer, W. & Cheung, M. W.-L. (2010). Outlier and influence diagnostics for meta-analysis. \emph{Research Synthesis Methods}, \bold{1}, 112--125.
+   Viechtbauer, W., & Cheung, M. W.-L. (2010). Outlier and influence diagnostics for meta-analysis. \emph{Research Synthesis Methods}, \bold{1}, 112--125.
 }
 \seealso{
-	\code{\link{leave1out.rma.uni}}, \code{\link{leave1out.rma.mh}}, \code{\link{leave1out.rma.peto}}
+   \code{\link{leave1out.rma.uni}}, \code{\link{leave1out.rma.mh}}, \code{\link{leave1out.rma.peto}}
 }
 \keyword{methods}

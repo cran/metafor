@@ -1,9 +1,9 @@
-\name{dat.co2}
+\name{dat.curtis1998}
 \docType{data}
-\alias{dat.co2}
+\alias{dat.curtis1998}
 \title{Studies on the Effects of Elevated CO2 Levels on Woody Plant Mass}
 \description{Results from studies examining the effects of elevated CO2 levels on woody plant mass.}
-\usage{dat.co2}
+\usage{dat.curtis1998}
 \format{The data frame contains the following columns:
 \tabular{lll}{
 \bold{id}       \tab \code{numeric}   \tab observation number \cr
@@ -46,15 +46,15 @@
    Hedges, L. V., Gurevitch, J., & Curtis, P. S. (1999). The meta-analysis of response ratios in experimental ecology. \emph{Ecology}, \bold{80}, 1150--1156. (data obtained from \emph{Ecological Archives}, E080-008-S1, at: \url{http://www.esapubs.org/archive/ecol/E080/008/})
 }
 \references{
-   Curtis, P. S. & Wang, X. (1998). A meta-analysis of elevated CO2 effects on woody plant mass, form, and physiology. \emph{Oecologia}, \bold{113}, 299--313.
+   Curtis, P. S., & Wang, X. (1998). A meta-analysis of elevated CO2 effects on woody plant mass, form, and physiology. \emph{Oecologia}, \bold{113}, 299--313.
 }
 \examples{
-### load CO2 data
-data(dat.co2)
+### load data
+data(dat.curtis1998)
 
 ### calculate log ratio of means and corresponding sampling variances
-dat <- escalc(m1i=m1i, sd1i=sd1i, n1i=n1i, m2i=m2i, sd2i=sd2i, n2i=n2i,
-              measure="ROM", data=dat.co2, append=TRUE)
+dat <- escalc(measure="ROM", m1i=m1i, sd1i=sd1i, n1i=n1i, m2i=m2i,
+              sd2i=sd2i, n2i=n2i, data=dat.curtis1998)
 dat
 
 ### meta-analysis of log ratio of means using a random-effects model

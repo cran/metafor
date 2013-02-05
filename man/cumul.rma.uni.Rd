@@ -8,54 +8,53 @@
 \method{cumul}{rma.uni}(x, order, digits=x$digits, transf=FALSE, targs, \dots)
 }
 \arguments{
-	\item{x}{an object of class \code{"rma.uni"}.}
-	\item{order}{an optional vector with indices giving the desired order for the cumulative meta-analysis.}
-	\item{digits}{an integer specifying the number of decimal places to which the printed results should be rounded (the default is to take the value from the object).}
-	\item{transf}{an optional argument specifying the name of a function that should be used to transform the model coefficients and interval bounds (e.g., \code{transf=exp}). Defaults to \code{FALSE}, which means that no transformation is used.}
-	\item{targs}{optional arguments needed by the function specified under \code{transf}.}
-	\item{\dots}{other arguments.}
+   \item{x}{an object of class \code{"rma.uni"}.}
+   \item{order}{optional vector with indices giving the desired order for the cumulative meta-analysis.}
+   \item{digits}{integer specifying the number of decimal places to which the printed results should be rounded (the default is to take the value from the object).}
+   \item{transf}{optional argument specifying the name of a function that should be used to transform the model coefficients and interval bounds (e.g., \code{transf=exp}). Defaults to \code{FALSE}, which means that no transformation is used.}
+   \item{targs}{optional arguments needed by the function specified under \code{transf}.}
+   \item{\dots}{other arguments.}
 }
 \details{
-	The model specified by \code{x} must be a model without moderators (i.e., either a fixed- or a random-effects model).
+   The model specified by \code{x} must be a model without moderators (i.e., either a fixed- or a random-effects model).
 }
 \value{
-	An object of class \code{c("list.rma","cumul.rma")}. The object is a list containing the following components:
-	\item{estimate}{estimated coefficients of the model.}
-	\item{se}{standard errors of the coefficients. \code{NA} if \code{transf} is used to transform the coefficients.}
-	\item{zval}{test statistics of the coefficients.}
-	\item{pval}{p-values for the test statistics.}
-	\item{ci.lb}{lower bounds of the confidence intervals for the coefficients.}
-	\item{ci.ub}{upper bounds of the confidence intervals for the coefficients.}
-	\item{QE}{test statistics for the tests of heterogeneity.}
-	\item{QEp}{p-values for the tests of heterogeneity.}
-	\item{tau2}{estimated amounts of (residual) heterogeneity (only for random-effects models).}
-	\item{I2}{values of \eqn{I^2} (only for random-effects models).}
-	\item{H2}{values of \eqn{H^2} (only for random-effects models).}
+   An object of class \code{c("list.rma","cumul.rma")}. The object is a list containing the following components:
+   \item{estimate}{estimated coefficients of the model.}
+   \item{se}{standard errors of the coefficients. \code{NA} if \code{transf} is used to transform the coefficients.}
+   \item{zval}{test statistics of the coefficients.}
+   \item{pval}{p-values for the test statistics.}
+   \item{ci.lb}{lower bounds of the confidence intervals for the coefficients.}
+   \item{ci.ub}{upper bounds of the confidence intervals for the coefficients.}
+   \item{QE}{test statistics for the tests of heterogeneity.}
+   \item{QEp}{p-values for the tests of heterogeneity.}
+   \item{tau2}{estimated amounts of (residual) heterogeneity (only for random-effects models).}
+   \item{I2}{values of \eqn{I^2} (only for random-effects models).}
+   \item{H2}{values of \eqn{H^2} (only for random-effects models).}
 
-	The object is formated and printed with \code{\link{print.list.rma}}. A forest plot showing the results from the cumulative meta-analysis can be obtained with \code{\link{forest.cumul.rma}}.
+   The object is formated and printed with \code{\link{print.list.rma}}. A forest plot showing the results from the cumulative meta-analysis can be obtained with \code{\link{forest.cumul.rma}}.
 }
 \author{
-	Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr
-	project homepage: \url{http://www.metafor-project.org/} \cr
-	author homepage: \url{http://www.wvbauer.com/}
+   Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr
+   package homepage: \url{http://www.metafor-project.org/} \cr
+   author homepage: \url{http://www.wvbauer.com/}
 }
 \references{
-	Chalmers, T. C. & Lau, J. (1993). Meta-analytic stimulus for changes in clinical trials. \emph{Statistical Methods in Medical Research}, \bold{2}, 161--172.
+   Chalmers, T. C., & Lau, J. (1993). Meta-analytic stimulus for changes in clinical trials. \emph{Statistical Methods in Medical Research}, \bold{2}, 161--172.
 
-	Lau, J., Schmid, C. H., & Chalmers, T. C. (1995). Cumulative meta-analysis of clinical trials builds evidence for exemplary medical care. \emph{Journal of Clinical Epidemiology}, \bold{48}, 45--57.
+   Lau, J., Schmid, C. H., & Chalmers, T. C. (1995). Cumulative meta-analysis of clinical trials builds evidence for exemplary medical care. \emph{Journal of Clinical Epidemiology}, \bold{48}, 45--57.
 
-	Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \url{http://www.jstatsoft.org/v36/i03/}.
+   Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \url{http://www.jstatsoft.org/v36/i03/}.
 }
 \seealso{
-	\code{\link{cumul}}, \code{\link{forest.cumul.rma}}
+   \code{\link{cumul}}, \code{\link{forest.cumul.rma}}
 }
 \examples{
 ### load BCG vaccine data
 data(dat.bcg)
 
 ### calculate log relative risks and corresponding sampling variances
-dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, 
-              data=dat.bcg, append=TRUE)
+dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
 
 ### random-effects model
 res <- rma(yi, vi, data=dat, method="REML")

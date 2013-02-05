@@ -8,58 +8,57 @@
 \method{blup}{rma.uni}(x, level=x$level, digits=x$digits, transf=FALSE, targs, \dots)
 }
 \arguments{
-	\item{x}{an object of class \code{"rma.uni"}.}
-	\item{level}{a numerical value between 0 and 100 specifying the prediction interval level (the default is to take the value from the object).}
-	\item{digits}{an integer specifying the number of decimal places to which the printed results should be rounded (the default is to take the value from the object).}
-	\item{transf}{an optional argument specifying the name of a function that should be used to transform the predicted values and interval bounds (e.g., \code{transf=exp}). Defaults to \code{FALSE}, which means that no transformation is used.}
-	\item{targs}{optional arguments needed by the function specified under \code{transf}.}
-	\item{\dots}{other arguments.}
+   \item{x}{an object of class \code{"rma.uni"}.}
+   \item{level}{numerical value between 0 and 100 specifying the prediction interval level (the default is to take the value from the object).}
+   \item{digits}{integer specifying the number of decimal places to which the printed results should be rounded (the default is to take the value from the object).}
+   \item{transf}{optional argument specifying the name of a function that should be used to transform the predicted values and interval bounds (e.g., \code{transf=exp}). Defaults to \code{FALSE}, which means that no transformation is used.}
+   \item{targs}{optional arguments needed by the function specified under \code{transf}.}
+   \item{\dots}{other arguments.}
 }
 \value{
-	An object of class \code{"list.rma"}. The object is a list containing the following components:	
-	\item{pred}{predicted values.}
-	\item{se}{corresponding standard errors.}
-	\item{pi.lb}{lower bound of the prediction intervals.}
-	\item{pi.ub}{upper bound of the prediction intervals.}
-	\item{\dots}{some additional elements/values.}
+   An object of class \code{"list.rma"}. The object is a list containing the following components:
+   \item{pred}{predicted values.}
+   \item{se}{corresponding standard errors.}
+   \item{pi.lb}{lower bound of the prediction intervals.}
+   \item{pi.ub}{upper bound of the prediction intervals.}
+   \item{\dots}{some additional elements/values.}
 
-	The \code{"list.rma"} object is formated and printed with \code{\link{print.list.rma}}.
+   The \code{"list.rma"} object is formated and printed with \code{\link{print.list.rma}}.
 }
 \note{
-	For predicted/fitted values that are based only on the fixed effects of the model, see \code{\link{fitted.rma}} and \code{\link{predict.rma}}.
+   For predicted/fitted values that are based only on the fixed effects of the model, see \code{\link{fitted.rma}} and \code{\link{predict.rma}}.
 
-	Fixed-effects models (with or without moderators) do not contain random study effects. The BLUPs for these models will therefore automatically be equal to the usual fitted values, that is, those obtained with \code{\link{fitted.rma}} and \code{\link{predict.rma}}.
+   Fixed-effects models (with or without moderators) do not contain random study effects. The BLUPs for these models will therefore automatically be equal to the usual fitted values, that is, those obtained with \code{\link{fitted.rma}} and \code{\link{predict.rma}}.
 
-	When using the \code{transf} argument, the transformation is applied to the predicted values and the corresponding interval bounds. The standard errors are set equal to \code{NA}.
+   When using the \code{transf} argument, the transformation is applied to the predicted values and the corresponding interval bounds. The standard errors are set equal to \code{NA}.
 
-	The normal distribution is used to calculate the prediction intervals. When the model was fitted with the Knapp and Hartung (2003) method (i.e., \code{knha=TRUE} in the \code{\link{rma.uni}} function), then the t-distribution with \eqn{k-p} degrees of freedom is used.
+   The normal distribution is used to calculate the prediction intervals. When the model was fitted with the Knapp and Hartung (2003) method (i.e., \code{knha=TRUE} in the \code{\link{rma.uni}} function), then the t-distribution with \eqn{k-p} degrees of freedom is used.
 
-	To be precise, it should be noted that the function actually calculates empirical BLUPs (eBLUPs), since the predicted values are a function of the estimated value of \eqn{\tau^2}{tau^2}.
+   To be precise, it should be noted that the function actually calculates empirical BLUPs (eBLUPs), since the predicted values are a function of the estimated value of \eqn{\tau^2}.
 }
 \author{
-	Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr
-	project homepage: \url{http://www.metafor-project.org/} \cr
-	author homepage: \url{http://www.wvbauer.com/}
+   Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr
+   package homepage: \url{http://www.metafor-project.org/} \cr
+   author homepage: \url{http://www.wvbauer.com/}
 }
 \references{
-	Kackar, R. N. & Harville, D. A. (1981). Unbiasedness of two-stage estimation and prediction procedures for mixed linear models. Communications in Statistics, Theory and Methods, \bold{10}, 1249--1261.
+   Kackar, R. N., & Harville, D. A. (1981). Unbiasedness of two-stage estimation and prediction procedures for mixed linear models. Communications in Statistics, Theory and Methods, \bold{10}, 1249--1261.
 
-	Raudenbush, S. W. & Bryk, A. S. (1985). Empirical Bayes meta-analysis. \emph{Journal of Educational Statistics}, \bold{10}, 75--98.
+   Raudenbush, S. W., & Bryk, A. S. (1985). Empirical Bayes meta-analysis. \emph{Journal of Educational Statistics}, \bold{10}, 75--98.
 
-	Robinson, G. K. (1991). That BLUP is a good thing: The estimation of random effects. \emph{Statistical Science}, \bold{6}, 15--32.
+   Robinson, G. K. (1991). That BLUP is a good thing: The estimation of random effects. \emph{Statistical Science}, \bold{6}, 15--32.
 
-	Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \url{http://www.jstatsoft.org/v36/i03/}.
+   Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \url{http://www.jstatsoft.org/v36/i03/}.
 }
 \seealso{
-	\code{\link{rma.uni}}, \code{\link{predict.rma}}, \code{\link{fitted.rma}}
+   \code{\link{rma.uni}}, \code{\link{predict.rma}}, \code{\link{fitted.rma}}
 }
 \examples{
 ### load BCG vaccine data
 data(dat.bcg)
 
 ### calculate log relative risks and corresponding sampling variances
-dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, 
-              data=dat.bcg, append=TRUE)
+dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
 
 ### meta-analysis of the log relative risks using a random-effects model
 res <- rma(yi, vi, data=dat, method="REML")
@@ -68,7 +67,7 @@ blup(res, transf=exp)
 ### illustrate shrinkage of BLUPs towards the (estimated) population average
 res <- rma(yi, vi, data=dat)
 blups <- blup(res)$pred
-plot(NA, NA, xlim=c(.8,2.4), ylim=c(-2,0.5), pch=19, 
+plot(NA, NA, xlim=c(.8,2.4), ylim=c(-2,0.5), pch=19,
      xaxt="n", bty="n", xlab="", ylab="Log Relative Risk")
 segments(rep(1,13), dat$yi, rep(2,13), blups, col="darkgray")
 points(rep(1,13), dat$yi, pch=19)

@@ -1,9 +1,9 @@
-\name{dat.los}
+\name{dat.normand1999}
 \docType{data}
-\alias{dat.los}
+\alias{dat.normand1999}
 \title{Studies on the Length of Hospital Stay of Stroke Patients}
 \description{Results from 9 studies on the length of the hospital stay of stroke patients under specialized care and under conventional/routine (non-specialist) care.}
-\usage{dat.los}
+\usage{dat.normand1999}
 \format{The data frame contains the following columns:
 \tabular{lll}{
 \bold{study}    \tab \code{numeric}   \tab study number \cr
@@ -23,12 +23,12 @@
    Normand, S. T. (1999). Meta-analysis: Formulating, evaluating, combining, and reporting. \emph{Statistics in Medicine}, \bold{18}, 321--359.
 }
 \examples{
-### load los data
-data(dat.los)
+### load data
+data(dat.normand1999)
 
 ### calculate mean differences and corresponding sampling variances
-dat <- escalc(m1i=m1i, sd1i=sd1i, n1i=n1i, m2i=m2i, sd2i=sd2i, n2i=n2i,
-              measure="MD", data=dat.los, append=TRUE)
+dat <- escalc(measure="MD", m1i=m1i, sd1i=sd1i, n1i=n1i, m2i=m2i,
+              sd2i=sd2i, n2i=n2i, data=dat.normand1999)
 dat
 
 ### meta-analysis of mean differences using a random-effects model
@@ -37,7 +37,7 @@ res
 
 ### meta-analysis of standardized mean differences using a random-effects model
 res <- rma(m1i=m1i, sd1i=sd1i, n1i=n1i, m2i=m2i, sd2i=sd2i, n2i=n2i,
-           measure="SMD", data=dat.los, slab=source)
+           measure="SMD", data=dat.normand1999, slab=source)
 res
 
 ### draw forest plot

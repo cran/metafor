@@ -10,36 +10,36 @@
 \method{leave1out}{rma.peto}(x, digits=x$digits, transf=FALSE, \dots)
 }
 \arguments{
-	\item{x}{an object of class \code{"rma.mh"} or \code{"rma.peto"}.}
-	\item{digits}{an integer specifying the number of decimal places to which the printed results should be rounded (the default is to take the value from the object).}
-	\item{transf}{logical indicating whether odds ratios or relative risks (and the corresponding confidence interval bounds) should be given in the transformed (meaning: raw) units or in terms of log units (the default).}
-	\item{\dots}{other arguments.}
+   \item{x}{an object of class \code{"rma.mh"} or \code{"rma.peto"}.}
+   \item{digits}{integer specifying the number of decimal places to which the printed results should be rounded (the default is to take the value from the object).}
+   \item{transf}{logical indicating whether odds ratios or relative risks (and the corresponding confidence interval bounds) should be given in the transformed (meaning: raw) units or in terms of log units (the default).}
+   \item{\dots}{other arguments.}
 }
 \value{
-	An object of class \code{"list.rma"}. The object is a list containing the following components:
-	\item{estimate}{estimated coefficients of the model.}
-	\item{se}{standard errors of the coefficients. \code{NA} if \code{transf=TRUE}.}
-	\item{zval}{test statistics of the coefficients.}
-	\item{pval}{p-values for the test statistics.}
-	\item{ci.lb}{lower bounds of the confidence intervals for the coefficients.}
-	\item{ci.ub}{upper bounds of the confidence intervals for the coefficients.}
-	\item{Q}{test statistics for the tests of heterogeneity.}
-	\item{Qp}{p-values for the tests of heterogeneity.}
+   An object of class \code{"list.rma"}. The object is a list containing the following components:
+   \item{estimate}{estimated coefficients of the model.}
+   \item{se}{standard errors of the coefficients. \code{NA} if \code{transf=TRUE}.}
+   \item{zval}{test statistics of the coefficients.}
+   \item{pval}{p-values for the test statistics.}
+   \item{ci.lb}{lower bounds of the confidence intervals for the coefficients.}
+   \item{ci.ub}{upper bounds of the confidence intervals for the coefficients.}
+   \item{Q}{test statistics for the tests of heterogeneity.}
+   \item{Qp}{p-values for the tests of heterogeneity.}
 
-	The \code{"list.rma"} object is formated and printed with \code{\link{print.list.rma}}.
+   The \code{"list.rma"} object is formated and printed with \code{\link{print.list.rma}}.
 }
 \author{
-	Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr
-	project homepage: \url{http://www.metafor-project.org/} \cr
-	author homepage: \url{http://www.wvbauer.com/}
+   Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr
+   package homepage: \url{http://www.metafor-project.org/} \cr
+   author homepage: \url{http://www.wvbauer.com/}
 }
 \references{
-	Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \url{http://www.jstatsoft.org/v36/i03/}.
+   Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \url{http://www.jstatsoft.org/v36/i03/}.
 
-	Viechtbauer, W. & Cheung, M. W.-L. (2010). Outlier and influence diagnostics for meta-analysis. \emph{Research Synthesis Methods}, \bold{1}, 112--125.
+   Viechtbauer, W., & Cheung, M. W.-L. (2010). Outlier and influence diagnostics for meta-analysis. \emph{Research Synthesis Methods}, \bold{1}, 112--125.
 }
 \seealso{
-	\code{\link{leave1out}}
+   \code{\link{leave1out}}
 }
 \examples{
 ### load BCG vaccine data

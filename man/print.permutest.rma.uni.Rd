@@ -8,30 +8,30 @@
 \method{print}{permutest.rma.uni}(x, digits=x$digits, signif.legend=TRUE, \dots)
 }
 \arguments{
-	\item{x}{an object of class \code{"permutest.rma.uni"}.}
-	\item{digits}{an integer specifying the number of decimal places to which the printed results should be rounded (the default is to take the value from the object).}
-	\item{signif.legend}{logical indicating whether the legend for the \sQuote{significance stars} should be printed.}
-	\item{\dots}{other arguments.}
+   \item{x}{an object of class \code{"permutest.rma.uni"}.}
+   \item{digits}{integer specifying the number of decimal places to which the printed results should be rounded (the default is to take the value from the object).}
+   \item{signif.legend}{logical indicating whether the legend for the \sQuote{significance stars} should be printed.}
+   \item{\dots}{other arguments.}
 }
 \details{
-	The output includes:
-	\itemize{
-	\item the results of the omnibus test of the coefficients in the model. Suppressed if the model includes only one coefficient (e.g., only an intercept, like in the fixed- and random-effects model). The p-value based on the permutation test is indicated by \code{p-val*}.
-	\item a table with the estimated coefficients, corresponding standard errors, test statistics, p-values, and confidence interval bounds. The p-values based on the permutation test are indicated by \code{pval*}.
-	}
+   The output includes:
+   \itemize{
+   \item the results of the omnibus test of the coefficients in the model. Suppressed if the model includes only one coefficient (e.g., only an intercept, like in the fixed- and random-effects model). The p-value based on the permutation test is indicated by \code{p-val*}.
+   \item a table with the estimated coefficients, corresponding standard errors, test statistics, p-values, and confidence interval bounds. The p-values based on the permutation test are indicated by \code{pval*}.
+   }
 }
 \value{
-	The function does not return an object.
+   The function does not return an object.
 }
 \author{
-	Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr
-	project homepage: \url{http://www.metafor-project.org/} \cr
-	author homepage: \url{http://www.wvbauer.com/}
+   Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr
+   package homepage: \url{http://www.metafor-project.org/} \cr
+   author homepage: \url{http://www.wvbauer.com/}
 }
 \references{
-	Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \url{http://www.jstatsoft.org/v36/i03/}.
+   Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \url{http://www.jstatsoft.org/v36/i03/}.
 }
 \seealso{
-	\code{\link{permutest.rma.uni}}
+   \code{\link{permutest.rma.uni}}
 }
 \keyword{print}

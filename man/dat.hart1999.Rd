@@ -1,9 +1,9 @@
-\name{dat.warfarin}
+\name{dat.hart1999}
 \docType{data}
-\alias{dat.warfarin}
+\alias{dat.hart1999}
 \title{Studies on the Effectiveness of Warfarin for Preventing Strokes}
 \description{Results from 6 clinical trials examining the effectiveness of adjusted-dose warfarin for preventing strokes in patients with atrial fibrillation.}
-\usage{dat.warfarin}
+\usage{dat.hart1999}
 \format{The data frame contains the following columns:
 \tabular{lll}{
 \bold{trial}    \tab \code{numeric}   \tab trial number \cr
@@ -11,13 +11,13 @@
 \bold{year}     \tab \code{numeric}   \tab publication year \cr
 \bold{x1i}      \tab \code{numeric}   \tab number of strokes in the warfarin group \cr
 \bold{n1i}      \tab \code{numeric}   \tab number of patients in the warfarin group \cr
-\bold{t1i}      \tab \code{numeric}   \tab total person-time (years) in the warfarin group \cr
+\bold{t1i}      \tab \code{numeric}   \tab total person-time (in years) in the warfarin group \cr
 \bold{x2i}      \tab \code{numeric}   \tab number of strokes in the placebo/control group \cr
 \bold{n2i}      \tab \code{numeric}   \tab number of patients in the placebo/control group \cr
-\bold{t2i}      \tab \code{numeric}   \tab total person-time (years) in the placebo/control group \cr
+\bold{t2i}      \tab \code{numeric}   \tab total person-time (in years) in the placebo/control group \cr
 \bold{compgrp}  \tab \code{character} \tab type of comparison group (placebo or control) \cr
 \bold{prevtype} \tab \code{character} \tab type of prevention (primary or secondary) \cr
-\bold{trinr}    \tab \code{character} \tab target range for the international normalized ratio (INR) 
+\bold{trinr}    \tab \code{character} \tab target range for the international normalized ratio (INR)
 }
 }
 \details{
@@ -27,12 +27,11 @@
    Hart, R. G., Benavente, O., McBride, R., & Pearce, L. A. (1999). Antithrombotic therapy to prevent stroke in patients with atrial fibrillation: A meta-analysis. \emph{Annals of Internal Medicine}, \bold{131}, 492--501.
 }
 \examples{
-### load warfarin data
-data(dat.warfarin)
+### load data
+data(dat.hart1999)
 
 ### calculate log incidence rate ratios and corresponding sampling variances
-dat <- escalc(x1i=x1i, x2i=x2i, t1i=t1i, t2i=t2i, measure="IRR", 
-              data=dat.warfarin, append=TRUE)
+dat <- escalc(measure="IRR", x1i=x1i, x2i=x2i, t1i=t1i, t2i=t2i, data=dat.hart1999)
 dat
 
 ### meta-analysis of log incidence rate ratios using a random-effects model
@@ -58,7 +57,7 @@ segments(x0=-9, y0=8.25, x1=-4, y1=8.25)
 par(op)
 
 ### meta-analysis of incidence rate differences using a random-effects model
-res <- rma(x1i=x1i, x2i=x2i, t1i=t1i, t2i=t2i, measure="IRD", data=dat.warfarin)
+res <- rma(measure="IRD", x1i=x1i, x2i=x2i, t1i=t1i, t2i=t2i, data=dat.hart1999)
 res
 }
 \keyword{datasets}

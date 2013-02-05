@@ -3,14 +3,14 @@
 \title{Trim and Fill Method for rma.uni Objects}
 \description{Apply the trim and fill method to objects of class \code{"rma.uni"}.}
 \usage{
-\method{trimfill}{rma.uni}(x, side, estimator="L0", maxit=50, verbose=FALSE, \dots)
+\method{trimfill}{rma.uni}(x, side, estimator="L0", maxiter=50, verbose=FALSE, \dots)
 }
 \arguments{
    \item{x}{an object of class \code{"rma.uni"}.}
    \item{side}{either \code{"left"} or \code{"right"}, indicating on which side of the funnel plot the missing studies should be imputed. If left undefined, the side is chosen within the function depending on the results of Egger's regression test (see \code{\link{regtest}} for details on this test).}
-   \item{estimator}{either \code{"L0"} or \code{"R0"} indicating the estimator to use for estimating the number of missing studies.}
-   \item{maxit}{an integer value indicating the maximum number of iterations to use for the trim and fill method.}
-   \item{verbose}{logical indicating whether information about the evolution of the algorithm should be printed.}
+   \item{estimator}{either \code{"L0"} or \code{"R0"} indicating the estimator to use for estimating the number of missing studies (default is \code{"L0"}).}
+   \item{maxiter}{integer indicating the maximum number of iterations to use for the trim and fill method (default is \code{50}).}
+   \item{verbose}{logical indicating whether information about the evolution of the algorithm should be printed (default is \code{FALSE}).}
    \item{\dots}{other arguments.}
 }
 \details{
@@ -26,15 +26,15 @@
 }
 \author{
    Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr
-   project homepage: \url{http://www.metafor-project.org/} \cr
+   package homepage: \url{http://www.metafor-project.org/} \cr
    author homepage: \url{http://www.wvbauer.com/}
 }
 \references{
-   Duval, S. J. & Tweedie, R. L. (2000a). Trim and fill: A simple funnel-plot-based method of testing and adjusting for publication bias in meta-analysis. \emph{Biometrics}, \bold{56}, 455--463.
+   Duval, S. J., & Tweedie, R. L. (2000a). Trim and fill: A simple funnel-plot-based method of testing and adjusting for publication bias in meta-analysis. \emph{Biometrics}, \bold{56}, 455--463.
 
-   Duval, S. J. & Tweedie, R. L. (2000b). A nonparametric "trim and fill" method of accounting for publication bias in meta-analysis. \emph{Journal of the American Statistical Association}, \bold{95}, 89--98.
+   Duval, S. J., & Tweedie, R. L. (2000b). A nonparametric "trim and fill" method of accounting for publication bias in meta-analysis. \emph{Journal of the American Statistical Association}, \bold{95}, 89--98.
 
-   Duval, S. J. (2005). The trim and fill method. In H. R. Rothstein, A. J. Sutton, & M. Borenstein (Eds.) (2005) \emph{Publication bias in meta-analysis: Prevention, assessment, and adjustments} (pp. 127--144). Chichester, England: Wiley.
+   Duval, S. J. (2005). The trim and fill method. In H. R. Rothstein, A. J. Sutton, & M. Borenstein (Eds.) \emph{Publication bias in meta-analysis: Prevention, assessment, and adjustments} (pp. 127--144). Chichester, England: Wiley.
 
    Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \url{http://www.jstatsoft.org/v36/i03/}.
 }

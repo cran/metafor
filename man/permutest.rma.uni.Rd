@@ -5,67 +5,69 @@
    The function carries out permutation tests for objects of class \code{"rma.uni"}.
 }
 \usage{
-\method{permutest}{rma.uni}(x, exact=FALSE, iter=1000, progbar=TRUE, 
+\method{permutest}{rma.uni}(x, exact=FALSE, iter=1000, progbar=TRUE,
           retpermdist=FALSE, digits=x$digits, \dots)
 }
 \arguments{
-	\item{x}{an object of class \code{"rma.uni"}.}
-	\item{exact}{logical indicating whether an exact permutation test should be carried out or not (default is \code{FALSE}). See \sQuote{Details}.}
-	\item{iter}{integer to specify the number of iterations for the permutation test when not doing an exact test (default is 1000 iterations).}
-	\item{progbar}{logical indicating whether a progress bar should be shown (default is \code{TRUE}).}
-	\item{retpermdist}{logical indicating whether the permutation distributions of the test statistics should also be returned (default is \code{FALSE}).}
-	\item{digits}{an integer specifying the number of decimal places to which the printed results should be rounded (the default is to take the value from the object).}
-	\item{\dots}{other arguments.}
+   \item{x}{an object of class \code{"rma.uni"}.}
+   \item{exact}{logical indicating whether an exact permutation test should be carried out or not (default is \code{FALSE}). See \sQuote{Details}.}
+   \item{iter}{integer specifying the number of iterations for the permutation test when not doing an exact test (default is 1000 iterations).}
+   \item{progbar}{logical indicating whether a progress bar should be shown (default is \code{TRUE}).}
+   \item{retpermdist}{logical indicating whether the permutation distributions of the test statistics should be returned (default is \code{FALSE}).}
+   \item{digits}{integer specifying the number of decimal places to which the printed results should be rounded (the default is to take the value from the object).}
+   \item{\dots}{other arguments.}
 }
 \details{
-	For models without moderators, the permutation test is carried out by permuting the signs of the observed effect sizes or outcomes. The (two-sided) p-value of the permutation test is then equal to two times the proportion of times that the test statistic under the permuted data is as extreme or more extreme than under the actually observed data. See Follmann and Proschan (1999) for more details.
+   For models without moderators, the permutation test is carried out by permuting the signs of the observed effect sizes or outcomes. The (two-sided) p-value of the permutation test is then equal to two times the proportion of times that the test statistic under the permuted data is as extreme or more extreme than under the actually observed data. See Follmann and Proschan (1999) for more details.
 
-	For models with moderators, the permutation test is carried out by permuting the rows of the design matrix. The (two-sided) p-value for a particular model coefficient is then equal to two times the proportion of times that the test statistic for the coefficient under the permuted data is as extreme or more extreme than under the actually observed data. Similarly, for the omnibus test, the p-value is the proportion of times that the test statistic for the omnibus test is as extreme or more extreme than the actually observed one. See Higgins and Thompson (2004) for more details.
+   For models with moderators, the permutation test is carried out by permuting the rows of the design matrix. The (two-sided) p-value for a particular model coefficient is then equal to two times the proportion of times that the test statistic for the coefficient under the permuted data is as extreme or more extreme than under the actually observed data. Similarly, for the omnibus test, the p-value is the proportion of times that the test statistic for the omnibus test is as extreme or more extreme than the actually observed one. See Higgins and Thompson (2004) for more details.
 
-	If \code{exact=TRUE}, the function will try to carry out an exact permutation test. An exact permutation test requires fitting the model to each possible permutation once. However, the number of possible permutations increases rapidly with the number of outcomes/studies (i.e., \eqn{k}), especially with respect to the possible number of permutations of the design matrix. For example, for \eqn{k=5}, there are only 120 possible permutations of the design matrix (32 possible permutations of the signs). For \eqn{k=8}, there are already 40,320 (256). And for \eqn{k=10}, there are 3,628,800 (1024). Therefore, going through all possible permutations may become infeasible.
+   If \code{exact=TRUE}, the function will try to carry out an exact permutation test. An exact permutation test requires fitting the model to each possible permutation once. However, the number of possible permutations increases rapidly with the number of outcomes/studies (i.e., \eqn{k}). For models without moderators, there are \eqn{2^k} possible permutations of the signs. Therefore, for \eqn{k=5}, there are 32 possible permutations, for \eqn{k=10}, there are already 1024, and for \eqn{k=20}, there are over one million permutations of the signs.
 
-	Instead of using an exact permutation test, one can set \code{exact=FALSE} (the default). In that case, the function approximates the exact permutation-based p-value(s) by going through a smaller number (as specified by the \code{iter} argument) of random permutations. Therefore, running the function twice on the same data will yield (slightly) different p-values. Setting \code{iter} sufficiently large ensures that the results become stable.
+   For models with moderators, the increase in the number of possible permutations may be even more severe. The total number of possible permutations of the design matrix is \eqn{k!}. Therefore, for \eqn{k=5}, there are 120 possible permutations, for \eqn{k=10}, there are 3,628,800, and for \eqn{k=20}, there are over \eqn{10^{18}}{10^18} permutations of the design matrix.
 
-	If \code{exact=FALSE} and \code{iter} is actually larger than the number of iterations required for an exact permutation test, then an exact test will be carried out.
-	
-	Also, the function will terminate with an error if the number of iterations is too large.
+   Therefore, going through all possible permutations may become infeasible. Instead of using an exact permutation test, one can set \code{exact=FALSE} (which is also the default). In that case, the function approximates the exact permutation-based p-value(s) by going through a smaller number (as specified by the \code{iter} argument) of \emph{random} permutations. Therefore, running the function twice on the same data will yield (slightly) different p-values. Setting \code{iter} sufficiently large ensures that the results become stable. Note that if \code{exact=FALSE} and \code{iter} is actually larger than the number of iterations required for an exact permutation test, then an exact test will be carried out.
 
-	Finally, it is important to note that the p-values obtained with permutation tests cannot reach conventional levels of statistical significance (i.e., \eqn{p \le .05}) when \eqn{k} is very small. In particular, for models without moderators, the smallest possible (two-sided) p-value is .0625 when \eqn{k=5} and .03125 when \eqn{k=6}. Therefore, \eqn{k} must be at least equal to 6 to reject the null hypothesis at \eqn{\alpha=.05}. For models with moderators, the smallest possible (two-sided) p-value for a particular model coefficient is .08333 when \eqn{k=4} and .01667 when \eqn{k=5}. Therefore, \eqn{k} must be at least equal to 5 to reject the null hypothesis at \eqn{\alpha=.05}.
+   For models with moderators, the exact permutation test actually only requires fitting the model to each \emph{unique} permutation of the design matrix. The number of unique permutations will be (often much) smaller than \eqn{k!} when the design matrix contains recurring rows. This may be the case when only including categorical moderators (i.e., factors) in the model or when any quantitative moderators included in the model only take on a small number of unique values. When \code{exact=TRUE}, the function therefore uses an algorithm to restrict the test to only the unique permutations of the design matrix, which may make the use of the exact test feasible even when \eqn{k} is large.
 }
 \value{
-	An object of class \code{"permutest.rma.uni"}. The object is a list containing the following components:	
-	\item{pval}{p-value(s) based on the permutation test.}
-	\item{QMp}{p-value for the omnibus test of coefficients based on the permutation test.}
-	\item{zval.perm}{values of the test statistics of the coefficients under the various permutations (only when \code{retpermdist=TRUE}).}
-	\item{QM.perm}{values of the test statistic for the omnibus test of coefficients under the various permutations (only when \code{retpermdist=TRUE}).}
-	\item{\dots}{some additional elements/values are passed on.}
+   An object of class \code{"permutest.rma.uni"}. The object is a list containing the following components:
+   \item{pval}{p-value(s) based on the permutation test.}
+   \item{QMp}{p-value for the omnibus test of coefficients based on the permutation test.}
+   \item{zval.perm}{values of the test statistics of the coefficients under the various permutations (only when \code{retpermdist=TRUE}).}
+   \item{QM.perm}{values of the test statistic for the omnibus test of coefficients under the various permutations (only when \code{retpermdist=TRUE}).}
+   \item{\dots}{some additional elements/values are passed on.}
 
-	The results are formated and printed with the \code{\link{print.permutest.rma.uni}} function. One can also use \code{\link{coef.permutest.rma.uni}} to obtain the table with the model coefficients, corresponding standard errors, test statistics, p-values, and confidence interval bounds.
+   The results are formated and printed with the \code{\link{print.permutest.rma.uni}} function. One can also use \code{\link{coef.permutest.rma.uni}} to obtain the table with the model coefficients, corresponding standard errors, test statistics, p-values, and confidence interval bounds.
+}
+\note{
+   It is important to note that the p-values obtained with permutation tests cannot reach conventional levels of statistical significance (i.e., \eqn{p \le .05}) when \eqn{k} is very small. In particular, for models without moderators, the smallest possible (two-sided) p-value is .0625 when \eqn{k=5} and .03125 when \eqn{k=6}. Therefore, \eqn{k} must be at least equal to 6 to reject the null hypothesis at \eqn{\alpha=.05}. For models with moderators, the smallest possible (two-sided) p-value for a particular model coefficient is .08333 when \eqn{k=4} and .01667 when \eqn{k=5} (assuming that each row in the design matrix is unique). Therefore, \eqn{k} must be at least equal to 5 to reject the null hypothesis at \eqn{\alpha=.05}.
+
+   When the number of permutations required for the exact test is so large as to be essentially indistinguishable from infinity (e.g., \code{factorial(200)}), the function will terminate with an error.
 }
 \author{
-	Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr
-	project homepage: \url{http://www.metafor-project.org/} \cr
-	author homepage: \url{http://www.wvbauer.com/}
+   Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr
+   package homepage: \url{http://www.metafor-project.org/} \cr
+   author homepage: \url{http://www.wvbauer.com/}
 }
 \references{
-	Follmann, D. A. & Proschan, M. A. (1999). Valid inference in random effects meta-analysis. \emph{Biometrics}, \bold{55}, 732--737.
+   Follmann, D. A., & Proschan, M. A. (1999). Valid inference in random effects meta-analysis. \emph{Biometrics}, \bold{55}, 732--737.
 
-	Good, P. I. (2009). \emph{Permutation, parametric, and bootstrap tests of hypotheses} (3rd ed.). New York: Springer.
+   Good, P. I. (2009). \emph{Permutation, parametric, and bootstrap tests of hypotheses} (3rd ed.). New York: Springer.
 
-	Higgins, J. P. T. & Thompson, S. G. (2004). Controlling the risk of spurious findings from meta-regression. \emph{Statistics in Medicine}, \bold{23}, 1663--1682.
+   Higgins, J. P. T., & Thompson, S. G. (2004). Controlling the risk of spurious findings from meta-regression. \emph{Statistics in Medicine}, \bold{23}, 1663--1682.
 
-	Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \url{http://www.jstatsoft.org/v36/i03/}.
+   Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \url{http://www.jstatsoft.org/v36/i03/}.
 }
 \seealso{
-	\code{\link{rma.uni}}, \code{\link{print.permutest.rma.uni}}
+   \code{\link{rma.uni}}, \code{\link{print.permutest.rma.uni}}
 }
 \examples{
 ### load BCG vaccine data
 data(dat.bcg)
 
 ### calculate log relative risks and corresponding sampling variances
-dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, 
-              data=dat.bcg, append=TRUE)
+dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
 
 ### random-effects model
 res <- rma(yi, vi, data=dat, method="REML")
@@ -78,7 +80,7 @@ permutest(res, exact=TRUE)
 }
 
 ### mixed-effects model with two moderators (absolute latitude and publication year)
-res <- rma(yi, vi, mods=cbind(ablat, year), data=dat, method="REML")
+res <- rma(yi, vi, mods = ~ ablat + year, data=dat, method="REML")
 
 ### permutation test (approximate only; exact not feasible)
 \dontrun{
@@ -90,7 +92,7 @@ permres
 ### dashed horizontal line: the observed value of the test statistic
 ### red curve:  standard normal density
 ### blue curve: kernel density estimate of the permutation distribution
-### note that the tail area under the permutation distribution is larger 
+### note that the tail area under the permutation distribution is larger
 ### than under a standard normal density (hence, the larger p-value)
 hist(permres$zval.perm[,2], breaks=120, freq=FALSE, xlim=c(-5,5), ylim=c(0,.4),
      main="Permutation Distribution", xlab="Value of Test Statistic")

@@ -8,24 +8,24 @@
 blup(x, \dots)
 }
 \arguments{
-	\item{x}{an object for which BLUPs are meaningful. See \sQuote{Details}.}
-	\item{\dots}{other arguments.}
+   \item{x}{an object for which BLUPs are meaningful. See \sQuote{Details}.}
+   \item{\dots}{other arguments.}
 }
 \details{
-	Currently, there is only a specific method for objects of class \code{"rma.uni"} created by the \code{\link{rma.uni}} function. Accordingly, the corresponding method is called \code{\link{blup.rma.uni}}. See the documentation for that function for more details.
+   Currently, there is only a specific method for objects of class \code{"rma.uni"} created by the \code{\link{rma.uni}} function. Accordingly, the corresponding method is called \code{\link{blup.rma.uni}}. See the documentation for that function for more details.
 }
 \value{
-	Best linear unbiased predictions and possibly corresponding standard errors and prediction interval bounds. 
+   Best linear unbiased predictions and possibly corresponding standard errors and prediction interval bounds.
 }
 \author{
-	Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr
-	project homepage: \url{http://www.metafor-project.org/} \cr
-	author homepage: \url{http://www.wvbauer.com/}
+   Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr
+   package homepage: \url{http://www.metafor-project.org/} \cr
+   author homepage: \url{http://www.wvbauer.com/}
 }
 \references{
-	Robinson, G. K. (1991). That BLUP is a good thing: The estimation of random effects. \emph{Statistical Science}, \bold{6}, 15--32.
+   Robinson, G. K. (1991). That BLUP is a good thing: The estimation of random effects. \emph{Statistical Science}, \bold{6}, 15--32.
 }
 \seealso{
-	\code{\link{blup.rma.uni}}
+   \code{\link{blup.rma.uni}}
 }
 \keyword{methods}

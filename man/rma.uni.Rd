@@ -4,25 +4,24 @@
 \title{Meta-Analysis via the Linear (Mixed-Effects) Model}
 \description{Function to fit the meta-analytic fixed- and random-effects models with or without moderators via the linear (mixed-effects) model. See the documentation of the \pkg{\link{metafor-package}} for more details on these models.}
 \usage{
-rma.uni(yi, vi, sei, ai, bi, ci, di, n1i, n2i, 
-        x1i, x2i, t1i, t2i, m1i, m2i, sd1i, sd2i, 
-        xi, mi, ri, ni, ti, mods, measure="GEN", 
-        intercept=TRUE, data, slab, subset, 
-        add=1/2, to="only0", vtype="LS", 
+rma.uni(yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i, x2i,
+        t1i, t2i, m1i, m2i, sd1i, sd2i, xi, mi, ri, ti, sdi, ni, mods,
+        measure="GEN", intercept=TRUE, data, slab, subset,
+        add=1/2, to="only0", drop00=FALSE, vtype="LS",
         method="REML", weighted=TRUE, knha=FALSE,
-        level=95, digits=4, btt, tau2, control)
-rma(yi, vi, sei, ai, bi, ci, di, n1i, n2i, 
-        x1i, x2i, t1i, t2i, m1i, m2i, sd1i, sd2i,
-        xi, mi, ri, ni, ti, mods, measure="GEN", 
-        intercept=TRUE, data, slab, subset, 
-        add=1/2, to="only0", vtype="LS", 
+        level=95, digits=4, btt, tau2, verbose=FALSE, control)
+rma(yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i, x2i,
+        t1i, t2i, m1i, m2i, sd1i, sd2i, xi, mi, ri, ti, sdi, ni, mods,
+        measure="GEN", intercept=TRUE, data, slab, subset,
+        add=1/2, to="only0", drop00=FALSE, vtype="LS",
         method="REML", weighted=TRUE, knha=FALSE,
-        level=95, digits=4, btt, tau2, control)
+        level=95, digits=4, btt, tau2, verbose=FALSE, control)
 }
 \arguments{
    \item{yi}{vector of length \eqn{k} with the observed effect sizes or outcomes. See \sQuote{Details}.}
    \item{vi}{vector of length \eqn{k} with the corresponding sampling variances. See \sQuote{Details}.}
    \item{sei}{vector of length \eqn{k} with the corresponding standard errors. See \sQuote{Details}.}
+   \item{weights}{vector of length \eqn{k} with the corresponding inverse sampling variances. See \sQuote{Details}.}
    \item{ai}{see below and the documentation of the \code{\link{escalc}} function for more details.}
    \item{bi}{see below and the documentation of the \code{\link{escalc}} function for more details.}
    \item{ci}{see below and the documentation of the \code{\link{escalc}} function for more details.}
@@ -40,51 +39,58 @@ rma(yi, vi, sei, ai, bi, ci, di, n1i, n2i,
    \item{xi}{see below and the documentation of the \code{\link{escalc}} function for more details.}
    \item{mi}{see below and the documentation of the \code{\link{escalc}} function for more details.}
    \item{ri}{see below and the documentation of the \code{\link{escalc}} function for more details.}
-   \item{ni}{see below and the documentation of the \code{\link{escalc}} function for more details.}
    \item{ti}{see below and the documentation of the \code{\link{escalc}} function for more details.}
-   \item{mods}{an optional argument to include one or more moderators in the model. A single moderator can be given as a vector of length \eqn{k} specifying the values of the moderator. Multiple moderators are specified by giving a matrix with \eqn{k} rows and \eqn{p'} columns. Alternatively, a model \code{\link{formula}} can be used to specify the model. See \sQuote{Details}.}
-   \item{measure}{a character string indicating the type of data supplied to the function. When \code{measure="GEN"} (default), the observed effect sizes or outcomes and corresponding sampling variances (or standard errors) should be supplied to the function via the \code{yi}, \code{vi}, and \code{sei} arguments (only one of the two, \code{vi} or \code{sei}, needs to be specified). Alternatively, one can set \code{measure} to one of the effect size or outcome measures described under the documentation for the \code{\link{escalc}} function and specify the needed data via the appropriate arguments.}
-   \item{intercept}{logical, indicating whether an intercept term should be added to the model (default is \code{TRUE}).}
-   \item{data}{an optional data frame containing the data supplied to the function.}
-   \item{slab}{an optional vector with unique labels for the \eqn{k} studies.}
-   \item{subset}{an optional vector indicating the subset of studies that should be used for the analysis. This can be a logical vector of length \eqn{k} or a numeric vector indicating the indices of the observations to include.}
+   \item{sdi}{see below and the documentation of the \code{\link{escalc}} function for more details.}
+   \item{ni}{see below and the documentation of the \code{\link{escalc}} function for more details.}
+   \item{mods}{optional argument to include one or more moderators in the model. A single moderator can be given as a vector of length \eqn{k} specifying the values of the moderator. Multiple moderators are specified by giving a matrix with \eqn{k} rows and \eqn{p'} columns. Alternatively, a model \code{\link{formula}} can be used to specify the model. See \sQuote{Details}.}
+   \item{measure}{character string indicating the type of data supplied to the function. When \code{measure="GEN"} (default), the observed effect sizes or outcomes and corresponding sampling variances (or standard errors) should be supplied to the function via the \code{yi}, \code{vi}, and \code{sei} arguments (only one of the two, \code{vi} or \code{sei}, needs to be specified). Alternatively, one can set \code{measure} to one of the effect size or outcome measures described under the documentation for the \code{\link{escalc}} function and specify the needed data via the appropriate arguments.}
+   \item{intercept}{logical indicating whether an intercept term should be added to the model (default is \code{TRUE}).}
+   \item{data}{optional data frame containing the data supplied to the function.}
+   \item{slab}{optional vector with unique labels for the \eqn{k} studies.}
+   \item{subset}{optional vector indicating the subset of studies that should be used for the analysis. This can be a logical vector of length \eqn{k} or a numeric vector indicating the indices of the observations to include.}
    \item{add}{see the documentation of the \code{\link{escalc}} function.}
    \item{to}{see the documentation of the \code{\link{escalc}} function.}
+   \item{drop00}{see the documentation of the \code{\link{escalc}} function.}
    \item{vtype}{see the documentation of the \code{\link{escalc}} function.}
-   \item{method}{a character string specifying whether a fixed- or a random/mixed-effects model should be fitted. A fixed-effects model (with or without moderators) is fitted when using \code{method="FE"}. Random/mixed-effects models are fitted by setting \code{method} equal to one of the following: \code{"HE"}, \code{"DL"}, \code{"SJ"}, \code{"ML"}, \code{"REML"}, or \code{"EB"}. Default is \code{"REML"}. See \sQuote{Details}.}
+   \item{method}{character string specifying whether a fixed- or a random/mixed-effects model should be fitted. A fixed-effects model (with or without moderators) is fitted when using \code{method="FE"}. Random/mixed-effects models are fitted by setting \code{method} equal to one of the following: \code{"DL"}, \code{"HE"}, \code{"SJ"}, \code{"ML"}, \code{"REML"}, \code{"EB"}, or \code{"HS"}. Default is \code{"REML"}. See \sQuote{Details}.}
    \item{weighted}{logical indicating whether weighted (default) or unweighted least squares should be used to fit the model.}
    \item{knha}{logical specifying whether the method by Knapp and Hartung (2003) should be used for adjusting test statistics and confidence intervals (default is \code{FALSE}). See \sQuote{Details}.}
-   \item{level}{a numerical value between 0 and 100 specifying the confidence interval level (default is 95).}
-   \item{digits}{an integer specifying the number of decimal places to which the printed results should be rounded (default is 4).}
-   \item{btt}{an optional vector of indices specifying which coefficients to include in the omnibus test of moderators. See \sQuote{Details}.}
-   \item{tau2}{an optional numerical value to specify the amount of (residual) heterogeneity in a random- or mixed-effects model (instead of estimating it). Useful for sensitivity analyses (e.g., for plotting results as a function of \eqn{\tau^2}{tau^2}). When unspecified, the value of \eqn{\tau^2}{tau^2} is estimated from the data.}
+   \item{level}{numerical value between 0 and 100 specifying the confidence interval level (default is 95).}
+   \item{digits}{integer specifying the number of decimal places to which the printed results should be rounded (default is 4).}
+   \item{btt}{optional vector of indices specifying which coefficients to include in the omnibus test of moderators. See \sQuote{Details}.}
+   \item{tau2}{optional numerical value to specify the amount of (residual) heterogeneity in a random- or mixed-effects model (instead of estimating it). Useful for sensitivity analyses (e.g., for plotting results as a function of \eqn{\tau^2}). When unspecified, the value of \eqn{\tau^2} is estimated from the data.}
+   \item{verbose}{logical indicating whether output should be generated for the Fisher scoring algorithm (default is \code{FALSE}). See \sQuote{Note}.}
    \item{control}{optional list of control values for the iterative estimation algorithms. Defaults to an empty list, which means that default values are defined inside the function. See \sQuote{Note}.}
 }
 \details{
 
    \bold{Specifying the Data}
 
-   The function can be used in conjunction with any of the usual effect size or outcome measures used in meta-analyses (e.g., log odds ratios, log relative risks, risk differences, mean differences, standardized mean differences, raw correlation coefficients, correlation coefficients transformed with Fisher's r-to-z transformation, and so on). Simply specify the observed outcomes via the \code{yi} argument and the corresponding sampling variances via the \code{vi} argument (or specify the standard errors, the square root of the sampling variances, via the \code{sei} argument). When specifying the data in this way, one must set \code{measure="GEN"} (which is the default).
+   The function can be used in conjunction with any of the usual effect size or outcome measures used in meta-analyses (e.g., log odds ratios, log relative risks, risk differences, mean differences, standardized mean differences, raw correlation coefficients, correlation coefficients transformed with Fisher's r-to-z transformation, and so on). Simply specify the observed outcomes via the \code{yi} argument and the corresponding sampling variances via the \code{vi} argument (instead, one can specify the standard errors, the square root of the sampling variances, via the \code{sei} argument, or the inverse of the sampling variances via the \code{weights} argument).
 
-   Alternatively, the function can automatically calculate the values of a chosen effect size or outcome measure (and the corresponding sampling variances) when supplied with the necessary data. The \code{\link{escalc}} function describes which measures are currently implemented and what data/arguments should then be specified/used. The \code{measure} argument should then be set to the desired effect size or outcome measure.
+   Alternatively, the function can automatically calculate the values of a chosen effect size or outcome measure (and the corresponding sampling variances) when supplied with the necessary data. The \code{\link{escalc}} function describes which effect size or outcome measures are currently implemented and what data/arguments should then be specified/used. The \code{measure} argument should then be set to the desired effect size or outcome measure.
 
    \bold{Specifying the Model}
 
+   The function can be used to fit fixed- and random/mixed-effects models, as well as meta-regression models including moderators (the difference between the various models is described in detail in the introductory \pkg{\link{metafor-package}} help file).
+
    Assuming the observed outcomes and corresponding sampling variances are supplied via \code{yi} and \code{vi}, the \emph{fixed-effects model} is fitted with \code{rma(yi, vi, method="FE")}. The \emph{random-effects model} is fitted with the same code but setting \code{method} to one of the various estimators for the amount of heterogeneity:
    \itemize{
-   \item \code{method="HS"} = Hunter-Schmidt estimator
-   \item \code{method="HE"} = Hedges estimator
    \item \code{method="DL"} = DerSimonian-Laird estimator
+   \item \code{method="HE"} = Hedges estimator
+   \item \code{method="HS"} = Hunter-Schmidt estimator
    \item \code{method="SJ"} = Sidik-Jonkman estimator
    \item \code{method="ML"} = maximum-likelihood estimator
    \item \code{method="REML"} = restricted maximum-likelihood estimator
    \item \code{method="EB"} = empirical Bayes estimator.
    }
-   One or more moderators can be included in these models via the \code{mods} argument. A single moderator can be given as a (row or column) vector of length \eqn{k} specifying the values of the moderator. Multiple moderators are specified by giving an appropriate design matrix with \eqn{k} rows and \eqn{p'} columns (e.g., using \code{mods = cbind(mod1, mod2, mod3)}, where \code{mod1}, \code{mod2}, and \code{mod3} correspond to the names of the variables for the three moderator variables). The intercept is included in the model by default unless \code{intercept=FALSE}. 
+   One or more moderators can be included in these models via the \code{mods} argument. A single moderator can be given as a (row or column) vector of length \eqn{k} specifying the values of the moderator. Multiple moderators are specified by giving an appropriate design matrix with \eqn{k} rows and \eqn{p'} columns (e.g., using \code{mods = cbind(mod1, mod2, mod3)}, where \code{mod1}, \code{mod2}, and \code{mod3} correspond to the names of the variables for the three moderator variables). The intercept is included in the model by default unless \code{intercept=FALSE}.
 
-   Alternatively, one can use the model \code{\link{formula}} syntax to specify the model. In this case, the \code{mods} argument should be set equal to a one-sided formula of the form \code{~ model} (e.g., \code{~ mod1 + mod2 + mod3}). Interactions, polynomial terms, and factors can be easily added to the model in this manner. When specifying a model formula via the \code{mods} argument, the \code{intercept} argument is ignored. Instead, the inclusion/exclusion of the intercept term is controlled by the specified formula (e.g., \code{~ mod1 + mod2 + mod3 - 1} would exclude the intercept term).
+   Alternatively, one can use standard \code{\link{formula}} syntax to specify the model. In this case, the \code{mods} argument should be set equal to a one-sided formula of the form \code{mods = ~ model} (e.g., \code{mods = ~ mod1 + mod2 + mod3}). Interactions, polynomial terms, and factors can be easily added to the model in this manner. When specifying a model formula via the \code{mods} argument, the \code{intercept} argument is ignored. Instead, the inclusion/exclusion of the intercept term is controlled by the specified formula (e.g., \code{mods = ~ mod1 + mod2 + mod3 - 1} would lead to the removal of the intercept term).
 
-   In this case, the model formula determines whether an intercept is included in the model or not. A \emph{fixed-effects with moderators model} is then fitted by setting \code{method="FE"}, while a \emph{mixed-effects model} is fitted by specifying one of the estimators for the amount of (residual) heterogeneity given earlier. 
+   A \emph{fixed-effects with moderators model} is then fitted by setting \code{method="FE"}, while a \emph{mixed-effects model} is fitted by specifying one of the estimators for the amount of (residual) heterogeneity given earlier.
+
+   When the observed outcomes and corresponding sampling variances are supplied via the \code{yi} and \code{vi} arguments (or \code{sei} or \code{weights}), one can also directly specify moderators via the \code{yi} argument (e.g., \code{rma(yi ~ mod1 + mod2 + mod3, vi)}). In that case, the \code{mods} argument is ignored and the inclusion/exclusion of the intercept term again is controlled by the specified formula.
 
    \bold{Omnibus Test of Parameters}
 
@@ -92,11 +98,11 @@ rma(yi, vi, sei, ai, bi, ci, di, n1i, n2i,
 
    \bold{Categorical Moderators}
 
-   Categorical moderator variables can be included in the model in the same way that appropriately (dummy) coded categorical independent variables can be included in linear models. You can either do the dummy coding manually or use a model formula together with the \code{\link{factor}} function to let \R handle the coding automatically. An example to illustrate these different approaches is provided below.
+   Categorical moderator variables can be included in the model in the same way that appropriately (dummy) coded categorical independent variables can be included in linear models. One can either do the dummy coding manually or use a model formula together with the \code{\link{factor}} function to let \R handle the coding automatically. An example to illustrate these different approaches is provided below.
 
    \bold{Knapp & Hartung Adjustment}
 
-   By default, the test statistics of the individual coefficients in the model (and the corresponding confidence intervals) are based on the normal distribution, while the omnibus test is based on a chi-square distribution with \eqn{m} degrees of freedom (\eqn{m} being the number of coefficients tested). The Knapp and Hartung (2003) method (\code{knha=TRUE}) is an adjustment to the standard errors of the estimated coefficients, which helps to account for the uncertainty in the estimate of the amount of (residual) heterogeneity and leads to different reference distributions. Individual coefficients and confidence intervals are then based on the t-distribution with \eqn{k-p} degrees of freedom, while the omnibus test statistic then uses an F-distribution with \eqn{m} and \eqn{k-p} degrees of freedom (\eqn{p} being the total number of model coefficients including the intercept if it is present). The Knapp and Hartung (2003) adjustment is only meant to be used in the context of random- or mixed-effects models.
+   By default, the test statistics of the individual coefficients in the model (and the corresponding confidence intervals) are based on the normal distribution, while the omnibus test is based on a chi-square distribution with \eqn{m} degrees of freedom (\eqn{m} being the number of coefficients tested). The Knapp and Hartung (2003) method (\code{knha=TRUE}) is an adjustment to the standard errors of the estimated coefficients, which helps to account for the uncertainty in the estimate of the amount of (residual) heterogeneity and leads to different reference distributions. Tests of individual coefficients and confidence intervals are then based on the t-distribution with \eqn{k-p} degrees of freedom, while the omnibus test statistic then uses an F-distribution with \eqn{m} and \eqn{k-p} degrees of freedom (\eqn{p} being the total number of model coefficients including the intercept if it is present). The Knapp and Hartung (2003) adjustment is only meant to be used in the context of random- or mixed-effects models.
 }
 \value{
    An object of class \code{c("rma.uni","rma")}. The object is a list containing the following components:
@@ -108,8 +114,8 @@ rma(yi, vi, sei, ai, bi, ci, di, n1i, n2i,
    \item{ci.ub}{upper bound of the confidence intervals for the coefficients.}
    \item{vb}{variance-covariance matrix of the estimated coefficients.}
    \item{tau2}{estimated amount of (residual) heterogeneity. Always \code{0} when \code{method="FE"}.}
-   \item{se.tau2}{estimated standard error of the estimated amount of (residual) heterogeneity when using ML or REML estimation (\code{NA} otherwise).}
-   \item{k}{number of outcomes included in the model fitting (equal to \code{length(yi)} unless \code{subset} was used or if there are missing data).}
+   \item{se.tau2}{estimated standard error of the estimated amount of (residual) heterogeneity.}
+   \item{k}{number of outcomes included in the model fitting.}
    \item{p}{number of coefficients in the model (including the intercept).}
    \item{m}{number of coefficients included in the omnibus test of coefficients.}
    \item{QE}{test statistic for the test of (residual) heterogeneity.}
@@ -118,12 +124,12 @@ rma(yi, vi, sei, ai, bi, ci, di, n1i, n2i,
    \item{QMp}{p-value for the omnibus test of coefficients.}
    \item{I2}{value of \eqn{I^2} (only for the random-effects model; \code{NA} otherwise).}
    \item{H2}{value of \eqn{H^2} (only for the random-effects model; \code{NA} otherwise).}
-   \item{int.only}{logical that indicates whether the model only includes an intercept.}
+   \item{int.only}{logical that indicates whether the model is an intercept-only model.}
    \item{yi, vi, X}{the vector of outcomes, the corresponding sampling variances, and the design matrix of the model.}
    \item{fit.stats}{a list with the log likelihood, deviance, AIC, and BIC values under the unrestricted and restricted likelihood.}
    \item{\dots}{some additional elements/values.}
 
-   The results of the fitted model are neatly formated and printed with the \code{\link{print.rma.uni}} function. If you also want the fit statistics, use \code{\link{summary.rma}} (or use the \code{\link{fitstats.rma}} function to extract them). Full versus reduced model comparisons in terms of fit statistics and likelihoods can be obtained with \code{\link{anova.rma.uni}}. Permutation tests for the model coefficient(s) can be obtained with \code{\link{permutest.rma.uni}}.
+   The results of the fitted model are neatly formated and printed with the \code{\link{print.rma.uni}} function. If fit statistics should also be given, use \code{\link{summary.rma}} (or use the \code{\link{fitstats.rma}} function to extract them). Full versus reduced model comparisons in terms of fit statistics and likelihoods can be obtained with \code{\link{anova.rma.uni}}. Permutation tests for the model coefficient(s) can be obtained with \code{\link{permutest.rma.uni}}.
 
    Predicted/fitted values can be obtained with \code{\link{predict.rma}} and \code{\link{fitted.rma}}. For best linear unbiased predictions, see \code{\link{blup.rma.uni}}.
 
@@ -133,86 +139,88 @@ rma(yi, vi, sei, ai, bi, ci, di, n1i, n2i,
 
    Forest, funnel, radial, and L'abbe plots (the latter two only for models without moderators) can be obtained with \code{\link{forest.rma}}, \code{\link{funnel.rma}}, \code{\link{radial.rma}}, and \code{\link{labbe.rma}}. The \code{\link{qqnorm.rma.uni}} function provides normal QQ plots of the standardized residuals. One can also just call \code{\link{plot.rma.uni}} on the fitted model object to obtain various plots at once.
 
-   Tests for publication bias (or more accurately, for funnel plot asymmetry) can be obtained with \code{\link{ranktest.rma}} and \code{\link{regtest.rma}}. For models without moderators, the \code{\link{trimfill.rma.uni}} method can be used to carry out a trim and fill analysis.
+   Tests for funnel plot asymmetry (which may be indicative of publication bias) can be obtained with \code{\link{ranktest.rma}} and \code{\link{regtest.rma}}. For models without moderators, the \code{\link{trimfill.rma.uni}} method can be used to carry out a trim and fill analysis.
 
    For models without moderators, a cumulative meta-analysis (i.e., adding one obervation at a time) can be obtained with \code{\link{cumul.rma.uni}}.
 
    Other assessor functions include \code{\link{coef.rma}}, \code{\link{vcov.rma}}, \code{\link{logLik.rma}}, \code{\link{deviance.rma}}, \code{\link{AIC.rma}}, \code{\link{BIC.rma}}, \code{\link{hatvalues.rma.uni}}, and \code{\link{weights.rma.uni}}.
 }
 \note{
-   While the HS, HE, DL, and SJ estimators of \eqn{\tau^2}{tau^2} are based on closed-form solutions, the ML, REML, and EB estimators must be obtained numerically. For this, the \code{rma()} function makes use of the Fisher scoring algorithm, which is robust to poor starting values and usually converges quickly (Harville, 1977; Jennrich & Sampson, 1976). By default, the starting value is set equal to the value of the Hedges estimator and the algorithm terminates when the change in the estimated value of \eqn{\tau^2}{tau^2} is smaller than \eqn{10^{-5}}{10^(-5)} from one iteration to the next. The maximum number of iterations is 100 by default (which should be sufficient in most cases). A different starting value, threshold, and maximum number of iterations can be specified via the \code{control} argument by setting \code{control=list(tau2.init=value, threshold=value, maxiter=value)} when calling the \code{rma()} function. The step length of the Fisher scoring algorithm can also be manually adjusted by a desired factor with \code{control=list(stepadj=value)} (values below 1 will reduce the step length). Information on the evolution of the algorithm is obtained with \code{control=list(verbose=TRUE)}.
+   While the HS, HE, DL, and SJ estimators of \eqn{\tau^2} are based on closed-form solutions, the ML, REML, and EB estimators must be obtained numerically. For this, the \code{rma()} function makes use of the Fisher scoring algorithm, which is robust to poor starting values and usually converges quickly (Harville, 1977; Jennrich & Sampson, 1976). By default, the starting value is set equal to the value of the Hedges estimator and the algorithm terminates when the change in the estimated value of \eqn{\tau^2} is smaller than \eqn{10^{-5}}{10^(-5)} from one iteration to the next. The maximum number of iterations is 100 by default (which should be sufficient in most cases). A different starting value, threshold, and maximum number of iterations can be specified via the \code{control} argument by setting \code{control=list(tau2.init=value, threshold=value, maxiter=value)} when calling the \code{rma()} function. The step length of the Fisher scoring algorithm can also be manually adjusted by a desired factor with \code{control=list(stepadj=value)} (values below 1 will reduce the step length). Information on the evolution of the algorithm is obtained by setting \code{verbose=TRUE} or with \code{control=list(verbose=TRUE)}.
 
-   All of the heterogeneity estimators except SJ can in principle yield negative estimates for the amount of (residual) heterogeneity. However, negative estimates of \eqn{\tau^2}{tau^2} are outside of the parameter space. For the HS, HE, and DL estimators, negative estimates are therefore truncated to zero. For ML, REML, and EB estimation, the Fisher scoring algorithm makes use of step halving to guarantee a non-negative estimate. For those brave enough to step into risky territory, there is the option to set the lower bound of \eqn{\tau^2}{tau^2} equal to some other value besides zero with \code{control=list(tau2.min=value)}.
+   All of the heterogeneity estimators except SJ can in principle yield negative estimates for the amount of (residual) heterogeneity. However, negative estimates of \eqn{\tau^2} are outside of the parameter space. For the HS, HE, and DL estimators, negative estimates are therefore truncated to zero. For ML, REML, and EB estimation, the Fisher scoring algorithm makes use of step halving to guarantee a non-negative estimate. For those brave enough to step into risky territory, there is the option to set the lower bound of \eqn{\tau^2} equal to some other value besides zero with \code{control=list(tau2.min=value)}.
 
    The Hunter-Schmidt estimator for the amount of heterogeneity is defined in Hunter and Schmidt (1990) only in the context of the random-effects model when analyzing correlation coefficients. A general version of this estimator for the random-effects model not specific to any particular outcome measure is described in Viechtbauer (2005). The same idea can be easily extended to the mixed-effects model and is implemented here.
 
-   Outcomes with non-positive sampling variances are problematic. If a sampling variance is equal to zero, then its weight will be \eqn{1/0} for fixed-effects models when using weighted estimation. Switching to unweighted estimation is a possible solution then. For random/mixed-effects model, some estimators of \eqn{\tau^2}{tau^2} are undefined when there is at least one sampling variance equal to zero. Other estimators may work, but it may still be necessary to switch to unweighted model fitting, especially when the estimate of \eqn{\tau^2}{tau^2} turns out to be zero.
+   Outcomes with non-positive sampling variances are problematic. If a sampling variance is equal to zero, then its weight will be \eqn{1/0} for fixed-effects models when using weighted estimation. Switching to unweighted estimation is a possible solution then. For random/mixed-effects model, some estimators of \eqn{\tau^2} are undefined when there is at least one sampling variance equal to zero. Other estimators may work, but it may still be necessary to switch to unweighted model fitting, especially when the estimate of \eqn{\tau^2} turns out to be zero.
 
-   If you get a \sQuote{singular matrix} error when using the function, then this means that there is a linear relationship between the moderator variables included in the model. For example, two moderators that correlated perfectly would cause this error. Deleting (redundant) moderator variables from the model as needed should solve this problem.
+   When including moderators in the model, it is possible that the design matrix is not of full rank (i.e., there is a linear relationship between the moderator variables included in the model). In that case, the model cannot be fitted and an error will be issued. For example, two moderators that correlated perfectly would cause this problem. Deleting (redundant) moderator variables from the model as needed should solve this problem.
 
    Finally, some general words of caution about the assumptions underlying the models are warranted:
    \itemize{
    \item The sampling variances (i.e., the \code{vi} values) are treated as if they were known constants. This (usually) implies that the distributions of the test statistics and corresponding confidence intervals are only exact and have nominal coverage when the within-study sample sizes are large (i.e., when the error in the sampling variance estimates is small). Certain outcome measures (e.g., the arcsine transformed risk difference and Fisher's r-to-z transformed correlation coefficient) are based on variance stabilizing transformations that also help to make the assumption of known sampling variances much more reasonable.
-   \item When fitting a mixed/random-effects model, \eqn{\tau^2}{tau^2} is estimated and then treated as a known constant thereafter. This ignores the uncertainty in the estimate of \eqn{\tau^2}{tau^2}. As a consequence, the standard errors of the parameter estimates tend to be too small, yielding test statistics that are too large and confidence intervals that are not wide enough. The Knapp and Hartung (2003) adjustment can be used to counter this problem, yielding test statistics and confidence intervals whose properties are closer to nominal.
+   \item When fitting a mixed/random-effects model, \eqn{\tau^2} is estimated and then treated as a known constant thereafter. This ignores the uncertainty in the estimate of \eqn{\tau^2}. As a consequence, the standard errors of the parameter estimates tend to be too small, yielding test statistics that are too large and confidence intervals that are not wide enough. The Knapp and Hartung (2003) adjustment can be used to counter this problem, yielding test statistics and confidence intervals whose properties are closer to nominal.
    \item Most effect size measures are not exactly normally distributed as assumed under the various models. However, the normal approximation usually becomes more accurate for most effect size or outcome measures as the within-study sample sizes increase. Therefore, sufficiently large within-study sample sizes are (usually) needed to be certain that the tests and confidence intervals have nominal levels/coverage. Again, certain outcome measures (e.g., Fisher's r-to-z transformed correlation coefficient) may be preferable from this perspective as well.
    }
 }
 \author{
-	Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr
-	project homepage: \url{http://www.metafor-project.org/} \cr
-	author homepage: \url{http://www.wvbauer.com/}
+   Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr
+   package homepage: \url{http://www.metafor-project.org/} \cr
+   author homepage: \url{http://www.wvbauer.com/}
 }
 \references{
-   DerSimonian, R. & Laird, N. (1986). Meta-analysis in clinical trials. \emph{Controlled Clinical Trials}, \bold{7}, 177--188.
+   DerSimonian, R., & Laird, N. (1986). Meta-analysis in clinical trials. \emph{Controlled Clinical Trials}, \bold{7}, 177--188.
 
    Harville, D. A. (1977). Maximum likelihood approaches to variance component estimation and to related problems. \emph{Journal of the American Statistical Association}, \bold{72}, 320--338.
-   
+
    Hedges, L. V. (1983). A random effects model for effect sizes. \emph{Psychological Bulletin}, \bold{93}, 388--395.
 
-   Hedges, L. V. & Olkin, I. (1985). \emph{Statistical methods for meta-analysis}. San Diego, CA: Academic Press.
+   Hedges, L. V., & Olkin, I. (1985). \emph{Statistical methods for meta-analysis}. San Diego, CA: Academic Press.
 
-   Hunter, J. E. & Schmidt, F. L. (1990). \emph{Methods of meta-analysis: Correcting error and bias in
-   research findings}. Newbury Park, CA: Sage.
+   Hunter, J. E., & Schmidt, F. L. (2004). \emph{Methods of meta-analysis: Correcting error and bias in research findings} (2nd ed.). Thousand Oaks, CA: Sage.
 
-   Jennrich, R. I. & Sampson, P. F. (1976). Newton-Raphson and related algorithms for maximum likelihood variance component estimation. \emph{Technometrics}, \bold{18}, 11--17.
+   Jennrich, R. I., & Sampson, P. F. (1976). Newton-Raphson and related algorithms for maximum likelihood variance component estimation. \emph{Technometrics}, \bold{18}, 11--17.
 
-   Knapp, G. & Hartung, J. (2003). Improved tests for a random effects meta-regression with a single covariate. \emph{Statistics in Medicine}, \bold{22}, 2693--2710.
+   Knapp, G., & Hartung, J. (2003). Improved tests for a random effects meta-regression with a single covariate. \emph{Statistics in Medicine}, \bold{22}, 2693--2710.
 
-   Morris, C. N. (1983). Parametric Empirical Bayes inference: Theory and applications (with discussion). \emph{Journal of the American Statistical Association}, \bold{78}, 47--65.
+   Morris, C. N. (1983). Parametric empirical Bayes inference: Theory and applications (with discussion). \emph{Journal of the American Statistical Association}, \bold{78}, 47--65.
 
-   Raudenbush, S. W. (2009). Analyzing effect sizes: Random effects models. In H. C. Cooper, L. V. Hedges, & J. C. Valentine (Eds.), \emph{The handbook of research synthesis and meta-analysis} (2nd ed., pp. 295--315). New York: Russell Sage Foundation.
+   Raudenbush, S. W. (2009). Analyzing effect sizes: Random effects models. In H. Cooper, L. V. Hedges, & J. C. Valentine (Eds.), \emph{The handbook of research synthesis and meta-analysis} (2nd ed., pp. 295--315). New York: Russell Sage Foundation.
 
-   Sidik, K. & Jonkman, J. N. (2005a). A note on variance estimation in random effects meta-regression. \emph{Journal of Biopharmaceutical Statistics}, \bold{15}, 823--838.
+   Sidik, K., & Jonkman, J. N. (2005a). A note on variance estimation in random effects meta-regression. \emph{Journal of Biopharmaceutical Statistics}, \bold{15}, 823--838.
 
-   Sidik, K. & Jonkman, J. N. (2005b). Simple heterogeneity variance estimation for meta-analysis. \emph{Journal of the Royal Statistical Society, Series C}, \bold{54}, 367--384.
+   Sidik, K., & Jonkman, J. N. (2005b). Simple heterogeneity variance estimation for meta-analysis. \emph{Journal of the Royal Statistical Society, Series C}, \bold{54}, 367--384.
 
    Viechtbauer, W. (2005). Bias and efficiency of meta-analytic variance estimators in the random-effects model. \emph{Journal of Educational and Behavioral Statistics}, \bold{30}, 261--293.
 
    Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \url{http://www.jstatsoft.org/v36/i03/}.
 }
 \seealso{
-   \code{\link{rma.mh}}, \code{\link{rma.peto}}
+   \code{\link{rma.mh}}, \code{\link{rma.peto}}, \code{\link{rma.glmm}}
 }
 \examples{
 ### load BCG vaccine data
 data(dat.bcg)
 
 ### calculate log relative risks and corresponding sampling variances
-dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, 
-              data=dat.bcg, append=TRUE)
+dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
 
-### random-effects model
+### random-effects model (method="REML" is default, so technically not needed)
 rma(yi, vi, data=dat, method="REML")
+rma(yi, sei=sqrt(vi), data=dat, method="REML")
+rma(yi, weights=1/vi, data=dat, method="REML")
+
+### supplying the cell frequencies directly to the function
+rma(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat, method="REML")
 
 ### mixed-effects model with two moderators (absolute latitude and publication year)
 rma(yi, vi, mods=cbind(ablat, year), data=dat, method="REML")
 
 ### using a model formula to specify the same model
-rma(yi, vi, mods=~ablat+year, data=dat, method="REML")
+rma(yi, vi, mods = ~ ablat + year, data=dat, method="REML")
 
-### supplying the cell frequencies directly to the function
-rma(ai=tpos, bi=tneg, ci=cpos, di=cneg, mods=cbind(ablat, year), 
-    data=dat, measure="RR", method="REML")
+### using a model formula in the yi argument
+rma(yi ~ ablat + year, vi, data=dat, method="REML")
 
 ### manual dummy coding of the allocation factor
 alloc.random     <- ifelse(dat$alloc == "random",     1, 0)
@@ -222,14 +230,19 @@ alloc.systematic <- ifelse(dat$alloc == "systematic", 1, 0)
 ### test the allocation factor (in the presence of the other moderators)
 ### note: "alternate" is the reference level of the allocation factor
 ### note: the intercept is the first coefficient, so btt=c(2,3)
-rma(yi, vi, mods=cbind(alloc.random, alloc.systematic, year, ablat), 
+rma(yi, vi, mods = ~ alloc.random + alloc.systematic + year + ablat,
     data=dat, method="REML", btt=c(2,3))
 
 ### using a model formula to specify the same model
-rma(yi, vi, mods=~factor(alloc)+year+ablat, data=dat, method="REML", btt=c(2,3))
+rma(yi, vi, mods = ~ factor(alloc) + year + ablat, data=dat, method="REML", btt=c(2,3))
 
-### subgrouping versus using a single model with a factor (subgrouping provides 
-### an estimate of tau^2 within each subgroup, but the number of studies in each 
+### all pairwise differences using the 'multcomp' package (with Holm's method)
+res <- rma(yi, vi, mods = ~ factor(alloc) - 1, data=dat, method="REML")
+res
+\dontrun{summary(glht(res, linfct=contrMat(rep(1,3), type=("Tukey"))), test=adjusted("holm"))}
+
+### subgrouping versus using a single model with a factor (subgrouping provides
+### an estimate of tau^2 within each subgroup, but the number of studies in each
 ### subgroup get quite small; the model with the allocation factor provides a
 ### single estimate of tau^2 based on a larger number of studies, but assumes
 ### that tau^2 is the same within each subgroup)
@@ -239,21 +252,21 @@ res.s <- rma(yi, vi, data=dat, subset=(alloc=="systematic"))
 res.a
 res.r
 res.s
-res <- rma(yi, vi, mods=~factor(alloc)-1, data=dat)
+res <- rma(yi, vi, mods = ~ factor(alloc) - 1, data=dat)
 res
 
-### demonstrating that Q_E + Q_M = Q_total for fixed-effects models
+### demonstrating that Q_E + Q_M = Q_Total for fixed-effects models
 ### note: this does not work for random/mixed-effects models, since Q_E and
-### Q_total are calculated under the assumption that tau^2 = 0, while the
+### Q_Total are calculated under the assumption that tau^2 = 0, while the
 ### calculation of Q_M incorporates the estimate of tau^2
 res <- rma(yi, vi, data=dat, method="FE")
-res
-res <- rma(yi, vi, mods=cbind(ablat, year), data=dat, method="FE")
-res
+res ### this gives Q_Total
+res <- rma(yi, vi, mods = ~ ablat + year, data=dat, method="FE")
+res ### this gives Q_E and Q_M
 res$QE + res$QM
 
 ### decomposition of Q_E into subgroup Q-values
-res <- rma(yi, vi, mods=~factor(alloc), data=dat)
+res <- rma(yi, vi, mods = ~ factor(alloc), data=dat)
 res
 
 res.a <- rma(yi, vi, data=dat, subset=(alloc=="alternate"))

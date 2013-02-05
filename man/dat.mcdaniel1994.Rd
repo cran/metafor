@@ -1,9 +1,9 @@
-\name{dat.empint}
+\name{dat.mcdaniel1994}
 \docType{data}
-\alias{dat.empint}
+\alias{dat.mcdaniel1994}
 \title{Studies on the Validity of Employment Interviews}
 \description{Results from 160 studies on the correlation between employment interview assessments and job performance.}
-\usage{dat.empint}
+\usage{dat.mcdaniel1994}
 \format{The data frame contains the following columns:
 \tabular{lll}{
 \bold{study}    \tab \code{numeric}   \tab study number \cr
@@ -28,11 +28,11 @@
    Rothstein, H. R., Sutton, A. J., & Borenstein, M. (Eds.). (2005). \emph{Publication bias in meta-analysis: Prevention, assessment, and adjustments}. Chichester, England: Wiley.
 }
 \examples{
-### load empint data
-data(dat.empint)
+### load data
+data(dat.mcdaniel1994)
 
 ### calculate r-to-z transformed correlations and corresponding sampling variances
-dat <- escalc(ri=ri, ni=ni, measure="ZCOR", data=dat.empint, append=TRUE)
+dat <- escalc(ri=ri, ni=ni, measure="ZCOR", data=dat.mcdaniel1994)
 dat
 
 ### meta-analysis of the transformed correlations using a random-effects model
@@ -58,7 +58,7 @@ rma(yi, vi, mods=~factor(struct), data=dat)
 table(dat$type, dat$struct, useNA="always")
 
 ### meta-analysis of raw correlations using a random-effects model
-res <- rma(ri=ri, ni=ni, measure="COR", data=dat.empint)
+res <- rma(ri=ri, ni=ni, measure="COR", data=dat.mcdaniel1994)
 res
 }
 \keyword{datasets}

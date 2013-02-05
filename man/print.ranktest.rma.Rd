@@ -8,29 +8,29 @@
 \method{print}{ranktest.rma}(x, digits=x$digits, \dots)
 }
 \arguments{
-	\item{x}{an object of class \code{"ranktest.rma"}.}
-	\item{digits}{an integer specifying the number of decimal places to which the printed results should be rounded (the default is to take the value from the object).}
-	\item{\dots}{other arguments.}
+   \item{x}{an object of class \code{"ranktest.rma"}.}
+   \item{digits}{integer specifying the number of decimal places to which the printed results should be rounded (the default is to take the value from the object).}
+   \item{\dots}{other arguments.}
 }
 \details{
-	The output includes:
-	\itemize{
-	\item the estimated value of Kendall's tau rank correlation coefficient
-	\item the corresponding p-value for the test that the true tau is equal to zero
-	}
+   The output includes:
+   \itemize{
+   \item the estimated value of Kendall's tau rank correlation coefficient
+   \item the corresponding p-value for the test that the true tau is equal to zero
+   }
 }
 \value{
-	The function does not return an object.
+   The function does not return an object.
 }
 \author{
-	Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr
-	project homepage: \url{http://www.metafor-project.org/} \cr
-	author homepage: \url{http://www.wvbauer.com/}
+   Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr
+   package homepage: \url{http://www.metafor-project.org/} \cr
+   author homepage: \url{http://www.wvbauer.com/}
 }
 \references{
-	Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \url{http://www.jstatsoft.org/v36/i03/}.
+   Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \url{http://www.jstatsoft.org/v36/i03/}.
 }
 \seealso{
-	\code{\link{ranktest.rma}}
+   \code{\link{ranktest.rma}}
 }
 \keyword{print}
