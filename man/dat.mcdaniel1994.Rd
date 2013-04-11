@@ -58,7 +58,7 @@ rma(yi, vi, mods=~factor(struct), data=dat)
 table(dat$type, dat$struct, useNA="always")
 
 ### meta-analysis of raw correlations using a random-effects model
-res <- rma(ri=ri, ni=ni, measure="COR", data=dat.mcdaniel1994)
+res <- rma(ri=ri, ni=ni, measure="COR", data=dat)
 res
 }
 \keyword{datasets}

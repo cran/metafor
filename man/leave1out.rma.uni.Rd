@@ -28,8 +28,8 @@
    \item{Q}{test statistics for the tests of heterogeneity.}
    \item{Qp}{p-values for the tests of heterogeneity.}
    \item{tau2}{estimated amounts of (residual) heterogeneity (only for random-effects models).}
-   \item{I2}{values of \eqn{I^2} (only for random-effects models).}
-   \item{H2}{values of \eqn{H^2} (only for random-effects models).}
+   \item{I2}{values of \eqn{I^2}.}
+   \item{H2}{values of \eqn{H^2}.}
 
    The \code{"list.rma"} object is formated and printed with \code{\link{print.list.rma}}.
 }

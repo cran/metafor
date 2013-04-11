@@ -25,26 +25,26 @@
 }
 \examples{
 ### load data
-data(dat.bonett2010)
+dat <- get(data(dat.bonett2010))
 
 ### meta-analysis using the raw alpha values
-res <- rma(measure="ARAW", ai=ai, mi=mi, ni=ni, data=dat.bonett2010)
+res <- rma(measure="ARAW", ai=ai, mi=mi, ni=ni, data=dat)
 res
 
 ### meta-analysis using transformed alpha values (using the
 ### transformation suggested by Hakstian & Whalen, 1976)
-res <- rma(measure="AHW", ai=ai, mi=mi, ni=ni, data=dat.bonett2010)
+res <- rma(measure="AHW", ai=ai, mi=mi, ni=ni, data=dat)
 res
 predict(res, transf=transf.iahw)
 
 ### meta-analysis using transformed alpha values (using the
 ### transformation suggested by Bonett, 2002)
-res <- rma(measure="ABT", ai=ai, mi=mi, ni=ni, data=dat.bonett2010)
+res <- rma(measure="ABT", ai=ai, mi=mi, ni=ni, data=dat)
 res
 predict(res, transf=transf.iabt)
 
-### examine whether women and mixed samples yield different alphas (using raw alpha values)
-res <- rma(measure="ARAW", mods = ~ caregivers, ai=ai, mi=mi, ni=ni, data=dat.bonett2010)
+### examine whether female/mixed samples yield different alphas (with raw alphas)
+res <- rma(measure="ARAW", mods=~caregivers, ai=ai, mi=mi, ni=ni, data=dat)
 res
 predict(res, newmods=c(0,1), digits=2)
 }

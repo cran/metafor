@@ -10,19 +10,23 @@
    Print and summary methods for objects of class \code{"rma.uni"}, \code{"rma.mh"}, \code{"rma.peto"}, and \code{"rma.glmm"}.
 }
 \usage{
-\method{print}{rma.uni}(x, digits=x$digits, showfit=FALSE, signif.legend=TRUE, \dots)
+\method{print}{rma.uni}(x, digits=x$digits, showfit=FALSE, signif.stars=getOption("show.signif.stars"), 
+      signif.legend=signif.stars, \dots)
 \method{print}{rma.mh}(x, digits=x$digits, showfit=FALSE, \dots)
 \method{print}{rma.peto}(x, digits=x$digits, showfit=FALSE, \dots)
-\method{print}{rma.glmm}(x, digits=x$digits, showfit=FALSE, signif.legend=TRUE, \dots)
-\method{summary}{rma}(object, digits=object$digits, showfit=TRUE, signif.legend=TRUE, \dots)
-\method{print}{summary.rma}(x, digits=x$digits, showfit=TRUE, signif.legend=TRUE, \dots)
+\method{print}{rma.glmm}(x, digits=x$digits, showfit=FALSE, signif.stars=getOption("show.signif.stars"),
+      signif.legend=signif.stars, \dots)
+\method{summary}{rma}(object, digits=object$digits, showfit=TRUE, \dots)
+\method{print}{summary.rma}(x, digits=x$digits, showfit=TRUE, signif.stars=getOption("show.signif.stars"),
+      signif.legend=signif.stars, \dots)
 }
 \arguments{
    \item{x}{an object of class \code{"rma.uni"}, \code{"rma.mh"}, \code{"rma.peto"}, \code{"rma.glmm"}, or \code{"summary.rma"} (for \code{print}).}
    \item{object}{an object of class \code{"rma"} (for \code{summary}).}
    \item{digits}{integer specifying the number of decimal places to which the printed results should be rounded (the default is to take the value from the object).}
    \item{showfit}{logical indicating whether the fit statistics and information criteria should be printed (default is \code{FALSE} for \code{print} and \code{TRUE} for \code{summary}).}
-   \item{signif.legend}{logical indicating whether the legend for the \sQuote{significance stars} should be printed.}
+   \item{signif.stars}{logical indicating whether p-values should be encoded visually with \sQuote{significance stars}. Defaults to the \code{show.signif.stars} slot of \code{\link{options}}.}
+   \item{signif.legend}{logical indicating whether the legend for the \sQuote{significance stars} should be printed. Defaults to the value for \code{signif.stars}.}
    \item{\dots}{other arguments.}
 }
 \details{

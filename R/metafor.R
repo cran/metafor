@@ -206,7 +206,7 @@ function (X, W, k)
 .onAttach <-
 function (libname, pkgname) 
 {
-    loadmsg <- "\nLoading 'metafor' package (version 1.7-0). For an overview \nand introduction to the package please type: help(metafor)."
+    loadmsg <- "\nLoading 'metafor' package (version 1.8-0). For an overview \nand introduction to the package please type: help(metafor)."
     packageStartupMessage(loadmsg, domain = NULL, appendLF = TRUE)
 }
 .QE.func <-
@@ -999,7 +999,12 @@ function (object, parm, level = object$level, fixed = FALSE,
     if (!is.element("rma.uni", class(object))) 
         stop("Argument 'object' must be an object of class \"rma.uni\".")
     x <- object
-    if (x$k == 1) 
+    k <- x$k
+    p <- x$p
+    yi <- x$yi
+    vi <- x$vi
+    X <- x$X
+    if (k == 1) 
         stop("Stopped because k = 1.")
     if (missing(control)) 
         control <- list()
@@ -1014,26 +1019,25 @@ function (object, parm, level = object$level, fixed = FALSE,
         if (!x$allvipos) 
             stop("Cannot compute confidence interval for the amount of (residual)\n  heterogeneity with non-positive sampling variances in the data.")
         alpha <- (100 - level)/100
-        crit.u <- qchisq(alpha/2, x$k - x$p, lower.tail = FALSE)
-        crit.l <- qchisq(alpha/2, x$k - x$p, lower.tail = TRUE)
+        crit.u <- qchisq(alpha/2, k - p, lower.tail = FALSE)
+        crit.l <- qchisq(alpha/2, k - p, lower.tail = TRUE)
         status.lb <- 1
         status.ub <- 1
         conv <- 1
-        if (.QE.func(con$tau2.min, Y = cbind(x$yi), vi = x$vi, 
-            X = x$X, k = x$k, objective = 0, verbose = FALSE) < 
-            crit.l) {
+        if (.QE.func(con$tau2.min, Y = cbind(yi), vi = vi, X = X, 
+            k = k, objective = 0, verbose = FALSE) < crit.l) {
             tau2.lb <- NA
             tau2.ub <- NA
         }
         else {
-            if (.QE.func(con$tau2.min, Y = cbind(x$yi), vi = x$vi, 
-                X = x$X, k = x$k, objective = 0, verbose = FALSE) > 
+            if (.QE.func(con$tau2.min, Y = cbind(yi), vi = vi, 
+                X = X, k = k, objective = 0, verbose = FALSE) > 
                 crit.u) {
                 tau2.lb <- try(uniroot(.QE.func, interval = c(con$tau2.min, 
                   con$tau2.max), tol = con$tol, maxiter = con$maxiter, 
-                  Y = cbind(x$yi), vi = x$vi, X = x$X, k = x$k, 
-                  objective = crit.u, verbose = con$verbose, 
-                  digits = digits)$root, silent = TRUE)
+                  Y = cbind(yi), vi = vi, X = X, k = k, objective = crit.u, 
+                  verbose = con$verbose, digits = digits)$root, 
+                  silent = TRUE)
                 if (!is.numeric(tau2.lb)) {
                   tau2.lb <- NA
                   status.lb <- 0
@@ -1045,8 +1049,8 @@ function (object, parm, level = object$level, fixed = FALSE,
             }
             tau2.ub <- try(uniroot(.QE.func, interval = c(tau2.lb, 
                 con$tau2.max), tol = con$tol, maxiter = con$maxiter, 
-                Y = cbind(x$yi), vi = x$vi, X = x$X, k = x$k, 
-                objective = crit.l, verbose = con$verbose, digits = digits)$root, 
+                Y = cbind(yi), vi = vi, X = X, k = k, objective = crit.l, 
+                verbose = con$verbose, digits = digits)$root, 
                 silent = TRUE)
             if (!is.numeric(tau2.ub)) {
                 tau2.ub <- NA
@@ -1063,34 +1067,23 @@ function (object, parm, level = object$level, fixed = FALSE,
         if (conv == 0L) {
             stop("Try increasing tau2.max (via the 'control' argument).")
         }
-        if (x$int.only) {
-            wi <- 1/x$vi
-            s2 <- (x$k - 1) * sum(wi)/(sum(wi)^2 - sum(wi^2))
-            I2.lb <- tau2.lb/(tau2.lb + s2) * 100
-            I2.ub <- tau2.ub/(tau2.ub + s2) * 100
-            H2.lb <- tau2.lb/s2 + 1
-            H2.ub <- tau2.ub/s2 + 1
-        }
-        else {
-            I2.lb <- NA
-            I2.ub <- NA
-            H2.lb <- NA
-            H2.ub <- NA
-        }
+        wi <- 1/vi
+        W <- .diag(wi)
+        stXWX <- .invcalc(X = X, W = W, k = k)
+        P <- W - W %*% X %*% stXWX %*% crossprod(X, W)
+        vi.avg <- (k - p)/.tr(P)
+        I2.lb <- 100 * tau2.lb/(vi.avg + tau2.lb)
+        I2.ub <- 100 * tau2.ub/(vi.avg + tau2.ub)
+        H2.lb <- tau2.lb/vi.avg + 1
+        H2.ub <- tau2.ub/vi.avg + 1
         tau2 <- c(x$tau2, tau2.lb, tau2.ub)
         tau <- sqrt(c(ifelse(x$tau2 >= 0, x$tau2, NA), ifelse(tau2.lb >= 
             0, tau2.lb, NA), ifelse(tau2.ub >= 0, tau2.ub, NA)))
         I2 <- c(x$I2, I2.lb, I2.ub)
         H2 <- c(x$H2, H2.lb, H2.ub)
-        if (x$int.only) {
-            res.random <- rbind(tau2, tau, I2, H2)
-            dimnames(res.random)[[1]] <- c("tau^2", "tau", "I^2(%)", 
-                "H^2")
-        }
-        else {
-            res.random <- rbind(tau2, tau)
-            dimnames(res.random)[[1]] <- c("tau^2", "tau")
-        }
+        res.random <- rbind(tau2, tau, I2, H2)
+        dimnames(res.random)[[1]] <- c("tau^2", "tau", "I^2(%)", 
+            "H^2")
         if (x$method == "FE") 
             res.random[, 1] <- NA
         dimnames(res.random)[[2]] <- c("estimate", "ci.lb", "ci.ub")
@@ -1098,7 +1091,7 @@ function (object, parm, level = object$level, fixed = FALSE,
     if (fixed) {
         alpha <- (100 - level)/100
         if (x$knha || x$robust) {
-            crit <- qt(alpha/2, df = x$k - x$p, lower.tail = FALSE)
+            crit <- qt(alpha/2, df = k - p, lower.tail = FALSE)
         }
         else {
             crit <- qnorm(alpha/2, lower.tail = FALSE)
@@ -1925,11 +1918,13 @@ function (measure, formula, ai, bi, ci, di, n1i, n2i, x1i, x2i,
         if (measure == "RBIS") {
             p1i <- n1i/ni
             p2i <- n2i/ni
-            zi <- qnorm(p1i)
+            zi <- qnorm(p1i, lower.tail = FALSE)
             fzi <- dnorm(zi)
             yi <- sqrt(p1i * p2i)/fzi * yi
-            vi <- 1/ni * (yi^4 + yi^2 * (p1i * p2i * zi^2/fzi^2 - 
-                (p1i - p2i) * zi/fzi - 5/2) + p1i * p2i/fzi^2)
+            yi.t <- ifelse(abs(yi) > 1, sign(yi), yi)
+            vi <- 1/(ni - 1) * (p1i * p2i/fzi^2 - (3/2 + (1 - 
+                p1i * zi/fzi) * (1 + p2i * zi/fzi)) * yi.t^2 + 
+                yi.t^4)
         }
         if (measure == "D2OR") {
             ni <- n1i + n2i
@@ -2170,14 +2165,23 @@ function (measure, formula, ai, bi, ci, di, n1i, n2i, x1i, x2i,
         sd2i <- eval(mf.sd2i, data, enclos = sys.frame(sys.parent()))
         ni <- eval(mf.ni, data, enclos = sys.frame(sys.parent()))
         ri <- eval(mf.ri, data, enclos = sys.frame(sys.parent()))
-        if (length(m1i) == 0L || length(m2i) == 0L || length(sd1i) == 
-            0L || length(sd2i) == 0L || length(ni) == 0L || length(ri) == 
-            0L) 
-            stop("Cannot compute outcomes. Check that all of the required \n  information is specified via the appropriate arguments.")
+        if (is.element(measure, c("MC", "SMCC"))) {
+            if (length(m1i) == 0L || length(m2i) == 0L || length(sd1i) == 
+                0L || length(sd2i) == 0L || length(ni) == 0L || 
+                length(ri) == 0L) 
+                stop("Cannot compute outcomes. Check that all of the required \n  information is specified via the appropriate arguments.")
+            if (any(c(sd1i, sd2i) < 0, na.rm = TRUE)) 
+                stop("One or more standard deviations are negative.")
+        }
+        else {
+            if (length(m1i) == 0L || length(m2i) == 0L || length(sd1i) == 
+                0L || length(ni) == 0L || length(ri) == 0L) 
+                stop("Cannot compute outcomes. Check that all of the required \n  information is specified via the appropriate arguments.")
+            if (any(sd1i < 0, na.rm = TRUE)) 
+                stop("One or more standard deviations are negative.")
+        }
         if (any(abs(ri) > 1, na.rm = TRUE)) 
             stop("One or more correlations are > 1 or < -1.")
-        if (any(c(sd1i, sd2i) < 0, na.rm = TRUE)) 
-            stop("One or more standard deviations are negative.")
         ni.u <- ni
         if (measure == "MC") {
             yi <- m1i - m2i
@@ -4637,12 +4641,12 @@ function (x, xlim, ylim, xlab, ylab, add = x$add, to = x$to,
                 ylab <- "Log Odds"
             }
             else {
-                xlab <- "Transformed Log Odds"
+                ylab <- "Transformed Log Odds"
                 if (transf.char == "exp" || transf.char == "transf.exp.int") 
-                  xlab <- "Odds"
+                  ylab <- "Odds"
                 if (transf.char == "transf.ilogit" || transf.char == 
                   "transf.ilogit.int") 
-                  xlab <- "Proportion"
+                  ylab <- "Proportion"
             }
         }
         if (x$measure == "RR") {
@@ -5105,7 +5109,12 @@ function (measure = "OR", ai, bi, ci, di, n1i, n2i, data, subset,
         }
     }
     if (scale) {
-        lls.sum <- apply(lls, 1, sum, na.rm = TRUE)
+        trapezoid <- function(x, y) sum(diff(x) * (y[-1] + y[-length(y)]))/2
+        lls.sum <- rep(NA, k)
+        for (i in 1:k) {
+            lls.sum[i] <- trapezoid(logORs[!is.na(lls[i, ])], 
+                lls[i, !is.na(lls[i, ])])
+        }
         lls <- apply(lls, 2, "/", lls.sum)
     }
     lls[out] <- NA
@@ -5118,7 +5127,7 @@ function (measure = "OR", ai, bi, ci, di, n1i, n2i, data, subset,
     plot(NA, NA, xlim = c(xlim[1], xlim[2]), ylim = ylim, xlab = xlab, 
         ylab = ylab, ...)
     if (is.numeric(refline)) 
-        abline(v = refline, lty = "dotdash", lwd = 2, ...)
+        abline(v = refline, lty = "solid", lwd = 2, ...)
     for (i in (1:k)[order(1/vi)]) {
         lines(logORs, lls[i, ], lty = lty[i], lwd = lwd[i], col = col[i], 
             ...)
@@ -5308,9 +5317,9 @@ function (x, exact = FALSE, iter = 1000, progbar = TRUE, retpermdist = FALSE,
     return(out)
 }
 plot.infl.rma.uni <-
-function (x, plotdfb = FALSE, dfbnew = FALSE, logcov = TRUE, 
-    which = 1:8, layout, slab.style = 1, las = 0, pch = 21, bg = "black", 
-    bg.infl = "red", col.na = "lightgray", ...) 
+function (x, plotinf = TRUE, plotdfb = FALSE, dfbnew = FALSE, 
+    logcov = TRUE, layout, slab.style = 1, las = 0, pch = 21, 
+    bg = "black", bg.infl = "red", col.na = "lightgray", ...) 
 {
     if (class(x) != "infl.rma.uni") 
         stop("Argument 'x' must be an object of class \"infl.rma.uni\".")
@@ -5318,6 +5327,48 @@ function (x, plotdfb = FALSE, dfbnew = FALSE, logcov = TRUE,
     if (!is.element(na.act, c("na.omit", "na.exclude", "na.fail", 
         "na.pass"))) 
         stop("Unknown 'na.action' specified under options().")
+    any.na <- is.na(cbind(x$inf, x$dfb))
+    if (any(any.na)) {
+        if (na.act == "na.fail") 
+            stop("Missing values in results.")
+    }
+    if (is.logical(plotinf)) {
+        if (plotinf) {
+            which.inf <- 1:8
+        }
+    }
+    else {
+        which.inf <- plotinf
+        which.inf <- which.inf[(which.inf >= 1) & (which.inf <= 
+            8)]
+        which.inf <- unique(round(which.inf))
+        if (length(which.inf) == 0L) 
+            stop("Incorrect specification of 'plotinf' argument.")
+        plotinf <- TRUE
+    }
+    if (is.logical(plotdfb)) {
+        if (plotdfb) {
+            which.dfb <- seq.int(x$p)
+        }
+    }
+    else {
+        which.dfb <- plotdfb
+        which.dfb <- which.dfb[(which.dfb >= 1) & (which.dfb <= 
+            x$p)]
+        which.dfb <- unique(round(which.dfb))
+        if (length(which.dfb) == 0L) 
+            stop("Incorrect specification of 'plotdfb' argument.")
+        plotdfb <- TRUE
+    }
+    if (!plotinf & !plotdfb) 
+        stop("At least one of the arguments 'plotinf' or 'plotdfb' argument must be TRUE.")
+    if (!plotinf & dfbnew) 
+        dfbnew <- FALSE
+    par.mar <- par("mar")
+    par.mar.adj <- par.mar - c(2, 2, 2, 1)
+    par.mar.adj[par.mar.adj < 1] <- 1
+    par(mar = par.mar.adj)
+    on.exit(par(mar = par.mar))
     lplot <- function(..., minlength, strict) {
         plot(...)
     }
@@ -5333,327 +5384,301 @@ function (x, plotdfb = FALSE, dfbnew = FALSE, logcov = TRUE,
     labline <- function(..., minlength, strict) {
         abline(...)
     }
-    any.na <- is.na(cbind(x$inf, x$dfb))
-    if (any(any.na)) {
-        if (na.act == "na.fail") 
-            stop("Missing values in results.")
-    }
     ids <- switch(slab.style, `1` = x$ids, `2` = dimnames(x$inf)[[1]], 
         `3` = abbreviate(dimnames(x$inf)[[1]], ...))
-    which <- which[(which >= 1) & (which <= 8)]
-    which <- unique(round(which))
-    if (length(which) == 0L) 
-        stop("Incorrect specification of 'which' argument.")
-    par.mfrow <- par("mfrow")
-    on.exit(par(mfrow = par.mfrow))
-    if (missing(layout)) {
-        if (length(which) == 2) 
-            par(mfrow = c(2, 1))
-        if (length(which) == 3) 
-            par(mfrow = c(3, 1))
-        if (length(which) == 4) 
-            par(mfrow = c(2, 2))
-        if (length(which) == 5) 
-            par(mfrow = c(5, 1))
-        if (length(which) == 6) 
-            par(mfrow = c(3, 2))
-        if (length(which) == 7) 
-            par(mfrow = c(7, 1))
-        if (length(which) == 8) 
-            par(mfrow = c(4, 2))
-    }
-    else {
-        layout <- layout[(layout >= 1)]
-        layout <- round(layout)
-        if (length(layout) != 2L) 
-            stop("Incorrect specification of 'layout' argument.")
-        par(mfrow = layout)
-    }
-    par.mar <- par("mar")
-    par.mar.adj <- par.mar - c(2, 2, 2, 1)
-    par.mar.adj[par.mar.adj < 1] <- 1
-    par(mar = par.mar.adj)
-    on.exit(par(mar = par.mar), add = TRUE)
-    for (i in seq.int(length(which))) {
-        if (which[i] == 1) {
-            zi <- x$inf$rstudent
-            not.na <- !is.na(zi)
-            if (na.act == "na.omit") {
-                zi <- zi[not.na]
-                len.ids <- length(x$ids) - sum(!not.na)
-                ids.infl <- x$is.infl[not.na]
-                lab.ids <- ids[not.na]
-            }
-            if (na.act == "na.exclude" || na.act == "na.pass") {
-                len.ids <- length(x$ids)
-                ids.infl <- x$is.infl
-                lab.ids <- ids
-            }
-            zi.min <- min(zi, -2, na.rm = TRUE)
-            zi.max <- max(zi, 2, na.rm = TRUE)
-            lplot(NA, NA, xlim = c(1, len.ids), ylim = c(zi.min, 
-                zi.max), xaxt = "n", main = "rstudent", xlab = "", 
-                ylab = "", las = las, ...)
-            laxis(side = 1, at = seq.int(len.ids), labels = lab.ids, 
-                xlab = "", las = las, ...)
-            labline(h = 0, lty = "dashed", ...)
-            labline(h = c(qnorm(0.025), qnorm(0.975)), lty = "dotted", 
-                ...)
-            if (na.act == "na.exclude" || na.act == "na.pass") 
-                llines(seq.int(len.ids)[not.na], zi[not.na], 
-                  col = col.na, ...)
-            llines(seq.int(len.ids), zi, ...)
-            lpoints(seq.int(len.ids), zi, pch = pch, bg = bg, 
-                ...)
-            lpoints(seq.int(len.ids)[ids.infl], zi[ids.infl], 
-                bg = bg.infl, pch = pch, ...)
+    if (plotinf) {
+        par.mfrow <- par("mfrow")
+        on.exit(par(mfrow = par.mfrow), add = TRUE)
+        if (missing(layout)) {
+            if (length(which.inf) == 2) 
+                par(mfrow = c(2, 1))
+            if (length(which.inf) == 3) 
+                par(mfrow = c(3, 1))
+            if (length(which.inf) == 4) 
+                par(mfrow = c(2, 2))
+            if (length(which.inf) == 5) 
+                par(mfrow = c(5, 1))
+            if (length(which.inf) == 6) 
+                par(mfrow = c(3, 2))
+            if (length(which.inf) == 7) 
+                par(mfrow = c(7, 1))
+            if (length(which.inf) == 8) 
+                par(mfrow = c(4, 2))
         }
-        if (which[i] == 2) {
-            zi <- x$inf$dffits
-            not.na <- !is.na(zi)
-            if (na.act == "na.omit") {
-                zi <- zi[not.na]
-                len.ids <- length(x$ids) - sum(!not.na)
-                ids.infl <- x$is.infl[not.na]
-                lab.ids <- ids[not.na]
-            }
-            if (na.act == "na.exclude" || na.act == "na.pass") {
-                len.ids <- length(x$ids)
-                ids.infl <- x$is.infl
-                lab.ids <- ids
-            }
-            zi.min <- min(zi, na.rm = TRUE)
-            zi.max <- max(zi, na.rm = TRUE)
-            lplot(NA, NA, xlim = c(1, len.ids), ylim = c(zi.min, 
-                zi.max), xaxt = "n", main = "dffits", xlab = "", 
-                ylab = "", las = las, ...)
-            laxis(side = 1, at = seq.int(len.ids), labels = lab.ids, 
-                xlab = "", las = las, ...)
-            labline(h = 0, lty = "dashed", ...)
-            labline(h = 3 * sqrt(x$p/(x$k - x$p)), lty = "dotted", 
-                ...)
-            labline(h = -3 * sqrt(x$p/(x$k - x$p)), lty = "dotted", 
-                ...)
-            if (na.act == "na.exclude" || na.act == "na.pass") 
-                llines(seq.int(len.ids)[not.na], zi[not.na], 
-                  col = col.na, ...)
-            llines(seq.int(len.ids), zi, ...)
-            lpoints(seq.int(len.ids), zi, pch = pch, bg = bg, 
-                ...)
-            lpoints(seq.int(len.ids)[ids.infl], zi[ids.infl], 
-                bg = bg.infl, pch = pch, ...)
+        else {
+            layout <- layout[(layout >= 1)]
+            layout <- round(layout)
+            if (length(layout) != 2L) 
+                stop("Incorrect specification of 'layout' argument.")
+            par(mfrow = layout)
         }
-        if (which[i] == 3) {
-            zi <- x$inf$cook.d
-            not.na <- !is.na(zi)
-            if (na.act == "na.omit") {
-                zi <- zi[not.na]
-                len.ids <- length(x$ids) - sum(!not.na)
-                ids.infl <- x$is.infl[not.na]
-                lab.ids <- ids[not.na]
-            }
-            if (na.act == "na.exclude" || na.act == "na.pass") {
-                len.ids <- length(x$ids)
-                ids.infl <- x$is.infl
-                lab.ids <- ids
-            }
-            zi.min <- min(zi, na.rm = TRUE)
-            zi.max <- max(zi, na.rm = TRUE)
-            lplot(NA, NA, xlim = c(1, len.ids), ylim = c(zi.min, 
-                zi.max), xaxt = "n", main = "cook.d", xlab = "", 
-                ylab = "", las = las, ...)
-            laxis(side = 1, at = seq.int(len.ids), labels = lab.ids, 
-                xlab = "", las = las, ...)
-            labline(h = qchisq(0.5, df = x$p), lty = "dotted", 
-                ...)
-            if (na.act == "na.exclude" || na.act == "na.pass") 
-                llines(seq.int(len.ids)[not.na], zi[not.na], 
-                  col = col.na, ...)
-            llines(seq.int(len.ids), zi, ...)
-            lpoints(seq.int(len.ids), zi, pch = pch, bg = bg, 
-                ...)
-            lpoints(seq.int(len.ids)[ids.infl], zi[ids.infl], 
-                bg = bg.infl, pch = pch, ...)
-        }
-        if (which[i] == 4) {
-            zi <- x$inf$cov.r
-            not.na <- !is.na(zi)
-            if (na.act == "na.omit") {
-                zi <- zi[not.na]
-                len.ids <- length(x$ids) - sum(!not.na)
-                ids.infl <- x$is.infl[not.na]
-                lab.ids <- ids[not.na]
-            }
-            if (na.act == "na.exclude" || na.act == "na.pass") {
-                len.ids <- length(x$ids)
-                ids.infl <- x$is.infl
-                lab.ids <- ids
-            }
-            zi.min <- min(zi, na.rm = TRUE)
-            zi.max <- max(zi, na.rm = TRUE)
-            if (logcov) {
+        for (i in seq.int(length(which.inf))) {
+            if (which.inf[i] == 1) {
+                zi <- x$inf$rstudent
+                not.na <- !is.na(zi)
+                if (na.act == "na.omit") {
+                  zi <- zi[not.na]
+                  len.ids <- length(x$ids) - sum(!not.na)
+                  ids.infl <- x$is.infl[not.na]
+                  lab.ids <- ids[not.na]
+                }
+                if (na.act == "na.exclude" || na.act == "na.pass") {
+                  len.ids <- length(x$ids)
+                  ids.infl <- x$is.infl
+                  lab.ids <- ids
+                }
+                zi.min <- min(zi, -2, na.rm = TRUE)
+                zi.max <- max(zi, 2, na.rm = TRUE)
                 lplot(NA, NA, xlim = c(1, len.ids), ylim = c(zi.min, 
-                  zi.max), xaxt = "n", main = "cov.r", xlab = "", 
-                  ylab = "", las = las, log = "y", ...)
-            }
-            else {
-                lplot(NA, NA, xlim = c(1, len.ids), ylim = c(zi.min, 
-                  zi.max), xaxt = "n", main = "cov.r", xlab = "", 
+                  zi.max), xaxt = "n", main = "rstudent", xlab = "", 
                   ylab = "", las = las, ...)
+                laxis(side = 1, at = seq.int(len.ids), labels = lab.ids, 
+                  xlab = "", las = las, ...)
+                labline(h = 0, lty = "dashed", ...)
+                labline(h = c(qnorm(0.025), qnorm(0.975)), lty = "dotted", 
+                  ...)
+                if (na.act == "na.exclude" || na.act == "na.pass") 
+                  llines(seq.int(len.ids)[not.na], zi[not.na], 
+                    col = col.na, ...)
+                llines(seq.int(len.ids), zi, ...)
+                lpoints(seq.int(len.ids), zi, pch = pch, bg = bg, 
+                  ...)
+                lpoints(seq.int(len.ids)[ids.infl], zi[ids.infl], 
+                  bg = bg.infl, pch = pch, ...)
             }
-            laxis(side = 1, at = seq.int(len.ids), labels = lab.ids, 
-                xlab = "", las = las, ...)
-            labline(h = 1, lty = "dashed", ...)
-            if (na.act == "na.exclude" || na.act == "na.pass") 
-                llines(seq.int(len.ids)[not.na], zi[not.na], 
-                  col = col.na, ...)
-            llines(seq.int(len.ids), zi, ...)
-            lpoints(seq.int(len.ids), zi, pch = pch, bg = bg, 
-                ...)
-            lpoints(seq.int(len.ids)[ids.infl], zi[ids.infl], 
-                bg = bg.infl, pch = pch, ...)
-        }
-        if (which[i] == 5) {
-            zi <- x$inf$tau2.del
-            not.na <- !is.na(zi)
-            if (na.act == "na.omit") {
-                zi <- zi[not.na]
-                len.ids <- length(x$ids) - sum(!not.na)
-                ids.infl <- x$is.infl[not.na]
-                lab.ids <- ids[not.na]
+            if (which.inf[i] == 2) {
+                zi <- x$inf$dffits
+                not.na <- !is.na(zi)
+                if (na.act == "na.omit") {
+                  zi <- zi[not.na]
+                  len.ids <- length(x$ids) - sum(!not.na)
+                  ids.infl <- x$is.infl[not.na]
+                  lab.ids <- ids[not.na]
+                }
+                if (na.act == "na.exclude" || na.act == "na.pass") {
+                  len.ids <- length(x$ids)
+                  ids.infl <- x$is.infl
+                  lab.ids <- ids
+                }
+                zi.min <- min(zi, na.rm = TRUE)
+                zi.max <- max(zi, na.rm = TRUE)
+                lplot(NA, NA, xlim = c(1, len.ids), ylim = c(zi.min, 
+                  zi.max), xaxt = "n", main = "dffits", xlab = "", 
+                  ylab = "", las = las, ...)
+                laxis(side = 1, at = seq.int(len.ids), labels = lab.ids, 
+                  xlab = "", las = las, ...)
+                labline(h = 0, lty = "dashed", ...)
+                labline(h = 3 * sqrt(x$p/(x$k - x$p)), lty = "dotted", 
+                  ...)
+                labline(h = -3 * sqrt(x$p/(x$k - x$p)), lty = "dotted", 
+                  ...)
+                if (na.act == "na.exclude" || na.act == "na.pass") 
+                  llines(seq.int(len.ids)[not.na], zi[not.na], 
+                    col = col.na, ...)
+                llines(seq.int(len.ids), zi, ...)
+                lpoints(seq.int(len.ids), zi, pch = pch, bg = bg, 
+                  ...)
+                lpoints(seq.int(len.ids)[ids.infl], zi[ids.infl], 
+                  bg = bg.infl, pch = pch, ...)
             }
-            if (na.act == "na.exclude" || na.act == "na.pass") {
-                len.ids <- length(x$ids)
-                ids.infl <- x$is.infl
-                lab.ids <- ids
+            if (which.inf[i] == 3) {
+                zi <- x$inf$cook.d
+                not.na <- !is.na(zi)
+                if (na.act == "na.omit") {
+                  zi <- zi[not.na]
+                  len.ids <- length(x$ids) - sum(!not.na)
+                  ids.infl <- x$is.infl[not.na]
+                  lab.ids <- ids[not.na]
+                }
+                if (na.act == "na.exclude" || na.act == "na.pass") {
+                  len.ids <- length(x$ids)
+                  ids.infl <- x$is.infl
+                  lab.ids <- ids
+                }
+                zi.min <- min(zi, na.rm = TRUE)
+                zi.max <- max(zi, na.rm = TRUE)
+                lplot(NA, NA, xlim = c(1, len.ids), ylim = c(zi.min, 
+                  zi.max), xaxt = "n", main = "cook.d", xlab = "", 
+                  ylab = "", las = las, ...)
+                laxis(side = 1, at = seq.int(len.ids), labels = lab.ids, 
+                  xlab = "", las = las, ...)
+                labline(h = qchisq(0.5, df = x$p), lty = "dotted", 
+                  ...)
+                if (na.act == "na.exclude" || na.act == "na.pass") 
+                  llines(seq.int(len.ids)[not.na], zi[not.na], 
+                    col = col.na, ...)
+                llines(seq.int(len.ids), zi, ...)
+                lpoints(seq.int(len.ids), zi, pch = pch, bg = bg, 
+                  ...)
+                lpoints(seq.int(len.ids)[ids.infl], zi[ids.infl], 
+                  bg = bg.infl, pch = pch, ...)
             }
-            zi.min <- min(zi, na.rm = TRUE)
-            zi.max <- max(zi, na.rm = TRUE)
-            lplot(NA, NA, xlim = c(1, len.ids), ylim = c(zi.min, 
-                zi.max), xaxt = "n", main = "tau2.del", xlab = "", 
-                ylab = "", las = las, ...)
-            laxis(side = 1, at = seq.int(len.ids), labels = lab.ids, 
-                xlab = "", las = las, ...)
-            labline(h = x$tau2, lty = "dashed", ...)
-            if (na.act == "na.exclude" || na.act == "na.pass") 
-                llines(seq.int(len.ids)[not.na], zi[not.na], 
-                  col = col.na, ...)
-            llines(seq.int(len.ids), zi, ...)
-            lpoints(seq.int(len.ids), zi, pch = pch, bg = bg, 
-                ...)
-            lpoints(seq.int(len.ids)[ids.infl], zi[ids.infl], 
-                bg = bg.infl, pch = pch, ...)
-        }
-        if (which[i] == 6) {
-            zi <- x$inf$QE.del
-            not.na <- !is.na(zi)
-            if (na.act == "na.omit") {
-                zi <- zi[not.na]
-                len.ids <- length(x$ids) - sum(!not.na)
-                ids.infl <- x$is.infl[not.na]
-                lab.ids <- ids[not.na]
+            if (which.inf[i] == 4) {
+                zi <- x$inf$cov.r
+                not.na <- !is.na(zi)
+                if (na.act == "na.omit") {
+                  zi <- zi[not.na]
+                  len.ids <- length(x$ids) - sum(!not.na)
+                  ids.infl <- x$is.infl[not.na]
+                  lab.ids <- ids[not.na]
+                }
+                if (na.act == "na.exclude" || na.act == "na.pass") {
+                  len.ids <- length(x$ids)
+                  ids.infl <- x$is.infl
+                  lab.ids <- ids
+                }
+                zi.min <- min(zi, na.rm = TRUE)
+                zi.max <- max(zi, na.rm = TRUE)
+                if (logcov) {
+                  lplot(NA, NA, xlim = c(1, len.ids), ylim = c(zi.min, 
+                    zi.max), xaxt = "n", main = "cov.r", xlab = "", 
+                    ylab = "", las = las, log = "y", ...)
+                }
+                else {
+                  lplot(NA, NA, xlim = c(1, len.ids), ylim = c(zi.min, 
+                    zi.max), xaxt = "n", main = "cov.r", xlab = "", 
+                    ylab = "", las = las, ...)
+                }
+                laxis(side = 1, at = seq.int(len.ids), labels = lab.ids, 
+                  xlab = "", las = las, ...)
+                labline(h = 1, lty = "dashed", ...)
+                if (na.act == "na.exclude" || na.act == "na.pass") 
+                  llines(seq.int(len.ids)[not.na], zi[not.na], 
+                    col = col.na, ...)
+                llines(seq.int(len.ids), zi, ...)
+                lpoints(seq.int(len.ids), zi, pch = pch, bg = bg, 
+                  ...)
+                lpoints(seq.int(len.ids)[ids.infl], zi[ids.infl], 
+                  bg = bg.infl, pch = pch, ...)
             }
-            if (na.act == "na.exclude" || na.act == "na.pass") {
-                len.ids <- length(x$ids)
-                ids.infl <- x$is.infl
-                lab.ids <- ids
+            if (which.inf[i] == 5) {
+                zi <- x$inf$tau2.del
+                not.na <- !is.na(zi)
+                if (na.act == "na.omit") {
+                  zi <- zi[not.na]
+                  len.ids <- length(x$ids) - sum(!not.na)
+                  ids.infl <- x$is.infl[not.na]
+                  lab.ids <- ids[not.na]
+                }
+                if (na.act == "na.exclude" || na.act == "na.pass") {
+                  len.ids <- length(x$ids)
+                  ids.infl <- x$is.infl
+                  lab.ids <- ids
+                }
+                zi.min <- min(zi, na.rm = TRUE)
+                zi.max <- max(zi, na.rm = TRUE)
+                lplot(NA, NA, xlim = c(1, len.ids), ylim = c(zi.min, 
+                  zi.max), xaxt = "n", main = "tau2.del", xlab = "", 
+                  ylab = "", las = las, ...)
+                laxis(side = 1, at = seq.int(len.ids), labels = lab.ids, 
+                  xlab = "", las = las, ...)
+                labline(h = x$tau2, lty = "dashed", ...)
+                if (na.act == "na.exclude" || na.act == "na.pass") 
+                  llines(seq.int(len.ids)[not.na], zi[not.na], 
+                    col = col.na, ...)
+                llines(seq.int(len.ids), zi, ...)
+                lpoints(seq.int(len.ids), zi, pch = pch, bg = bg, 
+                  ...)
+                lpoints(seq.int(len.ids)[ids.infl], zi[ids.infl], 
+                  bg = bg.infl, pch = pch, ...)
             }
-            zi.min <- min(zi, na.rm = TRUE)
-            zi.max <- max(zi, na.rm = TRUE)
-            lplot(NA, NA, xlim = c(1, len.ids), ylim = c(zi.min, 
-                zi.max), xaxt = "n", main = "QE.del", xlab = "", 
-                ylab = "", las = las, ...)
-            laxis(side = 1, at = seq.int(len.ids), labels = lab.ids, 
-                xlab = "", las = las, ...)
-            labline(h = x$QE, lty = "dashed", ...)
-            if (na.act == "na.exclude" || na.act == "na.pass") 
-                llines(seq.int(len.ids)[not.na], zi[not.na], 
-                  col = col.na, ...)
-            llines(seq.int(len.ids), zi, ...)
-            lpoints(seq.int(len.ids), zi, pch = pch, bg = bg, 
-                ...)
-            lpoints(seq.int(len.ids)[ids.infl], zi[ids.infl], 
-                bg = bg.infl, pch = pch, ...)
-        }
-        if (which[i] == 7) {
-            zi <- x$inf$hat
-            not.na <- !is.na(zi)
-            if (na.act == "na.omit") {
-                zi <- zi[not.na]
-                len.ids <- length(x$ids) - sum(!not.na)
-                ids.infl <- x$is.infl[not.na]
-                lab.ids <- ids[not.na]
+            if (which.inf[i] == 6) {
+                zi <- x$inf$QE.del
+                not.na <- !is.na(zi)
+                if (na.act == "na.omit") {
+                  zi <- zi[not.na]
+                  len.ids <- length(x$ids) - sum(!not.na)
+                  ids.infl <- x$is.infl[not.na]
+                  lab.ids <- ids[not.na]
+                }
+                if (na.act == "na.exclude" || na.act == "na.pass") {
+                  len.ids <- length(x$ids)
+                  ids.infl <- x$is.infl
+                  lab.ids <- ids
+                }
+                zi.min <- min(zi, na.rm = TRUE)
+                zi.max <- max(zi, na.rm = TRUE)
+                lplot(NA, NA, xlim = c(1, len.ids), ylim = c(zi.min, 
+                  zi.max), xaxt = "n", main = "QE.del", xlab = "", 
+                  ylab = "", las = las, ...)
+                laxis(side = 1, at = seq.int(len.ids), labels = lab.ids, 
+                  xlab = "", las = las, ...)
+                labline(h = x$QE, lty = "dashed", ...)
+                if (na.act == "na.exclude" || na.act == "na.pass") 
+                  llines(seq.int(len.ids)[not.na], zi[not.na], 
+                    col = col.na, ...)
+                llines(seq.int(len.ids), zi, ...)
+                lpoints(seq.int(len.ids), zi, pch = pch, bg = bg, 
+                  ...)
+                lpoints(seq.int(len.ids)[ids.infl], zi[ids.infl], 
+                  bg = bg.infl, pch = pch, ...)
             }
-            if (na.act == "na.exclude" || na.act == "na.pass") {
-                len.ids <- length(x$ids)
-                ids.infl <- x$is.infl
-                lab.ids <- ids
+            if (which.inf[i] == 7) {
+                zi <- x$inf$hat
+                not.na <- !is.na(zi)
+                if (na.act == "na.omit") {
+                  zi <- zi[not.na]
+                  len.ids <- length(x$ids) - sum(!not.na)
+                  ids.infl <- x$is.infl[not.na]
+                  lab.ids <- ids[not.na]
+                }
+                if (na.act == "na.exclude" || na.act == "na.pass") {
+                  len.ids <- length(x$ids)
+                  ids.infl <- x$is.infl
+                  lab.ids <- ids
+                }
+                zi.min <- 0
+                zi.max <- max(zi, na.rm = TRUE)
+                lplot(NA, NA, xlim = c(1, len.ids), ylim = c(zi.min, 
+                  zi.max), xaxt = "n", main = "hat", xlab = "", 
+                  ylab = "", las = las, ...)
+                laxis(side = 1, at = seq.int(len.ids), labels = lab.ids, 
+                  xlab = "", las = las, ...)
+                labline(h = x$p/x$k, lty = "dashed", ...)
+                labline(h = 3 * x$p/x$k, lty = "dotted", ...)
+                if (na.act == "na.exclude" || na.act == "na.pass") 
+                  llines(seq.int(len.ids)[not.na], zi[not.na], 
+                    col = col.na, ...)
+                llines(seq.int(len.ids), zi, ...)
+                lpoints(seq.int(len.ids), zi, pch = pch, bg = bg, 
+                  ...)
+                lpoints(seq.int(len.ids)[ids.infl], zi[ids.infl], 
+                  bg = bg.infl, pch = pch, ...)
             }
-            zi.min <- 0
-            zi.max <- max(zi, na.rm = TRUE)
-            lplot(NA, NA, xlim = c(1, len.ids), ylim = c(zi.min, 
-                zi.max), xaxt = "n", main = "hat", xlab = "", 
-                ylab = "", las = las, ...)
-            laxis(side = 1, at = seq.int(len.ids), labels = lab.ids, 
-                xlab = "", las = las, ...)
-            labline(h = x$p/x$k, lty = "dashed", ...)
-            labline(h = 3 * x$p/x$k, lty = "dotted", ...)
-            if (na.act == "na.exclude" || na.act == "na.pass") 
-                llines(seq.int(len.ids)[not.na], zi[not.na], 
-                  col = col.na, ...)
-            llines(seq.int(len.ids), zi, ...)
-            lpoints(seq.int(len.ids), zi, pch = pch, bg = bg, 
-                ...)
-            lpoints(seq.int(len.ids)[ids.infl], zi[ids.infl], 
-                bg = bg.infl, pch = pch, ...)
-        }
-        if (which[i] == 8) {
-            zi <- x$inf$weight
-            not.na <- !is.na(zi)
-            if (na.act == "na.omit") {
-                zi <- zi[not.na]
-                len.ids <- length(x$ids) - sum(!not.na)
-                ids.infl <- x$is.infl[not.na]
-                lab.ids <- ids[not.na]
+            if (which.inf[i] == 8) {
+                zi <- x$inf$weight
+                not.na <- !is.na(zi)
+                if (na.act == "na.omit") {
+                  zi <- zi[not.na]
+                  len.ids <- length(x$ids) - sum(!not.na)
+                  ids.infl <- x$is.infl[not.na]
+                  lab.ids <- ids[not.na]
+                }
+                if (na.act == "na.exclude" || na.act == "na.pass") {
+                  len.ids <- length(x$ids)
+                  ids.infl <- x$is.infl
+                  lab.ids <- ids
+                }
+                zi.min <- 0
+                zi.max <- max(zi, na.rm = TRUE)
+                lplot(NA, NA, xlim = c(1, len.ids), ylim = c(zi.min, 
+                  zi.max), xaxt = "n", main = "weight", xlab = "", 
+                  ylab = "", las = las, ...)
+                laxis(side = 1, at = seq.int(len.ids), labels = lab.ids, 
+                  xlab = "", las = las, ...)
+                labline(h = 100/x$k, lty = "dashed", ...)
+                if (na.act == "na.exclude" || na.act == "na.pass") 
+                  llines(seq.int(len.ids)[not.na], zi[not.na], 
+                    col = col.na, ...)
+                llines(seq.int(len.ids), zi, ...)
+                lpoints(seq.int(len.ids), zi, pch = pch, bg = bg, 
+                  ...)
+                lpoints(seq.int(len.ids)[ids.infl], zi[ids.infl], 
+                  bg = bg.infl, pch = pch, ...)
             }
-            if (na.act == "na.exclude" || na.act == "na.pass") {
-                len.ids <- length(x$ids)
-                ids.infl <- x$is.infl
-                lab.ids <- ids
-            }
-            zi.min <- 0
-            zi.max <- max(zi, na.rm = TRUE)
-            lplot(NA, NA, xlim = c(1, len.ids), ylim = c(zi.min, 
-                zi.max), xaxt = "n", main = "weight", xlab = "", 
-                ylab = "", las = las, ...)
-            laxis(side = 1, at = seq.int(len.ids), labels = lab.ids, 
-                xlab = "", las = las, ...)
-            labline(h = 100/x$k, lty = "dashed", ...)
-            if (na.act == "na.exclude" || na.act == "na.pass") 
-                llines(seq.int(len.ids)[not.na], zi[not.na], 
-                  col = col.na, ...)
-            llines(seq.int(len.ids), zi, ...)
-            lpoints(seq.int(len.ids), zi, pch = pch, bg = bg, 
-                ...)
-            lpoints(seq.int(len.ids)[ids.infl], zi[ids.infl], 
-                bg = bg.infl, pch = pch, ...)
         }
     }
-    if (is.logical(plotdfb)) {
-        if (plotdfb | dfbnew) {
-            which.dfb <- seq.int(x$p)
-        }
-    }
-    else {
-        which.dfb <- plotdfb
-        which.dfb <- which.dfb[(which.dfb >= 1) & (which.dfb <= 
-            x$p)]
-        which.dfb <- unique(round(which.dfb))
-        if (length(which.dfb) == 0L) 
-            stop("Incorrect specification of 'plotdfb' argument.")
-        plotdfb <- TRUE
-    }
-    if (plotdfb | dfbnew) {
+    if (plotdfb) {
         if (dfbnew) {
             dev.new()
             par.mar <- par("mar")
@@ -5663,8 +5688,11 @@ function (x, plotdfb = FALSE, dfbnew = FALSE, logcov = TRUE,
             on.exit(par(mar = par.mar), add = TRUE)
         }
         else {
-            par.ask <- par("ask")
-            par(ask = TRUE)
+            if (plotinf) {
+                par.ask <- par("ask")
+                par(ask = TRUE)
+                on.exit(par(ask = par.ask), add = TRUE)
+            }
         }
         par(mfrow = c(length(which.dfb), 1))
         for (i in seq.int(length(which.dfb))) {
@@ -5698,9 +5726,6 @@ function (x, plotdfb = FALSE, dfbnew = FALSE, logcov = TRUE,
                 ...)
             lpoints(seq.int(len.ids)[ids.infl], zi[ids.infl], 
                 bg = bg.infl, pch = pch, ...)
-        }
-        if (!dfbnew) {
-            par(ask = par.ask)
         }
     }
     invisible()
@@ -6211,7 +6236,8 @@ function (x, digits = x$digits, ...)
     print(out, quote = FALSE, right = TRUE)
 }
 print.permutest.rma.uni <-
-function (x, digits = x$digits, signif.legend = TRUE, ...) 
+function (x, digits = x$digits, signif.stars = getOption("show.signif.stars"), 
+    signif.legend = signif.stars, ...) 
 {
     if (class(x) != "permutest.rma.uni") 
         stop("Argument 'x' must be an object of class \"permutest.rma.uni\".")
@@ -6246,9 +6272,14 @@ function (x, digits = x$digits, signif.legend = TRUE, ...)
     signif <- symnum(x$pval, corr = FALSE, na = FALSE, cutpoints = c(0, 
         0.001, 0.01, 0.05, 0.1, 1), symbols = c("***", "**", 
         "*", ".", " "))
-    res.table <- cbind(formatC(res.table, digits = digits, format = "f"), 
-        signif)
-    dimnames(res.table)[[2]][7] <- ""
+    if (signif.stars) {
+        res.table <- cbind(formatC(res.table, digits = digits, 
+            format = "f"), signif)
+        dimnames(res.table)[[2]][7] <- ""
+    }
+    else {
+        res.table <- formatC(res.table, digits = digits, format = "f")
+    }
     res.table[x$pval > ncutoff, 4] <- formatC(x$pval[x$pval > 
         ncutoff], digits = digits, format = "f")
     res.table[x$pval < ncutoff, 4] <- paste("<", cutoff, sep = "", 
@@ -6352,8 +6383,8 @@ function (x, digits = x$digits, ret.fit = x$ret.fit, ...)
     invisible()
 }
 print.rma.glmm <-
-function (x, digits = x$digits, showfit = FALSE, signif.legend = TRUE, 
-    ...) 
+function (x, digits = x$digits, showfit = FALSE, signif.stars = getOption("show.signif.stars"), 
+    signif.legend = signif.stars, ...) 
 {
     if (!is.element("rma.glmm", class(x))) 
         stop("Argument 'x' must be an object of class \"rma.glmm\".")
@@ -6403,43 +6434,49 @@ function (x, digits = x$digits, showfit = FALSE, signif.legend = TRUE,
     }
     if (x$method != "FE") {
         if (x$int.only) {
-            cat("tau^2 (estimate of total amount of heterogeneity): ", 
+            cat("tau^2 (estimated amount of total heterogeneity): ", 
                 formatC(x$tau2, digits = ifelse(abs(x$tau2) <= 
                   .Machine$double.eps * 10, 0, digits), format = "f"), 
                 ifelse(is.na(x$se.tau2), "", paste(" (SE = ", 
                   formatC(x$se.tau2, digits = digits, format = "f"), 
                   ")", sep = "")), "\n", sep = "")
-            cat("tau (sqrt of the estimate of total heterogeneity): ", 
+            cat("tau (square root of estimated tau^2 value):      ", 
                 ifelse(x$tau2 >= 0, formatC(sqrt(x$tau2), digits = ifelse(x$tau2 <= 
                   .Machine$double.eps * 10, 0, digits), format = "f"), 
-                  NA), "\n", sep = "")
-            cat("I^2 (% of total variability due to heterogeneity): ", 
+                  NA), "\n\n", sep = "")
+            cat("I^2 (total heterogeneity / total variability):   ", 
                 ifelse(is.na(x$I2), NA, formatC(x$I2, digits = 2, 
                   format = "f")), "%", "\n", sep = "")
-            cat("H^2 (total variability / sampling variability):    ", 
+            cat("H^2 (total variability / sampling variability):  ", 
                 ifelse(is.na(x$H2), NA, formatC(x$H2, digits = 2, 
                   format = "f")), sep = "")
         }
         else {
-            cat("tau^2 (estimate of residual amount of heterogeneity): ", 
+            cat("tau^2 (estimated amount of residual heterogeneity):     ", 
                 formatC(x$tau2, digits = ifelse(abs(x$tau2) <= 
                   .Machine$double.eps * 10, 0, digits), format = "f"), 
                 ifelse(is.na(x$se.tau2), "", paste(" (SE = ", 
                   formatC(x$se.tau2, digits = digits, format = "f"), 
                   ")", sep = "")), "\n", sep = "")
-            cat("tau (sqrt of the estimate of residual heterogeneity): ", 
+            cat("tau (square root of estimated tau^2 value):             ", 
                 ifelse(x$tau2 >= 0, formatC(sqrt(x$tau2), digits = ifelse(x$tau2 <= 
                   .Machine$double.eps * 10, 0, digits), format = "f"), 
-                  NA), sep = "")
+                  NA), "\n\n", sep = "")
+            cat("I^2 (residual heterogeneity / unaccounted variability): ", 
+                ifelse(is.na(x$I2), NA, formatC(x$I2, digits = 2, 
+                  format = "f")), "%", "\n", sep = "")
+            cat("H^2 (unaccounted variability / sampling variability):   ", 
+                ifelse(is.na(x$H2), NA, formatC(x$H2, digits = 2, 
+                  format = "f")), sep = "")
         }
         cat("\n\n")
     }
     if (!is.na(x$sigma2)) {
-        cat("sigma^2 (estimate of study level variability): ", 
+        cat("sigma^2 (estimated amount of study level variability): ", 
             formatC(x$sigma2, digits = ifelse(abs(x$sigma2) <= 
                 .Machine$double.eps * 10, 0, digits), format = "f"), 
             "\n", sep = "")
-        cat("sigma (sqrt of estimate of study variability): ", 
+        cat("sigma (square root of estimated sigma^2 value):        ", 
             ifelse(x$sigma2 >= 0, formatC(sqrt(x$sigma2), digits = ifelse(x$sigma2 <= 
                 .Machine$double.eps * 10, 0, digits), format = "f"), 
                 NA), "\n\n", sep = "")
@@ -6516,9 +6553,15 @@ function (x, digits = x$digits, showfit = FALSE, signif.legend = TRUE,
         signif <- symnum(x$pval, corr = FALSE, na = FALSE, cutpoints = c(0, 
             0.001, 0.01, 0.05, 0.1, 1), symbols = c("***", "**", 
             "*", ".", " "))
-        res.table <- c(formatC(res.table, digits = digits, format = "f"), 
-            signif)
-        names(res.table)[7] <- ""
+        if (signif.stars) {
+            res.table <- c(formatC(res.table, digits = digits, 
+                format = "f"), signif)
+            names(res.table)[7] <- ""
+        }
+        else {
+            res.table <- formatC(res.table, digits = digits, 
+                format = "f")
+        }
         res.table[4][x$pval > ncutoff] <- formatC(x$pval[x$pval > 
             ncutoff], digits = digits, format = "f")
         res.table[4][x$pval < ncutoff] <- paste("<", cutoff, 
@@ -6534,9 +6577,15 @@ function (x, digits = x$digits, showfit = FALSE, signif.legend = TRUE,
         signif <- symnum(x$pval, corr = FALSE, na = FALSE, cutpoints = c(0, 
             0.001, 0.01, 0.05, 0.1, 1), symbols = c("***", "**", 
             "*", ".", " "))
-        res.table <- cbind(formatC(res.table, digits = digits, 
-            format = "f"), signif)
-        dimnames(res.table)[[2]][7] <- ""
+        if (signif.stars) {
+            res.table <- cbind(formatC(res.table, digits = digits, 
+                format = "f"), signif)
+            dimnames(res.table)[[2]][7] <- ""
+        }
+        else {
+            res.table <- formatC(res.table, digits = digits, 
+                format = "f")
+        }
         res.table[x$pval > ncutoff, 4] <- formatC(x$pval[x$pval > 
             ncutoff], digits = digits, format = "f")
         res.table[x$pval < ncutoff, 4] <- paste("<", cutoff, 
@@ -6701,7 +6750,7 @@ function (x, digits = x$digits, showfit = FALSE, ...)
             QEp <- paste("< ", cutoff, sep = "", collapse = "")
         }
         cat("Test for Heterogeneity: \n")
-        cat("Q(df = ", x$k.yi - 1, ") = ", formatC(x$QE, digits = digits, 
+        cat("Q(df = ", x$k.pos - 1, ") = ", formatC(x$QE, digits = digits, 
             format = "f"), ", p-val ", QEp, sep = "")
     }
     res.table <- c(x$b, x$se, x$zval, x$pval, x$ci.lb, x$ci.ub)
@@ -6732,8 +6781,8 @@ function (x, digits = x$digits, showfit = FALSE, ...)
     invisible()
 }
 print.rma.uni <-
-function (x, digits = x$digits, showfit = FALSE, signif.legend = TRUE, 
-    ...) 
+function (x, digits = x$digits, showfit = FALSE, signif.stars = getOption("show.signif.stars"), 
+    signif.legend = signif.stars, ...) 
 {
     if (!is.element("rma.uni", class(x))) 
         stop("Argument 'x' must be an object of class \"rma.uni\".")
@@ -6788,34 +6837,40 @@ function (x, digits = x$digits, showfit = FALSE, signif.legend = TRUE,
     }
     if (x$method != "FE") {
         if (x$int.only) {
-            cat("tau^2 (estimate of total amount of heterogeneity): ", 
+            cat("tau^2 (estimated amount of total heterogeneity): ", 
                 formatC(x$tau2, digits = ifelse(abs(x$tau2) <= 
                   .Machine$double.eps * 10, 0, digits), format = "f"), 
                 ifelse(is.na(x$se.tau2), "", paste(" (SE = ", 
                   formatC(x$se.tau2, digits = digits, format = "f"), 
                   ")", sep = "")), "\n", sep = "")
-            cat("tau (sqrt of the estimate of total heterogeneity): ", 
+            cat("tau (square root of estimated tau^2 value):      ", 
                 ifelse(x$tau2 >= 0, formatC(sqrt(x$tau2), digits = ifelse(x$tau2 <= 
                   .Machine$double.eps * 10, 0, digits), format = "f"), 
                   NA), "\n", sep = "")
-            cat("I^2 (% of total variability due to heterogeneity): ", 
+            cat("I^2 (total heterogeneity / total variability):   ", 
                 ifelse(is.na(x$I2), NA, formatC(x$I2, digits = 2, 
                   format = "f")), "%", "\n", sep = "")
-            cat("H^2 (total variability / sampling variability):    ", 
+            cat("H^2 (total variability / sampling variability):  ", 
                 ifelse(is.na(x$H2), NA, formatC(x$H2, digits = 2, 
                   format = "f")), sep = "")
         }
         else {
-            cat("tau^2 (estimate of residual amount of heterogeneity): ", 
+            cat("tau^2 (estimated amount of residual heterogeneity):     ", 
                 formatC(x$tau2, digits = ifelse(abs(x$tau2) <= 
                   .Machine$double.eps * 10, 0, digits), format = "f"), 
                 ifelse(is.na(x$se.tau2), "", paste(" (SE = ", 
                   formatC(x$se.tau2, digits = digits, format = "f"), 
                   ")", sep = "")), "\n", sep = "")
-            cat("tau (sqrt of the estimate of residual heterogeneity): ", 
+            cat("tau (square root of estimated tau^2 value):             ", 
                 ifelse(x$tau2 >= 0, formatC(sqrt(x$tau2), digits = ifelse(x$tau2 <= 
                   .Machine$double.eps * 10, 0, digits), format = "f"), 
-                  NA), sep = "")
+                  NA), "\n", sep = "")
+            cat("I^2 (residual heterogeneity / unaccounted variability): ", 
+                ifelse(is.na(x$I2), NA, formatC(x$I2, digits = 2, 
+                  format = "f")), "%", "\n", sep = "")
+            cat("H^2 (unaccounted variability / sampling variability):   ", 
+                ifelse(is.na(x$H2), NA, formatC(x$H2, digits = 2, 
+                  format = "f")), sep = "")
         }
         cat("\n\n")
     }
@@ -6869,9 +6924,15 @@ function (x, digits = x$digits, showfit = FALSE, signif.legend = TRUE,
         signif <- symnum(x$pval, corr = FALSE, na = FALSE, cutpoints = c(0, 
             0.001, 0.01, 0.05, 0.1, 1), symbols = c("***", "**", 
             "*", ".", " "))
-        res.table <- c(formatC(res.table, digits = digits, format = "f"), 
-            signif)
-        names(res.table)[7] <- ""
+        if (signif.stars) {
+            res.table <- c(formatC(res.table, digits = digits, 
+                format = "f"), signif)
+            names(res.table)[7] <- ""
+        }
+        else {
+            res.table <- formatC(res.table, digits = digits, 
+                format = "f")
+        }
         res.table[4][x$pval > ncutoff] <- formatC(x$pval[x$pval > 
             ncutoff], digits = digits, format = "f")
         res.table[4][x$pval < ncutoff] <- paste("<", cutoff, 
@@ -6887,9 +6948,15 @@ function (x, digits = x$digits, showfit = FALSE, signif.legend = TRUE,
         signif <- symnum(x$pval, corr = FALSE, na = FALSE, cutpoints = c(0, 
             0.001, 0.01, 0.05, 0.1, 1), symbols = c("***", "**", 
             "*", ".", " "))
-        res.table <- cbind(formatC(res.table, digits = digits, 
-            format = "f"), signif)
-        dimnames(res.table)[[2]][7] <- ""
+        if (signif.stars) {
+            res.table <- cbind(formatC(res.table, digits = digits, 
+                format = "f"), signif)
+            dimnames(res.table)[[2]][7] <- ""
+        }
+        else {
+            res.table <- formatC(res.table, digits = digits, 
+                format = "f")
+        }
         res.table[x$pval > ncutoff, 4] <- formatC(x$pval[x$pval > 
             ncutoff], digits = digits, format = "f")
         res.table[x$pval < ncutoff, 4] <- paste("<", cutoff, 
@@ -6952,14 +7019,14 @@ function (x, digits, ...)
     }
 }
 print.summary.rma <-
-function (x, digits = x$digits, showfit = TRUE, signif.legend = TRUE, 
-    ...) 
+function (x, digits = x$digits, showfit = TRUE, signif.stars = getOption("show.signif.stars"), 
+    signif.legend = signif.stars, ...) 
 {
     if (!is.element("summary.rma", class(x))) 
         stop("Argument 'x' must be an object of class \"summary.rma\".")
     class(x) <- class(x)[-1]
-    print(x, digits = digits, showfit = showfit, signif.legend = signif.legend, 
-        ...)
+    print(x, digits = digits, showfit = showfit, signif.stars = signif.stars, 
+        signif.legend = signif.legend, ...)
     invisible()
 }
 qqnorm.rma.glmm <-
@@ -7886,8 +7953,8 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
     else {
         int.only <- FALSE
     }
-    choltXX <- try(chol(t(X) %*% X), silent = TRUE)
-    if (class(choltXX) == "try-error") 
+    evstXX <- eigen(t(X) %*% X, symmetric = TRUE)$values
+    if (any(evstXX <= .Machine$double.eps)) 
         stop("Design matrix not of full rank. Cannot fit model.")
     if (method == "FE") {
         if (p > k) {
@@ -8131,10 +8198,14 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
                     P) + 2 * max(tau2, 0)^2 * .tr(P %*% P)))
         }
         tau2 <- max(con$tau2.min, c(tau2))
+        if (con$verbose && is.element(method, c("ML", "REML", 
+            "EB"))) 
+            cat("Fisher scoring algorithm converged after", iter, 
+                "iterations.", "\n")
     }
     else {
         if (method == "HS") {
-            wi <- 1/(vi + tau2)
+            wi <- 1/vi
             W <- .diag(wi)
             stXWX <- .invcalc(X = X, W = W, k = k)
             P <- W - W %*% X %*% stXWX %*% crossprod(X, W)
@@ -8152,12 +8223,29 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
                 2 * max(tau2, 0)^2 * (k - p)))
         }
         if (method == "DL") {
-            wi <- 1/(vi + tau2)
+            wi <- 1/vi
             W <- .diag(wi)
             stXWX <- .invcalc(X = X, W = W, k = k)
             P <- W - W %*% X %*% stXWX %*% crossprod(X, W)
+            trP <- .tr(P)
             se.tau2 <- sqrt(1/trP^2 * (2 * (k - p) + 4 * max(tau2, 
                 0) * trP + 2 * max(tau2, 0)^2 * .tr(P %*% P)))
+        }
+        if (method == "SJ") {
+            if (is.null(con$tau2.init)) {
+                tau2.0 <- var(yi) * (k - 1)/k
+            }
+            else {
+                tau2.0 <- con$tau2.init
+            }
+            wi <- 1/(vi + tau2.0)
+            W <- .diag(wi)
+            stXWX <- .invcalc(X = X, W = W, k = k)
+            P <- W - W %*% X %*% stXWX %*% crossprod(X, W)
+            se.tau2 <- sqrt(tau2.0^2/(k - p)^2 * (2 * .tr(P %*% 
+                .diag(vi) %*% P %*% .diag(vi)) + 4 * max(tau2, 
+                0) * .tr(P %*% .diag(vi) %*% P) + 2 * max(tau2, 
+                0)^2 * .tr(P %*% P)))
         }
         if (method == "ML") {
             wi <- 1/(vi + tau2)
@@ -8185,9 +8273,6 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
         if (!allvipos && weighted) 
             stop("Weighted estimation cannot be used with a fixed-effects\n  model when there are non-positive sampling variances.")
     }
-    if (con$verbose && is.element(method, c("ML", "REML", "EB"))) 
-        cat("Fisher scoring algorithm converged after", iter, 
-            "iterations.", "\n")
     if (allvipos) {
         wi <- 1/vi
         W <- .diag(wi)
@@ -8196,12 +8281,9 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
         QE <- max(0, c(crossprod(Y, P) %*% Y))
         QEp <- ifelse(k - p >= 1, pchisq(QE, df = k - p, lower.tail = FALSE), 
             1)
-        if (int.only) {
-            sumwi <- sum(wi)
-            vi.avg <- (k - 1)/(sumwi - sum(wi^2)/sumwi)
-            I2 <- 100 * tau2/(vi.avg + tau2)
-            H2 <- tau2/vi.avg + 1
-        }
+        vi.avg <- (k - p)/.tr(P)
+        I2 <- 100 * tau2/(vi.avg + tau2)
+        H2 <- tau2/vi.avg + 1
     }
     wi <- 1/(vi + tau2)
     W <- .diag(wi)
@@ -8343,7 +8425,7 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
     ti, ni, mods, measure, intercept = TRUE, data, slab, subset, 
     add = 1/2, to = "only0", drop00 = TRUE, vtype = "LS", model = "UM.FS", 
     method = "ML", tdist = FALSE, level = 95, digits = 4, btt, 
-    nAGQ = 1, verbose = FALSE, control) 
+    nAGQ = 100, verbose = FALSE, control) 
 {
     if (missing(measure)) 
         stop("Need to specify 'measure' argument.")
@@ -8618,14 +8700,14 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
         stop("Processing terminated since k = 0.")
     if (k < 2) 
         stop("Need at least k=2 studies to fit models.")
-    yivi.na <- is.na(cbind(yi, vi))
+    yivi.na <- is.na(cbind(yi, vi, mods.f))
     if (any(yivi.na)) {
         not.na.yivi <- apply(yivi.na, MARGIN = 1, sum) == 0L
         if (na.act == "na.omit" || na.act == "na.exclude" || 
             na.act == "na.pass") {
             yi <- yi[not.na.yivi]
-            vi <- vi[not.na.yivi]
             ni <- ni[not.na.yivi]
+            vi <- vi[not.na.yivi]
             warning("Some yi/vi values are NA.")
         }
         if (na.act == "na.fail") 
@@ -8635,6 +8717,20 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
         not.na.yivi <- rep(TRUE, k)
     }
     k.yi <- length(yi)
+    vi.I2 <- vi.f
+    mods.I2 <- mods.f
+    YVM.na <- is.na(cbind(yi.f, vi.f, mods.f))
+    if (any(YVM.na)) {
+        not.na.I2 <- apply(YVM.na, MARGIN = 1, sum) == 0L
+        if (na.act == "na.omit" || na.act == "na.exclude" || 
+            na.act == "na.pass") {
+            vi.I2 <- vi.f[not.na.I2]
+            mods.I2 <- mods.f[not.na.I2, , drop = FALSE]
+        }
+        if (na.act == "na.fail") 
+            stop("Missing values in data.")
+    }
+    k.I2 <- length(vi.I2)
     if (is.null(mods) && !intercept) {
         warning("Must either include an intercept (intercept=TRUE) and/or moderators in model.\n  Coerced intercept into the model.")
         intercept <- TRUE
@@ -8642,10 +8738,12 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
     if (intercept) {
         X <- cbind(intrcpt = rep(1, k), mods)
         X.f <- cbind(intrcpt = rep(1, k.f), mods.f)
+        X.I2 <- cbind(intrcpt = rep(1, k.I2), mods.I2)
     }
     else {
         X <- mods
         X.f <- mods.f
+        X.I2 <- mods.I2
     }
     is.int <- apply(X == 1L, 2, sum) == k
     if (any(is.int)) {
@@ -8653,6 +8751,7 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
         int.indx <- which(is.int, arr.ind = TRUE)
         X <- cbind(intrcpt = 1, X[, -int.indx, drop = FALSE])
         X.f <- cbind(intrcpt = 1, X.f[, -int.indx, drop = FALSE])
+        X.I2 <- cbind(intrcpt = 1, X.I2[, -int.indx, drop = FALSE])
         if (is.formula) 
             intercept <- TRUE
     }
@@ -8666,8 +8765,8 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
     else {
         int.only <- FALSE
     }
-    choltXX <- try(chol(t(X) %*% X), silent = TRUE)
-    if (class(choltXX) == "try-error") 
+    evstXX <- eigen(t(X) %*% X, symmetric = TRUE)$values
+    if (any(evstXX <= .Machine$double.eps)) 
         stop("Design matrix not of full rank. Cannot fit model.")
     if (method == "FE" && p > k) 
         stop("Number of parameters to be estimated is larger than the number of observations.")
@@ -9120,8 +9219,15 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
         if (con$verbose) 
             message("Fitting saturated model.")
         X.QE <- model.matrix(~-1 + X.fit + study)
-        res.QE <- try(glm(dat.grp ~ -1 + X.QE, offset = dat.off, 
-            family = dat.fam, control = control.glm), silent = silent)
+        if (con$verbose) {
+            res.QE <- try(glm(dat.grp ~ -1 + X.QE, offset = dat.off, 
+                family = dat.fam, control = control.glm), silent = silent)
+        }
+        else {
+            res.QE <- suppressWarnings(try(glm(dat.grp ~ -1 + 
+                X.QE, offset = dat.off, family = dat.fam, control = control.glm), 
+                silent = silent))
+        }
         if (inherits(res.QE, "try-error")) 
             stop("Cannot fit saturated model.")
         ll.FE <- c(logLik(res.FE))
@@ -9192,13 +9298,13 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
         QEp.Wld <- 1
         QEp.LRT <- 1
     }
-    if (int.only) {
-        wi <- 1/vi
-        sumwi <- sum(wi)
-        vi.avg <- (k - 1)/(sumwi - sum(wi^2)/sumwi)
-        I2 <- 100 * tau2/(vi.avg + tau2)
-        H2 <- tau2/vi.avg + 1
-    }
+    wi <- 1/vi.I2
+    W <- .diag(wi)
+    stXWX <- .invcalc(X = X.I2, W = W, k = k.I2)
+    P <- W - W %*% X.I2 %*% stXWX %*% crossprod(X.I2, W)
+    vi.avg <- (k.I2 - p)/.tr(P)
+    I2 <- 100 * tau2/(vi.avg + tau2)
+    H2 <- tau2/vi.avg + 1
     chol.h <- try(chol(vb[btt, btt]), silent = silent)
     if (class(chol.h) == "try-error") 
         stop("Cannot invert Hessian for QM test.")
@@ -9894,19 +10000,23 @@ function (ai, bi, ci, di, n1i, n2i, data, slab, subset, add = 1/2,
     ci.ub <- b + qnorm(alpha/2, lower.tail = FALSE) * se
     names(b) <- "intrcpt"
     vb <- matrix(se^2, dimnames = list("intrcpt", "intrcpt"))
-    wi <- 1/vi
-    QE <- sum(wi * (yi - b)^2)
-    if (k.yi - 1 >= 1) {
+    k.pos <- sum(Vi > 0)
+    Vi[Vi == 0] <- NA
+    QE <- sum((ai - Ei)^2/Vi, na.rm = TRUE) - sum(ai - Ei)^2/sum(Vi, 
+        na.rm = TRUE)
+    if (k.pos >= 1) {
         QEp <- pchisq(QE, df = k.yi - 1, lower.tail = FALSE)
     }
     else {
         QEp <- 1
     }
+    wi <- 1/vi
+    RSS <- sum(wi * (yi - b)^2)
     ll.ML <- -1/2 * (k.yi) * log(2 * base::pi) - 1/2 * sum(log(vi)) - 
-        1/2 * QE
+        1/2 * RSS
     ll.REML <- -1/2 * (k.yi - 1) * log(2 * base::pi) + 1/2 * 
         log(k.yi) - 1/2 * sum(log(vi)) - 1/2 * log(sum(wi)) - 
-        1/2 * QE
+        1/2 * RSS
     dev.ML <- -2 * (ll.ML - sum(dnorm(yi, mean = yi, sd = sqrt(vi), 
         log = TRUE)))
     AIC.ML <- -2 * ll.ML + 2
@@ -9933,16 +10043,16 @@ function (ai, bi, ci, di, n1i, n2i, data, slab, subset, add = 1/2,
     knha <- FALSE
     robust <- FALSE
     res <- list(b, se, zval, pval, ci.lb, ci.ub, vb, tau2, k, 
-        k.f, k.yi, k.eff, p, parms, QE, QEp, int.only, yi, vi, 
-        yi.f, vi.f, X.f, ai, bi, ci, di, ai.f, bi.f, ci.f, di.f, 
-        ni, ni.f, ids, not.na, not.na.yivi, slab, slab.null, 
-        measure, method, weighted, knha, robust, intercept, digits, 
-        level, add, to, drop00, fit.stats)
+        k.f, k.yi, k.pos, k.eff, p, parms, QE, QEp, int.only, 
+        yi, vi, yi.f, vi.f, X.f, ai, bi, ci, di, ai.f, bi.f, 
+        ci.f, di.f, ni, ni.f, ids, not.na, not.na.yivi, slab, 
+        slab.null, measure, method, weighted, knha, robust, intercept, 
+        digits, level, add, to, drop00, fit.stats)
     names(res) <- c("b", "se", "zval", "pval", "ci.lb", "ci.ub", 
-        "vb", "tau2", "k", "k.f", "k.yi", "k.eff", "p", "parms", 
-        "QE", "QEp", "int.only", "yi", "vi", "yi.f", "vi.f", 
-        "X.f", "ai", "bi", "ci", "di", "ai.f", "bi.f", "ci.f", 
-        "di.f", "ni", "ni.f", "ids", "not.na", "not.na.yivi", 
+        "vb", "tau2", "k", "k.f", "k.yi", "k.pos", "k.eff", "p", 
+        "parms", "QE", "QEp", "int.only", "yi", "vi", "yi.f", 
+        "vi.f", "X.f", "ai", "bi", "ci", "di", "ai.f", "bi.f", 
+        "ci.f", "di.f", "ni", "ni.f", "ids", "not.na", "not.na.yivi", 
         "slab", "slab.null", "measure", "method", "weighted", 
         "knha", "robust", "intercept", "digits", "level", "add", 
         "to", "drop00", "fit.stats")
@@ -10295,8 +10405,8 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
     else {
         int.only <- FALSE
     }
-    choltXX <- try(chol(t(X) %*% X), silent = TRUE)
-    if (class(choltXX) == "try-error") 
+    evstXX <- eigen(t(X) %*% X, symmetric = TRUE)$values
+    if (any(evstXX <= .Machine$double.eps)) 
         stop("Design matrix not of full rank. Cannot fit model.")
     if (method == "FE") {
         if (p > k) {
@@ -10540,10 +10650,14 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
                     P) + 2 * max(tau2, 0)^2 * .tr(P %*% P)))
         }
         tau2 <- max(con$tau2.min, c(tau2))
+        if (con$verbose && is.element(method, c("ML", "REML", 
+            "EB"))) 
+            cat("Fisher scoring algorithm converged after", iter, 
+                "iterations.", "\n")
     }
     else {
         if (method == "HS") {
-            wi <- 1/(vi + tau2)
+            wi <- 1/vi
             W <- .diag(wi)
             stXWX <- .invcalc(X = X, W = W, k = k)
             P <- W - W %*% X %*% stXWX %*% crossprod(X, W)
@@ -10561,12 +10675,29 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
                 2 * max(tau2, 0)^2 * (k - p)))
         }
         if (method == "DL") {
-            wi <- 1/(vi + tau2)
+            wi <- 1/vi
             W <- .diag(wi)
             stXWX <- .invcalc(X = X, W = W, k = k)
             P <- W - W %*% X %*% stXWX %*% crossprod(X, W)
+            trP <- .tr(P)
             se.tau2 <- sqrt(1/trP^2 * (2 * (k - p) + 4 * max(tau2, 
                 0) * trP + 2 * max(tau2, 0)^2 * .tr(P %*% P)))
+        }
+        if (method == "SJ") {
+            if (is.null(con$tau2.init)) {
+                tau2.0 <- var(yi) * (k - 1)/k
+            }
+            else {
+                tau2.0 <- con$tau2.init
+            }
+            wi <- 1/(vi + tau2.0)
+            W <- .diag(wi)
+            stXWX <- .invcalc(X = X, W = W, k = k)
+            P <- W - W %*% X %*% stXWX %*% crossprod(X, W)
+            se.tau2 <- sqrt(tau2.0^2/(k - p)^2 * (2 * .tr(P %*% 
+                .diag(vi) %*% P %*% .diag(vi)) + 4 * max(tau2, 
+                0) * .tr(P %*% .diag(vi) %*% P) + 2 * max(tau2, 
+                0)^2 * .tr(P %*% P)))
         }
         if (method == "ML") {
             wi <- 1/(vi + tau2)
@@ -10594,9 +10725,6 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
         if (!allvipos && weighted) 
             stop("Weighted estimation cannot be used with a fixed-effects\n  model when there are non-positive sampling variances.")
     }
-    if (con$verbose && is.element(method, c("ML", "REML", "EB"))) 
-        cat("Fisher scoring algorithm converged after", iter, 
-            "iterations.", "\n")
     if (allvipos) {
         wi <- 1/vi
         W <- .diag(wi)
@@ -10605,12 +10733,9 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
         QE <- max(0, c(crossprod(Y, P) %*% Y))
         QEp <- ifelse(k - p >= 1, pchisq(QE, df = k - p, lower.tail = FALSE), 
             1)
-        if (int.only) {
-            sumwi <- sum(wi)
-            vi.avg <- (k - 1)/(sumwi - sum(wi^2)/sumwi)
-            I2 <- 100 * tau2/(vi.avg + tau2)
-            H2 <- tau2/vi.avg + 1
-        }
+        vi.avg <- (k - p)/.tr(P)
+        I2 <- 100 * tau2/(vi.avg + tau2)
+        H2 <- tau2/vi.avg + 1
     }
     wi <- 1/(vi + tau2)
     W <- .diag(wi)
@@ -11116,8 +11241,7 @@ function (object, out.names = c("sei", "zi", "ci.lb", "ci.ub"),
     return(dat)
 }
 summary.rma <-
-function (object, digits = object$digits, showfit = TRUE, signif.legend = TRUE, 
-    ...) 
+function (object, digits = object$digits, showfit = TRUE, ...) 
 {
     if (!is.element("rma", class(object))) 
         stop("Argument 'object' must be an object of class \"rma\".")

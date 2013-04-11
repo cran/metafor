@@ -7,7 +7,7 @@ rma.glmm(ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi, ti, ni,
          mods, measure, intercept=TRUE, data, slab, subset,
          add=1/2, to="only0", drop00=TRUE, vtype="LS",
          model="UM.FS", method="ML", tdist=FALSE,
-         level=95, digits=4, btt, nAGQ=1, verbose=FALSE, control)
+         level=95, digits=4, btt, nAGQ=100, verbose=FALSE, control)
 }
 \arguments{
    \item{ai}{see below and the documentation of the \code{\link{escalc}} function for more details.}
@@ -40,7 +40,7 @@ rma.glmm(ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi, ti, ni,
    \item{level}{numerical value between 0 and 100 specifying the confidence interval level (default is 95).}
    \item{digits}{integer specifying the number of decimal places to which the printed results should be rounded (default is 4).}
    \item{btt}{optional vector of indices specifying which coefficients to include in the omnibus test of moderators. See \sQuote{Details}.}
-   \item{nAGQ}{positive integer specifying the number of points per axis for evaluating the adaptive Gauss-Hermite approximation to the log likelihood. This defaults to 1, corresponding to the Laplacian approximation. Values greater than 1 produce greater accuracy in the evaluation of the log likelihood at the expense of speed. See \sQuote{Note}.}
+   \item{nAGQ}{positive integer specifying the number of points per axis for evaluating the adaptive Gauss-Hermite approximation to the log likelihood. This defaults to 100, which should provide sufficient accuracy in the evaluation of the log likelihood in most cases, but at the expense of speed. Setting this to 1 corresponds to the Laplacian approximation. See \sQuote{Note}.}
    \item{verbose}{logical indicating whether output should be generated for the fitting algorithms used (default is \code{FALSE}). See \sQuote{Note}.}
    \item{control}{optional list of control values for the estimation algorithms. Defaults to an empty list, which means that default values are defined inside the function. See \sQuote{Note}.}
 }
@@ -127,8 +127,8 @@ rma.glmm(ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi, ti, ni,
    \item{QEp.LRT}{p-value for the likelihood ratio test of (residual) heterogeneity.}
    \item{QM}{test statistic for the omnibus test of coefficients.}
    \item{QMp}{p-value for the omnibus test of coefficients.}
-   \item{I2}{value of \eqn{I^2} (only for the random-effects model; \code{NA} otherwise).}
-   \item{H2}{value of \eqn{H^2} (only for the random-effects model; \code{NA} otherwise).}
+   \item{I2}{value of \eqn{I^2}.}
+   \item{H2}{value of \eqn{H^2}.}
    \item{int.only}{logical that indicates whether the model is an intercept-only model.}
    \item{yi, vi, X}{the vector of outcomes, the corresponding sampling variances, and the design matrix of the model.}
    \item{fit.stats}{a list with the log likelihood, deviance, AIC, and BIC values.}
@@ -150,7 +150,7 @@ rma.glmm(ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi, ti, ni,
    \item for \code{\link[lme4]{lmer}}, the \code{maxIter} (default is \code{300}) and \code{maxFN} (default is \code{900}) arguments,
    \item for \code{\link{optim}}, the \code{method} (default is \code{"BFGS"}) and \code{reltol} (default is \code{1e-8}) arguments,
    \item for \code{\link{integrate}}, the \code{rel.tol} (default is \code{1e-8}) and \code{subdivisions} (default is \code{100}) arguments.
-   } Also, for \code{\link[lme4]{lmer}}, the \code{nAGQ} argument is used to specify the number of quadrature points. The default is 1, which corresponds to the Laplacian approximation. Values greater than 1 produce greater accuracy in the evaluation of the log likelihood at the expense of speed.
+   } Also, for \code{\link[lme4]{lmer}}, the \code{nAGQ} argument is used to specify the number of quadrature points. The default value is 100, which should be more than enough for most cases, but this can be quite slow. Setting this to 1 corresponds to the Laplacian approximation.
 
    Information on the evolution of the various algorithms is obtained by setting \code{verbose=TRUE} or with \code{control=list(verbose=TRUE)}.
 
@@ -180,22 +180,26 @@ rma.glmm(ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi, ti, ni,
 data(dat.bcg)
 
 ### random-effects model using rma.uni() (standard random-effects model analysis)
-rma(measure="OR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg, method="REML")
+rma(measure="OR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg, method="REML", verbose=TRUE)
 
-### random-effects models using rma.glmm() (require lme4 package to be installed)
+### random-effects models using rma.glmm() (requires lme4 package to be installed)
 
-### unconditional model with fixed study effects
-rma.glmm(measure="OR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg, model="UM.FS")
+### unconditional model with fixed study effects (fitting this model is slow with default of nAGQ=100)
+\dontrun{
+rma.glmm(measure="OR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg, model="UM.FS", verbose=TRUE)
+}
 
-### unconditional model with random study effects
-rma.glmm(measure="OR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg, model="UM.RS")
+### unconditional model with random study effects (fitting this model is slow with default of nAGQ=100)
+\dontrun{
+rma.glmm(measure="OR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg, model="UM.RS", verbose=TRUE)
+}
 
 ### conditional model with approximate likelihood
-rma.glmm(measure="OR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg, model="CM.AL")
+rma.glmm(measure="OR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg, model="CM.AL", verbose=TRUE)
 
 ### conditional model with exact likelihood (fitting this model is slow)
 \dontrun{
-rma.glmm(measure="OR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg, model="CM.EL")
+rma.glmm(measure="OR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg, model="CM.EL", verbose=TRUE)
 }
 }
 \keyword{models}

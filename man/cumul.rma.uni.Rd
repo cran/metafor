@@ -29,8 +29,8 @@
    \item{QE}{test statistics for the tests of heterogeneity.}
    \item{QEp}{p-values for the tests of heterogeneity.}
    \item{tau2}{estimated amounts of (residual) heterogeneity (only for random-effects models).}
-   \item{I2}{values of \eqn{I^2} (only for random-effects models).}
-   \item{H2}{values of \eqn{H^2} (only for random-effects models).}
+   \item{I2}{values of \eqn{I^2}.}
+   \item{H2}{values of \eqn{H^2}.}
 
    The object is formated and printed with \code{\link{print.list.rma}}. A forest plot showing the results from the cumulative meta-analysis can be obtained with \code{\link{forest.cumul.rma}}.
 }

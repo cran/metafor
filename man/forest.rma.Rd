@@ -152,7 +152,7 @@ res <- rma(ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg, measure="RR",
 forest(res)
 forest(res, ylim=c(-1.5, 16)) ### the default
 forest(res, ylim=c(-1.5, 20)) ### extra space in plot
-forest(res, ylim=c(-1.5, 20), rows=c(17:15, 12:6,3:1)) ### set positions
+forest(res, ylim=c(-1.5, 20), rows=c(17:15, 12:6, 3:1)) ### set positions
 
 ### forest plot with subgrouping of studies
 forest(res, xlim=c(-16, 6), at=log(c(.05, .25, 1, 4)), atransf=exp,

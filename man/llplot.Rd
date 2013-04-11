@@ -25,7 +25,7 @@ llplot(measure="OR", ai, bi, ci, di, n1i, n2i, data, subset, drop00=TRUE,
    \item{ylim}{y axis limits. If unspecified, the function tries to set the y axis limits to some sensible values.}
    \item{xlab}{title for the x axis. If unspecified, the function tries to set an appropriate axis title.}
    \item{ylab}{title for the y axis. If unspecified, the function tries to set an appropriate axis title.}
-   \item{scale}{logical indicating whether the log likelihood values should be scaled, so that the total area under each curve is approximately equal to 1.}
+   \item{scale}{logical indicating whether the log likelihood values should be scaled, so that the total area under each curve is (approximately) equal to 1.}
    \item{lty}{the line type (either a single value or a vector of length \eqn{k}). If unspecified, the function uses solid lines for tables where the MLE of the odds ratio is finite and dashed/dotted lines otherwise.}
    \item{lwd}{the line width (either a single value or a vector of length \eqn{k}). If unspecified, the function sets the widths according to the sampling variances (so that the line is thicker for more precise studies and vice-versa).}
    \item{col}{the line color (either a single value or a vector of length \eqn{k}). If unspecified, the function uses various gray shades according to the sampling variances (so that darher shades are used for more precise studies and vice-versa).}

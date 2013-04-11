@@ -122,8 +122,8 @@ rma(yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i, x2i,
    \item{QEp}{p-value for the test of (residual) heterogeneity.}
    \item{QM}{test statistic for the omnibus test of coefficients.}
    \item{QMp}{p-value for the omnibus test of coefficients.}
-   \item{I2}{value of \eqn{I^2} (only for the random-effects model; \code{NA} otherwise).}
-   \item{H2}{value of \eqn{H^2} (only for the random-effects model; \code{NA} otherwise).}
+   \item{I2}{value of \eqn{I^2}.}
+   \item{H2}{value of \eqn{H^2}.}
    \item{int.only}{logical that indicates whether the model is an intercept-only model.}
    \item{yi, vi, X}{the vector of outcomes, the corresponding sampling variances, and the design matrix of the model.}
    \item{fit.stats}{a list with the log likelihood, deviance, AIC, and BIC values under the unrestricted and restricted likelihood.}

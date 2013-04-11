@@ -28,7 +28,7 @@
 \details{
    The confidence intervals for the model coefficients are simply the usual Wald-type intervals which are also shown when printing the fitted object.
 
-   The confidence interval for the amount of (residual) heterogeneity is obtained iteratively via the Q-profile method as described by Hartung and Knapp (2005) and Viechtbauer (2007). The method provides an exact confidence interval for \eqn{\tau^2} in random- and mixed-effects models. The square root of the interval bounds is also returned for easier interpretation. For random-effects models, confidence intervals for \eqn{I^2} and \eqn{H^2} are also provided (Higgins & Thompson, 2002). Since \eqn{I^2} and \eqn{H^2} are just monotonic transformation of \eqn{\tau^2}, the confidence intervals for \eqn{I^2} and \eqn{H^2} are also exact.
+   The confidence interval for the amount of (residual) heterogeneity is obtained iteratively via the Q-profile method as described by Hartung and Knapp (2005) and Viechtbauer (2007). The method provides an exact confidence interval for \eqn{\tau^2} in random- and mixed-effects models. The square root of the interval bounds is also returned for easier interpretation. Confidence intervals for \eqn{I^2} and \eqn{H^2} are also provided (Higgins & Thompson, 2002). Since \eqn{I^2} and \eqn{H^2} are just monotonic transformation of \eqn{\tau^2}, the confidence intervals for \eqn{I^2} and \eqn{H^2} are also exact.
 }
 \value{
    An object of class \code{"confint.rma"}. The object is a list with either one or two elements (named \code{fixed} and \code{random}) with the following elements:

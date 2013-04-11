@@ -32,7 +32,7 @@ rma.peto(ai, bi, ci, di, n1i, n2i,
    group 2 \tab \code{ci} \tab \code{di} \tab \code{n2i}
    } where \code{ai}, \code{bi}, \code{ci}, and \code{di} denote the cell frequencies and \code{n1i} and \code{n2i} the row totals. For example, in a set of randomized clinical trials (RCTs) or cohort studies, group 1 and group 2 may refer to the treatment (exposed) and placebo/control (not exposed) group, with outcome 1 denoting some event of interest (e.g., death) and outcome 2 its complement. In a set of case-control studies, group 1 and group 2 may refer to the group of cases and the group of controls, with outcome 1 denoting, for example, exposure to some risk factor and outcome 2 non-exposure.
 
-   An approach for aggregating 2x2 table data of this type was suggested by Peto (see Yusuf et al., 1985). The method provides a weighted estimate of the (log) odds ratio under a fixed-effects model. Note that the printed results are given both in terms of the log and the raw units (for easier interpretation).
+   An approach for aggregating 2x2 table data of this type was suggested by Peto (see Yusuf et al., 1985). The method provides a weighted estimate of the (log) odds ratio under a fixed-effects model. The method is particularly advantageous when the event of interest is rare, but it should only be used when the group sizes within the individual studies are not too dissimilar and effect sizes are generally small (Greenland & Salvan, 1990; Sweeting et al., 2004; Bradburn et al., 2007). Note that the printed results are given both in terms of the log and the raw units (for easier interpretation).
 
    Peto's method itself does not require the calculation of the individual (log) odds ratios and directly makes use of the 2x2 table counts. Zero cells are not a problem (except in extreme cases, such as when one of the two outcomes never occurs in any of the tables). Therefore, it is unnecessary to add some constant to the cell counts when there are zero cells. However, for plotting and various other functions, it is necessary to calculate the individual (log) odds ratios for the \eqn{k} tables. Here, zero cells can be problematic, so adding a constant value to the cell counts ensures that all \eqn{k} values can be calculated. The \code{add} and \code{to} arguments are used to specify what value should be added to the 2x2 cell frequencies and under what circumstances when calculating the individual (log) odds ratios and when applying Peto's method. The documentation of the \code{\link{escalc}} function explains how the \code{add} and \code{to} arguments work. If only one value for these arguments is specified, then these values are used when calculating the individual outcomes and no adjustment to the cell counts is made when applying Peto's method. Alternatively, when specifying two values for these arguments, the first value applies when calculating the individual outcomes and the second value when applying Peto's method. Note that \code{drop00} is set to \code{TRUE} by default, since studies where \code{ai=ci=0} or \code{bi=di=0} are also automatically \sQuote{dropped} when applying Peto's method.
 }
@@ -67,6 +67,13 @@ rma.peto(ai, bi, ci, di, n1i, n2i,
    author homepage: \url{http://www.wvbauer.com/}
 }
 \references{
+
+   Bradburn, M. J., Deeks, J. J., Berlin, J. A., & Localio, A. R. (2007). Much ado about nothing: A comparison of the performance of meta-analytical methods with rare events. \emph{Statistics in Medicine}, \bold{26}, 53--77.
+
+   Greenland, S., & Salvan, A. (1990). Bias in the one-step method for pooling study results. \emph{Statistics in Medicine}, \bold{9}, 247--252.
+
+   Sweeting, M. J., Sutton, A. J., & Lambert, P. C. (2004). What to add to nothing? Use and avoidance of continuity corrections in meta-analysis of sparse data. \emph{Statistics in Medicine}, \bold{23}, 1351--1375.
+
    Yusuf, S., Peto, R., Lewis, J., Collins, R., & Sleight, P. (1985). Beta blockade during and after myocardial infarction: An overview of the randomized trials. \emph{Progress in Cardiovascular Disease}, \bold{27}, 335--371.
 
    Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \url{http://www.jstatsoft.org/v36/i03/}.
@@ -75,7 +82,7 @@ rma.peto(ai, bi, ci, di, n1i, n2i,
    \code{\link{rma.uni}}, \code{\link{rma.glmm}}, \code{\link{rma.mh}}
 }
 \examples{
-### load BCG vaccine data
+### load data
 data(dat.bcg)
 
 ### meta-analysis of the (log) odds ratios using Peto's method

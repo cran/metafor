@@ -53,8 +53,8 @@
 data(dat.curtis1998)
 
 ### calculate log ratio of means and corresponding sampling variances
-dat <- escalc(measure="ROM", m1i=m1i, sd1i=sd1i, n1i=n1i, m2i=m2i,
-              sd2i=sd2i, n2i=n2i, data=dat.curtis1998)
+dat <- escalc(measure="ROM", m1i=m1i, sd1i=sd1i, n1i=n1i, 
+              m2i=m2i, sd2i=sd2i, n2i=n2i, data=dat.curtis1998)
 dat
 
 ### meta-analysis of log ratio of means using a random-effects model

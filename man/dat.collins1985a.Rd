@@ -36,22 +36,22 @@ dat <- escalc(measure="OR", ai=xci, n1i=nci, ci=xti, n2i=nti,
 summary(dat, digits=2, transf=exp)
 
 ### meta-analysis of log odds ratios using Peto's method
-res <- rma.peto(ai=xci, n1i=nci, ci=xti, n2i=nti, data=dat)
+res <- rma.peto(ai=xci, n1i=nci, ci=xti, n2i=nti, data=dat.collins1985a)
 summary(res)
 
 \dontrun{
 ### meta-analysis of log odds ratios using conditional logistic regression model
 res <- rma.glmm(measure="OR", ai=xci, n1i=nci, ci=xti, n2i=nti,
-                data=dat, model="CM.EL", method="FE")
+                data=dat.collins1985a, model="CM.EL", method="FE")
 summary(res)
 
 ### plot the log likelihoods of the odds ratios
-llplot(measure="OR", ai=xci, n1i=nci, ci=xti, n2i=nti, data=dat,
+llplot(measure="OR", ai=xci, n1i=nci, ci=xti, n2i=nti, data=dat.collins1985a,
        lwd=1, refline=NA, xlim=c(-4,4), drop00=FALSE)
 
 ### meta-analysis of log odds ratios using conditional logistic regression model
 res <- rma.glmm(measure="OR", ai=xci, n1i=nci, ci=xti, n2i=nti,
-                data=dat, model="CM.EL", method="ML")
+                data=dat.collins1985a, model="CM.EL", method="ML")
 summary(res)
 }
 }

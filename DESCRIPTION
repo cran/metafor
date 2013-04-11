@@ -1,6 +1,6 @@
 Package: metafor
-Version: 1.7-0
-Date: 2013-02-05
+Version: 1.8-0
+Date: 2013-04-11
 Title: Meta-Analysis Package for R
 Author: Wolfgang Viechtbauer <wvb@metafor-project.org>
 Maintainer: Wolfgang Viechtbauer <wvb@metafor-project.org>
@@ -22,7 +22,8 @@ Description: The metafor package provides a comprehensive collection of
 License: GPL (>= 2)
 ByteCompile: TRUE
 BuildVignettes: FALSE
-URL: http://www.metafor-project.org/, http://www.wvbauer.com
-Packaged: 2013-02-06 10:01:31 UTC; Wolfgang
+URL: http://www.metafor-project.org/ http://www.wvbauer.com
+Packaged: 2013-04-11 15:04:16 UTC; Wolfgang
+NeedsCompilation: no
 Repository: CRAN
-Date/Publication: 2013-02-06 11:56:38
+Date/Publication: 2013-04-11 17:37:25
