@@ -14,7 +14,7 @@
 }
 \arguments{
    \item{y}{an object of class \code{"rma.uni"}, \code{"rma.mh"}, or \code{"rma.peto"}. The method is not yet implemented for objects of class \code{"rma.glmm"}.}
-   \item{type}{either \code{"rstandard"} (default) or \code{"rstudent"} indicating whether the usual or deleted residuals should be used in creating the plot. See \sQuote{Details}.}
+   \item{type}{either \code{"rstandard"} (default) or \code{"rstudent"} indicating whether standardized residuals or studentized deleted residuals should be used in creating the plot. See \sQuote{Details}.}
    \item{pch}{plotting symbol to use for the observed effect sizes or outcomes. By default, a solid circle is used. See \code{\link{points}} for other options.}
    \item{envelope}{logical indicating whether a pseudo confidence envelope should be simulated and added to the plot (default is \code{TRUE})). Only for objects of class \code{"rma.uni"}. See \sQuote{Details}.}
    \item{level}{numerical value between 0 and 100 specifying the level of the pseudo confidence envelope (the default is to take the value from the object).}

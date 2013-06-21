@@ -21,7 +21,7 @@
    \item the p-value for the likelihood ratio test.
    \item the test statistic for the test of (residual) heterogeneity for the full and the reduced model.
    \item the estimate of \eqn{\tau^2} from the full and the reduced model. Suppressed for fixed-effects models.
-   \item the amount of (residual) heterogeneity in the reduced model that is accounted for in the full model (in percent). \code{NA} for fixed-effects models or if the amount of heterogeneity in the reduced model is equal to zero. This can be regarded as a pseudo-R^2 statistic (Raudenbush, 2009).
+   \item the amount of (residual) heterogeneity in the reduced model that is accounted for in the full model (in percent). \code{NA} for fixed-effects models or if the amount of heterogeneity in the reduced model is equal to zero. This can be regarded as a pseudo R^2 statistic (Raudenbush, 2009).
    }
 }
 \value{

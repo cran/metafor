@@ -8,7 +8,7 @@
 \arguments{
    \item{x}{an object of class \code{"rma.uni"}.}
    \item{side}{either \code{"left"} or \code{"right"}, indicating on which side of the funnel plot the missing studies should be imputed. If left undefined, the side is chosen within the function depending on the results of Egger's regression test (see \code{\link{regtest}} for details on this test).}
-   \item{estimator}{either \code{"L0"} or \code{"R0"} indicating the estimator to use for estimating the number of missing studies (default is \code{"L0"}).}
+   \item{estimator}{either \code{"L0"}, \code{"R0"}, or \code{"Q0"}, indicating the estimator to use for estimating the number of missing studies (default is \code{"L0"}).}
    \item{maxiter}{integer indicating the maximum number of iterations to use for the trim and fill method (default is \code{50}).}
    \item{verbose}{logical indicating whether information about the evolution of the algorithm should be printed (default is \code{FALSE}).}
    \item{\dots}{other arguments.}
@@ -20,9 +20,14 @@
    An object of class \code{c("rma.uni.trimfill","rma.uni","rma")}. The object is a list containing the same components as objects created by \code{\link{rma.uni}}, except that the data are augmented by the trim and fill method. The following components are also added:
    \item{k0}{estimated number of missing studies.}
    \item{side}{either \code{"left"} or \code{"right"}, indicating on which side of the funnel plot the missing studies (if any) were imputed.}
+   \item{se.k0}{estimated standard error of k0.}
+   \item{p.k0}{p-value for the test of H0: no missing studies on the chosen side (only when \code{estimator="R0"}; \code{NA} otherwise).}
    \item{fill}{a vector of dummy codes, indicating which of the data are the observed (0) and the augmented (1) data.}
 
    The results of the fitted model after the data augmentation are printed with the \code{\link{print.rma.uni}} function. Calling \code{\link{funnel.rma}} on the object provides a funnel plot of the observed and augmented data.
+}
+\note{
+   Three different estimators for the number of missing studies were proposed by Duval and Tweedie (2000a, 2000b). Based on these articles and Duval (2005), \code{"R0"} and \code{"L0"} are recommended. An advantage of estimator \code{"R0"} is that it directly provides a test of the null hypothesis that the number of missing studies is zero (on the chosen side).
 }
 \author{
    Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr
@@ -46,14 +51,18 @@
 data(dat.bcg)
 
 ### meta-analysis of the log relative risks using a fixed-effects model
-res <- rma(ai=tpos, bi=tneg, ci=cpos, di=cneg, 
+res <- rma(ai=tpos, bi=tneg, ci=cpos, di=cneg,
            data=dat.bcg, measure="RR", method="FE")
 res.tf <- trimfill(res)
 res.tf
 funnel(res.tf)
 
+### estimator "R0" also provides test
+res.tf <- trimfill(res, estimator="R0")
+res.tf
+
 ### meta-analysis of the log relative risks using a random-effects model
-res <- rma(ai=tpos, bi=tneg, ci=cpos, di=cneg, 
+res <- rma(ai=tpos, bi=tneg, ci=cpos, di=cneg,
            data=dat.bcg, measure="RR", method="REML")
 res.tf <- trimfill(res)
 res.tf

@@ -274,7 +274,7 @@ escalc(measure, formula, \dots)
          \item \code{"ARAW"} for \emph{raw alpha} values.
          \item \code{"AHW"} for \emph{transformed alpha values} (Hakstian & Whalen, 1976).
          \item \code{"ABT"} for \emph{transformed alpha values} (Bonett, 2002).
-         } Note that the transformations implemented here are slightly different from the ones described by Hakstian and Whalen (1976) and Bonett (2002). In particular, for \code{"AHW"}, the transformation \eqn{1-(1-\alpha)^{1/3}}{1-(1-\alpha)^(1/3)} is used, while for \code{"ABT"}, the transformation \eqn{-ln(1-\alpha)} is used. This ensures that the transformed values are monotonically increasing functions of alpha.
+         } Note that the transformations implemented here are slightly different from the ones described by Hakstian and Whalen (1976) and Bonett (2002). In particular, for \code{"AHW"}, the transformation \eqn{1-(1-\alpha)^{1/3}}{1-(1-\alpha)^(1/3)} is used, while for \code{"ABT"}, the transformation \eqn{-ln(1-\alpha)} is used. This ensures that the transformed values are monotonically increasing functions of \eqn{alpha}.
 
          A dataset corresponding to data of this type is provided in \code{\link{dat.bonett2010}}.
 

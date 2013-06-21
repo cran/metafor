@@ -42,7 +42,7 @@ rma.glmm(ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi, ti, ni,
    \item{btt}{optional vector of indices specifying which coefficients to include in the omnibus test of moderators. See \sQuote{Details}.}
    \item{nAGQ}{positive integer specifying the number of points per axis for evaluating the adaptive Gauss-Hermite approximation to the log likelihood. This defaults to 100, which should provide sufficient accuracy in the evaluation of the log likelihood in most cases, but at the expense of speed. Setting this to 1 corresponds to the Laplacian approximation. See \sQuote{Note}.}
    \item{verbose}{logical indicating whether output should be generated for the fitting algorithms used (default is \code{FALSE}). See \sQuote{Note}.}
-   \item{control}{optional list of control values for the estimation algorithms. Defaults to an empty list, which means that default values are defined inside the function. See \sQuote{Note}.}
+   \item{control}{optional list of control values for the estimation algorithms. If unspecified, default values are defined inside the function. See \sQuote{Note}.}
 }
 \details{
 
@@ -152,7 +152,7 @@ rma.glmm(ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi, ti, ni,
    \item for \code{\link{integrate}}, the \code{rel.tol} (default is \code{1e-8}) and \code{subdivisions} (default is \code{100}) arguments.
    } Also, for \code{\link[lme4]{lmer}}, the \code{nAGQ} argument is used to specify the number of quadrature points. The default value is 100, which should be more than enough for most cases, but this can be quite slow. Setting this to 1 corresponds to the Laplacian approximation.
 
-   Information on the evolution of the various algorithms is obtained by setting \code{verbose=TRUE} or with \code{control=list(verbose=TRUE)}.
+   Information on the evolution of the various algorithms is obtained by setting \code{verbose=TRUE} or with \code{control=list(verbose=TRUE)}. Since fitting the various models can be computationally expensive, this option is quite useful to determine how the fitting is progressing.
 
    For \code{model="CM.EL"} and \code{measure="OR"}, optimization involves repeated calculation of the density of the non-central hypergeometric distribution. When \code{method="ML"}, this also requires integration over the same density. This is currently implemented in a rather brute-force manner and may not be numerically stable, especially when models with moderators are fitted. Stability can be improved by scaling the moderators in a similar manner (i.e., don't use a moderator that is coded 0 and 1, while another uses values in the 1000s). Sensitivity analyses are highly recommended here, to ensure that the results do not depend on the scaling of the moderators.
 }
@@ -179,27 +179,35 @@ rma.glmm(ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi, ti, ni,
 ### load BCG vaccine data
 data(dat.bcg)
 
-### random-effects model using rma.uni() (standard random-effects model analysis)
-rma(measure="OR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg, method="REML", verbose=TRUE)
+### random-effects model using rma.uni() (standard RE model analysis)
+rma(measure="OR", ai=tpos, bi=tneg, ci=cpos, di=cneg,
+    data=dat.bcg, method="REML", verbose=TRUE)
 
-### random-effects models using rma.glmm() (requires lme4 package to be installed)
+### random-effects models using rma.glmm() (requires 'lme4' package)
 
-### unconditional model with fixed study effects (fitting this model is slow with default of nAGQ=100)
+### unconditional model with fixed study effects
+### note: fitting this model is slow with the default of nAGQ=100
 \dontrun{
-rma.glmm(measure="OR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg, model="UM.FS", verbose=TRUE)
+rma.glmm(measure="OR", ai=tpos, bi=tneg, ci=cpos, di=cneg, 
+         data=dat.bcg, model="UM.FS", verbose=TRUE)
 }
 
-### unconditional model with random study effects (fitting this model is slow with default of nAGQ=100)
+### unconditional model with random study effects
+### note: fitting this model is slow with the default of nAGQ=100
 \dontrun{
-rma.glmm(measure="OR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg, model="UM.RS", verbose=TRUE)
+rma.glmm(measure="OR", ai=tpos, bi=tneg, ci=cpos, di=cneg,
+         data=dat.bcg, model="UM.RS", verbose=TRUE)
 }
 
 ### conditional model with approximate likelihood
-rma.glmm(measure="OR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg, model="CM.AL", verbose=TRUE)
+rma.glmm(measure="OR", ai=tpos, bi=tneg, ci=cpos, di=cneg,
+         data=dat.bcg, model="CM.AL", verbose=TRUE)
 
-### conditional model with exact likelihood (fitting this model is slow)
+### conditional model with exact likelihood
+### note: fitting this model is slow
 \dontrun{
-rma.glmm(measure="OR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg, model="CM.EL", verbose=TRUE)
+rma.glmm(measure="OR", ai=tpos, bi=tneg, ci=cpos, di=cneg,
+         data=dat.bcg, model="CM.EL", verbose=TRUE)
 }
 }
 \keyword{models}

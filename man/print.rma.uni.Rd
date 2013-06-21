@@ -10,7 +10,7 @@
    Print and summary methods for objects of class \code{"rma.uni"}, \code{"rma.mh"}, \code{"rma.peto"}, and \code{"rma.glmm"}.
 }
 \usage{
-\method{print}{rma.uni}(x, digits=x$digits, showfit=FALSE, signif.stars=getOption("show.signif.stars"), 
+\method{print}{rma.uni}(x, digits=x$digits, showfit=FALSE, signif.stars=getOption("show.signif.stars"),
       signif.legend=signif.stars, \dots)
 \method{print}{rma.mh}(x, digits=x$digits, showfit=FALSE, \dots)
 \method{print}{rma.peto}(x, digits=x$digits, showfit=FALSE, \dots)
@@ -34,14 +34,15 @@
    \itemize{
    \item the log likelihood, deviance, AIC, and BIC value (when setting \code{showfit=TRUE} or by default for \code{summary}).
    \item the amount of (residual) heterogeneity in the random/mixed-effects model (i.e., the estimate of \eqn{\tau^2} and its square root). Suppressed for fixed-effects models. The (asymptotic) standard error of the estimate of \eqn{\tau^2} is also provided (where possible).
-   \item the \eqn{I^2} statistic estimates (in percent) how much of the total variability in the effect size estimates (which is composed of heterogeneity and sampling variability) can be attributed to heterogeneity among the true effects. Only supplied when fitting a random-effects model.
-   \item the \eqn{H^2} statistic is the ratio of the total amount of variability in the observed outcomes to the amount of sampling variability. Only supplied when fitting a random-effects model.
-   \item the amount of study-level variability (only for objects of class \code{"rma.glmm"} and when using a model that models study level differences as a random effect).
-   \item the results of the test for (residual) heterogeneity. This is the usual Q-test for heterogeneity when not including moderators in the model and the QE-test for residual heterogeneity when moderators are included. For objects of class \code{"rma.glmm"}, the results from a likelihood ratio test are provided.
+   \item the \eqn{I^2} statistic. For a random-effects model, \eqn{I^2} estimates (in percent) how much of the total variability in the effect size estimates (which is composed of heterogeneity plus sampling variability) can be attributed to heterogeneity among the true effects. For a mixed-effects model, \eqn{I^2} estimates how much of the unaccounted variability (which is composed of residual heterogeneity plus sampling variability) can be attributed to residual heterogeneity.
+   \item the \eqn{H^2} statistic. For a random-effects model, \eqn{H^2} estimates the ratio of the total amount of variability in the effect size estimates to the amount of sampling variability. For a mixed-effects model, \eqn{H^2} estimates the ratio of the unaccounted variability in the effect size estimates to the amount of sampling variability.
+   \item the \eqn{R^2} statistic, which estimates the amount of heterogeneity accounted for by the moderators included in the model and can be regarded as a pseudo \eqn{R^2} statistic (Raudenbush, 2009). Only for objects of class \code{"rma.uni"} and mixed-effects models (i.e., for models including moderators). This is suppressed (and set to \code{NULL}) for models without moderators, fixed-effects models, or if the model does not contain an intercept. \code{NA} if the amount of heterogeneity is equal to zero to begin with.
+   \item the amount of study level variability (only for objects of class \code{"rma.glmm"} and when using a model that models study level differences as a random effect).
+   \item the results of the test for (residual) heterogeneity. This is the usual Q-test for heterogeneity when not including moderators in the model and the QE-test for residual heterogeneity when moderators are included. For objects of class \code{"rma.glmm"}, the results from a Wald-type test and a likelihood ratio test are provided (see \code{\link{rma.glmm}} for more details).
    \item the results of the omnibus (Wald-type) test of the coefficients in the model (the indices of the coefficients tested are also indicated). Suppressed if the model includes only one coefficient (e.g., only an intercept, like in the fixed- and random-effects model).
    \item a table with the estimated coefficients, corresponding standard errors, test statistics, p-values, and confidence interval bounds.
+   \item the Cochran-Mantel-Haenszel test and Tarone's test for heterogeneity (only when analyzing odds ratios using the Mantel-Haenszel method, i.e., \code{"rma.mh"}). 
    }
-   When analyzing odds ratios using the Mantel-Haenszel method, the Cochran-Mantel-Haenszel test and Tarone's test for heterogeneity are also provided.
 }
 \value{
    The \code{print} functions do not return an object. The \code{summary} function returns the object passed to it (with additional class \code{"summary.rma"}).
@@ -52,6 +53,8 @@
    author homepage: \url{http://www.wvbauer.com/}
 }
 \references{
+   Raudenbush, S. W. (2009). Analyzing effect sizes: Random effects models. In H. Cooper, L. V. Hedges, & J. C. Valentine (Eds.), \emph{The handbook of research synthesis and meta-analysis} (2nd ed., pp. 295--315). New York: Russell Sage Foundation.
+
    Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \url{http://www.jstatsoft.org/v36/i03/}.
 }
 \seealso{

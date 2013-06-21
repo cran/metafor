@@ -1,11 +1,73 @@
+Changes in Version 1.9-0 (2013-06-21)
+=====================================
+
+   o vignette renamed to 'metafor' so vignette("metafor") works now
+
+   o added a diagram to the documentation, showing the various functions in
+     the metafor package (and how they relate to each other); can be loaded
+     with vignette("metafor_diagram")
+
+   o anova.rma.uni() function can now also be used to test (sub)sets of
+     model coefficients with a Wald-type test when a single model is passed
+     to the function
+
+   o the pseudo R^2 statistic is now automatically calculated by the
+     rma.uni() function and supplied in the output (only for mixed-effects
+     models and when the model includes an intercept, so that the random-
+     effects model is clearly nested within the mixed-effects model)
+
+   o component 'VAF' is now called 'R2' in anova.rma.uni() function
+
+   o added function hc() that carries out a random-effects model analysis
+     using the method by Henmi and Copas (2010); thanks to Michael Dewey for
+     the suggestion and providing the code
+
+   o added new dataset (dat.lee2004), which was used in the article by Henmi
+     and Copas (2010) to illustrate their method
+
+   o fixed missing x axis labels in the forest() functions
+
+   o rma.glmm() now computes Hessian matrices via the 'numDeriv' package
+     when model="CM.EL" and measure="OR" (i.e., for the conditional logistic
+     model with exact likelihood); so 'numDeriv' is now a suggested package
+     and is loaded within rma.glmm() when required
+
+   o trimfill.rma.uni() now also implements the "Q0" estimator (although the
+     "L0" and "R0" estimators are generally to be preferred)
+
+   o trimfill.rma.uni() now also calculates the SE of the estimated number
+     of missing studies and, for estimator "R0", provides a formal test of
+     the null hypothesis that the number of missing studies on a given side
+     is zero
+
+   o added new dataset (dat.bangertdrowns2004)
+
+   o the 'level' argument in various functions now either accepts a value
+     representing a percentage or a proportion (values greater than 1 are
+     assumed to be a percentage)
+
+   o summary.escalc() now computes confidence intervals correctly when using
+     the 'transf' argument
+
+   o computation of Cochran-Mantel-Haenszel statistic in rma.mh() changed
+     slightly to avoid integer overflow with very big counts
+
+   o some internal improvements with respect to object attributes that were
+     getting discarded when subsetting
+
+   o some general code cleanup
+
+   o some improvements to the documentation
+
+
 Changes in Version 1.8-0 (2013-04-11)
 =====================================
 
    o added additional clarifications about the change score outcome measures
      ("MC", "SMCC", and "SMCR") to the help file for the escalc() function
-     and changed the code so that "SMCR" no longer expects argument sd2i to
-     be specified (which is not needed anyways) (thanks to Markus Kösters
-	 for bringing this to my attention)
+     and changed the code so that "SMCR" no longer expects argument 'sd2i'
+     to be specified (which is not needed anyways) (thanks to Markus Kösters
+     for bringing this to my attention)
 
    o sampling variance for the biserial correlation coefficient ("RBIS") is
      now calculated in a slightly more accurate way
@@ -29,11 +91,11 @@ Changes in Version 1.8-0 (2013-04-11)
 
    o in rma.glmm(), default number of quadrature points (nAGQ) is now 100
      (which is quite a bit slower, but should provide more than sufficient
-	 accuracy in most cases)
+     accuracy in most cases)
 
-   o the standard errors of the HS and DL estimates of tau^2 are now
+   o the standard error of the HS and DL estimators of tau^2 are now
      correctly computed when tau^2 is prespecified by the user in the rma()
-     function; in addition, the standard error of the SJ estimate is also
+     function; in addition, the standard error of the SJ estimator is also
      now provided when tau^2 is prespecified
 
    o rma.uni() and rma.glmm() now use a better method to check whether the
@@ -43,10 +105,13 @@ Changes in Version 1.8-0 (2013-04-11)
      by the rma.uni() and rma.glmm() function; confint.rma.uni() provides
      the corresponding confidence intervals for rma.uni() models
 
-   o various print() methods now have a new argument called signif.stars,
+   o various print() methods now have a new argument called 'signif.stars',
      which defaults to getOption("show.signif.stars") (which by default is
      TRUE) to determine whether the infamous 'significance stars' should be
      printed
+
+   o slight changes in wording in the output produced by the print.rma.uni()
+     and print.rma.glmm() functions
 
    o some improvements to the documentation
 
@@ -64,13 +129,13 @@ Changes in Version 1.7-0 (2013-02-05)
    o addded several methods functions for objects of class 'rma.glmm' (not
      all methods yet implemented; to be completed in the future)
 
-   o rma.uni() now allows the user to specify a formula for the yi argument,
-     so instead of rma(yi, vi, mods=~mod1+mod2), one can specify the same
-     model with rma(yi~mod1+mod2, vi)
+   o rma.uni() now allows the user to specify a formula for the 'yi'
+     argument, so instead of rma(yi, vi, mods=~mod1+mod2), one can specify
+     the same model with rma(yi~mod1+mod2, vi)
 
    o rma.uni() now has a 'weights' argument to specify the inverse of the
-     sampling variances (instead of using the vi or sei arguments); for now,
-     this is all this argument should be used for (in the future, this
+     sampling variances (instead of using the 'vi' or 'sei' arguments); for
+     now, this is all this argument should be used for (in the future, this
      argument may potentially be used to allow the user to define
      alternative weights)
 
@@ -78,7 +143,7 @@ Changes in Version 1.7-0 (2013-02-05)
      issues an error accordingly (instead of the rather cryptic error that
      was issued before)
 
-   o rma.uni() now has a verbose argument
+   o rma.uni() now has a 'verbose' argument
 
    o coef.rma() now returns only the model coefficients (this change was
      necessary to make the package compatible with the 'multcomp' package;
@@ -162,8 +227,8 @@ Changes in Version 1.7-0 (2013-02-05)
      sample sizes can now be explicitly specified via the 'ni' argument when
      using the rma.uni() function (i.e., when measure="GEN"); the escalc()
      function also now adds information on the 'ni' values to the resulting
-     data frame (as an attribute of the yi variable), so, if possible, this
-     information is passed on to regtest.rma()
+     data frame (as an attribute of the 'yi' variable), so, if possible,
+     this information is passed on to regtest.rma()
 
    o added switch so that regtest() can also provide the full results from
      the fitted model (thanks to Michael Dewey for the suggestion)
@@ -184,9 +249,9 @@ Changes in Version 1.7-0 (2013-02-05)
      such studies are identified)
 
    o added additional extractor functions for some of the influence measures
-     (i.e., cooks.distance, dfbetas); unfortunately, the covratio and dffits
-     functions in the 'stats' package are not generic; so, to avoid masking,
-     there are currently no extractor functions for these measures
+     (i.e., cooks.distance, dfbetas); unfortunately, the 'covratio' and
+     'dffits' functions in the 'stats' package are not generic; so, to avoid
+     masking, there are currently no extractor functions for these measures
 
    o better handling of missing values in some unusual situations
 
@@ -282,7 +347,7 @@ Changes in Version 1.6-0 (2011-04-12)
    o in labbe.rma(), the solid and dashed lines are now drawn behind (and
      not on top of) the points
 
-   o slight change to transf.ipft.hm() so that missing values in targs$ni
+   o slight change to transf.ipft.hm() so that missing values in 'targs$ni'
      are ignored
 
    o some improvements to the documentation

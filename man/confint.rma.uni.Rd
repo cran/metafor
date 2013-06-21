@@ -22,7 +22,7 @@
    \item{random}{logical indicating whether a confidence interval for the amount of (residual) heterogeneity should be returned (default is \code{TRUE}).}
    \item{digits}{integer specifying the number of decimal places to which the results should be rounded (the default is to take the value from the object).}
    \item{verbose}{logical indicating whether output should be generated for the iterative algorithm used as part of the Q-profile method (default is \code{FALSE}). See \sQuote{Note}.}
-   \item{control}{list of control values for the iterative algorithm. Defaults to an empty list, which means that default values are defined inside the function. See \sQuote{Note}.}
+   \item{control}{list of control values for the iterative algorithm. If unspecified, default values are defined inside the function. See \sQuote{Note}.}
    \item{\dots}{other arguments.}
 }
 \details{

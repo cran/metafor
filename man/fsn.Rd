@@ -3,12 +3,13 @@
 \title{Fail-Safe N (File Drawer Analysis)}
 \description{Function to calculate the fail-safe N.}
 \usage{
-fsn(yi, vi, sei, data, type="Rosenthal", alpha=.05, target, subset, digits=4)
+fsn(yi, vi, sei, weights, data, type="Rosenthal", alpha=.05, target, subset, digits=4)
 }
 \arguments{
-   \item{yi}{vector with the observed effect sizes or outcomes.}
-   \item{vi}{vector with the corresponding sampling variances.}
-   \item{sei}{vector with the corresponding standard errors.\cr(note: only one of the two, \code{vi} or \code{sei}, needs to be specified)}
+   \item{yi}{vector with the observed effect sizes or outcomes. See \sQuote{Details}}
+   \item{vi}{vector with the corresponding sampling variances. See \sQuote{Details}}
+   \item{sei}{vector with the corresponding standard errors. See \sQuote{Details}}
+   \item{weights}{vector of length \eqn{k} with the corresponding inverse sampling variances. See \sQuote{Details}.}
    \item{data}{optional data frame containing the variables given to the arguments above.}
    \item{type}{vector indicating the method to use for the calculation of the fail-safe N. Possible options are \code{"Rosenthal"}, \code{"Orwin"}, or \code{"Rosenberg"}. See below for more details.}
    \item{alpha}{target alpha level to use for the Rosenthal and Rosenberg methods (.05 by default).}
@@ -17,6 +18,8 @@ fsn(yi, vi, sei, data, type="Rosenthal", alpha=.05, target, subset, digits=4)
    \item{digits}{integer specifying the number of decimal places to which the printed results should be rounded (default is 4).}
 }
 \details{
+   The function can be used in conjunction with any of the usual effect size or outcome measures used in meta-analyses (e.g., log odds ratios, log relative risks, risk differences, mean differences, standardized mean differences, raw correlation coefficients, correlation coefficients transformed with Fisher's r-to-z transformation, and so on). Simply specify the observed outcomes via the \code{yi} argument and the corresponding sampling variances via the \code{vi} argument. Instead of specifying \code{vi}, one can specify the standard errors (the square root of the sampling variances) via the \code{sei} argument or the inverse of the sampling variances via the \code{weights} argument. The \code{\link{escalc}} function can be used to compute \code{yi} and \code{vi} for a wide variety of effect size and outcome measures.
+
    The Rosenthal method (sometimes called a \sQuote{file drawer analysis}) calculates the number of studies averaging null results that would have to be added to the given set of observed outcomes to reduce the combined significance level (p-value) to a target alpha level (e.g., .05). The calculation is based on Stouffer's method to combine p-values and is described in Rosenthal (1979).
 
    The Orwin method calculates the number of studies averaging null results that would have to be added to the given set of observed outcomes to reduce the (unweighted) average effect size to a target (unweighted) average effect size. The method is described in Orwin (1983).
@@ -52,7 +55,7 @@ fsn(yi, vi, sei, data, type="Rosenthal", alpha=.05, target, subset, digits=4)
    Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \url{http://www.jstatsoft.org/v36/i03/}.
 }
 \seealso{
-   \code{\link{ranktest}}, \code{\link{trimfill}}
+   \code{\link{ranktest}}, \code{\link{regtest}}, \code{\link{trimfill}}
 }
 \examples{
 ### load BCG vaccine data

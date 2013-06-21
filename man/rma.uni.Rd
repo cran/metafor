@@ -60,13 +60,13 @@ rma(yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i, x2i,
    \item{btt}{optional vector of indices specifying which coefficients to include in the omnibus test of moderators. See \sQuote{Details}.}
    \item{tau2}{optional numerical value to specify the amount of (residual) heterogeneity in a random- or mixed-effects model (instead of estimating it). Useful for sensitivity analyses (e.g., for plotting results as a function of \eqn{\tau^2}). When unspecified, the value of \eqn{\tau^2} is estimated from the data.}
    \item{verbose}{logical indicating whether output should be generated for the Fisher scoring algorithm (default is \code{FALSE}). See \sQuote{Note}.}
-   \item{control}{optional list of control values for the iterative estimation algorithms. Defaults to an empty list, which means that default values are defined inside the function. See \sQuote{Note}.}
+   \item{control}{optional list of control values for the iterative estimation algorithms. If unspecified, default values are defined inside the function. See \sQuote{Note}.}
 }
 \details{
 
    \bold{Specifying the Data}
 
-   The function can be used in conjunction with any of the usual effect size or outcome measures used in meta-analyses (e.g., log odds ratios, log relative risks, risk differences, mean differences, standardized mean differences, raw correlation coefficients, correlation coefficients transformed with Fisher's r-to-z transformation, and so on). Simply specify the observed outcomes via the \code{yi} argument and the corresponding sampling variances via the \code{vi} argument (instead, one can specify the standard errors, the square root of the sampling variances, via the \code{sei} argument, or the inverse of the sampling variances via the \code{weights} argument).
+   The function can be used in conjunction with any of the usual effect size or outcome measures used in meta-analyses (e.g., log odds ratios, log relative risks, risk differences, mean differences, standardized mean differences, raw correlation coefficients, correlation coefficients transformed with Fisher's r-to-z transformation, and so on). Simply specify the observed outcomes via the \code{yi} argument and the corresponding sampling variances via the \code{vi} argument.  Instead of specifying \code{vi}, one can specify the standard errors (the square root of the sampling variances) via the \code{sei} argument or the inverse of the sampling variances via the \code{weights} argument.
 
    Alternatively, the function can automatically calculate the values of a chosen effect size or outcome measure (and the corresponding sampling variances) when supplied with the necessary data. The \code{\link{escalc}} function describes which effect size or outcome measures are currently implemented and what data/arguments should then be specified/used. The \code{measure} argument should then be set to the desired effect size or outcome measure.
 
@@ -122,14 +122,15 @@ rma(yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i, x2i,
    \item{QEp}{p-value for the test of (residual) heterogeneity.}
    \item{QM}{test statistic for the omnibus test of coefficients.}
    \item{QMp}{p-value for the omnibus test of coefficients.}
-   \item{I2}{value of \eqn{I^2}.}
-   \item{H2}{value of \eqn{H^2}.}
+   \item{I2}{value of \eqn{I^2}. See \code{\link{print.rma.uni}} for more details.}
+   \item{H2}{value of \eqn{H^2}. See \code{\link{print.rma.uni}} for more details.}
+   \item{R2}{value of \eqn{R^2}. See \code{\link{print.rma.uni}} for more details.}
    \item{int.only}{logical that indicates whether the model is an intercept-only model.}
    \item{yi, vi, X}{the vector of outcomes, the corresponding sampling variances, and the design matrix of the model.}
    \item{fit.stats}{a list with the log likelihood, deviance, AIC, and BIC values under the unrestricted and restricted likelihood.}
    \item{\dots}{some additional elements/values.}
 
-   The results of the fitted model are neatly formated and printed with the \code{\link{print.rma.uni}} function. If fit statistics should also be given, use \code{\link{summary.rma}} (or use the \code{\link{fitstats.rma}} function to extract them). Full versus reduced model comparisons in terms of fit statistics and likelihoods can be obtained with \code{\link{anova.rma.uni}}. Permutation tests for the model coefficient(s) can be obtained with \code{\link{permutest.rma.uni}}.
+   The results of the fitted model are neatly formated and printed with the \code{\link{print.rma.uni}} function. If fit statistics should also be given, use \code{\link{summary.rma}} (or use the \code{\link{fitstats.rma}} function to extract them). Full versus reduced model comparisons in terms of fit statistics and likelihoods can be obtained with \code{\link{anova.rma.uni}}. Wald-type tests for sets of model coefficients can be obtained with the same function. Permutation tests for the model coefficient(s) can be obtained with \code{\link{permutest.rma.uni}}.
 
    Predicted/fitted values can be obtained with \code{\link{predict.rma}} and \code{\link{fitted.rma}}. For best linear unbiased predictions, see \code{\link{blup.rma.uni}}.
 
@@ -139,7 +140,7 @@ rma(yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i, x2i,
 
    Forest, funnel, radial, and L'abbe plots (the latter two only for models without moderators) can be obtained with \code{\link{forest.rma}}, \code{\link{funnel.rma}}, \code{\link{radial.rma}}, and \code{\link{labbe.rma}}. The \code{\link{qqnorm.rma.uni}} function provides normal QQ plots of the standardized residuals. One can also just call \code{\link{plot.rma.uni}} on the fitted model object to obtain various plots at once.
 
-   Tests for funnel plot asymmetry (which may be indicative of publication bias) can be obtained with \code{\link{ranktest.rma}} and \code{\link{regtest.rma}}. For models without moderators, the \code{\link{trimfill.rma.uni}} method can be used to carry out a trim and fill analysis.
+   Tests for funnel plot asymmetry (which may be indicative of publication bias) can be obtained with \code{\link{ranktest.rma}} and \code{\link{regtest.rma}}. For models without moderators, the \code{\link{trimfill.rma.uni}} method can be used to carry out a trim and fill analysis and code{\link{hc.rma.uni}} provides the results from the method by Henmi and Copas (2010).
 
    For models without moderators, a cumulative meta-analysis (i.e., adding one obervation at a time) can be obtained with \code{\link{cumul.rma.uni}}.
 
