@@ -1,6 +1,6 @@
 \name{funnel.rma}
 \alias{funnel.rma}
-\title{Funnel Plots for rma Objects}
+\title{Funnel Plots for 'rma' Objects}
 \description{Function to create funnel plots for objects of class \code{"rma"}.}
 \usage{
 \method{funnel}{rma}(x, yaxis="sei", xlim, ylim, xlab, ylab,
@@ -11,16 +11,16 @@
 }
 \arguments{
    \item{x}{an object of class \code{"rma"}.}
-   \item{yaxis}{either \code{"sei"}, \code{"vi"}, \code{"seinv"}, \code{"vinv"}, \code{"ni"}, \code{"ninv"}, \code{"sqrtni"}, \code{"sqrtninv"}, or \code{"lni"} to indicate what values should be placed on the y axis. See \sQuote{Details}.}
-   \item{xlim}{x axis limits. If unspecified, the function tries to set the x axis limits to some sensible values.}
-   \item{ylim}{y axis limits. If unspecified, the function tries to set the y axis limits to some sensible values.}
-   \item{xlab}{title for the x axis. If unspecified, the function tries to set an appropriate axis title.}
-   \item{ylab}{title for the y axis. If unspecified, the function tries to set an appropriate axis title.}
-   \item{steps}{the number of tick marks for the y axis (default is 5).}
-   \item{at}{position of the x axis tick marks and corresponding labels. If unspecified, the function tries to set the tick mark positions/labels to some sensible values.}
-   \item{atransf}{optional argument specifying the name of a function that should be used to transform the x axis labels (e.g., \code{transf=exp}). Defaults to \code{FALSE}, which means that no transformation is used.}
+   \item{yaxis}{either \code{"sei"}, \code{"vi"}, \code{"seinv"}, \code{"vinv"}, \code{"ni"}, \code{"ninv"}, \code{"sqrtni"}, \code{"sqrtninv"}, or \code{"lni"} to indicate what values should be placed on the y-axis. See \sQuote{Details}.}
+   \item{xlim}{x-axis limits. If unspecified, the function tries to set the x-axis limits to some sensible values.}
+   \item{ylim}{y-axis limits. If unspecified, the function tries to set the y-axis limits to some sensible values.}
+   \item{xlab}{title for the x-axis. If unspecified, the function tries to set an appropriate axis title.}
+   \item{ylab}{title for the y-axis. If unspecified, the function tries to set an appropriate axis title.}
+   \item{steps}{the number of tick marks for the y-axis (default is 5).}
+   \item{at}{position of the x-axis tick marks and corresponding labels. If unspecified, the function tries to set the tick mark positions/labels to some sensible values.}
+   \item{atransf}{optional argument specifying the name of a function that should be used to transform the x-axis labels (e.g., \code{transf=exp}). Defaults to \code{FALSE}, which means that no transformation is used.}
    \item{targs}{optional arguments needed by the function specified via \code{atransf}.}
-   \item{digits}{integer specifying the number of decimal places to which the tick mark labels of the x and y axis should be rounded. Can also be a vector of two integers, the first specifying the number of decimal places for the x axis, the second for the y axis labels (e.g., c(2,3)). If unspecified, the function tries to set the argument to some sensible values.}
+   \item{digits}{integer specifying the number of decimal places to which the tick mark labels of the x- and y-axis should be rounded. Can also be a vector of two integers, the first specifying the number of decimal places for the x-axis, the second for the y-axis labels (e.g., c(2,3)). If unspecified, the function tries to set the argument to some sensible values.}
    \item{level}{numerical value between 0 and 100 specifying the level of the pseudo confidence interval region (the default is to take the value from the object). May also be a vector of values to obtain multiple regions. See \sQuote{Examples}.}
    \item{addtau2}{logical to indicate whether the amount of heterogeneity should be accounted for when drawing the pseudo confidence interval region (default is \code{FALSE}). Ignored when the model includes moderators and residuals are plotted.}
    \item{type}{either \code{"rstandard"} (default) or \code{"rstudent"} indicating whether the usual or deleted residuals should be used in creating the funnel plot when the model involves moderators. See \sQuote{Details}.}
@@ -30,15 +30,15 @@
    \item{refline}{value at which to draw the vertical reference line and, if drawn, where the pseudo confidence interval should be centered. If unspecified, the reference line is drawn at the fixed- or random-effects model estimate when the model does not include moderators and at zero when moderators are included (and therefore residuals are plotted).}
    \item{pch}{plotting symbol to use for the observed effect sizes or outcomes. By default, a solid circle is used. Can also be a vector of values. See \code{\link{points}} for other options.}
    \item{pch.fill}{plotting symbol to use for the effect sizes or outcomes filled in by the trim and fill method. By default, a circle is used. Only relevant when plotting an object created by the \code{\link{trimfill}} function.}
-   \item{ci.res}{integer specifying the number of y axis values at which to calculate the bounds of the pseudo confidence interval. The default is \code{1000}, which usually provides a sufficient resolution for the plotting.}
+   \item{ci.res}{integer specifying the number of y-axis values at which to calculate the bounds of the pseudo confidence interval. The default is \code{1000}, which usually provides a sufficient resolution for the plotting.}
    \item{\dots}{other arguments.}
 }
 \details{
-   For fixed- and random-effects models (i.e., models not involving moderators), the plot shows the individual observed effect sizes or outcomes on the x axis against the corresponding standard errors (i.e., the square root of the sampling variances) on the y axis. A vertical line indicates the estimate based on the model. A pseudo confidence interval region is drawn around this value with bounds equal to \eqn{\pm 1.96 SE}{+- 1.96 SE}, where \eqn{SE} is the standard error value from the y axis. If \code{addtau2=TRUE}, then the bounds of the pseudo confidence interval region are equal to \eqn{\pm 1.96 \sqrt{SE^2 + \tau^2}}{+- 1.96 \sqrt(SE^2 + \tau^2)}, where \eqn{\tau^2} is the amount of heterogeneity as estimated by the model.
+   For fixed- and random-effects models (i.e., models not involving moderators), the plot shows the individual observed effect sizes or outcomes on the x-axis against the corresponding standard errors (i.e., the square root of the sampling variances) on the y-axis. A vertical line indicates the estimate based on the model. A pseudo confidence interval region is drawn around this value with bounds equal to \eqn{\pm 1.96 SE}{+- 1.96 SE}, where \eqn{SE} is the standard error value from the y-axis. If \code{addtau2=TRUE}, then the bounds of the pseudo confidence interval region are equal to \eqn{\pm 1.96 \sqrt{SE^2 + \tau^2}}{+- 1.96 \sqrt(SE^2 + \tau^2)}, where \eqn{\tau^2} is the amount of heterogeneity as estimated by the model.
 
-   For models involving moderators, the plot shows the residuals on the x axis against their corresponding standard errors. Either the usual or deleted residuals can be used for that purpose (set via the \code{type} argument). See \code{\link{residuals.rma}} for more details on the different types of residuals.
+   For models involving moderators, the plot shows the residuals on the x-axis against their corresponding standard errors. Either the usual or deleted residuals can be used for that purpose (set via the \code{type} argument). See \code{\link{residuals.rma}} for more details on the different types of residuals.
 
-   Instead of placing the standard error value on the y axis, several other options are available by setting the \code{yaxis} argument to:
+   Instead of placing the standard error value on the y-axis, several other options are available by setting the \code{yaxis} argument to:
    \itemize{
    \item \code{yaxis="vi"} for the sampling variance,
    \item \code{yaxis="seinv"} for the inverse of the standard error,
@@ -48,14 +48,14 @@
    \item \code{yaxis="sqrtni"} for the square-root sample size,
    \item \code{yaxis="sqrtninv"} for the inverse of the square-root sample size,
    \item \code{yaxis="lni"} for the log of the sample size.
-   } However, only when \code{yaxis="sei"} (the default) will the pseudo confidence region have the expected (upside-down) funnel shape with straight lines. Also, when placing (a function of) the sample size on the y axis, then the pseudo confidence region cannot be drawn. See Sterne and Egger (2001) for more details on the choice of the y axis.
+   } However, only when \code{yaxis="sei"} (the default) will the pseudo confidence region have the expected (upside-down) funnel shape with straight lines. Also, when placing (a function of) the sample size on the y-axis, then the pseudo confidence region cannot be drawn. See Sterne and Egger (2001) for more details on the choice of the y-axis.
 
    If the object passed to the function comes from the \code{\link{trimfill}} function, the effect sizes or outcomes that are filled in by the trim and fill method are also added to the funnel plot. The symbol to use for plotting the filled in values can then be specified via the \code{pch.fill} argument.
 
    The arguments \code{back}, \code{shade}, and \code{hlines} can be set to \code{NULL} to suppress the shading and the horizontal reference lines.
 }
 \note{
-   Placing (a function of) the sample size on the y axis (i.e., using \code{yaxis="ni"}, \code{yaxis="ninv"}, \code{yaxis="sqrtni"}, \code{yaxis="sqrtninv"}, or \code{yaxis="lni"}) is only possible when information about the sample sizes is actually stored within the object passed to the \code{funnel} function. That should automatically be the case when the observed outcomes were computed with the \code{escalc} function or when the observed outcomes were computed within the model fitting function. The only time this will not automatically be the case is when \code{rma.uni} was used together with the \code{yi} and \code{vi} arguments and the \code{yi} and \code{vi} values were \emph{not} computed with \code{escalc}. In that case, it is still possible to pass information about the sample sizes to the \code{rma.uni} function (i.e., use \code{rma.uni(yi, vi, ni)}).
+   Placing (a function of) the sample size on the y-axis (i.e., using \code{yaxis="ni"}, \code{yaxis="ninv"}, \code{yaxis="sqrtni"}, \code{yaxis="sqrtninv"}, or \code{yaxis="lni"}) is only possible when information about the sample sizes is actually stored within the object passed to the \code{funnel} function. That should automatically be the case when the observed outcomes were computed with the \code{escalc} function or when the observed outcomes were computed within the model fitting function. The only time this will not automatically be the case is when \code{rma.uni} was used together with the \code{yi} and \code{vi} arguments and the \code{yi} and \code{vi} values were \emph{not} computed with \code{escalc}. In that case, it is still possible to pass information about the sample sizes to the \code{rma.uni} function (i.e., use \code{rma.uni(yi, vi, ni)}).
 }
 \author{
    Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr
@@ -85,7 +85,7 @@ res <- rma(ai=tpos, bi=tneg, ci=cpos, di=cneg,
 ### standard funnel plot
 funnel(res)
 
-### funnel plot with relative risk values on the x axis
+### funnel plot with relative risk values on the x-axis
 funnel(res, atransf=exp, at=log(c(.12, .25, .5, 1, 2)))
 
 ### contour-enhanced funnel plot centered at 0 (see Peters et al., 2008)

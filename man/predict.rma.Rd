@@ -1,8 +1,8 @@
 \name{predict.rma}
 \alias{predict.rma}
-\title{Predicted Values for rma Objects}
+\title{Compute Predicted Values for 'rma' Objects}
 \description{
-   The function calculates predicted values, corresponding standard errors, confidence intervals, and (approximate) credibility intervals for objects of class \code{"rma"}.
+   The function computes predicted values, corresponding standard errors, confidence intervals, and (approximate) credibility intervals for objects of class \code{"rma"}.
 }
 \usage{
 \method{predict}{rma}(object, newmods, addx=FALSE, level=object$level,

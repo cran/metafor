@@ -3,7 +3,7 @@
 \alias{qqnorm.rma.mh}
 \alias{qqnorm.rma.peto}
 \alias{qqnorm.rma.glmm}
-\title{Normal QQ Plot for rma Objects}
+\title{Normal QQ Plot for 'rma' Objects}
 \description{Function to create normal QQ plots for objects of class \code{"rma.uni"}, \code{"rma.mh"}, and \code{"rma.peto"}.}
 \usage{
 \method{qqnorm}{rma.uni}(y, type="rstandard", pch=19, envelope=TRUE, level=y$level,
@@ -39,6 +39,7 @@
    A list with components:
    \item{x}{the x coordinates of the points that were plotted.}
    \item{y}{the y coordinates of the points that were plotted.}
+   Note that the list is returned invisibly.
 }
 \author{
    Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr

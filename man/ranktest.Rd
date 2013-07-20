@@ -1,6 +1,6 @@
 \name{ranktest}
 \alias{ranktest}
-\title{Rank Correlation Test for Funnel Plot Asymmetry}
+\title{Carry Out a Rank Correlation Test for Funnel Plot Asymmetry}
 \description{
    The function \code{ranktest} is generic. It can be used to carry out the rank correlation test for funnel plot asymmetry as described by Begg and Mazumdar (1994).
 }

@@ -1,8 +1,8 @@
 \name{fitstats}
 \alias{fitstats}
-\title{Fit Statistics and Information Criteria}
+\title{Extract Fit Statistics and Information Criteria}
 \description{
-   The function \code{fitstats} is generic. It extracts the log likelihood, deviance, and information criteria (e.g., AIC and BIC) for suitable objects.
+   The function \code{fitstats} is generic. It can be used to extract the log likelihood, deviance, and information criteria (e.g., AIC and BIC) for suitable objects.
 }
 \usage{
 fitstats(object, \dots)

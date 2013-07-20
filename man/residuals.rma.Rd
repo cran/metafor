@@ -6,9 +6,9 @@
 \alias{rstudent.rma.uni}
 \alias{rstudent.rma.mh}
 \alias{rstudent.rma.peto}
-\title{Residual Values based on rma Objects}
+\title{Compute Residual Values based on 'rma' Objects}
 \description{
-   The \code{residuals}, \code{rstandard}, and \code{rstudent} functions can be used to extract residuals, corresponding standard errors, and standardized residuals for models fitted with the \code{\link{rma.uni}}, \code{\link{rma.mh}}, and \code{\link{rma.peto}} functions.
+   The \code{residuals}, \code{rstandard}, and \code{rstudent} functions can be used to compute residuals, corresponding standard errors, and standardized residuals for models fitted with the \code{\link{rma.uni}}, \code{\link{rma.mh}}, and \code{\link{rma.peto}} functions.
 }
 \usage{
 \method{residuals}{rma}(object, \dots)

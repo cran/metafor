@@ -1,6 +1,6 @@
 \name{regtest}
 \alias{regtest}
-\title{Regression Tests for Funnel Plot Asymmetry}
+\title{Carry Out a Regression Tests for Funnel Plot Asymmetry}
 \description{
    The function \code{regtest} is generic. It can be used to carry out various tests for funnel plot asymmetry, including Egger's regression test and variations thereof.
 }

@@ -1,6 +1,6 @@
 \name{permutest}
 \alias{permutest}
-\title{Permutation Tests}
+\title{Carry Out Permutation Tests}
 \description{
    The function \code{permutest} is generic. It can be used to carry out permutation tests for specific classes of objects.
 }

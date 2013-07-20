@@ -1,8 +1,8 @@
 \name{leave1out}
 \alias{leave1out}
-\title{Leave-One-Out Diagnostics}
+\title{Compute Leave-One-Out Diagnostics}
 \description{
-   The function \code{leave1out} is generic. For suitable model objects, it repeatedly fits the model, leaving out one observation at a time.
+   The function \code{leave1out} is generic. For suitable model objects, it repeatedly fits the model, leaving out one observation/study at a time.
 }
 \usage{
 leave1out(x, \dots)

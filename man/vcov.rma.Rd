@@ -1,8 +1,8 @@
 \name{vcov.rma}
 \alias{vcov.rma}
-\title{Variance-Covariance Matrix of Parameter Estimates for rma Objects}
+\title{Extract the Variance-Covariance Matrix of the Parameter Estimates from 'rma' Objects}
 \description{
-   The function extracts the (estimated) variance-covariance matrix of the fixed effects parameter estimates from objects of class \code{"rma"}.
+   The function extracts the (estimated) variance-covariance matrix of the (fixed effects) parameter estimates from objects of class \code{"rma"}.
 }
 \usage{
 \method{vcov}{rma}(object, \dots)

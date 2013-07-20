@@ -1,6 +1,6 @@
 \name{coef.permutest.rma.uni}
 \alias{coef.permutest.rma.uni}
-\title{Model Coefficients for permutest.rma.uni Objects}
+\title{Extract the Model Coefficient Table from 'permutest.rma.uni' Objects}
 \description{
    The function extracts the estimated model coefficients, corresponding standard errors, test statistics, p-values (based on the permutation test), and confidence interval bounds from objects of class \code{"permutest.rma.uni"}.
 }

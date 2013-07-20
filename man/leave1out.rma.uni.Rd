@@ -1,8 +1,8 @@
 \name{leave1out.rma.uni}
 \alias{leave1out.rma.uni}
-\title{Leave-One-Out Diagnostics for rma.uni Objects}
+\title{Compute Leave-One-Out Diagnostics for 'rma.uni' Objects}
 \description{
-   The function \code{leave1out.rma.uni} repeatedly fits the specified model, leaving out one observation at a time.
+   The function \code{leave1out.rma.uni} repeatedly fits the specified model, leaving out one observation/study at a time.
 }
 \usage{
 \method{leave1out}{rma.uni}(x, digits=x$digits, transf=FALSE, targs, \dots)

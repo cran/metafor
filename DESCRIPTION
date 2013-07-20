@@ -1,29 +1,17 @@
 Package: metafor
-Version: 1.9-0
-Date: 2013-06-21
+Version: 1.9-1
+Date: 2013-07-20
 Title: Meta-Analysis Package for R
 Author: Wolfgang Viechtbauer <wvb@metafor-project.org>
 Maintainer: Wolfgang Viechtbauer <wvb@metafor-project.org>
 Depends: R (>= 3.0.0), stats, Formula
 Suggests: lme4, numDeriv, polycor, BiasedUrn, survival, Epi, minqa
-Description: The metafor package provides a comprehensive collection of
-        functions for conducting meta-analyses in R. The package
-        includes functions to calculate various effect size or outcome
-        measures, fit fixed-, random-, and mixed-effects models to such
-        data, carry out moderator and meta-regression analyses, and
-        create various types of meta-analytical plots (e.g., forest,
-        funnel, radial, and L'Abbe plots). For meta-analyses of 2x2
-        tables, proportions, incidence rates, and incidence rate
-        ratios, the package also provides functions that implement
-        specialized methods, including the Mantel-Haenszel method,
-        Peto's method, and a variety of suitable generalized linear
-        (mixed-effects) models (i.e., mixed-effects (conditional)
-        logistic and Poisson regression models).
+Description: The metafor package provides a comprehensive collection of functions for conducting meta-analyses in R. The package includes functions to calculate various effect size or outcome measures, fit fixed-, random-, and mixed-effects models to such data, carry out moderator and meta-regression analyses, and create various types of meta-analytical plots (e.g., forest, funnel, radial, L'Abbe, Baujat plots). For meta-analyses of 2x2 tables, proportions, incidence rates, and incidence rate ratios, the package also provides functions that implement specialized methods, including the Mantel-Haenszel method, Peto's method, and a variety of suitable generalized linear (mixed-effects) models (i.e., mixed-effects (conditional) logistic and Poisson regression models).
 License: GPL (>= 2)
 ByteCompile: TRUE
 BuildVignettes: FALSE
 URL: http://www.metafor-project.org/ http://www.wvbauer.com
-Packaged: 2013-06-21 16:31:21 UTC; Wolfgang
+Packaged: 2013-07-20 12:57:53 UTC; Wolfgang
 NeedsCompilation: no
 Repository: CRAN
-Date/Publication: 2013-06-21 20:56:03
+Date/Publication: 2013-07-20 15:28:14

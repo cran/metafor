@@ -1,9 +1,9 @@
 \name{leave1out.rma.mh}
 \alias{leave1out.rma.mh}
 \alias{leave1out.rma.peto}
-\title{Leave-One-Out Diagnostics for rma.mh and rma.peto Objects}
+\title{Compute Leave-One-Out Diagnostics for 'rma.mh' and 'rma.peto' Objects}
 \description{
-   The functions \code{leave1out.rma.mh} and \code{leave1out.rma.peto} repeatedly fit the specified model, leaving out one observation (i.e., 2x2 table) at a time.
+   The functions \code{leave1out.rma.mh} and \code{leave1out.rma.peto} repeatedly fit the specified model, leaving out one observation/study at a time.
 }
 \usage{
 \method{leave1out}{rma.mh}(x, digits=x$digits, transf=FALSE, \dots)

@@ -1,8 +1,8 @@
 \name{trimfill}
 \alias{trimfill}
-\title{Trim and Fill Method}
+\title{Carry Out a Trim and Fill Analysis}
 \description{
-   The function \code{trimfill} is generic. It can be used to apply the trim and fill method proposed by Duval and Tweedie (2000a, 2000b; see also Duval, 2005) to specific classes of objects.
+   The function \code{trimfill} is generic. It can be used to carry out a trim and fill analysis as proposed by Duval and Tweedie (2000a, 2000b; see also Duval, 2005) for specific classes of objects.
 }
 \usage{
 trimfill(x, \dots)

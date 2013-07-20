@@ -1,9 +1,9 @@
 \name{cumul.rma.mh}
 \alias{cumul.rma.mh}
 \alias{cumul.rma.peto}
-\title{Cumulative Meta-Analysis for rma.mh and rma.peto Objects}
+\title{Cumulative Meta-Analysis for 'rma.mh' and 'rma.peto' Objects}
 \description{
-   The functions \code{leave1out.rma.mh} and \code{leave1out.rma.peto} repeatedly fit the specified model, adding one observation (i.e., 2x2 table) at a time to the model.
+   The functions \code{cumul.rma.mh} and \code{cumul.rma.peto} repeatedly fit the specified model, adding one observation/study at a time to the model.
 }
 \usage{
 \method{cumul}{rma.mh}(x, order, digits=x$digits, transf=FALSE, \dots)

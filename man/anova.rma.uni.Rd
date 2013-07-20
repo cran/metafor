@@ -1,8 +1,8 @@
 \name{anova.rma.uni}
 \alias{anova.rma.uni}
-\title{Likelihood Ratio and Wald-Type Tests for rma.uni Objects}
+\title{Compute Likelihood Ratio and Wald-Type Tests for 'rma.uni' Objects}
 \description{
-   For two models of class \code{"rma.uni"}, the function provides a full versus reduced model comparison in terms of model fit statistics and a likelihood ratio test. When a single model is specified, a Wald-type test of one or more model coefficients is carried out.
+   For two (nested) models of class \code{"rma.uni"}, the function provides a full versus reduced model comparison in terms of model fit statistics and a likelihood ratio test. When a single model is specified, a Wald-type test of one or more model coefficients is carried out.
 }
 \usage{
 \method{anova}{rma.uni}(object, object2, btt, digits=object$digits, \dots)
@@ -10,7 +10,7 @@
 \arguments{
    \item{object}{an object of class \code{"rma.uni"}.}
    \item{object2}{an (optional) object of class \code{"rma.uni"}. See \sQuote{Details}.}
-   \item{btt}{optional vector of indices specifying which coefficients to include in the test of moderators. See \sQuote{Details}.}
+   \item{btt}{optional vector of indices specifying which coefficients to include in the Wald-type test. See \sQuote{Details}.}
    \item{digits}{integer specifying the number of decimal places to which the printed results should be rounded (the default is to take the value from the object).}
    \item{\dots}{other arguments.}
 }

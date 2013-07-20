@@ -1,6 +1,6 @@
 \name{print.permutest.rma.uni}
 \alias{print.permutest.rma.uni}
-\title{Print Method for permutest.rma.uni Objects}
+\title{Print Method for 'permutest.rma.uni' Objects}
 \description{
    Print method for objects of class \code{"permutest.rma.uni"}.
 }

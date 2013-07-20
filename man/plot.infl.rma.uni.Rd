@@ -1,6 +1,6 @@
 \name{plot.infl.rma.uni}
 \alias{plot.infl.rma.uni}
-\title{Plot Method for infl.rma.uni Objects}
+\title{Plot Method for 'infl.rma.uni' Objects}
 \description{
    Plot method for objects of class \code{"infl.rma.uni"}.
 }
@@ -16,8 +16,8 @@
    \item{dfbnew}{logical indicating whether a new device should be opened for plotting the DFBETAS values (default is \code{FALSE}).}
    \item{logcov}{logical indicating whether the covariance ratios should be plotted on a log scale (default is \code{TRUE}).}
    \item{layout}{optional vector of two numbers, indicating the number of rows and columns for the layout of the figure.}
-   \item{slab.style}{integer to indicate the style of the x axis labels: 1 = study number, 2 = study label, 3 = abbreviated study label. Note that study labels, even when abbreviated, may be too long to fit in the margin.)}
-   \item{las}{integer between 0 and 3 to specify the alignment of the axis labels (see \code{\link{par}}). The most useful alternative to 0 is 3, so that the x axis labels are drawn vertical to the axis.}
+   \item{slab.style}{integer to indicate the style of the x-axis labels: 1 = study number, 2 = study label, 3 = abbreviated study label. Note that study labels, even when abbreviated, may be too long to fit in the margin.)}
+   \item{las}{integer between 0 and 3 to specify the alignment of the axis labels (see \code{\link{par}}). The most useful alternative to 0 is 3, so that the x-axis labels are drawn vertical to the axis.}
    \item{pch}{plotting symbol to use. By default, a filled circle is used. See \code{\link{points}} for other options.}
    \item{bg}{color to use for filling the plotting symbol (default is \code{"black"}).}
    \item{bg.infl}{color to use for filling the plotting symbol when the point is considered influential (default is \code{"red"}).}

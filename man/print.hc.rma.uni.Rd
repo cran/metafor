@@ -1,6 +1,6 @@
 \name{print.hc.rma.uni}
 \alias{print.hc.rma.uni}
-\title{Print Method for hc.rma.uni Objects}
+\title{Print Method for 'hc.rma.uni' Objects}
 \description{
    Print method for objects of class \code{"hc.rma.uni"}.
 }

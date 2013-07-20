@@ -2,7 +2,7 @@
 \alias{print.escalc}
 \alias{summary.escalc}
 \alias{print.summary.escalc}
-\title{Print and Summary Methods for escalc Objects}
+\title{Print and Summary Methods for 'escalc' Objects}
 \description{
    Print and summary methods for objects of class \code{"escalc"}.
 }

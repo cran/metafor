@@ -3,7 +3,7 @@
 \alias{confint.rma.mh}
 \alias{confint.rma.peto}
 \alias{confint.rma.glmm}
-\title{Confidence Intervals for rma Objects}
+\title{Compute Confidence Intervals for 'rma' Objects}
 \description{
    The function calculates a confidence interval for the amount of (residual) heterogeneity in random- and mixed-effects models that were fitted with the \code{\link{rma.uni}} function. Confidence intervals for the model coefficients can also be obtained.
 }

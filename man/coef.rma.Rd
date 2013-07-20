@@ -1,7 +1,7 @@
 \name{coef.rma}
 \alias{coef.rma}
 \alias{coef.summary.rma}
-\title{Model Coefficients for rma Objects}
+\title{Extract the Model Coefficients and Coefficient Table from 'rma' and 'summary.rma' Objects}
 \description{
    The \code{coef} function extracts the estimated model coefficients from objects of class \code{"rma"}. For objects of class \code{"summary.rma"}, the model coefficients, corresponding standard errors, test statistics, p-values, and confidence interval bounds are extracted.
 }

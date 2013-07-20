@@ -1,6 +1,6 @@
 \name{forest.rma}
 \alias{forest.rma}
-\title{Forest Plots for rma Objects}
+\title{Forest Plots for 'rma' Objects}
 \description{Function to create forest plots for objects of class \code{"rma"}.}
 \usage{
 \method{forest}{rma}(x, annotate=TRUE, addfit=TRUE, addcred=FALSE, showweight=FALSE,
@@ -18,30 +18,30 @@
    \item{addcred}{logical specifying whether the bounds of the credibility interval should be added to the plot. See \sQuote{Details}.}
    \item{showweight}{logical specifying whether the annotations should also include the weights given to the observed effects or outcomes during the model fitting (default is \code{FALSE}).}
    \item{xlim}{horizontal limits of the plot region. If unspecified, the function tries to set the horizontal plot limits to some sensible values.}
-   \item{alim}{the actual x axis limits. If unspecified, the function tries to set the x axis limits to some sensible values.}
-   \item{ylim}{the y limits of the plot. If unspecified, the function tries to set the y axis limits to some sensible values.}
-   \item{at}{position of the x axis tick marks and corresponding labels. If unspecified, the function tries to set the tick mark positions/labels to some sensible values.}
-   \item{steps}{the number of tick marks for the x axis (default is 5). Ignored when the user specifies the positions via the \code{at} argument.}
+   \item{alim}{the actual x-axis limits. If unspecified, the function tries to set the x-axis limits to some sensible values.}
+   \item{ylim}{the y limits of the plot. If unspecified, the function tries to set the y-axis limits to some sensible values.}
+   \item{at}{position of the x-axis tick marks and corresponding labels. If unspecified, the function tries to set the tick mark positions/labels to some sensible values.}
+   \item{steps}{the number of tick marks for the x-axis (default is 5). Ignored when the user specifies the positions via the \code{at} argument.}
    \item{level}{numerical value between 0 and 100 specifying the confidence interval level (the default is to take the value from the object).}
-   \item{digits}{integer specifying the number of decimal places to which the tick mark labels of the x axis and the annotations should be rounded (default is 2). Can also be a vector of two integers, the first specifying the number of decimal places for the annotations, the second for the x axis labels.}
+   \item{digits}{integer specifying the number of decimal places to which the tick mark labels of the x-axis and the annotations should be rounded (default is 2). Can also be a vector of two integers, the first specifying the number of decimal places for the annotations, the second for the x-axis labels.}
    \item{refline}{value at which a vertical \sQuote{reference} line should be drawn (default is 0). The line can be suppressed by setting this argument to \code{NA}.}
-   \item{xlab}{title for the x axis. If unspecified, the function tries to set an appropriate axis title.}
+   \item{xlab}{title for the x-axis. If unspecified, the function tries to set an appropriate axis title.}
    \item{slab}{optional vector with unique labels for the \eqn{k} studies. If unspecified, the labels are either taken from the object (if study labels were specified) or simple labels are created within the function. To suppress labels, set this argument to \code{NA}.}
    \item{mlab}{optional character string giving a label to the summary estimate from a fixed- or random-effects model. If unspecified, the label is created within the function.}
    \item{ilab}{optional vector or matrix of character strings providing additional information about the studies.}
-   \item{ilab.xpos}{vector of numerical value(s) specifying the x axis position(s) of the character vector(s) given via \code{ilab} (must be specified if \code{ilab} is specified).}
+   \item{ilab.xpos}{vector of numerical value(s) specifying the x-axis position(s) of the character vector(s) given via \code{ilab} (must be specified if \code{ilab} is specified).}
    \item{ilab.pos}{integer(s) (either 1, 2, 3, or 4) specifying the alignment of the character vector(s) given via \code{ilab} (2 means right, 4 mean left aligned). If unspecified, the default is to center the labels.}
    \item{order}{optional character string specifying how the studies should be ordered. See \sQuote{Details}.}
    \item{transf}{optional argument specifying the name of a function that should be used to transform the observed effect sizes, summary estimates, fitted values, and confidence interval bounds (e.g., \code{transf=exp}). Defaults to \code{FALSE}, which means that no transformation is used.}
-   \item{atransf}{optional argument specifying the name of a function that should be used to transform the x axis labels and annotations (e.g., \code{transf=exp}). Defaults to \code{FALSE}, which means that no transformation is used.}
+   \item{atransf}{optional argument specifying the name of a function that should be used to transform the x-axis labels and annotations (e.g., \code{transf=exp}). Defaults to \code{FALSE}, which means that no transformation is used.}
    \item{targs}{optional arguments needed by the function specified via \code{transf} or \code{atransf}.}
    \item{rows}{optional vector specifying the rows (or more generally, the horizontal positions) for plotting the outcomes. If unspecified, the function sets this value automatically. Can also be a single value specifying the row (horizontal position) of the first outcome (the remaining outcomes are then plotted below this starting row).}
    \item{efac}{vertical expansion factor for arrows, confidence interval limits, and the symbol used to denote summary estimates. The default value of 1 should usually work okay.}
    \item{pch}{plotting symbol to use for the observed effect sizes or outcomes. By default, a filled square is used. See \code{\link{points}} for other options. Can also be a vector of values.}
    \item{psize}{optional vector with point sizes for the observed effect sizes or outcomes. If unspecified, the point sizes are drawn proportional to the precision of the estimates.}
    \item{cex}{optional character and symbol expansion factor. If unspecified, the function tries to set this to a sensible value.}
-   \item{cex.lab}{optional expansion factor for the x axis titel. If unspecified, the function tries to set this to a sensible value.}
-   \item{cex.axis}{optional expansion factor for the x axis labels. If unspecified, the function tries to set this to a sensible value.}
+   \item{cex.lab}{optional expansion factor for the x-axis titel. If unspecified, the function tries to set this to a sensible value.}
+   \item{cex.axis}{optional expansion factor for the x-axis labels. If unspecified, the function tries to set this to a sensible value.}
    \item{col}{character string specifying the name of a color to use for the fitted values (\code{"darkgray"} by default).}
    \item{border}{character string specifying the name of a color to use for the border of the fitted values (\code{"darkgray"} by default).}
    \item{\dots}{other arguments.}
@@ -53,7 +53,7 @@
 
    For models involving moderators, the fitted value for each study is added as a polygon to the plot. With the \code{col} and \code{border} arguments, one can change the (border) color of these polygons. These polygons are suppressed by setting \code{addfit=FALSE}.
 
-   With the \code{transf} argument, the observed effect sizes or outcomes, summary estimate, fitted values, and confidence/credibility interval bounds can be transformed with an arbitrary function. For example, when plotting log odds ratios, one could use \code{transf=exp} to obtain a forest plot showing the odds ratios. Alternatively, one can use the \code{atransf} argument to transform the x axis labels and annotations (e.g., \code{atransf=exp}). The examples below illustrate the use of these arguments.
+   With the \code{transf} argument, the observed effect sizes or outcomes, summary estimate, fitted values, and confidence/credibility interval bounds can be transformed with an arbitrary function. For example, when plotting log odds ratios, one could use \code{transf=exp} to obtain a forest plot showing the odds ratios. Alternatively, one can use the \code{atransf} argument to transform the x-axis labels and annotations (e.g., \code{atransf=exp}). The examples below illustrate the use of these arguments.
 
    By default, the studies are ordered from top to bottom (i.e., the first study in the dataset will be placed in row \eqn{k}, the second study in row \eqn{k-1}, and so on, until the last study, which is placed in the first row). The studies can be reordered with the \code{order} argument:
    \itemize{
@@ -71,7 +71,7 @@
 \note{
    The function tries to set some sensible values for the optional arguments, but it may be necessary to tweak these in certain circumstances. In particular, if the number of studies is quite large, the labels, annotations, and symbols may become quite small and impossible to read. Stretching the plot window vertically may then provide a more readable figure (one should call the function again after adjusting the window size, so that the label/symbol sizes can be properly adjusted).
 
-   If the horizontal plot and/or x axis limits are set by the user, then the horizontal plot limits (\code{xlim}) must be at least as wide as the x axis limits (\code{alim}). Moreover, the x axis limits must encompass the observed effect sizes or outcomes. These restrictions are enforced inside the function.
+   If the horizontal plot and/or x-axis limits are set by the user, then the horizontal plot limits (\code{xlim}) must be at least as wide as the x-axis limits (\code{alim}). Moreover, the x-axis limits must encompass the observed effect sizes or outcomes. These restrictions are enforced inside the function.
 }
 \author{
    Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr
@@ -169,7 +169,7 @@ text(-16,                20, "Author(s) and Year",     pos=4)
 text(6,                  20, "Relative Risk [95\% CI]", pos=2)
 par(op)
 
-### see also addpoly.default function for an example where summaries
+### see also addpoly.rma function for an example where summaries
 ### for the three subgroups are added to such a forest plot
 }
 \keyword{hplot}

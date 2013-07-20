@@ -1,6 +1,6 @@
 \name{addpoly.rma}
 \alias{addpoly.rma}
-\title{Add Summary Estimate Polygon to Forest Plot}
+\title{Add Polygons to Forest Plots Based on 'rma' Objects}
 \description{Function to add a polygon to a forest plot showing the summary estimate with correspondong confidence interval based on an object of class \code{"rma"}.}
 \usage{
 \method{addpoly}{rma}(x, row=-2, level=x$level, digits=2,
@@ -23,7 +23,7 @@
    \item{\dots}{other arguments.}
 }
 \details{
-   The function can be used to add a polygon to an existing forest plot created with the \code{\link{forest}} function. The polygon shows the summary estimate based on a fixed- or random-effects model.
+   The function can be used to add a polygon to an existing forest plot created with the \code{\link{forest}} function. The polygon shows the summary estimate based on a fixed- or random-effects model. Using this function, summary estimates based on different types of models can be shown in the same plot. Also, summary estimates based on a subgrouping of the studies can be added to the plot this way. See examples below.
 
    The arguments \code{transf}, \code{atransf}, \code{efac}, and \code{cex} should always be set equal to the same values used to create the forest plot.
 }
@@ -55,5 +55,32 @@ res <- rma(ai=tpos, bi=tneg, ci=cpos, di=cneg,
 
 ### add summary estimate from the random-effects model to forest plot
 addpoly(res, atransf=exp)
+
+### forest plot with subgrouping of studies and summaries per subgroup
+res <- rma(ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg, measure="RR",
+           slab=paste(author, year, sep=", "), method="REML")
+forest(res, xlim=c(-16, 6), at=log(c(.05, .25, 1, 4)), atransf=exp,
+       ilab=cbind(dat.bcg$tpos, dat.bcg$tneg, dat.bcg$cpos, dat.bcg$cneg),
+       ilab.xpos=c(-9.5,-8,-6,-4.5), cex=.75, ylim=c(-1, 27),
+       order=order(dat.bcg$alloc), rows=c(3:4,9:15,20:23),
+       mlab="RE Model for All Studies")
+op <- par(cex=.75, font=4)
+text(-16, c(24,16,5), c("Systematic Allocation", "Random Allocation",
+                        "Alternate Allocation"), pos=4)
+par(font=2)
+text(c(-9.5,-8,-6,-4.5), 26, c("TB+", "TB-", "TB+", "TB-"))
+text(c(-8.75,-5.25),     27, c("Vaccinated", "Control"))
+text(-16,                26, "Author(s) and Year",     pos=4)
+text(6,                  26, "Relative Risk [95\% CI]", pos=2)
+par(op)
+res <- rma(ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg, measure="RR",
+           subset=(alloc=="systematic"), method="REML")
+addpoly(res, row=18.5, cex=.75, atransf=exp, mlab="RE Model for Subgroup")
+res <- rma(ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg, measure="RR",
+           subset=(alloc=="random"), method="REML")
+addpoly(res, row=7.5, cex=.75, atransf=exp, mlab="RE Model for Subgroup")
+res <- rma(ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg, measure="RR",
+           subset=(alloc=="alternate"), method="REML")
+addpoly(res, row=1.5, cex=.75, atransf=exp, mlab="RE Model for Subgroup")
 }
 \keyword{aplot}

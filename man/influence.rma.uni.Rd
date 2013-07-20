@@ -4,9 +4,9 @@
 \alias{cooks.distance.rma.uni}
 \alias{dfbetas.rma.uni}
 \alias{hatvalues.rma.uni}
-\title{Case Diagnostics for rma.uni Objects}
+\title{Compute Outlier and Influential Case Diagnostics for 'rma.uni' Objects}
 \description{
-   The functions calculate various case diagnostics that indicate the influence of deleting one case at a time on the model fit and the fitted/residual values for objects of class \code{"rma.uni"}.
+   The functions computes various outlier and influential case diagnostics that indicate the influence of deleting one case/study at a time on the model fit and the fitted/residual values for objects of class \code{"rma.uni"}.
 }
 \usage{
 \method{influence}{rma.uni}(model, digits=model$digits, \dots)

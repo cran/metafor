@@ -1,8 +1,8 @@
 \name{fitted.rma}
 \alias{fitted.rma}
-\title{Fitted Values for rma Objects}
+\title{Compute Fitted Values for 'rma' Objects}
 \description{
-   The function calculates the fitted values for objects of class \code{"rma"}.
+   The function computes the fitted values for objects of class \code{"rma"}.
 }
 \usage{
 \method{fitted}{rma}(object, \dots)

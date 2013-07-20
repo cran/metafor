@@ -1,8 +1,8 @@
 \name{blup}
 \alias{blup}
-\title{Best Linear Unbiased Predictions}
+\title{Compute Best Linear Unbiased Predictions}
 \description{
-   The function \code{blup} is generic. It extracts the best linear unbiased predictions (BLUPs) for specific classes of objects. BLUPs combine the fitted values based on the fixed effects in the model and the estimated contributions of the random effects.
+   The function \code{blup} is generic. It can be used to compute the best linear unbiased predictions (BLUPs) for specific classes of objects. BLUPs combine the fitted values based on the fixed effects in the model and the estimated contributions of the random effects.
 }
 \usage{
 blup(x, \dots)

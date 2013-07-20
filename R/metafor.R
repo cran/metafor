@@ -206,7 +206,7 @@ function (X, W, k)
 .onAttach <-
 function (libname, pkgname) 
 {
-    loadmsg <- "\nLoading 'metafor' package (version 1.9-0). For an overview \nand introduction to the package please type: help(metafor)."
+    loadmsg <- "\nLoading 'metafor' package (version 1.9-1). For an overview \nand introduction to the package please type: help(metafor)."
     packageStartupMessage(loadmsg, domain = NULL, appendLF = TRUE)
 }
 .QE.func <-
@@ -839,6 +839,186 @@ function (object, object2, btt, digits = object$digits, ...)
         return(res)
     }
 }
+baujat <-
+function (x, ...) 
+UseMethod("baujat")
+baujat.rma.mh <-
+function (x, xlim, ylim, xlab, ylab, cex, grid = TRUE, ...) 
+{
+    if (!is.element("rma.mh", class(x))) 
+        stop("Argument 'x' must be an object of class \"rma.mh\".")
+    na.act <- getOption("na.action")
+    if (!is.element(na.act, c("na.omit", "na.exclude", "na.fail", 
+        "na.pass"))) 
+        stop("Unknown 'na.action' specified under options().")
+    if (x$k == 1) 
+        stop("Stopped because k = 1.")
+    delpred <- rep(NA, x$k.f)
+    vdelpred <- rep(NA, x$k.f)
+    pred.full <- x$X.f %*% x$b
+    o.warn <- getOption("warn")
+    on.exit(options(warn = o.warn))
+    options(warn = -1)
+    for (i in seq.int(x$k.f)[x$not.na]) {
+        if (is.element(x$measure, c("RR", "OR", "RD"))) {
+            res <- try(rma.mh(ai = x$ai.f[-i], bi = x$bi.f[-i], 
+                ci = x$ci.f[-i], di = x$di.f[-i], measure = x$measure, 
+                add = x$add, to = x$to, drop00 = x$drop00, correct = x$correct, 
+                ...), silent = TRUE)
+        }
+        else {
+            res <- try(rma.mh(x1i = x$x1i.f[-i], x2i = x$x2i.f[-i], 
+                t1i = x$t1i.f[-i], t2i = x$t2i.f[-i], measure = x$measure, 
+                add = x$add, to = x$to, drop00 = x$drop00, correct = x$correct, 
+                ...), silent = TRUE)
+        }
+        if (inherits(res, "try-error")) 
+            next
+        Xi <- matrix(x$X.f[i, ], nrow = 1)
+        delpred[i] <- Xi %*% res$b
+        vdelpred[i] <- Xi %*% tcrossprod(res$vb, Xi)
+    }
+    yhati <- (delpred - pred.full)^2/vdelpred
+    options(na.action = "na.pass")
+    xhati <- 1/(x$tau2 + x$vi.f) * resid(x)^2
+    options(na.action = na.act)
+    if (missing(cex)) 
+        cex <- 0.8
+    if (missing(xlab)) {
+        if (x$method == "FE") {
+            xlab <- ifelse(x$int.only, "Contribution to Overall Heterogeneity", 
+                "Contribution to Residual Heterogeneity")
+        }
+        else {
+            xlab <- "Squared Pearson Residual"
+        }
+    }
+    if (missing(ylab)) 
+        ylab <- ifelse(x$int.only, "Influence on Overall Result", 
+            "Influence on Fitted Value")
+    if (missing(xlim)) 
+        xlim <- range(xhati, na.rm = TRUE)
+    if (missing(ylim)) 
+        ylim <- range(yhati, na.rm = TRUE)
+    plot(xhati, yhati, pch = 19, col = "white", xlab = xlab, 
+        ylab = ylab, cex = cex, xlim = xlim, ylim = ylim, ...)
+    if (grid) 
+        grid()
+    text(xhati, yhati, x$slab, cex = cex, ...)
+    invisible(data.frame(x = xhati, y = yhati))
+}
+baujat.rma.peto <-
+function (x, xlim, ylim, xlab, ylab, cex, grid = TRUE, ...) 
+{
+    if (!is.element("rma.peto", class(x))) 
+        stop("Argument 'x' must be an object of class \"rma.peto\".")
+    na.act <- getOption("na.action")
+    if (!is.element(na.act, c("na.omit", "na.exclude", "na.fail", 
+        "na.pass"))) 
+        stop("Unknown 'na.action' specified under options().")
+    if (x$k == 1) 
+        stop("Stopped because k = 1.")
+    delpred <- rep(NA, x$k.f)
+    vdelpred <- rep(NA, x$k.f)
+    pred.full <- x$X.f %*% x$b
+    o.warn <- getOption("warn")
+    on.exit(options(warn = o.warn))
+    options(warn = -1)
+    for (i in seq.int(x$k.f)[x$not.na]) {
+        res <- try(rma.peto(ai = x$ai.f[-i], bi = x$bi.f[-i], 
+            ci = x$ci.f[-i], di = x$di.f[-i], add = x$add, to = x$to, 
+            drop00 = x$drop00, ...), silent = TRUE)
+        if (inherits(res, "try-error")) 
+            next
+        Xi <- matrix(x$X.f[i, ], nrow = 1)
+        delpred[i] <- Xi %*% res$b
+        vdelpred[i] <- Xi %*% tcrossprod(res$vb, Xi)
+    }
+    yhati <- (delpred - pred.full)^2/vdelpred
+    options(na.action = "na.pass")
+    xhati <- 1/(x$tau2 + x$vi.f) * resid(x)^2
+    options(na.action = na.act)
+    if (missing(cex)) 
+        cex <- 0.8
+    if (missing(xlab)) {
+        if (x$method == "FE") {
+            xlab <- ifelse(x$int.only, "Contribution to Overall Heterogeneity", 
+                "Contribution to Residual Heterogeneity")
+        }
+        else {
+            xlab <- "Squared Pearson Residual"
+        }
+    }
+    if (missing(ylab)) 
+        ylab <- ifelse(x$int.only, "Influence on Overall Result", 
+            "Influence on Fitted Value")
+    if (missing(xlim)) 
+        xlim <- range(xhati, na.rm = TRUE)
+    if (missing(ylim)) 
+        ylim <- range(yhati, na.rm = TRUE)
+    plot(xhati, yhati, pch = 19, col = "white", xlab = xlab, 
+        ylab = ylab, cex = cex, xlim = xlim, ylim = ylim, ...)
+    if (grid) 
+        grid()
+    text(xhati, yhati, x$slab, cex = cex, ...)
+    invisible(data.frame(x = xhati, y = yhati))
+}
+baujat.rma.uni <-
+function (x, xlim, ylim, xlab, ylab, cex, grid = TRUE, ...) 
+{
+    if (!is.element("rma.uni", class(x))) 
+        stop("Argument 'x' must be an object of class \"rma.uni\".")
+    na.act <- getOption("na.action")
+    if (!is.element(na.act, c("na.omit", "na.exclude", "na.fail", 
+        "na.pass"))) 
+        stop("Unknown 'na.action' specified under options().")
+    if (x$k == 1) 
+        stop("Stopped because k = 1.")
+    delpred <- rep(NA, x$k.f)
+    vdelpred <- rep(NA, x$k.f)
+    pred.full <- x$X.f %*% x$b
+    o.warn <- getOption("warn")
+    on.exit(options(warn = o.warn))
+    options(warn = -1)
+    for (i in seq.int(x$k.f)[x$not.na]) {
+        res <- try(rma(x$yi.f[-i], x$vi.f[-i], mods = cbind(x$X.f[-i, 
+            ]), method = x$method, weighted = x$weighted, intercept = FALSE, 
+            knha = x$knha, control = x$control, ...), silent = TRUE)
+        if (inherits(res, "try-error")) 
+            next
+        Xi <- matrix(x$X.f[i, ], nrow = 1)
+        delpred[i] <- Xi %*% res$b
+        vdelpred[i] <- Xi %*% tcrossprod(res$vb, Xi)
+    }
+    yhati <- (delpred - pred.full)^2/vdelpred
+    options(na.action = "na.pass")
+    xhati <- 1/(x$tau2 + x$vi.f) * resid(x)^2
+    options(na.action = na.act)
+    if (missing(cex)) 
+        cex <- 0.8
+    if (missing(xlab)) {
+        if (x$method == "FE") {
+            xlab <- ifelse(x$int.only, "Contribution to Overall Heterogeneity", 
+                "Contribution to Residual Heterogeneity")
+        }
+        else {
+            xlab <- "Squared Pearson Residual"
+        }
+    }
+    if (missing(ylab)) 
+        ylab <- ifelse(x$int.only, "Influence on Overall Result", 
+            "Influence on Fitted Value")
+    if (missing(xlim)) 
+        xlim <- range(xhati, na.rm = TRUE)
+    if (missing(ylim)) 
+        ylim <- range(yhati, na.rm = TRUE)
+    plot(xhati, yhati, pch = 19, col = "white", xlab = xlab, 
+        ylab = ylab, cex = cex, xlim = xlim, ylim = ylim, ...)
+    if (grid) 
+        grid()
+    text(xhati, yhati, x$slab, cex = cex, ...)
+    invisible(data.frame(x = xhati, y = yhati))
+}
 BIC.rma <-
 function (object, ...) 
 {
@@ -1240,13 +1420,15 @@ function (x, order, digits = x$digits, transf = FALSE, ...)
             res <- try(rma.mh(ai = ai.f[seq.int(i)], bi = bi.f[seq.int(i)], 
                 ci = ci.f[seq.int(i)], di = di.f[seq.int(i)], 
                 measure = x$measure, add = x$add, to = x$to, 
-                ...), silent = TRUE)
+                drop00 = x$drop00, correct = x$correct, ...), 
+                silent = TRUE)
         }
         else {
             res <- try(rma.mh(x1i = x1i.f[seq.int(i)], x2i = x2i.f[seq.int(i)], 
                 t1i = t1i.f[seq.int(i)], t2i = t2i.f[seq.int(i)], 
                 measure = x$measure, add = x$add, to = x$to, 
-                ...), silent = TRUE)
+                drop00 = x$drop00, correct = x$correct, ...), 
+                silent = TRUE)
         }
         if (inherits(res, "try-error")) 
             next
@@ -1339,7 +1521,7 @@ function (x, order, digits = x$digits, transf = FALSE, ...)
     for (i in seq.int(x$k.f)[x$not.na]) {
         res <- try(rma.peto(ai = ai.f[seq.int(i)], bi = bi.f[seq.int(i)], 
             ci = ci.f[seq.int(i)], di = di.f[seq.int(i)], add = x$add, 
-            to = x$to, ...), silent = TRUE)
+            to = x$to, drop00 = x$drop00, ...), silent = TRUE)
         if (inherits(res, "try-error")) 
             next
         b[i] <- res$b
@@ -1666,6 +1848,9 @@ function (measure, formula, ai, bi, ci, di, n1i, n2i, x1i, x2i,
         if (length(ai) == 0L || length(bi) == 0L || length(ci) == 
             0L || length(di) == 0L) 
             stop("Cannot compute outcomes. Check that all of the required \n  information is specified via the appropriate arguments.")
+        if (!all(length(ai) == c(length(ai), length(bi), length(ci), 
+            length(di)))) 
+            stop("Supplied data vectors are not all of the same length.")
         if (any(c(ai, bi, ci, di) < 0, na.rm = TRUE)) 
             stop("One or more counts are negative.")
         ni.u <- ai + bi + ci + di
@@ -1822,6 +2007,9 @@ function (measure, formula, ai, bi, ci, di, n1i, n2i, x1i, x2i,
         if (length(x1i) == 0L || length(x2i) == 0L || length(t1i) == 
             0L || length(t2i) == 0L) 
             stop("Cannot compute outcomes. Check that all of the required \n  information is specified via the appropriate arguments.")
+        if (!all(length(x1i) == c(length(x1i), length(x2i), length(t1i), 
+            length(t2i)))) 
+            stop("Supplied data vectors are not all of the same length.")
         if (any(c(x1i, x2i) < 0, na.rm = TRUE)) 
             stop("One or more counts are negative.")
         if (any(c(t1i, t2i) < 0, na.rm = TRUE)) 
@@ -1884,6 +2072,9 @@ function (measure, formula, ai, bi, ci, di, n1i, n2i, x1i, x2i,
             0L || length(sd2i) == 0L || length(n1i) == 0L || 
             length(n2i) == 0L) 
             stop("Cannot compute outcomes. Check that all of the required \n  information is specified via the appropriate arguments.")
+        if (!all(length(m1i) == c(length(m1i), length(m2i), length(sd1i), 
+            length(sd2i), length(n1i), length(n2i)))) 
+            stop("Supplied data vectors are not all of the same length.")
         if (any(c(sd1i, sd2i) < 0, na.rm = TRUE)) 
             stop("One or more standard deviations are negative.")
         ni.u <- n1i + n2i
@@ -1982,6 +2173,8 @@ function (measure, formula, ai, bi, ci, di, n1i, n2i, x1i, x2i,
         ni <- eval(mf.ni, data, enclos = sys.frame(sys.parent()))
         if (length(ri) == 0L || length(ni) == 0L) 
             stop("Cannot compute outcomes. Check that all of the required \n  information is specified via the appropriate arguments.")
+        if (length(ri) != length(ni)) 
+            stop("Supplied data vectors are not all of the same length.")
         if (any(abs(ri) > 1, na.rm = TRUE)) 
             stop("One or more correlations are > 1 or < -1.")
         if (any(abs(ni) <= 4, na.rm = TRUE)) 
@@ -2050,6 +2243,8 @@ function (measure, formula, ai, bi, ci, di, n1i, n2i, x1i, x2i,
             mi <- ni - xi
         if (length(xi) == 0L || length(mi) == 0L) 
             stop("Cannot compute outcomes. Check that all of the required \n  information is specified via the appropriate arguments.")
+        if (length(xi) != length(mi)) 
+            stop("Supplied data vectors are not all of the same length.")
         if (any(c(xi, mi) < 0, na.rm = TRUE)) 
             stop("One or more counts are negative.")
         ni.u <- xi + mi
@@ -2136,6 +2331,8 @@ function (measure, formula, ai, bi, ci, di, n1i, n2i, x1i, x2i,
         ti <- eval(mf.ti, data, enclos = sys.frame(sys.parent()))
         if (length(xi) == 0L || length(ti) == 0L) 
             stop("Cannot compute outcomes. Check that all of the required \n  information is specified via the appropriate arguments.")
+        if (length(xi) != length(ti)) 
+            stop("Supplied data vectors are not all of the same length.")
         if (any(xi < 0, na.rm = TRUE)) 
             stop("One or more counts are negative.")
         if (any(ti < 0, na.rm = TRUE)) 
@@ -2184,6 +2381,8 @@ function (measure, formula, ai, bi, ci, di, n1i, n2i, x1i, x2i,
         if (length(mi) == 0L || length(sdi) == 0L || length(ni) == 
             0L) 
             stop("Cannot compute outcomes. Check that all of the required \n  information is specified via the appropriate arguments.")
+        if (!all(length(mi) == c(length(mi), length(sdi), length(ni)))) 
+            stop("Supplied data vectors are not all of the same length.")
         if (any(sdi < 0, na.rm = TRUE)) 
             stop("One or more standard deviations are negative.")
         ni.u <- ni
@@ -2210,6 +2409,9 @@ function (measure, formula, ai, bi, ci, di, n1i, n2i, x1i, x2i,
                 0L || length(sd2i) == 0L || length(ni) == 0L || 
                 length(ri) == 0L) 
                 stop("Cannot compute outcomes. Check that all of the required \n  information is specified via the appropriate arguments.")
+            if (!all(length(m1i) == c(length(m1i), length(m2i), 
+                length(sd1i), length(sd2i), length(ni), length(ri)))) 
+                stop("Supplied data vectors are not all of the same length.")
             if (any(c(sd1i, sd2i) < 0, na.rm = TRUE)) 
                 stop("One or more standard deviations are negative.")
         }
@@ -2217,6 +2419,9 @@ function (measure, formula, ai, bi, ci, di, n1i, n2i, x1i, x2i,
             if (length(m1i) == 0L || length(m2i) == 0L || length(sd1i) == 
                 0L || length(ni) == 0L || length(ri) == 0L) 
                 stop("Cannot compute outcomes. Check that all of the required \n  information is specified via the appropriate arguments.")
+            if (!all(length(m1i) == c(length(m1i), length(m2i), 
+                length(sd1i), length(ni), length(ri)))) 
+                stop("Supplied data vectors are not all of the same length.")
             if (any(sd1i < 0, na.rm = TRUE)) 
                 stop("One or more standard deviations are negative.")
         }
@@ -2257,6 +2462,8 @@ function (measure, formula, ai, bi, ci, di, n1i, n2i, x1i, x2i,
         if (length(ai) == 0L || length(mi) == 0L || length(ni) == 
             0L) 
             stop("Cannot compute outcomes. Check that all of the required \n  information is specified via the appropriate arguments.")
+        if (!all(length(ai) == c(length(mi), length(ni)))) 
+            stop("Supplied data vectors are not all of the same length.")
         if (any(ai > 1, na.rm = TRUE)) 
             stop("One or more alphas are > 1.")
         if (any(mi < 2, na.rm = TRUE)) 
@@ -4883,6 +5090,8 @@ function (x, digits = x$digits, transf = FALSE, ...)
     if (!is.element(na.act, c("na.omit", "na.exclude", "na.fail", 
         "na.pass"))) 
         stop("Unknown 'na.action' specified under options().")
+    if (!x$int.only) 
+        stop("Method only applicable for models without moderators.")
     if (x$k == 1) 
         stop("Stopped because k = 1.")
     o.warn <- getOption("warn")
@@ -4900,12 +5109,14 @@ function (x, digits = x$digits, transf = FALSE, ...)
         if (is.element(x$measure, c("RR", "OR", "RD"))) {
             res <- try(rma.mh(ai = x$ai.f[-i], bi = x$bi.f[-i], 
                 ci = x$ci.f[-i], di = x$di.f[-i], measure = x$measure, 
-                add = x$add, to = x$to, ...), silent = TRUE)
+                add = x$add, to = x$to, drop00 = x$drop00, correct = x$correct, 
+                ...), silent = TRUE)
         }
         else {
             res <- try(rma.mh(x1i = x$x1i.f[-i], x2i = x$x2i.f[-i], 
                 t1i = x$t1i.f[-i], t2i = x$t2i.f[-i], measure = x$measure, 
-                add = x$add, to = x$to, ...), silent = TRUE)
+                add = x$add, to = x$to, drop00 = x$drop00, correct = x$correct, 
+                ...), silent = TRUE)
         }
         if (inherits(res, "try-error")) 
             next
@@ -4953,6 +5164,8 @@ function (x, digits = x$digits, transf = FALSE, ...)
     if (!is.element(na.act, c("na.omit", "na.exclude", "na.fail", 
         "na.pass"))) 
         stop("Unknown 'na.action' specified under options().")
+    if (!x$int.only) 
+        stop("Method only applicable for models without moderators.")
     if (x$k == 1) 
         stop("Stopped because k = 1.")
     o.warn <- getOption("warn")
@@ -4969,7 +5182,7 @@ function (x, digits = x$digits, transf = FALSE, ...)
     for (i in seq.int(x$k.f)[x$not.na]) {
         res <- try(rma.peto(ai = x$ai.f[-i], bi = x$bi.f[-i], 
             ci = x$ci.f[-i], di = x$di.f[-i], add = x$add, to = x$to, 
-            ...), silent = TRUE)
+            drop00 = x$drop00, ...), silent = TRUE)
         if (inherits(res, "try-error")) 
             next
         b[i] <- res$b
@@ -6235,8 +6448,8 @@ function (x, digits = x$digits, ...)
             QMp <- paste0("< ", cutoff)
         }
         cat("\n")
-        cat("Test of Moderators (coefficient(s) ", paste0(x$btt, 
-            collapse = ","), "): \n")
+        cat("Test of Moderators (coefficient(s) ", paste(x$btt, 
+            collapse = ","), "): \n", sep = "")
         if (x$knha || x$robust) {
             cat("F(df1 = ", x$m, ", df2 = ", x$k - x$p, ") = ", 
                 formatC(x$QM, digits = digits, format = "f"), 
@@ -6729,8 +6942,8 @@ function (x, digits = x$digits, showfit = FALSE, signif.stars = getOption("show.
         QMp <- paste0("< ", cutoff)
     }
     if (x$p > 1) {
-        cat("Test of Moderators (coefficient(s) ", paste0(x$btt, 
-            collapse = ","), "): \n")
+        cat("Test of Moderators (coefficient(s) ", paste(x$btt, 
+            collapse = ","), "): \n", sep = "")
         if (x$knha || x$robust) {
             cat("F(df1 = ", x$m, ", df2 = ", x$k - x$p, ") = ", 
                 formatC(x$QM, digits = digits, format = "f"), 
@@ -6860,12 +7073,12 @@ function (x, digits = x$digits, showfit = FALSE, ...)
         print(res.table.exp, quote = FALSE, right = TRUE)
         cat("\n")
         if (x$measure == "OR") {
-            if (is.na(x$CMH)) {
+            if (is.na(x$MH)) {
                 cat("Cochran-Mantel-Haenszel Test:     test value not computable for these data \n", 
                   sep = "")
             }
             else {
-                pval <- x$CMHp
+                pval <- x$MHp
                 if (pval > ncutoff) {
                   pval <- paste("=", formatC(pval, digits = digits, 
                     format = "f"))
@@ -6874,7 +7087,7 @@ function (x, digits = x$digits, showfit = FALSE, ...)
                   pval <- paste0("< ", cutoff)
                 }
                 cat("Cochran-Mantel-Haenszel Test:     CMH = ", 
-                  formatC(x$CMH, digits, format = "f"), ", df = 1,", 
+                  formatC(x$MH, digits, format = "f"), ", df = 1,", 
                   paste(rep(" ", nchar(x$k.pos) - 1, collapse = "")), 
                   " p-val ", pval, "\n", sep = "")
             }
@@ -6894,6 +7107,25 @@ function (x, digits = x$digits, showfit = FALSE, ...)
                 cat("Tarone's Test for Heterogeneity:  X^2 = ", 
                   formatC(x$TA, digits, format = "f"), ", df = ", 
                   x$k.pos - 1, ", p-val ", pval, "\n\n", sep = "")
+            }
+        }
+        if (x$measure == "IRR") {
+            if (is.na(x$MH)) {
+                cat("Mantel-Haenszel Test:     test value not computable for these data \n", 
+                  sep = "")
+            }
+            else {
+                pval <- x$MHp
+                if (pval > ncutoff) {
+                  pval <- paste("=", formatC(pval, digits = digits, 
+                    format = "f"))
+                }
+                else {
+                  pval <- paste0("< ", cutoff)
+                }
+                cat("Mantel-Haenszel Test: MH = ", formatC(x$MH, 
+                  digits, format = "f"), ", df = 1, p-val ", 
+                  pval, "\n\n", sep = "")
             }
         }
     }
@@ -8204,7 +8436,7 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
     bntt <- setdiff(seq.int(p), btt)
     m <- length(btt)
     con <- list(tau2.init = NULL, tau2.min = 0, tau2.max = 50, 
-        threshold = 10^-5, maxiter = 100, stepadj = 1, REML2 = FALSE, 
+        threshold = 10^-5, maxiter = 100, stepadj = 1, REMLf = TRUE, 
         verbose = FALSE)
     if (verbose) 
         con$verbose <- verbose
@@ -8601,9 +8833,9 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
     parms <- p + ifelse(method == "FE", 0, 1)
     ll.ML <- -1/2 * (k) * log(2 * base::pi) - 1/2 * sum(log(vi + 
         tau2)) - 1/2 * RSS.f
-    ll.REML <- -1/2 * (k - p) * log(2 * base::pi) + ifelse(con$REML2, 
-        0, 1/2 * determinant(crossprod(X, X), logarithm = TRUE)$modulus) - 
-        1/2 * sum(log(vi + tau2)) - 1/2 * determinant(crossprod(X, 
+    ll.REML <- -1/2 * (k - p) * log(2 * base::pi) + ifelse(con$REMLf, 
+        1/2 * determinant(crossprod(X, X), logarithm = TRUE)$modulus, 
+        0) - 1/2 * sum(log(vi + tau2)) - 1/2 * determinant(crossprod(X, 
         W) %*% X, logarithm = TRUE)$modulus - 1/2 * RSS.f
     if (k - p > 0L) {
         dev.ML <- -2 * (ll.ML - sum(dnorm(yi, mean = yi, sd = sqrt(vi), 
@@ -8648,7 +8880,7 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
     ti, ni, mods, measure, intercept = TRUE, data, slab, subset, 
     add = 1/2, to = "only0", drop00 = TRUE, vtype = "LS", model = "UM.FS", 
     method = "ML", tdist = FALSE, level = 95, digits = 4, btt, 
-    nAGQ = 100, verbose = FALSE, control) 
+    nAGQ = 7, verbose = FALSE, control) 
 {
     if (missing(measure)) 
         stop("Need to specify 'measure' argument.")
@@ -8923,8 +9155,6 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
     }
     if (k < 1) 
         stop("Processing terminated since k = 0.")
-    if (k < 2) 
-        stop("Need at least k=2 studies to fit models.")
     yivi.na <- is.na(cbind(yi, vi, mods.f))
     if (any(yivi.na)) {
         not.na.yivi <- apply(yivi.na, MARGIN = 1, sum) == 0L
@@ -9024,13 +9254,13 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
         maxIter = 300, maxFN = 900, routine = "optim", method = "BFGS", 
         reltol = 1e-08, REPORT = 1, rel.tol = 1e-08, subdivisions = 100, 
         lower = -Inf, upper = Inf, dnchgcalc = "dFNCHypergeo", 
-        dnchgprec = 1e-10)
+        dnchgprec = 1e-10, scale = TRUE)
     if (verbose) 
         con$verbose <- verbose
     con[pmatch(names(control), names(con))] <- control
     control.glm <- list(trace = con$verbose, epsilon = con$epsilon, 
         maxit = con$maxit)
-    control.lmer <- list(msVerbose = con$verbose, maxIter = con$maxIter, 
+    control.glmer <- list(msVerbose = con$verbose, maxIter = con$maxIter, 
         maxFN = con$maxFN)
     control.optim <- list(trace = ifelse(con$verbose, 1, 0), 
         reltol = con$reltol, REPORT = con$REPORT)
@@ -9087,6 +9317,14 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
     se.tau2 <- I2 <- H2 <- QE <- QEp <- NA
     alpha <- ifelse(level > 1, (100 - level)/100, 1 - level)
     robust <- FALSE
+    if (!int.only && int.incl && con$scale) {
+        Xsave <- X
+        meanX <- apply(X[, 2:p, drop = FALSE], 2, mean)
+        sdX <- apply(X[, 2:p, drop = FALSE], 2, sd)
+        is.d <- apply(X, 2, function(x) all(sapply(x, identical, 
+            0) | sapply(x, identical, 1)))
+        X[, !is.d] <- apply(X[, !is.d], 2, scale)
+    }
     if (is.element(measure, c("OR", "IRR"))) {
         if (is.element(model, c("UM.FS", "UM.RS"))) {
             if (measure == "OR") {
@@ -9104,23 +9342,37 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
             group2 <- rep(c(0, 1), times = k)
             group12 <- rep(c(1/2, -1/2), times = k)
             study <- factor(rep(seq.int(k), each = 2))
-            intrcpt <- cbind(rep(1, 2 * k))
+            const <- cbind(rep(1, 2 * k))
             X.fit <- X[rep(seq(k), each = 2), , drop = FALSE]
             X.fit <- cbind(group1 * X.fit[, , drop = FALSE])
             row.names(X.fit) <- seq.int(2 * k)
             if (model == "UM.FS") {
                 if (con$verbose) 
                   message("Fitting FE model.")
-                res.FE <- try(glm(dat.grp ~ -1 + X.fit + study, 
-                  offset = dat.off, family = dat.fam, control = control.glm), 
-                  silent = silent)
+                if (k > 1) {
+                  res.FE <- try(glm(dat.grp ~ -1 + X.fit + study, 
+                    offset = dat.off, family = dat.fam, control = control.glm), 
+                    silent = silent)
+                }
+                else {
+                  res.FE <- try(glm(dat.grp ~ -1 + X.fit + const, 
+                    offset = dat.off, family = dat.fam, control = control.glm), 
+                    silent = silent)
+                }
                 if (inherits(res.FE, "try-error")) 
                   stop("Cannot fit FE model.")
                 if (con$verbose) 
                   message("Fitting saturated model.")
-                X.QE <- model.matrix(~-1 + X.fit + study + study:group1)
-                res.QE <- try(glm(dat.grp ~ -1 + X.QE, offset = dat.off, 
-                  family = dat.fam, control = control.glm), silent = silent)
+                if (k > 1) {
+                  X.QE <- model.matrix(~-1 + X.fit + study + 
+                    study:group1)
+                  res.QE <- try(glm(dat.grp ~ -1 + X.QE, offset = dat.off, 
+                    family = dat.fam, control = control.glm), 
+                    silent = silent)
+                }
+                else {
+                  res.QE <- res.FE
+                }
                 if (inherits(res.QE, "try-error")) 
                   stop("Cannot fit saturated model.")
                 ll.FE <- c(logLik(res.FE))
@@ -9132,10 +9384,10 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
                 if (method == "ML") {
                   if (con$verbose) 
                     message("Fitting ML model.")
-                  res.ML <- try(lmer(dat.grp ~ -1 + X.fit + study + 
-                    (group12 - 1 | study), offset = dat.off, 
-                    family = dat.fam, nAGQ = nAGQ, verbose = con$verbose, 
-                    control = control.lmer), silent = silent)
+                  res.ML <- try(glmer(dat.grp ~ -1 + X.fit + 
+                    study + (group12 - 1 | study), family = dat.fam, 
+                    nAGQ = nAGQ, verbose = con$verbose, control = control.glmer), 
+                    silent = silent)
                   if (inherits(res.ML, "try-error")) 
                     stop("Cannot fit ML model.")
                   ll.ML <- ll.QE - 1/2 * lme4::deviance(res.ML)
@@ -9164,24 +9416,30 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
             if (model == "UM.RS") {
                 if (con$verbose) 
                   message("Fitting FE model.")
-                res.FE <- try(lmer(dat.grp ~ -1 + X.fit + intrcpt + 
+                res.FE <- try(glmer(dat.grp ~ -1 + X.fit + const + 
                   (1 | study), offset = dat.off, family = dat.fam, 
-                  nAGQ = nAGQ, verbose = con$verbose, control = control.lmer), 
+                  nAGQ = nAGQ, verbose = con$verbose, control = control.glmer), 
                   silent = silent)
                 if (inherits(res.FE, "try-error")) 
                   stop("Cannot fit FE model.")
                 if (con$verbose) 
                   message("Fitting saturated model.")
-                X.QE <- model.matrix(~-1 + X.fit + intrcpt + 
-                  study:group1)
-                res.QE <- try(glm(dat.grp ~ -1 + X.QE, offset = dat.off, 
-                  family = dat.fam, control = control.glm), silent = silent)
-                X.QE <- X.QE[, !is.na(coef(res.QE)), drop = FALSE]
-                res.QE <- try(lmer(dat.grp ~ -1 + X.QE + (1 | 
-                  study), offset = dat.off, family = dat.fam, 
-                  start = c(sqrt(VarCorr(res.FE)[[1]][1])), nAGQ = nAGQ, 
-                  verbose = con$verbose, control = control.lmer), 
-                  silent = silent)
+                if (k > 1) {
+                  X.QE <- model.matrix(~-1 + X.fit + const + 
+                    study:group1)
+                  res.QE <- try(glm(dat.grp ~ -1 + X.QE, offset = dat.off, 
+                    family = dat.fam, control = control.glm), 
+                    silent = silent)
+                  X.QE <- X.QE[, !is.na(coef(res.QE)), drop = FALSE]
+                  res.QE <- try(glmer(dat.grp ~ -1 + X.QE + (1 | 
+                    study), offset = dat.off, family = dat.fam, 
+                    start = c(sqrt(VarCorr(res.FE)[[1]][1])), 
+                    nAGQ = nAGQ, verbose = con$verbose, control = control.glmer), 
+                    silent = silent)
+                }
+                else {
+                  res.QE <- res.FE
+                }
                 if (inherits(res.QE, "try-error")) 
                   stop("Cannot fit saturated model.")
                 ll.FE <- c(lme4::logLik(res.FE))
@@ -9192,10 +9450,11 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
                 if (method == "ML") {
                   if (con$verbose) 
                     message("Fitting ML model.")
-                  res.ML <- try(lmer(dat.grp ~ -1 + X.fit + intrcpt + 
-                    (1 | study) + (group12 - 1 | study), offset = dat.off, 
-                    family = dat.fam, nAGQ = nAGQ, verbose = con$verbose, 
-                    control = control.lmer), silent = silent)
+                  res.ML <- try(glmer(dat.grp ~ -1 + X.fit + 
+                    const + (1 | study) + (group12 - 1 | study), 
+                    offset = dat.off, family = dat.fam, nAGQ = nAGQ, 
+                    verbose = con$verbose, control = control.glmer), 
+                    silent = silent)
                   if (inherits(res.ML, "try-error")) 
                     stop("Cannot fit ML model.")
                   ll.ML <- c(lme4::logLik(res.ML))
@@ -9243,9 +9502,15 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
                 stop("Cannot fit FE model.")
             if (con$verbose) 
                 message("Fitting saturated model.")
-            X.QE <- model.matrix(~-1 + X.fit + study)
-            res.QE <- try(glm(dat.grp ~ -1 + X.QE, offset = dat.off, 
-                family = binomial, control = control.glm), silent = silent)
+            if (k > 1) {
+                X.QE <- model.matrix(~-1 + X.fit + study)
+                res.QE <- try(glm(dat.grp ~ -1 + X.QE, offset = dat.off, 
+                  family = binomial, control = control.glm), 
+                  silent = silent)
+            }
+            else {
+                res.QE <- res.FE
+            }
             if (inherits(res.QE, "try-error")) 
                 stop("Cannot fit saturated model.")
             ll.FE <- c(logLik(res.FE))
@@ -9257,16 +9522,16 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
                 if (con$verbose) 
                   message("Fitting ML model.")
                 if (con$verbose) {
-                  res.ML <- try(lmer(dat.grp ~ -1 + X.fit + (1 | 
-                    study), offset = dat.off, family = binomial, 
-                    nAGQ = nAGQ, verbose = con$verbose, control = control.lmer), 
+                  res.ML <- try(glmer(dat.grp ~ -1 + X.fit + 
+                    (1 | study), offset = dat.off, family = binomial, 
+                    nAGQ = nAGQ, verbose = con$verbose, control = control.glmer), 
                     silent = silent)
                 }
                 else {
-                  res.ML <- suppressMessages(try(lmer(dat.grp ~ 
+                  res.ML <- suppressMessages(try(glmer(dat.grp ~ 
                     -1 + X.fit + (1 | study), offset = dat.off, 
                     family = binomial, nAGQ = nAGQ, verbose = con$verbose, 
-                    control = control.lmer), silent = silent))
+                    control = control.glmer), silent = silent))
                 }
                 if (inherits(res.ML, "try-error")) 
                   stop("Cannot fit ML model.")
@@ -9338,47 +9603,54 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
                   dnchgprec = con$dnchgprec)
                 if (con$verbose) 
                   message("Fitting saturated model.")
-                is.aliased <- is.na(coef(res.QE))
-                X.QE <- X.QE[, !is.aliased, drop = FALSE]
-                if (con$routine == "optim") {
-                  res.QE <- try(optim(par = c(coef(res.QE)[!is.aliased], 
-                    0), .dnchg, method = con$method, hessian = TRUE, 
-                    ai = ai, bi = bi, ci = ci, di = di, X.fit = X.QE, 
+                if (k > 1) {
+                  is.aliased <- is.na(coef(res.QE))
+                  X.QE <- X.QE[, !is.aliased, drop = FALSE]
+                  if (con$routine == "optim") {
+                    res.QE <- try(optim(par = c(coef(res.QE)[!is.aliased], 
+                      0), .dnchg, method = con$method, hessian = TRUE, 
+                      ai = ai, bi = bi, ci = ci, di = di, X.fit = X.QE, 
+                      random = FALSE, verbose = con$verbose, 
+                      digits = digits, dnchgcalc = con$dnchgcalc, 
+                      dnchgprec = con$dnchgprec, control = control.optim), 
+                      silent = silent)
+                  }
+                  if (con$routine == "nlminb") {
+                    res.QE <- try(nlminb(start = c(coef(res.QE)[!is.aliased], 
+                      0), .dnchg, ai = ai, bi = bi, ci = ci, 
+                      di = di, X.fit = X.QE, random = FALSE, 
+                      verbose = con$verbose, digits = digits, 
+                      dnchgcalc = con$dnchgcalc, dnchgprec = con$dnchgprec, 
+                      control = control.nlminb), silent = silent)
+                  }
+                  if (con$routine == "minqa") {
+                    res.QE <- try(minqa(par = c(coef(res.QE)[!is.aliased], 
+                      0), .dnchg, ai = ai, bi = bi, ci = ci, 
+                      di = di, X.fit = X.QE, random = FALSE, 
+                      verbose = con$verbose, digits = digits, 
+                      dnchgcalc = con$dnchgcalc, dnchgprec = con$dnchgprec, 
+                      control = control.minqa), silent = silent)
+                  }
+                  if (con$routine == "optim" || con$routine == 
+                    "nlminb") {
+                    if (inherits(res.QE, "try-error") || res.QE$convergence != 
+                      0) 
+                      stop("Cannot fit saturated model.")
+                  }
+                  if (con$routine == "minqa") {
+                    if (inherits(res.QE, "try-error") || res.QE$ierr != 
+                      0) 
+                      stop("Cannot fit FE model.")
+                  }
+                  h.QE <- hessian(.dnchg, x = res.QE$par, ai = ai, 
+                    bi = bi, ci = ci, di = di, X.fit = X.QE, 
                     random = FALSE, verbose = con$verbose, digits = digits, 
-                    dnchgcalc = con$dnchgcalc, dnchgprec = con$dnchgprec, 
-                    control = control.optim), silent = silent)
+                    dnchgcalc = con$dnchgcalc, dnchgprec = con$dnchgprec)
                 }
-                if (con$routine == "nlminb") {
-                  res.QE <- try(nlminb(start = c(coef(res.QE)[!is.aliased], 
-                    0), .dnchg, ai = ai, bi = bi, ci = ci, di = di, 
-                    X.fit = X.QE, random = FALSE, verbose = con$verbose, 
-                    digits = digits, dnchgcalc = con$dnchgcalc, 
-                    dnchgprec = con$dnchgprec, control = control.nlminb), 
-                    silent = silent)
+                else {
+                  res.QE <- res.FE
+                  h.QE <- h.FE
                 }
-                if (con$routine == "minqa") {
-                  res.QE <- try(minqa(par = c(coef(res.QE)[!is.aliased], 
-                    0), .dnchg, ai = ai, bi = bi, ci = ci, di = di, 
-                    X.fit = X.QE, random = FALSE, verbose = con$verbose, 
-                    digits = digits, dnchgcalc = con$dnchgcalc, 
-                    dnchgprec = con$dnchgprec, control = control.minqa), 
-                    silent = silent)
-                }
-                if (con$routine == "optim" || con$routine == 
-                  "nlminb") {
-                  if (inherits(res.QE, "try-error") || res.QE$convergence != 
-                    0) 
-                    stop("Cannot fit saturated model.")
-                }
-                if (con$routine == "minqa") {
-                  if (inherits(res.QE, "try-error") || res.QE$ierr != 
-                    0) 
-                    stop("Cannot fit FE model.")
-                }
-                h.QE <- hessian(.dnchg, x = res.QE$par, ai = ai, 
-                  bi = bi, ci = ci, di = di, X.fit = X.QE, random = FALSE, 
-                  verbose = con$verbose, digits = digits, dnchgcalc = con$dnchgcalc, 
-                  dnchgprec = con$dnchgprec)
                 if (con$routine == "optim") {
                   ll.FE <- -1 * res.FE$value
                   ll.QE <- -1 * res.QE$value
@@ -9422,13 +9694,20 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
                 study.l <- factor(rep(seq.int(k), times = ni))
                 X.fit.l <- X[rep(seq.int(k), times = ni), ]
                 X.fit.l <- cbind(group1 * X.fit.l)
-                if (con$routine == "clogit") 
-                  res.FE <- try(clogit(event ~ X.fit.l + strata(study.l), 
-                    iter.max = control.glm$maxit), silent = silent)
-                if (con$routine == "clogistic") 
-                  res.FE <- try(clogistic(event ~ X.fit.l, strata = study.l, 
-                    iter.max = control.glm$maxit, model = FALSE, 
-                    x = FALSE, y = FALSE), silent = silent)
+                const <- rep(1, length(event))
+                if (k > 1) {
+                  if (con$routine == "clogit") 
+                    res.FE <- try(clogit(event ~ X.fit.l + strata(study.l), 
+                      iter.max = control.glm$maxit), silent = silent)
+                  if (con$routine == "clogistic") 
+                    res.FE <- try(clogistic(event ~ X.fit.l, 
+                      strata = study.l, iter.max = control.glm$maxit, 
+                      model = FALSE, x = FALSE, y = FALSE), silent = silent)
+                }
+                else {
+                  stop(paste("Cannot use '", con$routine, "' routine when k=1.", 
+                    sep = ""))
+                }
                 if (inherits(res.FE, "try-error")) 
                   stop("Cannot fit FE model.")
                 if (con$verbose) 
@@ -9577,15 +9856,20 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
             stop("Cannot fit FE model.")
         if (con$verbose) 
             message("Fitting saturated model.")
-        X.QE <- model.matrix(~-1 + X.fit + study)
-        if (con$verbose) {
-            res.QE <- try(glm(dat.grp ~ -1 + X.QE, offset = dat.off, 
-                family = dat.fam, control = control.glm), silent = silent)
+        if (k > 1) {
+            X.QE <- model.matrix(~-1 + X.fit + study)
+            if (con$verbose) {
+                res.QE <- try(glm(dat.grp ~ -1 + X.QE, offset = dat.off, 
+                  family = dat.fam, control = control.glm), silent = silent)
+            }
+            else {
+                res.QE <- suppressWarnings(try(glm(dat.grp ~ 
+                  -1 + X.QE, offset = dat.off, family = dat.fam, 
+                  control = control.glm), silent = silent))
+            }
         }
         else {
-            res.QE <- suppressWarnings(try(glm(dat.grp ~ -1 + 
-                X.QE, offset = dat.off, family = dat.fam, control = control.glm), 
-                silent = silent))
+            res.QE <- res.FE
         }
         if (inherits(res.QE, "try-error")) 
             stop("Cannot fit saturated model.")
@@ -9597,16 +9881,16 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
             if (con$verbose) 
                 message("Fitting ML model.")
             if (con$verbose) {
-                res.ML <- try(lmer(dat.grp ~ -1 + X.fit + (1 | 
+                res.ML <- try(glmer(dat.grp ~ -1 + X.fit + (1 | 
                   study), offset = dat.off, family = dat.fam, 
-                  nAGQ = nAGQ, verbose = con$verbose, control = control.lmer), 
+                  nAGQ = nAGQ, verbose = con$verbose, control = control.glmer), 
                   silent = silent)
             }
             else {
-                res.ML <- suppressMessages(try(lmer(dat.grp ~ 
+                res.ML <- suppressMessages(try(glmer(dat.grp ~ 
                   -1 + X.fit + (1 | study), offset = dat.off, 
                   family = dat.fam, nAGQ = nAGQ, verbose = con$verbose, 
-                  control = control.lmer), silent = silent))
+                  control = control.glmer), silent = silent))
             }
             if (inherits(res.ML, "try-error")) 
                 stop("Cannot fit ML model.")
@@ -9668,6 +9952,14 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
     if (class(chol.h) == "try-error") 
         stop("Cannot invert Hessian for QM test.")
     QM <- c(t(b)[btt] %*% chol2inv(chol.h) %*% b[btt])
+    if (!int.only && int.incl && con$scale) {
+        mX <- rbind(c(1, -1 * ifelse(is.d[-1], 0, meanX/sdX)), 
+            cbind(0, diag(ifelse(is.d[-1], 1, 1/sdX))))
+        b <- mX %*% b
+        vb <- mX %*% vb %*% t(mX)
+        X <- Xsave
+        rownames(vb) <- colnames(vb) <- rownames(b) <- colnames(X)
+    }
     se <- sqrt(diag(vb))
     names(se) <- NULL
     zval <- c(b/se)
@@ -9726,10 +10018,10 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
 rma.mh <-
 function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, measure = "OR", 
     data, slab, subset, add = 1/2, to = "only0", drop00 = TRUE, 
-    level = 95, digits = 4) 
+    correct = TRUE, level = 95, digits = 4) 
 {
-    if (!is.element(measure, c("OR", "RR", "RD", "IRR"))) 
-        stop("Mantel-Haenszel method can only be used with measures OR, RR, RD, and IRR.")
+    if (!is.element(measure, c("OR", "RR", "RD", "IRR", "IRD"))) 
+        stop("Mantel-Haenszel method can only be used with measures OR, RR, RD, IRR, and IRD.")
     if (length(add) == 1) 
         add <- c(add, 0)
     if (length(add) != 2) 
@@ -9883,7 +10175,7 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, measure = "OR",
         n2i <- ci + di
         Ni <- ai + bi + ci + di
     }
-    if (is.element(measure, c("IRR"))) {
+    if (is.element(measure, c("IRR", "IRD"))) {
         ai <- bi <- ci <- di <- ai.f <- bi.f <- ci.f <- di.f <- NA
         mf.x1i <- mf[[match("x1i", names(mf))]]
         mf.x2i <- mf[[match("x2i", names(mf))]]
@@ -9989,7 +10281,7 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, measure = "OR",
         alpha <- ifelse(level > 1, (100 - level)/100, 1 - level)
         Ti <- t1i + t2i
     }
-    CO <- COp <- CMH <- CMHp <- BD <- BDp <- TA <- TAp <- k.pos <- NA
+    CO <- COp <- MH <- MHp <- BD <- BDp <- TA <- TAp <- k.pos <- NA
     if (measure == "OR") {
         Pi <- ai/Ni + di/Ni
         Qi <- bi/Ni + ci/Ni
@@ -10025,16 +10317,17 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, measure = "OR",
         if (identical(sum(xt), 0) || identical(sum(yt), 0)) {
             CO <- NA
             COp <- NA
-            CMH <- NA
-            CMHp <- NA
+            MH <- NA
+            MHp <- NA
         }
         else {
-            CO <- (abs(sum(ai - (n1i/Ni) * xt)))^2/sum((n1i/Ni) * 
-                (n2i/Ni) * (xt * (yt/Ni)))
+            CO <- sum(ai - (n1i/Ni) * xt)^2/sum((n1i/Ni) * (n2i/Ni) * 
+                (xt * (yt/Ni)))
             COp <- pchisq(CO, df = 1, lower.tail = FALSE)
-            CMH <- (abs(sum(ai - (n1i/Ni) * xt)) - 0.5)^2/sum((n1i/Ni) * 
-                (n2i/Ni) * (xt * (yt/(Ni - 1))))
-            CMHp <- pchisq(CMH, df = 1, lower.tail = FALSE)
+            MH <- (abs(sum(ai - (n1i/Ni) * xt)) - ifelse(correct, 
+                0.5, 0))^2/sum((n1i/Ni) * (n2i/Ni) * (xt * (yt/(Ni - 
+                1))))
+            MHp <- pchisq(MH, df = 1, lower.tail = FALSE)
         }
         if (is.na(b)) {
             BD <- NA
@@ -10139,6 +10432,27 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, measure = "OR",
         }
         names(b) <- "intrcpt"
         vb <- matrix(se^2, dimnames = list("intrcpt", "intrcpt"))
+        xt <- x1i + x2i
+        if (identical(sum(xt), 0)) {
+            MH <- NA
+            MHp <- NA
+        }
+        else {
+            MH <- (abs(sum(x1i - xt * (t1i/Ti))) - ifelse(correct, 
+                0.5, 0))^2/sum(xt * (t1i/Ti) * (t2i/Ti))
+            MHp <- pchisq(MH, df = 1, lower.tail = FALSE)
+        }
+    }
+    if (measure == "IRD") {
+        b <- sum((x1i * t2i - x2i * t1i)/Ti)/sum((t1i/Ti) * t2i)
+        se <- sqrt(sum(((t1i/Ti) * t2i)^2 * (x1i/t1i^2 + x2i/t2i^2)))/sum((t1i/Ti) * 
+            t2i)
+        zval <- b/se
+        pval <- 2 * pnorm(abs(zval), lower.tail = FALSE)
+        ci.lb <- b - qnorm(alpha/2, lower.tail = FALSE) * se
+        ci.ub <- b + qnorm(alpha/2, lower.tail = FALSE) * se
+        names(b) <- "intrcpt"
+        vb <- matrix(se^2, dimnames = list("intrcpt", "intrcpt"))
     }
     wi <- 1/vi
     QE <- sum(wi * (yi - b)^2)
@@ -10179,22 +10493,22 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, measure = "OR",
     robust <- FALSE
     res <- list(b, se, zval, pval, ci.lb, ci.ub, vb, tau2, k, 
         k.f, k.yi, k.pos, k.eff, p, parms, QE, QEp, CO, COp, 
-        CMH, CMHp, BD, BDp, TA, TAp, int.only, yi, vi, yi.f, 
-        vi.f, X.f, ai, bi, ci, di, x1i, x2i, t1i, t2i, ai.f, 
-        bi.f, ci.f, di.f, x1i.f, x2i.f, t1i.f, t2i.f, ni, ni.f, 
-        ids, not.na, not.na.yivi, slab, slab.null, measure, method, 
+        MH, MHp, BD, BDp, TA, TAp, int.only, yi, vi, yi.f, vi.f, 
+        X.f, ai, bi, ci, di, x1i, x2i, t1i, t2i, ai.f, bi.f, 
+        ci.f, di.f, x1i.f, x2i.f, t1i.f, t2i.f, ni, ni.f, ids, 
+        not.na, not.na.yivi, slab, slab.null, measure, method, 
         weighted, knha, robust, intercept, digits, level, add, 
-        to, drop00, fit.stats)
+        to, drop00, correct, fit.stats)
     names(res) <- c("b", "se", "zval", "pval", "ci.lb", "ci.ub", 
         "vb", "tau2", "k", "k.f", "k.yi", "k.pos", "k.eff", "p", 
-        "parms", "QE", "QEp", "CO", "COp", "CMH", "CMHp", "BD", 
+        "parms", "QE", "QEp", "CO", "COp", "MH", "MHp", "BD", 
         "BDp", "TA", "TAp", "int.only", "yi", "vi", "yi.f", "vi.f", 
         "X.f", "ai", "bi", "ci", "di", "x1i", "x2i", "t1i", "t2i", 
         "ai.f", "bi.f", "ci.f", "di.f", "x1i.f", "x2i.f", "t1i.f", 
         "t2i.f", "ni", "ni.f", "ids", "not.na", "not.na.yivi", 
         "slab", "slab.null", "measure", "method", "weighted", 
         "knha", "robust", "intercept", "digits", "level", "add", 
-        "to", "drop00", "fit.stats")
+        "to", "drop00", "correct", "fit.stats")
     class(res) <- c("rma.mh", "rma")
     return(res)
 }
@@ -10817,7 +11131,7 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
     bntt <- setdiff(seq.int(p), btt)
     m <- length(btt)
     con <- list(tau2.init = NULL, tau2.min = 0, tau2.max = 50, 
-        threshold = 10^-5, maxiter = 100, stepadj = 1, REML2 = FALSE, 
+        threshold = 10^-5, maxiter = 100, stepadj = 1, REMLf = TRUE, 
         verbose = FALSE)
     if (verbose) 
         con$verbose <- verbose
@@ -11214,9 +11528,9 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
     parms <- p + ifelse(method == "FE", 0, 1)
     ll.ML <- -1/2 * (k) * log(2 * base::pi) - 1/2 * sum(log(vi + 
         tau2)) - 1/2 * RSS.f
-    ll.REML <- -1/2 * (k - p) * log(2 * base::pi) + ifelse(con$REML2, 
-        0, 1/2 * determinant(crossprod(X, X), logarithm = TRUE)$modulus) - 
-        1/2 * sum(log(vi + tau2)) - 1/2 * determinant(crossprod(X, 
+    ll.REML <- -1/2 * (k - p) * log(2 * base::pi) + ifelse(con$REMLf, 
+        1/2 * determinant(crossprod(X, X), logarithm = TRUE)$modulus, 
+        0) - 1/2 * sum(log(vi + tau2)) - 1/2 * determinant(crossprod(X, 
         W) %*% X, logarithm = TRUE)$modulus - 1/2 * RSS.f
     if (k - p > 0L) {
         dev.ML <- -2 * (ll.ML - sum(dnorm(yi, mean = yi, sd = sqrt(vi), 
@@ -11380,12 +11694,14 @@ function (model, digits = model$digits, ...)
         if (is.element(x$measure, c("RR", "OR", "RD"))) {
             res <- try(rma.mh(ai = x$ai.f[-i], bi = x$bi.f[-i], 
                 ci = x$ci.f[-i], di = x$di.f[-i], measure = x$measure, 
-                add = x$add, to = x$to, ...), silent = TRUE)
+                add = x$add, to = x$to, drop00 = x$drop00, correct = x$correct, 
+                ...), silent = TRUE)
         }
         else {
             res <- try(rma.mh(x1i = x$x1i.f[-i], x2i = x$x2i.f[-i], 
                 t1i = x$t1i.f[-i], t2i = x$t2i.f[-i], measure = x$measure, 
-                add = x$add, to = x$to, ...), silent = TRUE)
+                add = x$add, to = x$to, drop00 = x$drop00, correct = x$correct, 
+                ...), silent = TRUE)
         }
         if (inherits(res, "try-error")) 
             next
@@ -11429,7 +11745,7 @@ function (model, digits = model$digits, ...)
     for (i in seq.int(x$k.f)[x$not.na]) {
         res <- try(rma.peto(ai = x$ai.f[-i], bi = x$bi.f[-i], 
             ci = x$ci.f[-i], di = x$di.f[-i], add = x$add, to = x$to, 
-            ...), silent = TRUE)
+            drop00 = x$drop00, ...), silent = TRUE)
         if (inherits(res, "try-error")) 
             next
         delpred[i] <- res$b
@@ -11631,6 +11947,1554 @@ function (object, digits = object$digits, showfit = TRUE, ...)
         stop("Argument 'object' must be an object of class \"rma\".")
     class(object) <- c("summary.rma", class(object))
     return(object)
+}
+to.long <-
+function (measure, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, 
+    m1i, m2i, sd1i, sd2i, xi, mi, ri, ti, sdi, ni, data, slab, 
+    subset, add = 1/2, to = "none", drop00 = FALSE, vlong = FALSE, 
+    append = TRUE, var.names) 
+{
+    if (!is.element(measure, c("RR", "OR", "PETO", "RD", "AS", 
+        "PHI", "YUQ", "YUY", "RTET", "PBIT", "OR2D", "IRR", "IRD", 
+        "IRSD", "MD", "SMD", "SMDH", "ROM", "RPB", "RBIS", "D2OR", 
+        "COR", "UCOR", "ZCOR", "PR", "PLN", "PLO", "PAS", "PFT", 
+        "IR", "IRLN", "IRS", "IRFT", "MN", "MC", "SMCC", "SMCR", 
+        "ARAW", "AHW", "ABT"))) 
+        stop("Unknown 'measure' specified.")
+    na.act <- getOption("na.action")
+    if (!is.element(na.act, c("na.omit", "na.exclude", "na.fail", 
+        "na.pass"))) 
+        stop("Unknown 'na.action' specified under options().")
+    if (!is.element(to, c("all", "only0", "if0all", "none"))) 
+        stop("Unknown 'to' argument specified.")
+    if (missing(data)) 
+        data <- NULL
+    no.data <- is.null(data)
+    if (is.null(data)) {
+        data <- sys.frame(sys.parent())
+    }
+    else {
+        if (!is.data.frame(data)) {
+            data <- data.frame(data)
+        }
+    }
+    mf <- match.call()
+    mf.slab <- mf[[match("slab", names(mf))]]
+    mf.subset <- mf[[match("subset", names(mf))]]
+    slab <- eval(mf.slab, data, enclos = sys.frame(sys.parent()))
+    subset <- eval(mf.subset, data, enclos = sys.frame(sys.parent()))
+    if (is.element(measure, c("RR", "OR", "RD", "AS", "PETO", 
+        "PHI", "YUQ", "YUY", "RTET", "PBIT", "OR2D"))) {
+        mf.ai <- mf[[match("ai", names(mf))]]
+        mf.bi <- mf[[match("bi", names(mf))]]
+        mf.ci <- mf[[match("ci", names(mf))]]
+        mf.di <- mf[[match("di", names(mf))]]
+        mf.n1i <- mf[[match("n1i", names(mf))]]
+        mf.n2i <- mf[[match("n2i", names(mf))]]
+        ai <- eval(mf.ai, data, enclos = sys.frame(sys.parent()))
+        bi <- eval(mf.bi, data, enclos = sys.frame(sys.parent()))
+        ci <- eval(mf.ci, data, enclos = sys.frame(sys.parent()))
+        di <- eval(mf.di, data, enclos = sys.frame(sys.parent()))
+        n1i <- eval(mf.n1i, data, enclos = sys.frame(sys.parent()))
+        n2i <- eval(mf.n2i, data, enclos = sys.frame(sys.parent()))
+        if (is.null(bi)) 
+            bi <- n1i - ai
+        if (is.null(di)) 
+            di <- n2i - ci
+        if (length(ai) == 0L || length(bi) == 0L || length(ci) == 
+            0L || length(di) == 0L) 
+            stop("Cannot compute outcomes. Check that all of the required \n  information is specified via the appropriate arguments.")
+        if (!all(length(ai) == c(length(ai), length(bi), length(ci), 
+            length(di)))) 
+            stop("Supplied data vectors are not all of the same length.")
+        if (any(c(ai, bi, ci, di) < 0, na.rm = TRUE)) 
+            stop("One or more counts are negative.")
+        ni.u <- ai + bi + ci + di
+        if (drop00) {
+            id00 <- c(ai == 0L & ci == 0L) | c(bi == 0L & di == 
+                0L)
+            id00[is.na(id00)] <- FALSE
+            ai[id00] <- NA
+            bi[id00] <- NA
+            ci[id00] <- NA
+            di[id00] <- NA
+        }
+        if (to == "all") {
+            ai <- ai + add
+            ci <- ci + add
+            bi <- bi + add
+            di <- di + add
+        }
+        if (to == "only0") {
+            id0 <- c(ai == 0L | ci == 0L | bi == 0L | di == 0L)
+            id0[is.na(id0)] <- FALSE
+            ai[id0] <- ai[id0] + add
+            ci[id0] <- ci[id0] + add
+            bi[id0] <- bi[id0] + add
+            di[id0] <- di[id0] + add
+        }
+        if (to == "if0all") {
+            id0 <- c(ai == 0L | ci == 0L | bi == 0L | di == 0L)
+            id0[is.na(id0)] <- FALSE
+            if (any(id0)) {
+                ai <- ai + add
+                ci <- ci + add
+                bi <- bi + add
+                di <- di + add
+            }
+        }
+    }
+    if (is.element(measure, c("IRR", "IRD", "IRSD"))) {
+        mf.x1i <- mf[[match("x1i", names(mf))]]
+        mf.x2i <- mf[[match("x2i", names(mf))]]
+        mf.t1i <- mf[[match("t1i", names(mf))]]
+        mf.t2i <- mf[[match("t2i", names(mf))]]
+        x1i <- eval(mf.x1i, data, enclos = sys.frame(sys.parent()))
+        x2i <- eval(mf.x2i, data, enclos = sys.frame(sys.parent()))
+        t1i <- eval(mf.t1i, data, enclos = sys.frame(sys.parent()))
+        t2i <- eval(mf.t2i, data, enclos = sys.frame(sys.parent()))
+        if (length(x1i) == 0L || length(x2i) == 0L || length(t1i) == 
+            0L || length(t2i) == 0L) 
+            stop("Cannot compute outcomes. Check that all of the required \n  information is specified via the appropriate arguments.")
+        if (!all(length(x1i) == c(length(x1i), length(x2i), length(t1i), 
+            length(t2i)))) 
+            stop("Supplied data vectors are not all of the same length.")
+        if (any(c(x1i, x2i) < 0, na.rm = TRUE)) 
+            stop("One or more counts are negative.")
+        if (any(c(t1i, t2i) < 0, na.rm = TRUE)) 
+            stop("One or more person-times are negative.")
+        ni.u <- t1i + t2i
+        if (drop00) {
+            id00 <- c(x1i == 0L & x2i == 0L)
+            id00[is.na(id00)] <- FALSE
+            x1i[id00] <- NA
+            x2i[id00] <- NA
+        }
+        if (to == "all") {
+            x1i <- x1i + add
+            x2i <- x2i + add
+        }
+        if (to == "only0") {
+            id0 <- c(x1i == 0L | x2i == 0L)
+            id0[is.na(id0)] <- FALSE
+            x1i[id0] <- x1i[id0] + add
+            x2i[id0] <- x2i[id0] + add
+        }
+        if (to == "if0all") {
+            id0 <- c(x1i == 0L | x2i == 0L)
+            id0[is.na(id0)] <- FALSE
+            if (any(id0)) {
+                x1i <- x1i + add
+                x2i <- x2i + add
+            }
+        }
+    }
+    if (is.element(measure, c("MD", "SMD", "SMDH", "ROM", "RPB", 
+        "RBIS", "D2OR"))) {
+        mf.m1i <- mf[[match("m1i", names(mf))]]
+        mf.m2i <- mf[[match("m2i", names(mf))]]
+        mf.sd1i <- mf[[match("sd1i", names(mf))]]
+        mf.sd2i <- mf[[match("sd2i", names(mf))]]
+        mf.n1i <- mf[[match("n1i", names(mf))]]
+        mf.n2i <- mf[[match("n2i", names(mf))]]
+        m1i <- eval(mf.m1i, data, enclos = sys.frame(sys.parent()))
+        m2i <- eval(mf.m2i, data, enclos = sys.frame(sys.parent()))
+        sd1i <- eval(mf.sd1i, data, enclos = sys.frame(sys.parent()))
+        sd2i <- eval(mf.sd2i, data, enclos = sys.frame(sys.parent()))
+        n1i <- eval(mf.n1i, data, enclos = sys.frame(sys.parent()))
+        n2i <- eval(mf.n2i, data, enclos = sys.frame(sys.parent()))
+        if (length(m1i) == 0L || length(m2i) == 0L || length(sd1i) == 
+            0L || length(sd2i) == 0L || length(n1i) == 0L || 
+            length(n2i) == 0L) 
+            stop("Cannot compute outcomes. Check that all of the required \n  information is specified via the appropriate arguments.")
+        if (!all(length(m1i) == c(length(m1i), length(m2i), length(sd1i), 
+            length(sd2i), length(n1i), length(n2i)))) 
+            stop("Supplied data vectors are not all of the same length.")
+        if (any(c(sd1i, sd2i) < 0, na.rm = TRUE)) 
+            stop("One or more standard deviations are negative.")
+        ni.u <- n1i + n2i
+    }
+    if (is.element(measure, c("COR", "UCOR", "ZCOR"))) {
+        mf.ri <- mf[[match("ri", names(mf))]]
+        mf.ni <- mf[[match("ni", names(mf))]]
+        ri <- eval(mf.ri, data, enclos = sys.frame(sys.parent()))
+        ni <- eval(mf.ni, data, enclos = sys.frame(sys.parent()))
+        if (length(ri) == 0L || length(ni) == 0L) 
+            stop("Cannot compute outcomes. Check that all of the required \n  information is specified via the appropriate arguments.")
+        if (length(ri) != length(ni)) 
+            stop("Supplied data vectors are not all of the same length.")
+        if (any(abs(ri) > 1, na.rm = TRUE)) 
+            stop("One or more correlations are > 1 or < -1.")
+        if (any(abs(ni) <= 4, na.rm = TRUE)) 
+            warning("Cannot estimate sampling variance when ni <= 4.")
+        ni.u <- ni
+    }
+    if (is.element(measure, c("PR", "PLN", "PLO", "PAS", "PFT"))) {
+        mf.xi <- mf[[match("xi", names(mf))]]
+        mf.mi <- mf[[match("mi", names(mf))]]
+        mf.ni <- mf[[match("ni", names(mf))]]
+        xi <- eval(mf.xi, data, enclos = sys.frame(sys.parent()))
+        mi <- eval(mf.mi, data, enclos = sys.frame(sys.parent()))
+        ni <- eval(mf.ni, data, enclos = sys.frame(sys.parent()))
+        if (is.null(mi)) 
+            mi <- ni - xi
+        if (length(xi) == 0L || length(mi) == 0L) 
+            stop("Cannot compute outcomes. Check that all of the required \n  information is specified via the appropriate arguments.")
+        if (length(xi) != length(mi)) 
+            stop("Supplied data vectors are not all of the same length.")
+        if (any(c(xi, mi) < 0, na.rm = TRUE)) 
+            stop("One or more counts are negative.")
+        ni.u <- xi + mi
+    }
+    if (is.element(measure, c("IR", "IRLN", "IRS", "IRFT"))) {
+        mf.xi <- mf[[match("xi", names(mf))]]
+        mf.ti <- mf[[match("ti", names(mf))]]
+        xi <- eval(mf.xi, data, enclos = sys.frame(sys.parent()))
+        ti <- eval(mf.ti, data, enclos = sys.frame(sys.parent()))
+        if (length(xi) == 0L || length(ti) == 0L) 
+            stop("Cannot compute outcomes. Check that all of the required \n  information is specified via the appropriate arguments.")
+        if (length(xi) != length(ti)) 
+            stop("Supplied data vectors are not all of the same length.")
+        if (any(xi < 0, na.rm = TRUE)) 
+            stop("One or more counts are negative.")
+        if (any(ti < 0, na.rm = TRUE)) 
+            stop("One or more person-times are negative.")
+        ni.u <- ti
+    }
+    if (is.element(measure, c("MN"))) {
+        mf.mi <- mf[[match("mi", names(mf))]]
+        mf.sdi <- mf[[match("sdi", names(mf))]]
+        mf.ni <- mf[[match("ni", names(mf))]]
+        mi <- eval(mf.mi, data, enclos = sys.frame(sys.parent()))
+        sdi <- eval(mf.sdi, data, enclos = sys.frame(sys.parent()))
+        ni <- eval(mf.ni, data, enclos = sys.frame(sys.parent()))
+        if (length(mi) == 0L || length(sdi) == 0L || length(ni) == 
+            0L) 
+            stop("Cannot compute outcomes. Check that all of the required \n  information is specified via the appropriate arguments.")
+        if (!all(length(mi) == c(length(mi), length(sdi), length(ni)))) 
+            stop("Supplied data vectors are not all of the same length.")
+        if (any(sdi < 0, na.rm = TRUE)) 
+            stop("One or more standard deviations are negative.")
+        ni.u <- ni
+    }
+    if (is.element(measure, c("MC", "SMCC", "SMCR"))) {
+        mf.m1i <- mf[[match("m1i", names(mf))]]
+        mf.m2i <- mf[[match("m2i", names(mf))]]
+        mf.sd1i <- mf[[match("sd1i", names(mf))]]
+        mf.sd2i <- mf[[match("sd2i", names(mf))]]
+        mf.ni <- mf[[match("ni", names(mf))]]
+        mf.ri <- mf[[match("ri", names(mf))]]
+        m1i <- eval(mf.m1i, data, enclos = sys.frame(sys.parent()))
+        m2i <- eval(mf.m2i, data, enclos = sys.frame(sys.parent()))
+        sd1i <- eval(mf.sd1i, data, enclos = sys.frame(sys.parent()))
+        sd2i <- eval(mf.sd2i, data, enclos = sys.frame(sys.parent()))
+        ni <- eval(mf.ni, data, enclos = sys.frame(sys.parent()))
+        ri <- eval(mf.ri, data, enclos = sys.frame(sys.parent()))
+        if (is.element(measure, c("MC", "SMCC"))) {
+            if (length(m1i) == 0L || length(m2i) == 0L || length(sd1i) == 
+                0L || length(sd2i) == 0L || length(ni) == 0L || 
+                length(ri) == 0L) 
+                stop("Cannot compute outcomes. Check that all of the required \n  information is specified via the appropriate arguments.")
+            if (!all(length(m1i) == c(length(m1i), length(m2i), 
+                length(sd1i), length(sd2i), length(ni), length(ri)))) 
+                stop("Supplied data vectors are not all of the same length.")
+            if (any(c(sd1i, sd2i) < 0, na.rm = TRUE)) 
+                stop("One or more standard deviations are negative.")
+        }
+        else {
+            if (length(m1i) == 0L || length(m2i) == 0L || length(sd1i) == 
+                0L || length(ni) == 0L || length(ri) == 0L) 
+                stop("Cannot compute outcomes. Check that all of the required \n  information is specified via the appropriate arguments.")
+            if (!all(length(m1i) == c(length(m1i), length(m2i), 
+                length(sd1i), length(ni), length(ri)))) 
+                stop("Supplied data vectors are not all of the same length.")
+            if (any(sd1i < 0, na.rm = TRUE)) 
+                stop("One or more standard deviations are negative.")
+        }
+        if (any(abs(ri) > 1, na.rm = TRUE)) 
+            stop("One or more correlations are > 1 or < -1.")
+        ni.u <- ni
+    }
+    if (is.element(measure, c("ARAW", "AHW", "ABT"))) {
+        mf.ai <- mf[[match("ai", names(mf))]]
+        mf.mi <- mf[[match("mi", names(mf))]]
+        mf.ni <- mf[[match("ni", names(mf))]]
+        ai <- eval(mf.ai, data, enclos = sys.frame(sys.parent()))
+        mi <- eval(mf.mi, data, enclos = sys.frame(sys.parent()))
+        ni <- eval(mf.ni, data, enclos = sys.frame(sys.parent()))
+        if (length(ai) == 0L || length(mi) == 0L || length(ni) == 
+            0L) 
+            stop("Cannot compute outcomes. Check that all of the required \n  information is specified via the appropriate arguments.")
+        if (!all(length(ai) == c(length(mi), length(ni)))) 
+            stop("Supplied data vectors are not all of the same length.")
+        if (any(ai > 1, na.rm = TRUE)) 
+            stop("One or more alphas are > 1.")
+        if (any(mi < 2, na.rm = TRUE)) 
+            stop("One or more mi's are < 2.")
+        ni.u <- ni
+    }
+    k <- length(ni.u)
+    if (is.null(slab)) {
+        slab <- seq.int(k)
+    }
+    else {
+        if (any(duplicated(slab))) 
+            stop("Study labels must be unique.")
+        if (length(slab) != k) 
+            stop("Study labels not of same length as data.")
+    }
+    if (is.element(measure, c("RR", "OR", "RD", "AS", "PETO", 
+        "PHI", "YUQ", "YUY", "RTET", "PBIT", "OR2D"))) {
+        if (!is.null(subset)) {
+            ai <- ai[subset]
+            bi <- bi[subset]
+            ci <- ci[subset]
+            di <- di[subset]
+            slab <- slab[subset]
+            k <- length(ai)
+            if (!no.data) 
+                data <- data[subset, ]
+        }
+        aibicidi.na <- is.na(cbind(ai, bi, ci, di))
+        if (any(aibicidi.na)) {
+            not.na <- apply(aibicidi.na, MARGIN = 1, sum) == 
+                0L
+            if (na.act == "na.omit") {
+                ai <- ai[not.na]
+                bi <- bi[not.na]
+                ci <- ci[not.na]
+                di <- di[not.na]
+                slab <- slab[not.na]
+                k <- length(ai)
+                warning("Tables with NAs omitted.")
+            }
+            if (na.act == "na.fail") 
+                stop("Missing values in tables.")
+        }
+        if (k < 1) 
+            stop("Processing terminated since k = 0.")
+        if (vlong) {
+            dat <- matrix(NA, nrow = 4 * k, ncol = 4)
+            dat[, 1] <- rep(slab, each = 4)
+            dat[, 2] <- rep(c(1, 1, 2, 2), k)
+            dat[, 3] <- rep(c(1, 2, 1, 2), k)
+            dat[, 4] <- c(rbind(ai, bi, ci, di))
+            if (missing(var.names)) {
+                colnames(dat) <- c("study", "group", "outcome", 
+                  "freq")
+            }
+            else {
+                if (length(var.names) != 4) 
+                  stop("Variable names not of length 4.")
+                colnames(dat) <- var.names
+            }
+            dat <- data.frame(dat)
+            dat[, 1] <- factor(dat[, 1])
+            dat[, 2] <- factor(dat[, 2])
+            dat[, 3] <- factor(dat[, 3])
+            if (!no.data && append) 
+                dat <- data.frame(data[rep(1:k, each = 4), ], 
+                  dat)
+        }
+        else {
+            dat <- matrix(NA, nrow = 2 * k, ncol = 4)
+            dat[, 1] <- rep(slab, each = 2)
+            dat[, 2] <- rep(c(1, 2), k)
+            dat[, 3] <- c(rbind(ai, ci))
+            dat[, 4] <- c(rbind(bi, di))
+            if (missing(var.names)) {
+                colnames(dat) <- c("study", "group", "out1", 
+                  "out2")
+            }
+            else {
+                if (length(var.names) != 4) 
+                  stop("Variable names not of length 4.")
+                colnames(dat) <- var.names
+            }
+            dat <- data.frame(dat)
+            dat[, 1] <- factor(dat[, 1])
+            dat[, 2] <- factor(dat[, 2])
+            if (!no.data && append) 
+                dat <- data.frame(data[rep(1:k, each = 2), ], 
+                  dat)
+        }
+    }
+    if (is.element(measure, c("IRR", "IRD", "IRSD"))) {
+        if (!is.null(subset)) {
+            x1i <- x1i[subset]
+            x2i <- x2i[subset]
+            t1i <- t1i[subset]
+            t2i <- t2i[subset]
+            slab <- slab[subset]
+            k <- length(x1i)
+            if (!no.data) 
+                data <- data[subset, ]
+        }
+        x1ix2it1it2i.na <- is.na(cbind(x1i, x2i, t1i, t2i))
+        if (any(x1ix2it1it2i.na)) {
+            not.na <- apply(x1ix2it1it2i.na, MARGIN = 1, sum) == 
+                0L
+            if (na.act == "na.omit") {
+                x1i <- x1i[not.na]
+                x2i <- x2i[not.na]
+                t1i <- t1i[not.na]
+                t2i <- t2i[not.na]
+                slab <- slab[not.na]
+                k <- length(x1i)
+                warning("Tables with NAs omitted.")
+            }
+            if (na.act == "na.fail") 
+                stop("Missing values in tables.")
+        }
+        if (k < 1) 
+            stop("Processing terminated since k = 0.")
+        dat <- matrix(NA, nrow = 2 * k, ncol = 4)
+        dat[, 1] <- rep(slab, each = 2)
+        dat[, 2] <- rep(c(1, 2), k)
+        dat[, 3] <- c(rbind(x1i, x2i))
+        dat[, 4] <- c(rbind(t1i, t2i))
+        if (missing(var.names)) {
+            colnames(dat) <- c("study", "group", "events", "ptime")
+        }
+        else {
+            if (length(var.names) != 4) 
+                stop("Variable names not of length 4.")
+            colnames(dat) <- var.names
+        }
+        dat <- data.frame(dat)
+        dat[, 1] <- factor(dat[, 1])
+        dat[, 2] <- factor(dat[, 2])
+        if (!no.data && append) 
+            dat <- data.frame(data[rep(1:k, each = 2), ], dat)
+    }
+    if (is.element(measure, c("MD", "SMD", "SMDH", "ROM", "RPB", 
+        "RBIS", "D2OR"))) {
+        if (!is.null(subset)) {
+            m1i <- m1i[subset]
+            m2i <- m2i[subset]
+            sd1i <- sd1i[subset]
+            sd2i <- sd2i[subset]
+            n1i <- n1i[subset]
+            n2i <- n2i[subset]
+            slab <- slab[subset]
+            k <- length(m1i)
+            if (!no.data) 
+                data <- data[subset, ]
+        }
+        m1im2isd1isd2in1in2i.na <- is.na(cbind(m1i, m2i, sd1i, 
+            sd2i, n1i, n2i))
+        if (any(m1im2isd1isd2in1in2i.na)) {
+            not.na <- apply(m1im2isd1isd2in1in2i.na, MARGIN = 1, 
+                sum) == 0L
+            if (na.act == "na.omit") {
+                m1i <- m1i[not.na]
+                m2i <- m2i[not.na]
+                sd1i <- sd1i[not.na]
+                sd2i <- sd2i[not.na]
+                n1i <- n1i[not.na]
+                n2i <- n2i[not.na]
+                slab <- slab[not.na]
+                k <- length(m1i)
+                warning("Tables with NAs omitted.")
+            }
+            if (na.act == "na.fail") 
+                stop("Missing values in tables.")
+        }
+        if (k < 1) 
+            stop("Processing terminated since k = 0.")
+        dat <- matrix(NA, nrow = 2 * k, ncol = 5)
+        dat[, 1] <- rep(slab, each = 2)
+        dat[, 2] <- rep(c(1, 2), k)
+        dat[, 3] <- c(rbind(m1i, m2i))
+        dat[, 4] <- c(rbind(sd1i, sd2i))
+        dat[, 5] <- c(rbind(n1i, n2i))
+        if (missing(var.names)) {
+            colnames(dat) <- c("study", "group", "mean", "sd", 
+                "n")
+        }
+        else {
+            if (length(var.names) != 5) 
+                stop("Variable names not of length 5.")
+            colnames(dat) <- var.names
+        }
+        dat <- data.frame(dat)
+        dat[, 1] <- factor(dat[, 1])
+        dat[, 2] <- factor(dat[, 2])
+        if (!no.data && append) 
+            dat <- data.frame(data[rep(1:k, each = 2), ], dat)
+    }
+    if (is.element(measure, c("COR", "UCOR", "ZCOR"))) {
+        if (!is.null(subset)) {
+            ri <- ri[subset]
+            ni <- ni[subset]
+            slab <- slab[subset]
+            k <- length(ri)
+            if (!no.data) 
+                data <- data[subset, ]
+        }
+        rini.na <- is.na(cbind(ri, ni))
+        if (any(rini.na)) {
+            not.na <- apply(rini.na, MARGIN = 1, sum) == 0L
+            if (na.act == "na.omit") {
+                ri <- ri[not.na]
+                ni <- ni[not.na]
+                slab <- slab[not.na]
+                k <- length(ri)
+                warning("Tables with NAs omitted.")
+            }
+            if (na.act == "na.fail") 
+                stop("Missing values in tables.")
+        }
+        if (k < 1) 
+            stop("Processing terminated since k = 0.")
+        dat <- matrix(NA, nrow = k, ncol = 3)
+        dat[, 1] <- slab
+        dat[, 2] <- ri
+        dat[, 3] <- ni
+        if (missing(var.names)) {
+            colnames(dat) <- c("study", "r", "n")
+        }
+        else {
+            if (length(var.names) != 3) 
+                stop("Variable names not of length 3.")
+            colnames(dat) <- var.names
+        }
+        dat <- data.frame(dat)
+        dat[, 1] <- factor(dat[, 1])
+        if (!no.data && append) 
+            dat <- data.frame(data, dat)
+    }
+    if (is.element(measure, c("PR", "PLN", "PLO", "PAS", "PFT"))) {
+        if (!is.null(subset)) {
+            xi <- xi[subset]
+            mi <- mi[subset]
+            slab <- slab[subset]
+            k <- length(xi)
+            if (!no.data) 
+                data <- data[subset, ]
+        }
+        ximi.na <- is.na(cbind(xi, mi))
+        if (any(ximi.na)) {
+            not.na <- apply(ximi.na, MARGIN = 1, sum) == 0L
+            if (na.act == "na.omit") {
+                xi <- xi[not.na]
+                mi <- mi[not.na]
+                slab <- slab[not.na]
+                k <- length(xi)
+                warning("Tables with NAs omitted.")
+            }
+            if (na.act == "na.fail") 
+                stop("Missing values in tables.")
+        }
+        if (k < 1) 
+            stop("Processing terminated since k = 0.")
+        if (vlong) {
+            dat <- matrix(NA, nrow = 2 * k, ncol = 3)
+            dat[, 1] <- rep(slab, each = 2)
+            dat[, 2] <- rep(c(1, 2), k)
+            dat[, 3] <- c(rbind(xi, mi))
+            if (missing(var.names)) {
+                colnames(dat) <- c("study", "outcome", "freq")
+            }
+            else {
+                if (length(var.names) != 3) 
+                  stop("Variable names not of length 3.")
+                colnames(dat) <- var.names
+            }
+            dat <- data.frame(dat)
+            dat[, 1] <- factor(dat[, 1])
+            dat[, 2] <- factor(dat[, 2])
+            if (!no.data && append) 
+                dat <- data.frame(data[rep(1:k, each = 2), ], 
+                  dat)
+        }
+        else {
+            dat <- matrix(NA, nrow = k, ncol = 3)
+            dat[, 1] <- slab
+            dat[, 2] <- xi
+            dat[, 3] <- mi
+            if (missing(var.names)) {
+                colnames(dat) <- c("study", "out1", "out2")
+            }
+            else {
+                if (length(var.names) != 3) 
+                  stop("Variable names not of length 3.")
+                colnames(dat) <- var.names
+            }
+            dat <- data.frame(dat)
+            if (!no.data && append) 
+                dat <- data.frame(data, dat)
+        }
+    }
+    if (is.element(measure, c("IR", "IRLN", "IRS", "IRFT"))) {
+        if (!is.null(subset)) {
+            xi <- xi[subset]
+            ti <- ti[subset]
+            slab <- slab[subset]
+            k <- length(xi)
+            if (!no.data) 
+                data <- data[subset, ]
+        }
+        xiti.na <- is.na(cbind(xi, ti))
+        if (any(xiti.na)) {
+            not.na <- apply(xiti.na, MARGIN = 1, sum) == 0L
+            if (na.act == "na.omit") {
+                xi <- xi[not.na]
+                ti <- ti[not.na]
+                slab <- slab[not.na]
+                k <- length(xi)
+                warning("Tables with NAs omitted.")
+            }
+            if (na.act == "na.fail") 
+                stop("Missing values in tables.")
+        }
+        if (k < 1) 
+            stop("Processing terminated since k = 0.")
+        dat <- matrix(NA, nrow = k, ncol = 3)
+        dat[, 1] <- slab
+        dat[, 2] <- xi
+        dat[, 3] <- ti
+        if (missing(var.names)) {
+            colnames(dat) <- c("study", "events", "ptime")
+        }
+        else {
+            if (length(var.names) != 3) 
+                stop("Variable names not of length 3.")
+            colnames(dat) <- var.names
+        }
+        dat <- data.frame(dat)
+        dat[, 1] <- factor(dat[, 1])
+        if (!no.data && append) 
+            dat <- data.frame(data, dat)
+    }
+    if (is.element(measure, c("MN"))) {
+        if (!is.null(subset)) {
+            mi <- mi[subset]
+            sdi <- sdi[subset]
+            ni <- ni[subset]
+            slab <- slab[subset]
+            k <- length(mi)
+            if (!no.data) 
+                data <- data[subset, ]
+        }
+        misdini.na <- is.na(cbind(mi, sdi, ni))
+        if (any(misdini.na)) {
+            not.na <- apply(misdini.na, MARGIN = 1, sum) == 0L
+            if (na.act == "na.omit") {
+                mi <- mi[not.na]
+                sdi <- sdi[not.na]
+                ni <- ni[not.na]
+                slab <- slab[not.na]
+                k <- length(mi)
+                warning("Tables with NAs omitted.")
+            }
+            if (na.act == "na.fail") 
+                stop("Missing values in tables.")
+        }
+        if (k < 1) 
+            stop("Processing terminated since k = 0.")
+        dat <- matrix(NA, nrow = k, ncol = 4)
+        dat[, 1] <- slab
+        dat[, 2] <- mi
+        dat[, 3] <- sdi
+        dat[, 4] <- ni
+        if (missing(var.names)) {
+            colnames(dat) <- c("study", "mean", "sd", "n")
+        }
+        else {
+            if (length(var.names) != 4) 
+                stop("Variable names not of length 4.")
+            colnames(dat) <- var.names
+        }
+        dat <- data.frame(dat)
+        dat[, 1] <- factor(dat[, 1])
+        if (!no.data && append) 
+            dat <- data.frame(data, dat)
+    }
+    if (is.element(measure, c("MC", "SMCC", "SMCR"))) {
+        if (!is.null(subset)) {
+            m1i <- m1i[subset]
+            m2i <- m2i[subset]
+            sd1i <- sd1i[subset]
+            if (is.element(measure, c("MC", "SMCC"))) 
+                sd2i <- sd2i[subset]
+            ni <- ni[subset]
+            ri <- ri[subset]
+            slab <- slab[subset]
+            k <- length(m1i)
+            if (!no.data) 
+                data <- data[subset, ]
+        }
+        if (is.element(measure, c("MC", "SMCC"))) {
+            m1im2isdiniri.na <- is.na(cbind(m1i, m2i, sd1i, sd2i, 
+                ni, ri))
+        }
+        else {
+            m1im2isdiniri.na <- is.na(cbind(m1i, m2i, sd1i, ni, 
+                ri))
+        }
+        if (any(m1im2isdiniri.na)) {
+            not.na <- apply(m1im2isdiniri.na, MARGIN = 1, sum) == 
+                0L
+            if (na.act == "na.omit") {
+                m1i <- m1i[not.na]
+                m2i <- m2i[not.na]
+                sd1i <- sd1i[not.na]
+                if (is.element(measure, c("MC", "SMCC"))) 
+                  sd2i <- sd2i[not.na]
+                ni <- ni[not.na]
+                ri <- ri[not.na]
+                slab <- slab[not.na]
+                k <- length(m1i)
+                warning("Tables with NAs omitted.")
+            }
+            if (na.act == "na.fail") 
+                stop("Missing values in tables.")
+        }
+        if (k < 1) 
+            stop("Processing terminated since k = 0.")
+        if (is.element(measure, c("MC", "SMCC"))) {
+            dat <- matrix(NA, nrow = k, ncol = 7)
+            dat[, 1] <- slab
+            dat[, 2] <- m1i
+            dat[, 3] <- m2i
+            dat[, 4] <- sd1i
+            dat[, 5] <- sd2i
+            dat[, 6] <- ni
+            dat[, 7] <- ri
+            if (missing(var.names)) {
+                colnames(dat) <- c("study", "mean1", "mean2", 
+                  "sd1", "sd2", "n", "r")
+            }
+            else {
+                if (length(var.names) != 7) 
+                  stop("Variable names not of length 7.")
+                colnames(dat) <- var.names
+            }
+            dat <- data.frame(dat)
+            dat[, 1] <- factor(dat[, 1])
+            if (!no.data && append) 
+                dat <- data.frame(data, dat)
+        }
+        else {
+            dat <- matrix(NA, nrow = k, ncol = 6)
+            dat[, 1] <- slab
+            dat[, 2] <- m1i
+            dat[, 3] <- m2i
+            dat[, 4] <- sd1i
+            dat[, 5] <- ni
+            dat[, 6] <- ri
+            if (missing(var.names)) {
+                colnames(dat) <- c("study", "mean1", "mean2", 
+                  "sd1", "n", "r")
+            }
+            else {
+                if (length(var.names) != 6) 
+                  stop("Variable names not of length 6.")
+                colnames(dat) <- var.names
+            }
+            dat <- data.frame(dat)
+            dat[, 1] <- factor(dat[, 1])
+            if (!no.data && append) 
+                dat <- data.frame(data, dat)
+        }
+    }
+    if (is.element(measure, c("ARAW", "AHW", "ABT"))) {
+        if (!is.null(subset)) {
+            ai <- ai[subset]
+            mi <- mi[subset]
+            ni <- ni[subset]
+            slab <- slab[subset]
+            k <- length(ai)
+            if (!no.data) 
+                data <- data[subset, ]
+        }
+        aimini.na <- is.na(cbind(ai, mi, ni))
+        if (any(aimini.na)) {
+            not.na <- apply(aimini.na, MARGIN = 1, sum) == 0L
+            if (na.act == "na.omit") {
+                ai <- ai[not.na]
+                mi <- mi[not.na]
+                ni <- ni[not.na]
+                slab <- slab[not.na]
+                k <- length(ai)
+                warning("Tables with NAs omitted.")
+            }
+            if (na.act == "na.fail") 
+                stop("Missing values in tables.")
+        }
+        if (k < 1) 
+            stop("Processing terminated since k = 0.")
+        dat <- matrix(NA, nrow = k, ncol = 4)
+        dat[, 1] <- slab
+        dat[, 2] <- ai
+        dat[, 3] <- mi
+        dat[, 4] <- ni
+        if (missing(var.names)) {
+            colnames(dat) <- c("study", "alpha", "m", "n")
+        }
+        else {
+            if (length(var.names) != 4) 
+                stop("Variable names not of length 4.")
+            colnames(dat) <- var.names
+        }
+        dat <- data.frame(dat)
+        dat[, 1] <- factor(dat[, 1])
+        if (!no.data && append) 
+            dat <- data.frame(data, dat)
+    }
+    rownames(dat) <- 1:nrow(dat)
+    return(dat)
+}
+to.table <-
+function (measure, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, 
+    m1i, m2i, sd1i, sd2i, xi, mi, ri, ti, sdi, ni, data, slab, 
+    subset, add = 1/2, to = "none", drop00 = FALSE, rows, cols) 
+{
+    if (!is.element(measure, c("RR", "OR", "PETO", "RD", "AS", 
+        "PHI", "YUQ", "YUY", "RTET", "PBIT", "OR2D", "IRR", "IRD", 
+        "IRSD", "MD", "SMD", "SMDH", "ROM", "RPB", "RBIS", "D2OR", 
+        "COR", "UCOR", "ZCOR", "PR", "PLN", "PLO", "PAS", "PFT", 
+        "IR", "IRLN", "IRS", "IRFT", "MN", "MC", "SMCC", "SMCR", 
+        "ARAW", "AHW", "ABT"))) 
+        stop("Unknown 'measure' specified.")
+    na.act <- getOption("na.action")
+    if (!is.element(na.act, c("na.omit", "na.exclude", "na.fail", 
+        "na.pass"))) 
+        stop("Unknown 'na.action' specified under options().")
+    if (!is.element(to, c("all", "only0", "if0all", "none"))) 
+        stop("Unknown 'to' argument specified.")
+    if (missing(data)) 
+        data <- NULL
+    if (is.null(data)) {
+        data <- sys.frame(sys.parent())
+    }
+    else {
+        if (!is.data.frame(data)) {
+            data <- data.frame(data)
+        }
+    }
+    mf <- match.call()
+    mf.slab <- mf[[match("slab", names(mf))]]
+    mf.subset <- mf[[match("subset", names(mf))]]
+    slab <- eval(mf.slab, data, enclos = sys.frame(sys.parent()))
+    subset <- eval(mf.subset, data, enclos = sys.frame(sys.parent()))
+    if (is.element(measure, c("RR", "OR", "RD", "AS", "PETO", 
+        "PHI", "YUQ", "YUY", "RTET", "PBIT", "OR2D"))) {
+        mf.ai <- mf[[match("ai", names(mf))]]
+        mf.bi <- mf[[match("bi", names(mf))]]
+        mf.ci <- mf[[match("ci", names(mf))]]
+        mf.di <- mf[[match("di", names(mf))]]
+        mf.n1i <- mf[[match("n1i", names(mf))]]
+        mf.n2i <- mf[[match("n2i", names(mf))]]
+        ai <- eval(mf.ai, data, enclos = sys.frame(sys.parent()))
+        bi <- eval(mf.bi, data, enclos = sys.frame(sys.parent()))
+        ci <- eval(mf.ci, data, enclos = sys.frame(sys.parent()))
+        di <- eval(mf.di, data, enclos = sys.frame(sys.parent()))
+        n1i <- eval(mf.n1i, data, enclos = sys.frame(sys.parent()))
+        n2i <- eval(mf.n2i, data, enclos = sys.frame(sys.parent()))
+        if (is.null(bi)) 
+            bi <- n1i - ai
+        if (is.null(di)) 
+            di <- n2i - ci
+        if (length(ai) == 0L || length(bi) == 0L || length(ci) == 
+            0L || length(di) == 0L) 
+            stop("Cannot compute outcomes. Check that all of the required \n  information is specified via the appropriate arguments.")
+        if (!all(length(ai) == c(length(ai), length(bi), length(ci), 
+            length(di)))) 
+            stop("Supplied data vectors are not all of the same length.")
+        if (any(c(ai, bi, ci, di) < 0, na.rm = TRUE)) 
+            stop("One or more counts are negative.")
+        ni.u <- ai + bi + ci + di
+        if (drop00) {
+            id00 <- c(ai == 0L & ci == 0L) | c(bi == 0L & di == 
+                0L)
+            id00[is.na(id00)] <- FALSE
+            ai[id00] <- NA
+            bi[id00] <- NA
+            ci[id00] <- NA
+            di[id00] <- NA
+        }
+        if (to == "all") {
+            ai <- ai + add
+            ci <- ci + add
+            bi <- bi + add
+            di <- di + add
+        }
+        if (to == "only0") {
+            id0 <- c(ai == 0L | ci == 0L | bi == 0L | di == 0L)
+            id0[is.na(id0)] <- FALSE
+            ai[id0] <- ai[id0] + add
+            ci[id0] <- ci[id0] + add
+            bi[id0] <- bi[id0] + add
+            di[id0] <- di[id0] + add
+        }
+        if (to == "if0all") {
+            id0 <- c(ai == 0L | ci == 0L | bi == 0L | di == 0L)
+            id0[is.na(id0)] <- FALSE
+            if (any(id0)) {
+                ai <- ai + add
+                ci <- ci + add
+                bi <- bi + add
+                di <- di + add
+            }
+        }
+    }
+    if (is.element(measure, c("IRR", "IRD", "IRSD"))) {
+        mf.x1i <- mf[[match("x1i", names(mf))]]
+        mf.x2i <- mf[[match("x2i", names(mf))]]
+        mf.t1i <- mf[[match("t1i", names(mf))]]
+        mf.t2i <- mf[[match("t2i", names(mf))]]
+        x1i <- eval(mf.x1i, data, enclos = sys.frame(sys.parent()))
+        x2i <- eval(mf.x2i, data, enclos = sys.frame(sys.parent()))
+        t1i <- eval(mf.t1i, data, enclos = sys.frame(sys.parent()))
+        t2i <- eval(mf.t2i, data, enclos = sys.frame(sys.parent()))
+        if (length(x1i) == 0L || length(x2i) == 0L || length(t1i) == 
+            0L || length(t2i) == 0L) 
+            stop("Cannot compute outcomes. Check that all of the required \n  information is specified via the appropriate arguments.")
+        if (!all(length(x1i) == c(length(x1i), length(x2i), length(t1i), 
+            length(t2i)))) 
+            stop("Supplied data vectors are not all of the same length.")
+        if (any(c(x1i, x2i) < 0, na.rm = TRUE)) 
+            stop("One or more counts are negative.")
+        if (any(c(t1i, t2i) < 0, na.rm = TRUE)) 
+            stop("One or more person-times are negative.")
+        ni.u <- t1i + t2i
+        if (drop00) {
+            id00 <- c(x1i == 0L & x2i == 0L)
+            id00[is.na(id00)] <- FALSE
+            x1i[id00] <- NA
+            x2i[id00] <- NA
+        }
+        if (to == "all") {
+            x1i <- x1i + add
+            x2i <- x2i + add
+        }
+        if (to == "only0") {
+            id0 <- c(x1i == 0L | x2i == 0L)
+            id0[is.na(id0)] <- FALSE
+            x1i[id0] <- x1i[id0] + add
+            x2i[id0] <- x2i[id0] + add
+        }
+        if (to == "if0all") {
+            id0 <- c(x1i == 0L | x2i == 0L)
+            id0[is.na(id0)] <- FALSE
+            if (any(id0)) {
+                x1i <- x1i + add
+                x2i <- x2i + add
+            }
+        }
+    }
+    if (is.element(measure, c("MD", "SMD", "SMDH", "ROM", "RPB", 
+        "RBIS", "D2OR"))) {
+        mf.m1i <- mf[[match("m1i", names(mf))]]
+        mf.m2i <- mf[[match("m2i", names(mf))]]
+        mf.sd1i <- mf[[match("sd1i", names(mf))]]
+        mf.sd2i <- mf[[match("sd2i", names(mf))]]
+        mf.n1i <- mf[[match("n1i", names(mf))]]
+        mf.n2i <- mf[[match("n2i", names(mf))]]
+        m1i <- eval(mf.m1i, data, enclos = sys.frame(sys.parent()))
+        m2i <- eval(mf.m2i, data, enclos = sys.frame(sys.parent()))
+        sd1i <- eval(mf.sd1i, data, enclos = sys.frame(sys.parent()))
+        sd2i <- eval(mf.sd2i, data, enclos = sys.frame(sys.parent()))
+        n1i <- eval(mf.n1i, data, enclos = sys.frame(sys.parent()))
+        n2i <- eval(mf.n2i, data, enclos = sys.frame(sys.parent()))
+        if (length(m1i) == 0L || length(m2i) == 0L || length(sd1i) == 
+            0L || length(sd2i) == 0L || length(n1i) == 0L || 
+            length(n2i) == 0L) 
+            stop("Cannot compute outcomes. Check that all of the required \n  information is specified via the appropriate arguments.")
+        if (!all(length(m1i) == c(length(m1i), length(m2i), length(sd1i), 
+            length(sd2i), length(n1i), length(n2i)))) 
+            stop("Supplied data vectors are not all of the same length.")
+        if (any(c(sd1i, sd2i) < 0, na.rm = TRUE)) 
+            stop("One or more standard deviations are negative.")
+        ni.u <- n1i + n2i
+    }
+    if (is.element(measure, c("COR", "UCOR", "ZCOR"))) {
+        mf.ri <- mf[[match("ri", names(mf))]]
+        mf.ni <- mf[[match("ni", names(mf))]]
+        ri <- eval(mf.ri, data, enclos = sys.frame(sys.parent()))
+        ni <- eval(mf.ni, data, enclos = sys.frame(sys.parent()))
+        if (length(ri) == 0L || length(ni) == 0L) 
+            stop("Cannot compute outcomes. Check that all of the required \n  information is specified via the appropriate arguments.")
+        if (length(ri) != length(ni)) 
+            stop("Supplied data vectors are not all of the same length.")
+        if (any(abs(ri) > 1, na.rm = TRUE)) 
+            stop("One or more correlations are > 1 or < -1.")
+        if (any(abs(ni) <= 4, na.rm = TRUE)) 
+            warning("Cannot estimate sampling variance when ni <= 4.")
+        ni.u <- ni
+    }
+    if (is.element(measure, c("PR", "PLN", "PLO", "PAS", "PFT"))) {
+        mf.xi <- mf[[match("xi", names(mf))]]
+        mf.mi <- mf[[match("mi", names(mf))]]
+        mf.ni <- mf[[match("ni", names(mf))]]
+        xi <- eval(mf.xi, data, enclos = sys.frame(sys.parent()))
+        mi <- eval(mf.mi, data, enclos = sys.frame(sys.parent()))
+        ni <- eval(mf.ni, data, enclos = sys.frame(sys.parent()))
+        if (is.null(mi)) 
+            mi <- ni - xi
+        if (length(xi) == 0L || length(mi) == 0L) 
+            stop("Cannot compute outcomes. Check that all of the required \n  information is specified via the appropriate arguments.")
+        if (length(xi) != length(mi)) 
+            stop("Supplied data vectors are not all of the same length.")
+        if (any(c(xi, mi) < 0, na.rm = TRUE)) 
+            stop("One or more counts are negative.")
+        ni.u <- xi + mi
+    }
+    if (is.element(measure, c("IR", "IRLN", "IRS", "IRFT"))) {
+        mf.xi <- mf[[match("xi", names(mf))]]
+        mf.ti <- mf[[match("ti", names(mf))]]
+        xi <- eval(mf.xi, data, enclos = sys.frame(sys.parent()))
+        ti <- eval(mf.ti, data, enclos = sys.frame(sys.parent()))
+        if (length(xi) == 0L || length(ti) == 0L) 
+            stop("Cannot compute outcomes. Check that all of the required \n  information is specified via the appropriate arguments.")
+        if (length(xi) != length(ti)) 
+            stop("Supplied data vectors are not all of the same length.")
+        if (any(xi < 0, na.rm = TRUE)) 
+            stop("One or more counts are negative.")
+        if (any(ti < 0, na.rm = TRUE)) 
+            stop("One or more person-times are negative.")
+        ni.u <- ti
+    }
+    if (is.element(measure, c("MN"))) {
+        mf.mi <- mf[[match("mi", names(mf))]]
+        mf.sdi <- mf[[match("sdi", names(mf))]]
+        mf.ni <- mf[[match("ni", names(mf))]]
+        mi <- eval(mf.mi, data, enclos = sys.frame(sys.parent()))
+        sdi <- eval(mf.sdi, data, enclos = sys.frame(sys.parent()))
+        ni <- eval(mf.ni, data, enclos = sys.frame(sys.parent()))
+        if (length(mi) == 0L || length(sdi) == 0L || length(ni) == 
+            0L) 
+            stop("Cannot compute outcomes. Check that all of the required \n  information is specified via the appropriate arguments.")
+        if (!all(length(mi) == c(length(mi), length(sdi), length(ni)))) 
+            stop("Supplied data vectors are not all of the same length.")
+        if (any(sdi < 0, na.rm = TRUE)) 
+            stop("One or more standard deviations are negative.")
+        ni.u <- ni
+    }
+    if (is.element(measure, c("MC", "SMCC", "SMCR"))) {
+        mf.m1i <- mf[[match("m1i", names(mf))]]
+        mf.m2i <- mf[[match("m2i", names(mf))]]
+        mf.sd1i <- mf[[match("sd1i", names(mf))]]
+        mf.sd2i <- mf[[match("sd2i", names(mf))]]
+        mf.ni <- mf[[match("ni", names(mf))]]
+        mf.ri <- mf[[match("ri", names(mf))]]
+        m1i <- eval(mf.m1i, data, enclos = sys.frame(sys.parent()))
+        m2i <- eval(mf.m2i, data, enclos = sys.frame(sys.parent()))
+        sd1i <- eval(mf.sd1i, data, enclos = sys.frame(sys.parent()))
+        sd2i <- eval(mf.sd2i, data, enclos = sys.frame(sys.parent()))
+        ni <- eval(mf.ni, data, enclos = sys.frame(sys.parent()))
+        ri <- eval(mf.ri, data, enclos = sys.frame(sys.parent()))
+        if (is.element(measure, c("MC", "SMCC"))) {
+            if (length(m1i) == 0L || length(m2i) == 0L || length(sd1i) == 
+                0L || length(sd2i) == 0L || length(ni) == 0L || 
+                length(ri) == 0L) 
+                stop("Cannot compute outcomes. Check that all of the required \n  information is specified via the appropriate arguments.")
+            if (!all(length(m1i) == c(length(m1i), length(m2i), 
+                length(sd1i), length(sd2i), length(ni), length(ri)))) 
+                stop("Supplied data vectors are not all of the same length.")
+            if (any(c(sd1i, sd2i) < 0, na.rm = TRUE)) 
+                stop("One or more standard deviations are negative.")
+        }
+        else {
+            if (length(m1i) == 0L || length(m2i) == 0L || length(sd1i) == 
+                0L || length(ni) == 0L || length(ri) == 0L) 
+                stop("Cannot compute outcomes. Check that all of the required \n  information is specified via the appropriate arguments.")
+            if (!all(length(m1i) == c(length(m1i), length(m2i), 
+                length(sd1i), length(ni), length(ri)))) 
+                stop("Supplied data vectors are not all of the same length.")
+            if (any(sd1i < 0, na.rm = TRUE)) 
+                stop("One or more standard deviations are negative.")
+        }
+        if (any(abs(ri) > 1, na.rm = TRUE)) 
+            stop("One or more correlations are > 1 or < -1.")
+        ni.u <- ni
+    }
+    if (is.element(measure, c("ARAW", "AHW", "ABT"))) {
+        mf.ai <- mf[[match("ai", names(mf))]]
+        mf.mi <- mf[[match("mi", names(mf))]]
+        mf.ni <- mf[[match("ni", names(mf))]]
+        ai <- eval(mf.ai, data, enclos = sys.frame(sys.parent()))
+        mi <- eval(mf.mi, data, enclos = sys.frame(sys.parent()))
+        ni <- eval(mf.ni, data, enclos = sys.frame(sys.parent()))
+        if (length(ai) == 0L || length(mi) == 0L || length(ni) == 
+            0L) 
+            stop("Cannot compute outcomes. Check that all of the required \n  information is specified via the appropriate arguments.")
+        if (!all(length(ai) == c(length(mi), length(ni)))) 
+            stop("Supplied data vectors are not all of the same length.")
+        if (any(ai > 1, na.rm = TRUE)) 
+            stop("One or more alphas are > 1.")
+        if (any(mi < 2, na.rm = TRUE)) 
+            stop("One or more mi's are < 2.")
+        ni.u <- ni
+    }
+    k <- length(ni.u)
+    if (is.null(slab)) {
+        slab <- seq.int(k)
+    }
+    else {
+        if (any(duplicated(slab))) 
+            stop("Study labels must be unique.")
+        if (length(slab) != k) 
+            stop("Study labels not of same length as data.")
+    }
+    if (is.element(measure, c("RR", "OR", "RD", "AS", "PETO", 
+        "PHI", "YUQ", "YUY", "RTET", "PBIT", "OR2D"))) {
+        if (!is.null(subset)) {
+            ai <- ai[subset]
+            bi <- bi[subset]
+            ci <- ci[subset]
+            di <- di[subset]
+            slab <- slab[subset]
+            k <- length(ai)
+        }
+        aibicidi.na <- is.na(cbind(ai, bi, ci, di))
+        if (any(aibicidi.na)) {
+            not.na <- apply(aibicidi.na, MARGIN = 1, sum) == 
+                0L
+            if (na.act == "na.omit") {
+                ai <- ai[not.na]
+                bi <- bi[not.na]
+                ci <- ci[not.na]
+                di <- di[not.na]
+                slab <- slab[not.na]
+                k <- length(ai)
+                warning("Tables with NAs omitted.")
+            }
+            if (na.act == "na.fail") 
+                stop("Missing values in tables.")
+        }
+        if (k < 1) 
+            stop("Processing terminated since k = 0.")
+        if (missing(rows)) {
+            rows <- c("Grp1", "Grp2")
+        }
+        else {
+            if (length(rows) != 2) 
+                stop("Group names not of length 2.")
+        }
+        if (missing(cols)) {
+            cols <- c("Out1", "Out2")
+        }
+        else {
+            if (length(cols) != 2) 
+                stop("Outcome names not of length 2.")
+        }
+        dat <- array(NA, dim = c(2, 2, k), dimnames = list(rows, 
+            cols, slab))
+        for (i in 1:k) {
+            tab.i <- rbind(c(ai[i], bi[i]), c(ci[i], di[i]))
+            dat[, , i] <- tab.i
+        }
+    }
+    if (is.element(measure, c("IRR", "IRD", "IRSD"))) {
+        if (!is.null(subset)) {
+            x1i <- x1i[subset]
+            x2i <- x2i[subset]
+            t1i <- t1i[subset]
+            t2i <- t2i[subset]
+            slab <- slab[subset]
+            k <- length(x1i)
+        }
+        x1ix2it1it2i.na <- is.na(cbind(x1i, x2i, t1i, t2i))
+        if (any(x1ix2it1it2i.na)) {
+            not.na <- apply(x1ix2it1it2i.na, MARGIN = 1, sum) == 
+                0L
+            if (na.act == "na.omit") {
+                x1i <- x1i[not.na]
+                x2i <- x2i[not.na]
+                t1i <- t1i[not.na]
+                t2i <- t2i[not.na]
+                slab <- slab[not.na]
+                k <- length(x1i)
+                warning("Tables with NAs omitted.")
+            }
+            if (na.act == "na.fail") 
+                stop("Missing values in tables.")
+        }
+        if (k < 1) 
+            stop("Processing terminated since k = 0.")
+        if (missing(rows)) {
+            rows <- c("Grp1", "Grp2")
+        }
+        else {
+            if (length(rows) != 2) 
+                stop("Group names not of length 2.")
+        }
+        if (missing(cols)) {
+            cols <- c("Events", "Person-Time")
+        }
+        else {
+            if (length(cols) != 2) 
+                stop("Outcome names not of length 2.")
+        }
+        dat <- array(NA, dim = c(2, 2, k), dimnames = list(rows, 
+            cols, slab))
+        for (i in 1:k) {
+            tab.i <- rbind(c(x1i[i], t1i[i]), c(x2i[i], t2i[i]))
+            dat[, , i] <- tab.i
+        }
+    }
+    if (is.element(measure, c("MD", "SMD", "SMDH", "ROM", "RPB", 
+        "RBIS", "D2OR"))) {
+        if (!is.null(subset)) {
+            m1i <- m1i[subset]
+            m2i <- m2i[subset]
+            sd1i <- sd1i[subset]
+            sd2i <- sd2i[subset]
+            n1i <- n1i[subset]
+            n2i <- n2i[subset]
+            slab <- slab[subset]
+            k <- length(m1i)
+        }
+        m1im2isd1isd2in1in2i.na <- is.na(cbind(m1i, m2i, sd1i, 
+            sd2i, n1i, n2i))
+        if (any(m1im2isd1isd2in1in2i.na)) {
+            not.na <- apply(m1im2isd1isd2in1in2i.na, MARGIN = 1, 
+                sum) == 0L
+            if (na.act == "na.omit") {
+                m1i <- m1i[not.na]
+                m2i <- m2i[not.na]
+                sd1i <- sd1i[not.na]
+                sd2i <- sd2i[not.na]
+                n1i <- n1i[not.na]
+                n2i <- n2i[not.na]
+                slab <- slab[not.na]
+                k <- length(m1i)
+                warning("Tables with NAs omitted.")
+            }
+            if (na.act == "na.fail") 
+                stop("Missing values in tables.")
+        }
+        if (k < 1) 
+            stop("Processing terminated since k = 0.")
+        if (missing(rows)) {
+            rows <- c("Grp1", "Grp2")
+        }
+        else {
+            if (length(rows) != 2) 
+                stop("Group names not of length 2.")
+        }
+        if (missing(cols)) {
+            cols <- c("Mean", "SD", "n")
+        }
+        else {
+            if (length(cols) != 3) 
+                stop("Outcome names not of length 3.")
+        }
+        dat <- array(NA, dim = c(2, 3, k), dimnames = list(rows, 
+            cols, slab))
+        for (i in 1:k) {
+            tab.i <- rbind(c(m1i[i], sd1i[i], n1i[i]), c(m2i[i], 
+                sd2i[i], n2i[i]))
+            dat[, , i] <- tab.i
+        }
+    }
+    if (is.element(measure, c("COR", "UCOR", "ZCOR"))) {
+        if (!is.null(subset)) {
+            ri <- ri[subset]
+            ni <- ni[subset]
+            slab <- slab[subset]
+            k <- length(ri)
+        }
+        rini.na <- is.na(cbind(ri, ni))
+        if (any(rini.na)) {
+            not.na <- apply(rini.na, MARGIN = 1, sum) == 0L
+            if (na.act == "na.omit") {
+                ri <- ri[not.na]
+                ni <- ni[not.na]
+                slab <- slab[not.na]
+                k <- length(ri)
+                warning("Tables with NAs omitted.")
+            }
+            if (na.act == "na.fail") 
+                stop("Missing values in tables.")
+        }
+        if (k < 1) 
+            stop("Processing terminated since k = 0.")
+        if (missing(rows)) {
+            rows <- c("Grp")
+        }
+        else {
+            if (length(rows) != 1) 
+                stop("Group names not of length 1.")
+        }
+        if (missing(cols)) {
+            cols <- c("r", "n")
+        }
+        else {
+            if (length(cols) != 2) 
+                stop("Outcome names not of length 2.")
+        }
+        dat <- array(NA, dim = c(1, 2, k), dimnames = list(rows, 
+            cols, slab))
+        for (i in 1:k) {
+            tab.i <- c(ri[i], ni[i])
+            dat[, , i] <- tab.i
+        }
+    }
+    if (is.element(measure, c("PR", "PLN", "PLO", "PAS", "PFT"))) {
+        if (!is.null(subset)) {
+            xi <- xi[subset]
+            mi <- mi[subset]
+            slab <- slab[subset]
+            k <- length(xi)
+        }
+        ximi.na <- is.na(cbind(xi, mi))
+        if (any(ximi.na)) {
+            not.na <- apply(ximi.na, MARGIN = 1, sum) == 0L
+            if (na.act == "na.omit") {
+                xi <- xi[not.na]
+                mi <- mi[not.na]
+                slab <- slab[not.na]
+                k <- length(xi)
+                warning("Tables with NAs omitted.")
+            }
+            if (na.act == "na.fail") 
+                stop("Missing values in tables.")
+        }
+        if (k < 1) 
+            stop("Processing terminated since k = 0.")
+        if (missing(rows)) {
+            rows <- c("Grp")
+        }
+        else {
+            if (length(rows) != 1) 
+                stop("Group names not of length 1.")
+        }
+        if (missing(cols)) {
+            cols <- c("Out1", "Out2")
+        }
+        else {
+            if (length(cols) != 2) 
+                stop("Outcome names not of length 2.")
+        }
+        dat <- array(NA, dim = c(1, 2, k), dimnames = list(rows, 
+            cols, slab))
+        for (i in 1:k) {
+            tab.i <- c(xi[i], mi[i])
+            dat[, , i] <- tab.i
+        }
+    }
+    if (is.element(measure, c("IR", "IRLN", "IRS", "IRFT"))) {
+        if (!is.null(subset)) {
+            xi <- xi[subset]
+            ti <- ti[subset]
+            slab <- slab[subset]
+            k <- length(xi)
+        }
+        xiti.na <- is.na(cbind(xi, ti))
+        if (any(xiti.na)) {
+            not.na <- apply(xiti.na, MARGIN = 1, sum) == 0L
+            if (na.act == "na.omit") {
+                xi <- xi[not.na]
+                ti <- ti[not.na]
+                slab <- slab[not.na]
+                k <- length(xi)
+                warning("Tables with NAs omitted.")
+            }
+            if (na.act == "na.fail") 
+                stop("Missing values in tables.")
+        }
+        if (k < 1) 
+            stop("Processing terminated since k = 0.")
+        if (missing(rows)) {
+            rows <- c("Grp")
+        }
+        else {
+            if (length(rows) != 1) 
+                stop("Group names not of length 1.")
+        }
+        if (missing(cols)) {
+            cols <- c("Events", "Person-Time")
+        }
+        else {
+            if (length(cols) != 2) 
+                stop("Outcome names not of length 2.")
+        }
+        dat <- array(NA, dim = c(1, 2, k), dimnames = list(rows, 
+            cols, slab))
+        for (i in 1:k) {
+            tab.i <- c(xi[i], ti[i])
+            dat[, , i] <- tab.i
+        }
+    }
+    if (is.element(measure, c("MN"))) {
+        if (!is.null(subset)) {
+            mi <- mi[subset]
+            sdi <- sdi[subset]
+            ni <- ni[subset]
+            slab <- slab[subset]
+            k <- length(mi)
+        }
+        misdini.na <- is.na(cbind(mi, sdi, ni))
+        if (any(misdini.na)) {
+            not.na <- apply(misdini.na, MARGIN = 1, sum) == 0L
+            if (na.act == "na.omit") {
+                mi <- mi[not.na]
+                sdi <- sdi[not.na]
+                ni <- ni[not.na]
+                slab <- slab[not.na]
+                k <- length(mi)
+                warning("Tables with NAs omitted.")
+            }
+            if (na.act == "na.fail") 
+                stop("Missing values in tables.")
+        }
+        if (k < 1) 
+            stop("Processing terminated since k = 0.")
+        if (missing(rows)) {
+            rows <- c("Grp")
+        }
+        else {
+            if (length(rows) != 1) 
+                stop("Group names not of length 1.")
+        }
+        if (missing(cols)) {
+            cols <- c("Mean", "SD", "n")
+        }
+        else {
+            if (length(cols) != 3) 
+                stop("Outcome names not of length 3.")
+        }
+        dat <- array(NA, dim = c(1, 3, k), dimnames = list(rows, 
+            cols, slab))
+        for (i in 1:k) {
+            tab.i <- c(mi[i], sdi[i], ni[i])
+            dat[, , i] <- tab.i
+        }
+    }
+    if (is.element(measure, c("MC", "SMCC", "SMCR"))) {
+        if (!is.null(subset)) {
+            m1i <- m1i[subset]
+            m2i <- m2i[subset]
+            sd1i <- sd1i[subset]
+            if (is.element(measure, c("MC", "SMCC"))) 
+                sd2i <- sd2i[subset]
+            ni <- ni[subset]
+            ri <- ri[subset]
+            slab <- slab[subset]
+            k <- length(m1i)
+        }
+        if (is.element(measure, c("MC", "SMCC"))) {
+            m1im2isdiniri.na <- is.na(cbind(m1i, m2i, sd1i, sd2i, 
+                ni, ri))
+        }
+        else {
+            m1im2isdiniri.na <- is.na(cbind(m1i, m2i, sd1i, ni, 
+                ri))
+        }
+        if (any(m1im2isdiniri.na)) {
+            not.na <- apply(m1im2isdiniri.na, MARGIN = 1, sum) == 
+                0L
+            if (na.act == "na.omit") {
+                m1i <- m1i[not.na]
+                m2i <- m2i[not.na]
+                sd1i <- sd1i[not.na]
+                if (is.element(measure, c("MC", "SMCC"))) 
+                  sd2i <- sd2i[not.na]
+                ni <- ni[not.na]
+                ri <- ri[not.na]
+                slab <- slab[not.na]
+                k <- length(m1i)
+                warning("Tables with NAs omitted.")
+            }
+            if (na.act == "na.fail") 
+                stop("Missing values in tables.")
+        }
+        if (k < 1) 
+            stop("Processing terminated since k = 0.")
+        if (missing(rows)) {
+            rows <- c("Grp")
+        }
+        else {
+            if (length(rows) != 1) 
+                stop("Group names not of length 1.")
+        }
+        if (is.element(measure, c("MC", "SMCC"))) {
+            if (missing(cols)) {
+                cols <- c("Mean1", "Mean2", "SD1", "SD2", "n", 
+                  "r")
+            }
+            else {
+                if (length(cols) != 6) 
+                  stop("Outcome names not of length 6.")
+            }
+        }
+        else {
+            if (missing(cols)) {
+                cols <- c("Mean1", "Mean2", "SD1", "n", "r")
+            }
+            else {
+                if (length(cols) != 5) 
+                  stop("Outcome names not of length 5.")
+            }
+        }
+        if (is.element(measure, c("MC", "SMCC"))) {
+            dat <- array(NA, dim = c(1, 6, k), dimnames = list(rows, 
+                cols, slab))
+            for (i in 1:k) {
+                tab.i <- c(m1i[i], m2i[i], sd1i[i], sd2i[i], 
+                  ni[i], ri[i])
+                dat[, , i] <- tab.i
+            }
+        }
+        else {
+            dat <- array(NA, dim = c(1, 5, k), dimnames = list(rows, 
+                cols, slab))
+            for (i in 1:k) {
+                tab.i <- c(m1i[i], m2i[i], sd1i[i], ni[i], ri[i])
+                dat[, , i] <- tab.i
+            }
+        }
+    }
+    if (is.element(measure, c("ARAW", "AHW", "ABT"))) {
+        if (!is.null(subset)) {
+            ai <- ai[subset]
+            mi <- mi[subset]
+            ni <- ni[subset]
+            slab <- slab[subset]
+            k <- length(ai)
+        }
+        aimini.na <- is.na(cbind(ai, mi, ni))
+        if (any(aimini.na)) {
+            not.na <- apply(aimini.na, MARGIN = 1, sum) == 0L
+            if (na.act == "na.omit") {
+                ai <- ai[not.na]
+                mi <- mi[not.na]
+                ni <- ni[not.na]
+                slab <- slab[not.na]
+                k <- length(ai)
+                warning("Tables with NAs omitted.")
+            }
+            if (na.act == "na.fail") 
+                stop("Missing values in tables.")
+        }
+        if (k < 1) 
+            stop("Processing terminated since k = 0.")
+        if (missing(rows)) {
+            rows <- c("Grp")
+        }
+        else {
+            if (length(rows) != 1) 
+                stop("Group names not of length 1.")
+        }
+        if (missing(cols)) {
+            cols <- c("alpha", "m", "n")
+        }
+        else {
+            if (length(cols) != 3) 
+                stop("Outcome names not of length 3.")
+        }
+        dat <- array(NA, dim = c(1, 3, k), dimnames = list(rows, 
+            cols, slab))
+        for (i in 1:k) {
+            tab.i <- c(ai[i], mi[i], ni[i])
+            dat[, , i] <- tab.i
+        }
+    }
+    return(dat)
 }
 transf.abt <-
 function (xi, ...) 
@@ -11984,6 +13848,8 @@ function (object, ...)
         wi <- (x$ai + x$bi) * (x$ci + x$di)/Ni
     if (x$measure == "IRR") 
         wi <- x$x2i * (x$t1i)/Ti
+    if (x$measure == "IRD") 
+        wi <- (x$t1i/Ti) * x$t2i
     weight[x$not.na] <- wi/sum(wi) * 100
     names(weight) <- x$slab
     if (na.act == "na.omit") 

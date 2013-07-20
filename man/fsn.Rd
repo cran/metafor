@@ -1,7 +1,7 @@
 \name{fsn}
 \alias{fsn}
-\title{Fail-Safe N (File Drawer Analysis)}
-\description{Function to calculate the fail-safe N.}
+\title{Compute Fail-Safe N (File Drawer Analysis)}
+\description{Function to compute the fail-safe N.}
 \usage{
 fsn(yi, vi, sei, weights, data, type="Rosenthal", alpha=.05, target, subset, digits=4)
 }

@@ -1,6 +1,6 @@
 \name{labbe.rma}
 \alias{labbe.rma}
-\title{L'Abbe Plots for rma Objects}
+\title{L'Abbe Plots for 'rma' Objects}
 \description{Function to create L'Abbe plots for objects of class \code{"rma"}.}
 \usage{
 \method{labbe}{rma}(x, xlim, ylim, xlab, ylab,
@@ -9,10 +9,10 @@
 }
 \arguments{
    \item{x}{an object of class \code{"rma"}. See \sQuote{Details}.}
-   \item{xlim}{x axis limits. If unspecified, the function tries to set the x axis limits to some sensible values.}
-   \item{ylim}{y axis limits. If unspecified, the function tries to set the y axis limits to some sensible values.}
-   \item{xlab}{title for the x axis. If unspecified, the function tries to set an appropriate axis title.}
-   \item{ylab}{title for the y axis. If unspecified, the function tries to set an appropriate axis title.}
+   \item{xlim}{x-axis limits. If unspecified, the function tries to set the x-axis limits to some sensible values.}
+   \item{ylim}{y-axis limits. If unspecified, the function tries to set the y-axis limits to some sensible values.}
+   \item{xlab}{title for the x-axis. If unspecified, the function tries to set an appropriate axis title.}
+   \item{ylab}{title for the y-axis. If unspecified, the function tries to set an appropriate axis title.}
    \item{add}{See below and the documentation of the \code{\link{escalc}} function for more details.}
    \item{to}{See below and the documentation of the \code{\link{escalc}} function for more details.}
    \item{transf}{optional argument specifying the name of a function that should be used to transform the outcomes (e.g., \code{transf=exp}). Defaults to \code{FALSE}, which means that no transformation is used.}
@@ -55,7 +55,7 @@ res <- rma(ai=tpos, bi=tneg, ci=cpos, di=cneg,
 ### default plot
 labbe(res)
 
-### funnel plot with risk values on the x and y axis
+### funnel plot with risk values on the x- and y-axis
 labbe(res, transf=exp)
 }
 \keyword{hplot}

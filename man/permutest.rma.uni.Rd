@@ -1,6 +1,6 @@
 \name{permutest.rma.uni}
 \alias{permutest.rma.uni}
-\title{Permutation Tests for rma.uni Objects}
+\title{Carry Out Permutation Tests for 'rma.uni' Objects}
 \description{
    The function carries out permutation tests for objects of class \code{"rma.uni"}.
 }

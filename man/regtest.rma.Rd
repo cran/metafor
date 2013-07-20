@@ -1,6 +1,6 @@
 \name{regtest.rma}
 \alias{regtest.rma}
-\title{Regression Tests for Funnel Plot Asymmetry for rma Objects}
+\title{Carry Out a Regression Tests for Funnel Plot Asymmetry for 'rma' Objects}
 \description{The function can be used to carry out various tests for funnel plot asymmetry, including Egger's regression test and variations thereof, for objects of class \code{"rma"}.}
 \usage{
 \method{regtest}{rma}(x, model="rma", predictor="sei", ret.fit=FALSE, \dots)

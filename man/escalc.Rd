@@ -4,9 +4,9 @@
 \alias{escalc.formula}
 \alias{[.escalc}
 \alias{cbind.escalc}
-\title{Calculate Effect Size and Outcome Measures}
+\title{Calculate Effect Sizes and Outcome Measures}
 \description{
-   The function can be used to calculate various effect size or outcome measures (and the corresponding sampling variances) that are commonly used in meta-analyses.
+   The function can be used to calculate various effect sizes or outcome measures (and the corresponding sampling variances) that are commonly used in meta-analyses.
 }
 \usage{
 escalc(measure, formula, \dots)
@@ -100,7 +100,7 @@ escalc(measure, formula, \dots)
          \item \code{"PETO"} for the \emph{log odds ratio} estimated with Peto's method (Yusuf et al., 1985).
          } Note that the log is taken of the relative risk and the odds ratio, which makes these outcome measures symmetric around 0 and yields corresponding sampling distributions that are closer to normality.
 
-         Cell entries with a zero count can be problematic, especially for the relative risk and the odds ratio. Adding a small constant to the cells of the 2x2 tables is a common solution to this problem. When \code{to="only0"} (the default), the value of \code{add} (the default is 1/2) is added to each cell of those 2x2 tables with at least one cell equal to 0. When \code{to="all"}, the value of \code{add} is added to each cell of all 2x2 tables. When \code{to="if0all"}, the value of \code{add} is added to each cell of all 2x2 tables, but only when there is at least one 2x2 table with a zero cell. Setting \code{to="none"} or \code{add=0} has the same effect: No adjustment to the observed table frequencies is made. Depending on the outcome measure and the data, this may lead to division by zero inside of the function (when this occurs, the resulting value is recoded to \code{NA}). Also, studies where \code{ai=ci=0} or \code{bi=di=0} may be considered to be uninformative about the size of the effect and dropping such studies has sometimes been recommended (Higgins & Green, 2008). This can be done by setting \code{drop00=TRUE}. The counts for such studies will be then be set to \code{NA}.
+         Cell entries with a zero count can be problematic, especially for the relative risk and the odds ratio. Adding a small constant to the cells of the 2x2 tables is a common solution to this problem. When \code{to="only0"} (the default), the value of \code{add} (the default is 1/2) is added to each cell of those 2x2 tables with at least one cell equal to 0. When \code{to="all"}, the value of \code{add} is added to each cell of all 2x2 tables. When \code{to="if0all"}, the value of \code{add} is added to each cell of all 2x2 tables, but only when there is at least one 2x2 table with a zero cell. Setting \code{to="none"} or \code{add=0} has the same effect: No adjustment to the observed table frequencies is made. Depending on the outcome measure and the data, this may lead to division by zero inside of the function (when this occurs, the resulting value is recoded to \code{NA}). Also, studies where \code{ai=ci=0} or \code{bi=di=0} may be considered to be uninformative about the size of the effect and dropping such studies has sometimes been recommended (Higgins & Green, 2008). This can be done by setting \code{drop00=TRUE}. The counts for such studies will then be set to \code{NA}.
 
          A dataset corresponding to data of this type is provided in \code{\link{dat.bcg}}.
 
@@ -114,14 +114,14 @@ escalc(measure, formula, \dots)
 
       \subsection{Measures for Event Counts}{
 
-         In medical and epidemiological studies comparing two different groups (e.g., treated versus untreated patients, exposed versus unexposed individuals), results are sometimes reported in terms of event counts (i.e., the number of events, such as strokes or myocardial infarctions) over a certain period of time. In particular, assume that the studies report data in the form:
+         In medical and epidemiological studies comparing two different groups (e.g., treated versus untreated patients, exposed versus unexposed individuals), results are sometimes reported in terms of event counts (i.e., the number of events, such as strokes or myocardial infarctions) over a certain period of time. Data of this type are also referred to as \sQuote{person-time data}. In particular, assume that the studies report data in the form:
          \tabular{lcc}{
                  \tab number of events \tab total person-time \cr
          group 1 \tab \code{x1i}       \tab \code{t1i} \cr
          group 2 \tab \code{x2i}       \tab \code{t2i}
          } where \code{x1i} and \code{x2i} denote the total number of events in the first and the second group, respectively, and \code{t1i} and \code{t2i} the corresponding total person-times at risk. Often, the person-time is measured in years, so that \code{t1i} and \code{t2i} denote the total number of follow-up years in the two groups.
 
-         Note that this form of data is fundamentally different from that described in the previous section, since the total follow-up time may differ even for groups of the same size and the individuals studied may experience the event of interest multiple times. Hence, different outcome measures than the ones described in the previous section must be considered when data are reported in this format. These inlude the incidence rate ratio, the incidence rate difference, and the square-root transformed incidence rate difference (Bagos & Nikolopoulos, 2009). For any of these outcome measures, one needs to specify the total number of events via the \code{x1i} and \code{x2i} arguments and the corresponding total person-times via the \code{t1i} and \code{t2i} arguments.
+         Note that this form of data is fundamentally different from that described in the previous section, since the total follow-up time may differ even for groups of the same size and the individuals studied may experience the event of interest multiple times. Hence, different outcome measures than the ones described in the previous section must be considered when data are reported in this format. These inlude the incidence rate ratio, the incidence rate difference, and the square-root transformed incidence rate difference (Bagos & Nikolopoulos, 2009; Rothman et al., 2008). For any of these outcome measures, one needs to specify the total number of events via the \code{x1i} and \code{x2i} arguments and the corresponding total person-times via the \code{t1i} and \code{t2i} arguments.
 
          The options for the \code{measure} argument are then:
          \itemize{
@@ -130,7 +130,7 @@ escalc(measure, formula, \dots)
          \item \code{"IRSD"} for the \emph{square-root transformed incidence rate difference}.
          } Note that the log is taken of the incidence rate ratio, which makes this outcome measure symmetric around 0 and yields a corresponding sampling distribution that is closer to normality.
 
-         Studies with zero events in one or both groups can be problematic, especially for the incidence rate ratio. Adding a small constant to the number of events is a common solution to this problem. When \code{to="only0"} (the default), the value of \code{add} (the default is 1/2) is added to \code{x1i} and \code{x2i} only in the studies that have zero events in one or both groups. When \code{to="all"}, the value of \code{add} is added to \code{x1i} and \code{x2i} in all studies. When \code{to="if0all"}, the value of \code{add} is added to \code{x1i} and \code{x2i} in all studies, but only when there is at least one study with zero events in one or both groups. Setting \code{to="none"} or \code{add=0} has the same effect: No adjustment to the observed number of events is made. Depending on the outcome measure and the data, this may lead to division by zero inside of the function (when this occurs, the resulting value is recoded to \code{NA}). Like for 2x2 table data, studies where \code{x1i=x2i=0} may be considered to be uninformative about the size of the effect and dropping such studies has sometimes been recommended. This can be done by setting \code{drop00=TRUE}. The counts for such studies will be then be set to \code{NA}.
+         Studies with zero events in one or both groups can be problematic, especially for the incidence rate ratio. Adding a small constant to the number of events is a common solution to this problem. When \code{to="only0"} (the default), the value of \code{add} (the default is 1/2) is added to \code{x1i} and \code{x2i} only in the studies that have zero events in one or both groups. When \code{to="all"}, the value of \code{add} is added to \code{x1i} and \code{x2i} in all studies. When \code{to="if0all"}, the value of \code{add} is added to \code{x1i} and \code{x2i} in all studies, but only when there is at least one study with zero events in one or both groups. Setting \code{to="none"} or \code{add=0} has the same effect: No adjustment to the observed number of events is made. Depending on the outcome measure and the data, this may lead to division by zero inside of the function (when this occurs, the resulting value is recoded to \code{NA}). Like for 2x2 table data, studies where \code{x1i=x2i=0} may be considered to be uninformative about the size of the effect and dropping such studies has sometimes been recommended. This can be done by setting \code{drop00=TRUE}. The counts for such studies will then be set to \code{NA}.
 
          A dataset corresponding to data of this type is provided in \code{\link{dat.hart1999}}.
 
@@ -443,6 +443,8 @@ escalc(measure, formula, \dots)
 
    Pearson, K. (1909). On a new method of determining correlation between a measured character A, and a character B, of which only the percentage of cases wherein B exceeds (or falls short of) a given intensity is recorded for each grade of A. \emph{Biometrika}, \bold{7}, 96--105.
 
+   Rothman, K. J., Greenland, S., & Lash, T. L. (2008). \emph{Modern epidemiology} (3rd ed.). Philadelphia: Lippincott Williams & Wilkins.
+
    Soper, H. E. (1914). On the probable error of the bi-serial expression for the correlation coefficient. \emph{Biometrika}, \bold{10}, 384--390.
 
    Tate, R. F. (1954). Correlation between a discrete and a continuous variable: Point-biserial correlation. \emph{Annals of Mathematical Statistics}, \bold{25}, 603--607.
@@ -474,13 +476,9 @@ dat[13,4:7] <- NA
 dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat, replace=FALSE)
 dat
 
-### using formula interface (first rearrange data into required format)
-k <- length(dat.bcg$trial)
-dat.fm      <- data.frame(study=factor(rep(1:k, each=4)))
-dat.fm$grp  <- factor(rep(c("T","T","C","C"), k), levels=c("T","C"))
-dat.fm$out  <- factor(rep(c("+","-","+","-"), k), levels=c("+","-"))
-dat.fm$freq <- with(dat.bcg, c(rbind(tpos, tneg, cpos, cneg)))
-dat.fm
-escalc(out ~ grp | study, weights=freq, data=dat.fm, measure="RR")
+### using formula interface (first rearrange data into long format)
+dat.long <- to.long(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg,
+                    data=dat.bcg, append=FALSE, vlong=TRUE)
+escalc(outcome ~ group | study, weights=freq, data=dat.long, measure="RR")
 }
 \keyword{datagen}

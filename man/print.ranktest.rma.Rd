@@ -1,6 +1,6 @@
 \name{print.ranktest.rma}
 \alias{print.ranktest.rma}
-\title{Print Method for ranktest.rma Objects}
+\title{Print Method for 'ranktest.rma' Objects}
 \description{
    Print method for objects of class \code{"ranktest.rma"}.
 }

@@ -1,6 +1,6 @@
 \name{print.anova.rma.uni}
 \alias{print.anova.rma.uni}
-\title{Print Method for anova.rma.uni Objects}
+\title{Print Method for 'anova.rma.uni' Objects}
 \description{
    Print method for objects of class \code{"anova.rma.uni"}.
 }

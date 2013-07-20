@@ -1,6 +1,6 @@
 \name{print.regtest.rma}
 \alias{print.regtest.rma}
-\title{Print Method for regtest.rma Objects}
+\title{Print Method for 'regtest.rma' Objects}
 \description{
    Print method for objects of class \code{"regtest.rma"}.
 }

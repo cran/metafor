@@ -1,6 +1,6 @@
 \name{print.confint.rma}
 \alias{print.confint.rma}
-\title{Print Method for confint.rma Objects}
+\title{Print Method for 'confint.rma' Objects}
 \description{
    Print method for objects of class \code{"confint.rma"}.
 }

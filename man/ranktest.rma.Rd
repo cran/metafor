@@ -1,6 +1,6 @@
 \name{ranktest.rma}
 \alias{ranktest.rma}
-\title{Rank Correlation Test for Funnel Plot Asymmetry for rma Objects}
+\title{Carry Out a Rank Correlation Test for Funnel Plot Asymmetry for 'rma' Objects}
 \description{Rank correlation test for funnel plot asymmetry for objects of class \code{"rma"}.}
 \usage{
 \method{ranktest}{rma}(x, \dots)

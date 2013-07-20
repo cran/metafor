@@ -1,7 +1,7 @@
 \name{trimfill.rma.uni}
 \alias{trimfill.rma.uni}
-\title{Trim and Fill Method for rma.uni Objects}
-\description{Apply the trim and fill method to objects of class \code{"rma.uni"}.}
+\title{Carry Out a Trim and Fill Analysis for 'rma.uni' Objects}
+\description{Carry out a trim and fill analysis for objects of class \code{"rma.uni"}.}
 \usage{
 \method{trimfill}{rma.uni}(x, side, estimator="L0", maxiter=50, verbose=FALSE, \dots)
 }
@@ -14,7 +14,7 @@
    \item{\dots}{other arguments.}
 }
 \details{
-   The trim and fill method is a nonparametric (rank-based) data augmentation technique proposed by Duval and Tweedie (2000a, 2000b; see also Duval, 2005). The method can be used to estimate the number of studies missing from a meta-analysis due to the suppression of the most extreme results on one side of the funnel plot. The method then augments the observed data so that the funnel plot is more symmetric. The trim and fill method can only be used in the context of the fixed- or random-effects model (i.e., in models without moderators). The method should not be regarded as a way of yielding a more "valid" estimate of the overall effect or outcome, but as a way of examining the sensitivity of the results to one particular selection mechanism (i.e., one particular form of publication bias).
+   The trim and fill method is a nonparametric (rank-based) data augmentation technique proposed by Duval and Tweedie (2000a, 2000b; see also Duval, 2005). The method can be used to estimate the number of studies missing from a meta-analysis due to the suppression of the most extreme results on one side of the funnel plot. The method then augments the observed data so that the funnel plot is more symmetric and recomputes the summary estimate based on the complete data. The trim and fill method can only be used in the context of a fixed- or random-effects model (i.e., in models without moderators). The method should not be regarded as a way of yielding a more "valid" estimate of the overall effect or outcome, but as a way of examining the sensitivity of the results to one particular selection mechanism (i.e., one particular form of publication bias).
 }
 \value{
    An object of class \code{c("rma.uni.trimfill","rma.uni","rma")}. The object is a list containing the same components as objects created by \code{\link{rma.uni}}, except that the data are augmented by the trim and fill method. The following components are also added:
@@ -27,7 +27,7 @@
    The results of the fitted model after the data augmentation are printed with the \code{\link{print.rma.uni}} function. Calling \code{\link{funnel.rma}} on the object provides a funnel plot of the observed and augmented data.
 }
 \note{
-   Three different estimators for the number of missing studies were proposed by Duval and Tweedie (2000a, 2000b). Based on these articles and Duval (2005), \code{"R0"} and \code{"L0"} are recommended. An advantage of estimator \code{"R0"} is that it directly provides a test of the null hypothesis that the number of missing studies is zero (on the chosen side).
+   Three different estimators for the number of missing studies were proposed by Duval and Tweedie (2000a, 2000b). Based on these articles and Duval (2005), \code{"R0"} and \code{"L0"} are recommended. An advantage of estimator \code{"R0"} is that it provides a test of the null hypothesis that the number of missing studies (on the chosen side) is zero.
 }
 \author{
    Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr

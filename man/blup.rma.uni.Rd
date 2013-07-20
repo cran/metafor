@@ -1,6 +1,6 @@
 \name{blup.rma.uni}
 \alias{blup.rma.uni}
-\title{Best Linear Unbiased Predictions for rma.uni Objects}
+\title{Compute Best Linear Unbiased Predictions for 'rma.uni' Objects}
 \description{
    The function calculates the best linear unbiased predictions (BLUPs) of the true outcomes by combining the fitted values based on the fixed effects and the estimated contributions of the random effects for objects of class \code{"rma.uni"}. Corresponding standard errors and prediction interval bounds are also provided.
 }

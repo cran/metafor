@@ -6,7 +6,7 @@
 \alias{BIC.rma}
 \alias{nobs.rma}
 \alias{df.residual.rma}
-\title{Fit Statistics and Information Criteria for rma Objects}
+\title{Extract Fit Statistics and Information Criteria from 'rma' Objects}
 \description{
    Functions to extract the log likelihood, deviance, AIC, and BIC values from objects of class \code{"rma"}.
 }

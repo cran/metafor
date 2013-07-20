@@ -1,6 +1,6 @@
 \name{print.fsn}
 \alias{print.fsn}
-\title{Print Method for fsn Objects}
+\title{Print Method for 'fsn' Objects}
 \description{
    Print method for objects of class \code{"fsn"}.
 }

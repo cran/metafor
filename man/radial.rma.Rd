@@ -1,6 +1,6 @@
 \name{radial.rma}
 \alias{radial.rma}
-\title{Radial (Galbraith) Plots for rma Objects}
+\title{Radial (Galbraith) Plots for 'rma' Objects}
 \description{Function to create radial (also called Galbraith) plots for objects of class \code{"rma"}.}
 \usage{
 \method{radial}{rma}(x, center=FALSE, xlim, zlim, xlab, zlab,
@@ -10,27 +10,27 @@
 \arguments{
    \item{x}{an object of class \code{"rma"}.}
    \item{center}{logical to indicate whether the plot should be centered horizontally at the model estimate (default is \code{FALSE}).}
-   \item{xlim}{x axis limits. If unspecified, the function tries to set the x axis limits to some sensible values.}
-   \item{zlim}{z axis limits. If unspecified, the function tries to set the z axis limits to some sensible values (note that the z axis limits are the actual vertical limit of the plotting region).}
-   \item{xlab}{title for the x axis. If unspecified, the function tries to set an appropriate axis title.}
-   \item{zlab}{title for the z axis. If unspecified, the function tries to set an appropriate axis title.}
-   \item{atz}{position for the z axis tick marks and labels. If unspecified, these values are set by the function.}
-   \item{aty}{position for the y axis tick marks and labels. If unspecified, these values are set by the function.}
-   \item{steps}{the number of tick marks for the y axis (default is 7). Ignored when argument \code{aty} is used.}
-   \item{level}{numerical value between 0 and 100 specifying the level of the z axis error region (the default is to take the value from the object).}
-   \item{digits}{integer specifying the number of decimal places to which the tick mark labels of the y axis should be rounded (default is 2).}
-   \item{back}{color of the z axis error region. Set to \code{NA} to suppress shading of the region.}
-   \item{transf}{optional argument specifying the name of a function that should be used to transform the y axis labels (e.g., \code{transf=exp}). Defaults to \code{FALSE}, which means that no transformation is used.}
+   \item{xlim}{x-axis limits. If unspecified, the function tries to set the x-axis limits to some sensible values.}
+   \item{zlim}{z-axis limits. If unspecified, the function tries to set the z-axis limits to some sensible values (note that the z-axis limits are the actual vertical limit of the plotting region).}
+   \item{xlab}{title for the x-axis. If unspecified, the function tries to set an appropriate axis title.}
+   \item{zlab}{title for the z-axis. If unspecified, the function tries to set an appropriate axis title.}
+   \item{atz}{position for the z-axis tick marks and labels. If unspecified, these values are set by the function.}
+   \item{aty}{position for the y-axis tick marks and labels. If unspecified, these values are set by the function.}
+   \item{steps}{the number of tick marks for the y-axis (default is 7). Ignored when argument \code{aty} is used.}
+   \item{level}{numerical value between 0 and 100 specifying the level of the z-axis error region (the default is to take the value from the object).}
+   \item{digits}{integer specifying the number of decimal places to which the tick mark labels of the y-axis should be rounded (default is 2).}
+   \item{back}{color of the z-axis error region. Set to \code{NA} to suppress shading of the region.}
+   \item{transf}{optional argument specifying the name of a function that should be used to transform the y-axis labels (e.g., \code{transf=exp}). Defaults to \code{FALSE}, which means that no transformation is used.}
    \item{targs}{optional arguments needed by the function specified via \code{transf}.}
    \item{pch}{plotting symbol. By default, a solid circle is used. See \code{\link{points}} for other options.}
-   \item{arc.res}{integer specifying the number of line segments to use when drawing the y axis and confidence interval arcs (default is 100).}
+   \item{arc.res}{integer specifying the number of line segments to use when drawing the y-axis and confidence interval arcs (default is 100).}
    \item{cex}{optional character and symbol expansion factor. If unspecified, the function tries to set this to a sensible value.}
    \item{\dots}{other arguments.}
 }
 \details{
-   For a fixed-effects model, the plot shows the inverse of the standard errors on the horizontal axis against the individual observed effect sizes or outcomes standardized by their corresponding standard errors on the vertical axis. Since the vertical axis corresponds to standardized values, it is referred to as the z axis within this function. On the right hand side of the plot, an arc is drawn (referred to as the y axis within this function) corresponding to the individual observed effect sizes or outcomes. A line projected from (0,0) through a particular point within the plot onto this arc indicates the value of the individual observed effect size or outcome for that point.
+   For a fixed-effects model, the plot shows the inverse of the standard errors on the horizontal axis against the individual observed effect sizes or outcomes standardized by their corresponding standard errors on the vertical axis. Since the vertical axis corresponds to standardized values, it is referred to as the z-axis within this function. On the right hand side of the plot, an arc is drawn (referred to as the y-axis within this function) corresponding to the individual observed effect sizes or outcomes. A line projected from (0,0) through a particular point within the plot onto this arc indicates the value of the individual observed effect size or outcome for that point.
 
-   For a random-effects model, the function uses \eqn{1/\sqrt{v_i + \tau^2}}{1/\sqrt(v_i + \tau^2)} for the horizontal axis, where \eqn{v_i} is the sampling variance of the observed effect size or outcome and \eqn{\tau^2} is the amount of heterogeneity as estimated based on the model. For the z axis, \eqn{\sqrt{v_i + \tau^2}}{\sqrt(v_i + \tau^2)} is used to standardize the individual observed effect sizes or outcomes.
+   For a random-effects model, the function uses \eqn{1/\sqrt{v_i + \tau^2}}{1/\sqrt(v_i + \tau^2)} for the horizontal axis, where \eqn{v_i} is the sampling variance of the observed effect size or outcome and \eqn{\tau^2} is the amount of heterogeneity as estimated based on the model. For the z-axis, \eqn{\sqrt{v_i + \tau^2}}{\sqrt(v_i + \tau^2)} is used to standardize the individual observed effect sizes or outcomes.
 
    If the model contains moderators, the function returns an error.
 }

@@ -1,6 +1,6 @@
 \name{print.predict.rma}
 \alias{print.predict.rma}
-\title{Print Method for predict.rma Objects}
+\title{Print Method for 'predict.rma' Objects}
 \description{
    Print method for objects of class \code{"predict.rma"}.
 }

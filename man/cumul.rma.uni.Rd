@@ -1,8 +1,8 @@
 \name{cumul.rma.uni}
 \alias{cumul.rma.uni}
-\title{Cumulative Meta-Analysis for rma.uni Objects}
+\title{Cumulative Meta-Analysis for 'rma.uni' Objects}
 \description{
-   The function \code{cumul.rma.uni} repeatedly fits the specified model, adding one observation at a time to the model.
+   The function \code{cumul.rma.uni} repeatedly fits the specified model, adding one observation/study at a time to the model.
 }
 \usage{
 \method{cumul}{rma.uni}(x, order, digits=x$digits, transf=FALSE, targs, \dots)

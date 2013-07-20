@@ -2,9 +2,9 @@
 \alias{weights.rma.uni}
 \alias{weights.rma.mh}
 \alias{weights.rma.peto}
-\title{Weights for rma Objects}
+\title{Compute Weights for 'rma' Objects}
 \description{
-   The function extracts the weights (in \%) given to the observed effects or outcomes during the model fitting from objects of class \code{"rma.uni"}, \code{"rma.mh"}, and \code{"rma.peto"}.
+   The function computes the weights (in \%) given to the observed effects or outcomes during the model fitting for objects of class \code{"rma.uni"}, \code{"rma.mh"}, and \code{"rma.peto"}.
 }
 \usage{
 \method{weights}{rma.uni}(object, \dots)

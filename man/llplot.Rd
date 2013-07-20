@@ -1,6 +1,6 @@
 \name{llplot}
 \alias{llplot}
-\title{Plot Log Likelihood of a Parameter Corresponding to an Outcome or Effect Size Measure}
+\title{Log Likelihood Plot of a Parameter Corresponding to an Outcome or Effect Size Measure}
 \description{
    Function to plot the log likelihood of a certain parameter corresponding to an outcome or effect size measure given the study data.
 }
@@ -21,10 +21,10 @@ llplot(measure="OR", ai, bi, ci, di, n1i, n2i, data, subset, drop00=TRUE,
    \item{subset}{optional vector indicating the subset of studies that should be used. This can be a logical vector or a numeric vector indicating the indices of the studies to include.}
    \item{drop00}{logical indicating whether studies with no cases (or only cases) in both groups should be dropped. See \sQuote{Details}.}
    \item{xvals}{integer specifying for how many distinct values of the (log) odds ratio the log likelihood should be evaluated.}
-   \item{xlim}{x axis limits. If unspecified, the function tries to set the x axis limits to some sensible values.}
-   \item{ylim}{y axis limits. If unspecified, the function tries to set the y axis limits to some sensible values.}
-   \item{xlab}{title for the x axis. If unspecified, the function tries to set an appropriate axis title.}
-   \item{ylab}{title for the y axis. If unspecified, the function tries to set an appropriate axis title.}
+   \item{xlim}{x-axis limits. If unspecified, the function tries to set the x-axis limits to some sensible values.}
+   \item{ylim}{y-axis limits. If unspecified, the function tries to set the y-axis limits to some sensible values.}
+   \item{xlab}{title for the x-axis. If unspecified, the function tries to set an appropriate axis title.}
+   \item{ylab}{title for the y-axis. If unspecified, the function tries to set an appropriate axis title.}
    \item{scale}{logical indicating whether the log likelihood values should be scaled, so that the total area under each curve is (approximately) equal to 1.}
    \item{lty}{the line type (either a single value or a vector of length \eqn{k}). If unspecified, the function uses solid lines for tables where the MLE of the odds ratio is finite and dashed/dotted lines otherwise.}
    \item{lwd}{the line width (either a single value or a vector of length \eqn{k}). If unspecified, the function sets the widths according to the sampling variances (so that the line is thicker for more precise studies and vice-versa).}

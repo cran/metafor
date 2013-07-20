@@ -19,7 +19,6 @@ forest(x, \dots)
    Alternatively, object \code{x} can be a vector with observed effect size or outcomes. The corresponding method is then \code{\link{forest.default}}.
 
    Finally, object \code{x} could be an object coming from the \code{\link{cumul.rma.uni}}, \code{\link{cumul.rma.mh}}, or \code{\link{cumul.rma.peto}} functions. The corresponding method is then \code{\link{forest.cumul.rma}}.
-
 }
 \author{
    Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr
