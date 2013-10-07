@@ -21,7 +21,7 @@
    \item{fixed}{logical indicating whether confidence intervals for the model coefficients should be returned (default is \code{FALSE}).}
    \item{random}{logical indicating whether a confidence interval for the amount of (residual) heterogeneity should be returned (default is \code{TRUE}).}
    \item{digits}{integer specifying the number of decimal places to which the results should be rounded (the default is to take the value from the object).}
-   \item{verbose}{logical indicating whether output should be generated for the iterative algorithm used as part of the Q-profile method (default is \code{FALSE}). See \sQuote{Note}.}
+   \item{verbose}{logical indicating whether output should be generated on the progress of the iterative algorithm used as part of the Q-profile method (default is \code{FALSE}). See \sQuote{Note}.}
    \item{control}{list of control values for the iterative algorithm. If unspecified, default values are defined inside the function. See \sQuote{Note}.}
    \item{\dots}{other arguments.}
 }
@@ -41,7 +41,7 @@
    The results are formated and printed with the \code{\link{print.confint.rma}} function.
 }
 \note{
-   The iterative algorithm used as part of the Q-profile method makes use of the \code{\link{uniroot}} function. By default, the desired accuracy is set equal to \code{.Machine$double.eps^0.25} and the maximum number of iterations to \code{1000}. The upper bound of the interval searched is set to 50 (which should be large enough for most cases). The desired accuracy (\code{tol}), maximum number of iterations (\code{maxiter}), and upper bound (\code{tau2.max}) can be adjusted with \code{control=list(tol=value, maxiter=value, tau2.max=value)}. One can also adjust the lower bound of the interval searched with \code{control=list(tau2.min=value)} (the default is to take that value from the object, which is 0 by default). You should only play around with this latter value if you know what you are doing. If \code{verbose=TRUE}, output is generated for the iterative algorithm.
+   The iterative algorithm used as part of the Q-profile method makes use of the \code{\link{uniroot}} function. By default, the desired accuracy is set equal to \code{.Machine$double.eps^0.25} and the maximum number of iterations to \code{1000}. The upper bound of the interval searched is set to 50 (which should be large enough for most cases). The desired accuracy (\code{tol}), maximum number of iterations (\code{maxiter}), and upper bound (\code{tau2.max}) can be adjusted with \code{control=list(tol=value, maxiter=value, tau2.max=value)}. One can also adjust the lower bound of the interval searched with \code{control=list(tau2.min=value)} (the default is to take that value from the object, which is 0 by default). You should only play around with this latter value if you know what you are doing. If \code{verbose=TRUE}, output is generated on the progress of the iterative algorithm.
 
    It is possible that the lower and upper confidence interval bounds both fall below zero (or whatever value was chosen for \code{tau2.min}). Since both values then fall outside of the parameter space, the confidence interval then just consists of the null set.
 

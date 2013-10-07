@@ -6,18 +6,9 @@ function (mi)
     cmi[is.na] <- 1 - 3/(4 * mi[is.na] - 1)
     return(cmi)
 }
-.diag <-
-function (x) 
-{
-    n <- length(x)
-    y <- array(0, c(n, n))
-    if ((m <- n) > 0L) 
-        y[1L + 0L:(m - 1L) * (n + 1L)] <- x
-    return(y)
-}
 .dnchg <-
 function (parms, ai, bi, ci, di, X.fit, random, verbose = FALSE, 
-    digits = 4, dnchgcalc, dnchgprec, control.int) 
+    digits = 4, dnchgcalc, dnchgprec, intCtrl) 
 {
     p <- ncol(X.fit)
     k <- length(ai)
@@ -38,11 +29,11 @@ function (parms, ai, bi, ci, di, X.fit, random, verbose = FALSE,
     }
     if (random) {
         for (i in seq.int(k)) {
-            res <- try(integrate(.dnchgi, lower = control.int$lower, 
-                upper = control.int$upper, ai = ai[i], bi = bi[i], 
+            res <- try(integrate(.dnchgi, lower = intCtrl$lower, 
+                upper = intCtrl$upper, ai = ai[i], bi = bi[i], 
                 ci = ci[i], di = di[i], mu.i = mu.i[i], tau2 = tau2, 
                 random = random, dnchgcalc = dnchgcalc, dnchgprec = dnchgprec, 
-                rel.tol = control.int$rel.tol, subdivisions = control.int$subdivisions, 
+                rel.tol = intCtrl$rel.tol, subdivisions = intCtrl$subdivisions, 
                 stop.on.error = FALSE), silent = !verbose)
             if (inherits(res, "try-error")) {
                 stop(paste0("Could not integrate over density of non-central hypergeometric distribution in study ", 
@@ -199,21 +190,136 @@ function (x)
 .invcalc <-
 function (X, W, k) 
 {
-    wX <- sqrt(W) %*% X
-    res.qrs <- qr.solve(wX, diag(k))
+    sWX <- sqrt(W) %*% X
+    res.qrs <- qr.solve(sWX, diag(k))
     return(tcrossprod(res.qrs))
+}
+.ll.rma.mv <-
+function (par = c(sigma2, tau2, rho), Y, V, X, sigma2, tau2, 
+    rho, reml, k, p, s.nvals, t.nvals, r.nvals, withS, withG, 
+    Z.S, Z.G1, Z.G2, struct, g.levels.r, R, Rfix, tol, posdefify, 
+    verbose, digits, REMLf) 
+{
+    sigma2 <- ifelse(is.na(sigma2), exp(par[1:s.nvals]), sigma2)
+    tau2 <- ifelse(is.na(tau2), exp(par[(s.nvals + 1):(s.nvals + 
+        t.nvals)]), tau2)
+    rho <- ifelse(is.na(rho), transf.ztor(par[(s.nvals + t.nvals + 
+        1):(s.nvals + t.nvals + r.nvals)]), rho)
+    M <- V
+    if (withS) {
+        for (j in seq.int(s.nvals)) {
+            if (Rfix[j]) {
+                M <- M + sigma2[j] * (Z.S[[j]] %*% R[[j]] %*% 
+                  t(Z.S[[j]]))
+            }
+            else {
+                M <- M + sigma2[j] * tcrossprod(Z.S[[j]])
+            }
+        }
+    }
+    if (withG) {
+        ncol.Z.G1 <- ncol(Z.G1)
+        if (struct == "CS") {
+            G <- matrix(rho, nrow = ncol.Z.G1, ncol = ncol.Z.G1)
+            diag(G) <- 1
+            G <- diag(sqrt(rep(tau2, ncol.Z.G1)), nrow = ncol.Z.G1, 
+                ncol = ncol.Z.G1) %*% G %*% diag(sqrt(rep(tau2, 
+                ncol.Z.G1)), nrow = ncol.Z.G1, ncol = ncol.Z.G1)
+            diag(G) <- tau2
+        }
+        if (struct == "HCS") {
+            G <- matrix(rho, nrow = ncol.Z.G1, ncol = ncol.Z.G1)
+            diag(G) <- 1
+            G <- diag(sqrt(tau2), nrow = ncol.Z.G1, ncol = ncol.Z.G1) %*% 
+                G %*% diag(sqrt(tau2), nrow = ncol.Z.G1, ncol = ncol.Z.G1)
+            diag(G) <- tau2
+        }
+        if (struct == "UN") {
+            G <- matrix(NA, nrow = ncol.Z.G1, ncol = ncol.Z.G1)
+            G[upper.tri(G)] <- rho
+            G[lower.tri(G)] <- t(G)[lower.tri(G)]
+            diag(G) <- 1
+            G <- diag(sqrt(tau2), nrow = ncol.Z.G1, ncol = ncol.Z.G1) %*% 
+                G %*% diag(sqrt(tau2), nrow = ncol.Z.G1, ncol = ncol.Z.G1)
+            diag(G) <- tau2
+            if (posdefify) 
+                G <- as.matrix(nearPD(G)$mat)
+        }
+        if (any(g.levels.r)) {
+            G[g.levels.r, ] <- 0
+            G[, g.levels.r] <- 0
+        }
+        M <- M + (Z.G1 %*% G %*% t(Z.G1)) * tcrossprod(Z.G2)
+    }
+    res <- try(.modfit(Y = Y, X = X, V = M, k = k, tol = tol), 
+        silent = !verbose)
+    if (inherits(res, "try-error")) {
+        llval <- -Inf
+    }
+    else {
+        W <- chol2inv(chol(M))
+        P <- W - W %*% X %*% res$vb %*% t(X) %*% W
+        RSS.f <- crossprod(Y, P) %*% Y
+        if (reml) {
+            llval <- -1/2 * (k - p) * log(2 * base::pi) + ifelse(REMLf, 
+                1/2 * determinant(crossprod(X, X), logarithm = TRUE)$modulus, 
+                0) - 1/2 * determinant(M, logarithm = TRUE)$modulus - 
+                1/2 * determinant(crossprod(X, W) %*% X, logarithm = TRUE)$modulus - 
+                1/2 * RSS.f
+        }
+        else {
+            llval <- -1/2 * (k) * log(2 * base::pi) - 1/2 * determinant(M, 
+                logarithm = TRUE)$modulus - 1/2 * RSS.f
+        }
+    }
+    if (verbose) {
+        if (withS) 
+            cat("sigma2 =", ifelse(is.na(sigma2), NA, paste(formatC(sigma2, 
+                digits = digits, format = "f", flag = " "), " ", 
+                sep = "")), "  ", sep = "")
+        if (withG) 
+            cat("tau2 =", ifelse(is.na(tau2), NA, paste(formatC(tau2, 
+                digits = digits, format = "f", flag = " "), " ", 
+                sep = "")), "  ", sep = "")
+        if (withG) 
+            cat("rho =", ifelse(is.na(rho), NA, paste(formatC(rho, 
+                digits = digits, format = "f", flag = " "), " ", 
+                sep = "")), "  ", sep = "")
+        cat("  ll =", ifelse(is.na(llval), NA, formatC(llval, 
+            digits = digits, format = "f", flag = " ")), sep = "", 
+            "\n")
+    }
+    llval <- -1 * llval
+    llval
+}
+.modfit <-
+function (Y, X, V, k, tol = 1e-07) 
+{
+    eV <- eigen(V, symmetric = TRUE)
+    d <- eV$values
+    if (any(d <= tol)) {
+        stop("Var-cov matrix is not positive definite.")
+    }
+    A <- diag(1/sqrt(d), nrow = k, ncol = k) %*% t(eV$vectors)
+    Ainv <- eV$vectors %*% diag(1/sqrt(d), nrow = k, ncol = k)
+    AX <- A %*% X
+    res.qrs <- qr.solve(AX, diag(k))
+    vb <- tcrossprod(res.qrs)
+    b <- qr.solve(AX, A %*% Y)
+    res <- list(b = b, vb = vb)
+    return(res)
 }
 .onAttach <-
 function (libname, pkgname) 
 {
-    loadmsg <- "\nLoading 'metafor' package (version 1.9-1). For an overview \nand introduction to the package please type: help(metafor)."
+    loadmsg <- "\nLoading 'metafor' package (version 1.9-2). For an overview \nand introduction to the package please type: help(metafor)."
     packageStartupMessage(loadmsg, domain = NULL, appendLF = TRUE)
 }
 .QE.func <-
 function (tau2val, Y, vi, X, k, objective, verbose = FALSE, digits = 4) 
 {
     wi <- 1/(vi + tau2val)
-    W <- .diag(wi)
+    W <- diag(wi, nrow = k, ncol = k)
     stXWX <- .invcalc(X = X, W = W, k = k)
     P <- W - W %*% X %*% stXWX %*% crossprod(X, W)
     RSS <- crossprod(Y, P) %*% Y
@@ -728,11 +834,16 @@ function (x, row = -2, level = x$level, digits = 2, annotate = TRUE,
         col = col, targs = targs, efac = efac, cex = cex, ...)
 }
 AIC.rma <-
-function (object, ..., k = 2) 
+function (object, ..., k = 2, correct = FALSE) 
 {
     if (!is.element("rma", class(object))) 
         stop("Argument 'object' must be an object of class \"rma\".")
-    AIC(logLik(object), k = k)
+    if (object$method == "REML") {
+        ifelse(correct, object$fit.stats$REML[5], object$fit.stats$REML[3])
+    }
+    else {
+        ifelse(correct, object$fit.stats$ML[5], object$fit.stats$ML[3])
+    }
 }
 anova.rma.uni <-
 function (object, object2, btt, digits = object$digits, ...) 
@@ -863,14 +974,14 @@ function (x, xlim, ylim, xlab, ylab, cex, grid = TRUE, ...)
         if (is.element(x$measure, c("RR", "OR", "RD"))) {
             res <- try(rma.mh(ai = x$ai.f[-i], bi = x$bi.f[-i], 
                 ci = x$ci.f[-i], di = x$di.f[-i], measure = x$measure, 
-                add = x$add, to = x$to, drop00 = x$drop00, correct = x$correct, 
-                ...), silent = TRUE)
+                add = x$add, to = x$to, drop00 = x$drop00, correct = x$correct), 
+                silent = TRUE)
         }
         else {
             res <- try(rma.mh(x1i = x$x1i.f[-i], x2i = x$x2i.f[-i], 
                 t1i = x$t1i.f[-i], t2i = x$t2i.f[-i], measure = x$measure, 
-                add = x$add, to = x$to, drop00 = x$drop00, correct = x$correct, 
-                ...), silent = TRUE)
+                add = x$add, to = x$to, drop00 = x$drop00, correct = x$correct), 
+                silent = TRUE)
         }
         if (inherits(res, "try-error")) 
             next
@@ -927,7 +1038,7 @@ function (x, xlim, ylim, xlab, ylab, cex, grid = TRUE, ...)
     for (i in seq.int(x$k.f)[x$not.na]) {
         res <- try(rma.peto(ai = x$ai.f[-i], bi = x$bi.f[-i], 
             ci = x$ci.f[-i], di = x$di.f[-i], add = x$add, to = x$to, 
-            drop00 = x$drop00, ...), silent = TRUE)
+            drop00 = x$drop00), silent = TRUE)
         if (inherits(res, "try-error")) 
             next
         Xi <- matrix(x$X.f[i, ], nrow = 1)
@@ -983,7 +1094,7 @@ function (x, xlim, ylim, xlab, ylab, cex, grid = TRUE, ...)
     for (i in seq.int(x$k.f)[x$not.na]) {
         res <- try(rma(x$yi.f[-i], x$vi.f[-i], mods = cbind(x$X.f[-i, 
             ]), method = x$method, weighted = x$weighted, intercept = FALSE, 
-            knha = x$knha, control = x$control, ...), silent = TRUE)
+            knha = x$knha, control = x$control), silent = TRUE)
         if (inherits(res, "try-error")) 
             next
         Xi <- matrix(x$X.f[i, ], nrow = 1)
@@ -1024,7 +1135,12 @@ function (object, ...)
 {
     if (!is.element("rma", class(object))) 
         stop("Argument 'object' must be an object of class \"rma\".")
-    BIC(logLik(object))
+    if (object$method == "REML") {
+        object$fit.stats$REML[4]
+    }
+    else {
+        object$fit.stats$ML[4]
+    }
 }
 blup <-
 function (x, ...) 
@@ -1231,10 +1347,13 @@ function (object, parm, level = object$level, fixed = FALSE,
     if (!fixed && !random) 
         stop("At least one of the arguments 'fixed' and 'random' must be TRUE.")
     con <- list(tol = .Machine$double.eps^0.25, maxiter = 1000, 
-        tau2.min = x$control$tau2.min, tau2.max = 50, verbose = FALSE)
+        tau2.min = ifelse(is.null(x$control$tau2.min), 0, x$control$tau2.min), 
+        tau2.max = ifelse(is.null(x$control$tau2.max), 50, x$control$tau2.max), 
+        verbose = FALSE)
     con[pmatch(names(control), names(con))] <- control
     if (verbose) 
         con$verbose <- verbose
+    verbose <- con$verbose
     if (random) {
         if (!x$allvipos) 
             stop("Cannot compute confidence interval for the amount of (residual)\n  heterogeneity with non-positive sampling variances in the data.")
@@ -1256,8 +1375,7 @@ function (object, parm, level = object$level, fixed = FALSE,
                 tau2.lb <- try(uniroot(.QE.func, interval = c(con$tau2.min, 
                   con$tau2.max), tol = con$tol, maxiter = con$maxiter, 
                   Y = cbind(yi), vi = vi, X = X, k = k, objective = crit.u, 
-                  verbose = con$verbose, digits = digits)$root, 
-                  silent = TRUE)
+                  verbose = verbose, digits = digits)$root, silent = TRUE)
                 if (!is.numeric(tau2.lb)) {
                   tau2.lb <- NA
                   status.lb <- 0
@@ -1270,8 +1388,7 @@ function (object, parm, level = object$level, fixed = FALSE,
             tau2.ub <- try(uniroot(.QE.func, interval = c(tau2.lb, 
                 con$tau2.max), tol = con$tol, maxiter = con$maxiter, 
                 Y = cbind(yi), vi = vi, X = X, k = k, objective = crit.l, 
-                verbose = con$verbose, digits = digits)$root, 
-                silent = TRUE)
+                verbose = verbose, digits = digits)$root, silent = TRUE)
             if (!is.numeric(tau2.ub)) {
                 tau2.ub <- NA
                 status.ub <- 0
@@ -1288,7 +1405,7 @@ function (object, parm, level = object$level, fixed = FALSE,
             stop("Try increasing tau2.max (via the 'control' argument).")
         }
         wi <- 1/vi
-        W <- .diag(wi)
+        W <- diag(wi, nrow = k, ncol = k)
         stXWX <- .invcalc(X = X, W = W, k = k)
         P <- W - W %*% X %*% stXWX %*% crossprod(X, W)
         vi.avg <- (k - p)/.tr(P)
@@ -1346,7 +1463,7 @@ function (model, ...)
     cook.d <- rep(NA, x$k.f)
     if (x$weighted) {
         wi <- 1/(x$vi + x$tau2)
-        W <- .diag(wi)
+        W <- diag(wi, nrow = x$k, ncol = x$k)
         svb <- crossprod(x$X, W) %*% x$X/x$s2w
     }
     else {
@@ -1358,7 +1475,7 @@ function (model, ...)
     for (i in seq.int(x$k.f)[x$not.na]) {
         res <- try(rma(x$yi.f[-i], x$vi.f[-i], mods = cbind(x$X.f[-i, 
             ]), method = x$method, weighted = x$weighted, intercept = FALSE, 
-            knha = x$knha, control = x$control, ...), silent = TRUE)
+            knha = x$knha, control = x$control), silent = TRUE)
         if (inherits(res, "try-error")) 
             next
         dfbeta <- x$b - res$b
@@ -1420,15 +1537,13 @@ function (x, order, digits = x$digits, transf = FALSE, ...)
             res <- try(rma.mh(ai = ai.f[seq.int(i)], bi = bi.f[seq.int(i)], 
                 ci = ci.f[seq.int(i)], di = di.f[seq.int(i)], 
                 measure = x$measure, add = x$add, to = x$to, 
-                drop00 = x$drop00, correct = x$correct, ...), 
-                silent = TRUE)
+                drop00 = x$drop00, correct = x$correct), silent = TRUE)
         }
         else {
             res <- try(rma.mh(x1i = x1i.f[seq.int(i)], x2i = x2i.f[seq.int(i)], 
                 t1i = t1i.f[seq.int(i)], t2i = t2i.f[seq.int(i)], 
                 measure = x$measure, add = x$add, to = x$to, 
-                drop00 = x$drop00, correct = x$correct, ...), 
-                silent = TRUE)
+                drop00 = x$drop00, correct = x$correct), silent = TRUE)
         }
         if (inherits(res, "try-error")) 
             next
@@ -1521,7 +1636,7 @@ function (x, order, digits = x$digits, transf = FALSE, ...)
     for (i in seq.int(x$k.f)[x$not.na]) {
         res <- try(rma.peto(ai = ai.f[seq.int(i)], bi = bi.f[seq.int(i)], 
             ci = ci.f[seq.int(i)], di = di.f[seq.int(i)], add = x$add, 
-            to = x$to, drop00 = x$drop00, ...), silent = TRUE)
+            to = x$to, drop00 = x$drop00), silent = TRUE)
         if (inherits(res, "try-error")) 
             next
         b[i] <- res$b
@@ -1615,7 +1730,7 @@ function (x, order, digits = x$digits, transf = FALSE, targs,
     for (i in seq.int(x$k.f)[not.na]) {
         res <- try(rma(yi.f[seq.int(i)], vi.f[seq.int(i)], method = x$method, 
             weighted = x$weighted, intercept = TRUE, knha = x$knha, 
-            control = x$control, ...), silent = TRUE)
+            control = x$control), silent = TRUE)
         if (inherits(res, "try-error")) 
             next
         b[i] <- res$b
@@ -1735,7 +1850,7 @@ function (model, ...)
     if (x$k == 1) 
         stop("Stopped because k = 1.")
     tau2.del <- rep(NA, x$k.f)
-    dfbetas <- matrix(NA, nrow = x$k.f, ncol = length(x$b))
+    dfbetas <- matrix(NA, nrow = x$k.f, ncol = x$p)
     if (!x$weighted) {
         svb <- chol2inv(chol(x$vb))
         stXX <- .invcalc(X = x$X, W = diag(x$k), k = x$k)
@@ -1746,24 +1861,24 @@ function (model, ...)
     for (i in seq.int(x$k.f)[x$not.na]) {
         res <- try(rma(x$yi.f[-i], x$vi.f[-i], mods = cbind(x$X.f[-i, 
             ]), method = x$method, weighted = x$weighted, intercept = FALSE, 
-            knha = x$knha, control = x$control, ...), silent = TRUE)
+            knha = x$knha, control = x$control), silent = TRUE)
         if (inherits(res, "try-error")) 
             next
         tau2.del[i] <- res$tau2
         dfbeta <- x$b - res$b
         if (x$weighted) {
-            vb.del <- .invcalc(X = x$X, W = .diag(1/(x$vi + tau2.del[i])), 
-                k = x$k)
+            vb.del <- .invcalc(X = x$X, W = diag(1/(x$vi + tau2.del[i]), 
+                nrow = x$k, ncol = x$k), k = x$k)
             dfbetas[i, ] <- dfbeta/sqrt(res$s2w * diag(vb.del))
         }
         else {
-            vb.del <- tcrossprod(stXX, x$X) %*% .diag(x$vi + 
-                tau2.del[i]) %*% x$X %*% stXX
+            vb.del <- tcrossprod(stXX, x$X) %*% diag(x$vi + tau2.del[i], 
+                nrow = x$k, ncol = x$k) %*% x$X %*% stXX
             dfbetas[i, ] <- dfbeta/sqrt(res$s2w * diag(vb.del))
         }
     }
     if (na.act == "na.omit") {
-        out <- dfbetas[x$not.na, ]
+        out <- dfbetas[x$not.na, , drop = FALSE]
         dimnames(out)[[1]] <- x$slab[x$not.na]
     }
     if (na.act == "na.exclude" || na.act == "na.pass") {
@@ -2786,13 +2901,13 @@ function (object, REML, ...)
     if (REML) {
         out <- cbind(object$fit.stats$REML)
         dimnames(out)[[1]] <- c("logLik:", "deviance:", "AIC:", 
-            "BIC:")
+            "BIC:", "AICc:")
         dimnames(out)[[2]] <- c("REML")
     }
     else {
         out <- cbind(object$fit.stats$ML)
         dimnames(out)[[1]] <- c("logLik:", "deviance:", "AIC:", 
-            "BIC:")
+            "BIC:", "AICc:")
         dimnames(out)[[2]] <- c("ML")
     }
     return(out)
@@ -2859,7 +2974,7 @@ function (x, annotate = TRUE, xlim, alim, ylim, at, steps = 5,
     }
     vi <- x$se^2
     if (length(yi) != length(vi)) 
-        stop("Length of yi and vi (or sei) vectors is not the same.")
+        stop("Length of yi and vi (or sei) vectors are not the same.")
     k <- length(yi)
     if (x$slab.null) {
         slab <- paste("+ Study ", x$slab)
@@ -4525,7 +4640,7 @@ function (model, ...)
     x <- model
     if (x$weighted) {
         wi <- 1/(x$vi + x$tau2)
-        W <- .diag(wi)
+        W <- diag(wi, nrow = x$k, ncol = x$k)
         stXWX <- .invcalc(X = x$X, W = W, k = x$k)
         H <- x$X %*% stXWX %*% crossprod(x$X, W)
     }
@@ -4677,7 +4792,7 @@ function (model, digits = model$digits, ...)
     pred.full <- x$X.f %*% x$b
     if (x$weighted) {
         wi <- 1/(x$vi + x$tau2)
-        W <- .diag(wi)
+        W <- diag(wi, nrow = x$k, ncol = x$k)
         svb <- crossprod(x$X, W) %*% x$X/x$s2w
     }
     else {
@@ -4694,7 +4809,7 @@ function (model, digits = model$digits, ...)
     for (i in seq.int(x$k.f)[x$not.na]) {
         res <- try(rma(x$yi.f[-i], x$vi.f[-i], mods = cbind(x$X.f[-i, 
             ]), method = x$method, weighted = x$weighted, intercept = FALSE, 
-            knha = x$knha, control = x$control, ...), silent = TRUE)
+            knha = x$knha, control = x$control), silent = TRUE)
         if (inherits(res, "try-error")) 
             next
         tau2.del[i] <- res$tau2
@@ -4708,18 +4823,18 @@ function (model, digits = model$digits, ...)
         }
         else {
             dffits[i] <- (pred.full[i] - delpred[i])/(sqrt(res$s2w * 
-                diag(H %*% .diag(tau2.del[i] + x$vi) %*% t(H))))[i - 
-                x$k.f + sum(x$not.na)]
+                diag(H %*% diag(tau2.del[i] + x$vi, nrow = x$k, 
+                  ncol = x$k) %*% t(H))))[i - x$k.f + sum(x$not.na)]
         }
         dfbeta <- x$b - res$b
         if (x$weighted) {
-            vb.del <- .invcalc(X = x$X, W = .diag(1/(x$vi + tau2.del[i])), 
-                k = x$k)
+            vb.del <- .invcalc(X = x$X, W = diag(1/(x$vi + tau2.del[i]), 
+                nrow = x$k, ncol = x$k), k = x$k)
             dfbetas[i, ] <- dfbeta/sqrt(res$s2w * diag(vb.del))
         }
         else {
-            vb.del <- tcrossprod(stXX, x$X) %*% .diag(x$vi + 
-                tau2.del[i]) %*% x$X %*% stXX
+            vb.del <- tcrossprod(stXX, x$X) %*% diag(x$vi + tau2.del[i], 
+                nrow = x$k, ncol = x$k) %*% x$X %*% stXX
             dfbetas[i, ] <- dfbeta/sqrt(res$s2w * diag(vb.del))
         }
         cook.d[i] <- (crossprod(dfbeta, svb) %*% dfbeta)
@@ -5109,14 +5224,14 @@ function (x, digits = x$digits, transf = FALSE, ...)
         if (is.element(x$measure, c("RR", "OR", "RD"))) {
             res <- try(rma.mh(ai = x$ai.f[-i], bi = x$bi.f[-i], 
                 ci = x$ci.f[-i], di = x$di.f[-i], measure = x$measure, 
-                add = x$add, to = x$to, drop00 = x$drop00, correct = x$correct, 
-                ...), silent = TRUE)
+                add = x$add, to = x$to, drop00 = x$drop00, correct = x$correct), 
+                silent = TRUE)
         }
         else {
             res <- try(rma.mh(x1i = x$x1i.f[-i], x2i = x$x2i.f[-i], 
                 t1i = x$t1i.f[-i], t2i = x$t2i.f[-i], measure = x$measure, 
-                add = x$add, to = x$to, drop00 = x$drop00, correct = x$correct, 
-                ...), silent = TRUE)
+                add = x$add, to = x$to, drop00 = x$drop00, correct = x$correct), 
+                silent = TRUE)
         }
         if (inherits(res, "try-error")) 
             next
@@ -5182,7 +5297,7 @@ function (x, digits = x$digits, transf = FALSE, ...)
     for (i in seq.int(x$k.f)[x$not.na]) {
         res <- try(rma.peto(ai = x$ai.f[-i], bi = x$bi.f[-i], 
             ci = x$ci.f[-i], di = x$di.f[-i], add = x$add, to = x$to, 
-            drop00 = x$drop00, ...), silent = TRUE)
+            drop00 = x$drop00), silent = TRUE)
         if (inherits(res, "try-error")) 
             next
         b[i] <- res$b
@@ -5249,7 +5364,7 @@ function (x, digits = x$digits, transf = FALSE, targs, ...)
     for (i in seq.int(x$k.f)[x$not.na]) {
         res <- try(rma(x$yi.f[-i], x$vi.f[-i], method = x$method, 
             weighted = x$weighted, intercept = TRUE, knha = x$knha, 
-            control = x$control, ...), silent = TRUE)
+            control = x$control), silent = TRUE)
         if (inherits(res, "try-error")) 
             next
         b[i] <- res$b
@@ -5587,7 +5702,7 @@ function (x, exact = FALSE, iter = 1000, progbar = TRUE, retpermdist = FALSE,
             for (i in seq.int(iter)) {
                 res <- try(rma(signmat[i, ] * x$yi, x$vi, method = x$method, 
                   weighted = x$weighted, intercept = TRUE, knha = x$knha, 
-                  control = x$control, btt = 1, ...), silent = FALSE)
+                  control = x$control, btt = 1), silent = FALSE)
                 if (inherits(res, "try-error")) 
                   next
                 zval.perm[i] <- res$zval
@@ -5602,7 +5717,7 @@ function (x, exact = FALSE, iter = 1000, progbar = TRUE, retpermdist = FALSE,
                 signs <- 2 * rbinom(x$k, 1, 0.5) - 1
                 res <- try(rma(signs * x$yi, x$vi, method = x$method, 
                   weighted = x$weighted, intercept = TRUE, knha = x$knha, 
-                  control = x$control, btt = 1, ...), silent = FALSE)
+                  control = x$control, btt = 1), silent = FALSE)
                 if (inherits(res, "try-error")) 
                   next
                 zval.perm[i] <- res$zval
@@ -5630,7 +5745,7 @@ function (x, exact = FALSE, iter = 1000, progbar = TRUE, retpermdist = FALSE,
                 res <- try(rma(x$yi, x$vi, mods = cbind(X[permmat[i, 
                   ], ]), method = x$method, weighted = x$weighted, 
                   intercept = FALSE, knha = x$knha, control = x$control, 
-                  btt = x$btt, ...), silent = FALSE)
+                  btt = x$btt), silent = FALSE)
                 if (inherits(res, "try-error")) 
                   next
                 zval.perm[i, ] <- res$zval
@@ -5645,7 +5760,7 @@ function (x, exact = FALSE, iter = 1000, progbar = TRUE, retpermdist = FALSE,
                 res <- try(rma(x$yi, x$vi, mods = cbind(X[sample(x$k), 
                   ]), method = x$method, weighted = x$weighted, 
                   intercept = FALSE, knha = x$knha, control = x$control, 
-                  btt = x$btt, ...), silent = FALSE)
+                  btt = x$btt), silent = FALSE)
                 if (inherits(res, "try-error")) 
                   next
                 zval.perm[i, ] <- res$zval
@@ -6300,8 +6415,9 @@ function (x, qqplot = FALSE, ...)
     invisible()
 }
 predict.rma <-
-function (object, newmods, addx = FALSE, level = object$level, 
-    digits = object$digits, transf = FALSE, targs, ...) 
+function (object, newmods, intercept = object$intercept, addx = FALSE, 
+    level = object$level, digits = object$digits, transf = FALSE, 
+    targs, ...) 
 {
     if (!is.element("rma", class(object))) 
         stop("Argument 'object' must be an object of class \"rma\".")
@@ -6349,8 +6465,13 @@ function (object, newmods, addx = FALSE, level = object$level,
                 X.new <- cbind(newmods)
             }
         }
-        if (x$intercept) {
-            X.new <- cbind(intrcpt = rep(1, k.new), X.new)
+        if (x$int.incl) {
+            if (intercept) {
+                X.new <- cbind(intrcpt = rep(1, k.new), X.new)
+            }
+            else {
+                X.new <- cbind(intrcpt = rep(0, k.new), X.new)
+            }
         }
     }
     pred <- rep(NA, k.new)
@@ -6363,8 +6484,8 @@ function (object, newmods, addx = FALSE, level = object$level,
     se <- sqrt(vpred)
     ci.lb <- pred - crit * se
     ci.ub <- pred + crit * se
-    cr.lb <- pred - crit * sqrt(vpred + x$tau2)
-    cr.ub <- pred + crit * sqrt(vpred + x$tau2)
+    cr.lb <- pred - crit * sqrt(vpred + x$tau2[1])
+    cr.ub <- pred + crit * sqrt(vpred + x$tau2[1])
     if (is.function(transf)) {
         if (is.null(targs)) {
             pred <- sapply(pred, transf)
@@ -6462,27 +6583,28 @@ function (x, digits = x$digits, ...)
     }
     else {
         res.table <- rbind(c(x$p.f, x$fit.stats.f[3], x$fit.stats.f[4], 
-            x$fit.stats.f[1], NA, NA, x$QE.f, x$tau2.f, NA), 
-            c(x$p.r, x$fit.stats.r[3], x$fit.stats.r[4], x$fit.stats.r[1], 
-                x$LRT, x$pval, x$QE.r, x$tau2.r, NA))
-        res.table[, seq.int(2, 9)] <- formatC(res.table[, seq.int(2, 
-            9)], digits = digits, format = "f")
-        colnames(res.table) <- c("df", "AIC", "BIC", "logLik", 
-            "LRT", "pval", "QE", "tau^2", "R^2")
+            x$fit.stats.f[5], x$fit.stats.f[1], NA, NA, x$QE.f, 
+            x$tau2.f, NA), c(x$p.r, x$fit.stats.r[3], x$fit.stats.r[4], 
+            x$fit.stats.r[5], x$fit.stats.r[1], x$LRT, x$pval, 
+            x$QE.r, x$tau2.r, NA))
+        res.table[, seq.int(2, 10)] <- formatC(res.table[, seq.int(2, 
+            10)], digits = digits, format = "f")
+        colnames(res.table) <- c("df", "AIC", "BIC", "AICc", 
+            "logLik", "LRT", "pval", "QE", "tau^2", "R^2")
         rownames(res.table) <- c("Full", "Reduced")
         pval <- x$pval
         if (pval > ncutoff) {
-            res.table[2, 6] <- formatC(pval, digits = digits, 
+            res.table[2, 7] <- formatC(pval, digits = digits, 
                 format = "f")
         }
         else {
-            res.table[2, 6] <- paste0("<", cutoff)
+            res.table[2, 7] <- paste0("<", cutoff)
         }
-        res.table[1, c(5, 6)] <- ""
-        res.table[1, 9] <- ""
-        res.table[2, 9] <- paste0(x$R2, "%")
+        res.table[1, c(6, 7)] <- ""
+        res.table[1, 10] <- ""
+        res.table[2, 10] <- paste0(x$R2, "%")
         if (x$method == "FE") {
-            res.table <- res.table[, seq.int(7)]
+            res.table <- res.table[, seq.int(8)]
         }
         print(res.table, quote = FALSE, right = TRUE)
     }
@@ -6835,7 +6957,7 @@ function (x, digits = x$digits, showfit = FALSE, signif.stars = getOption("show.
         cat("\n")
         fs <- c(formatC(round(x$fit.stats$ML, digits = digits), 
             digits = digits, format = "f"))
-        names(fs) <- c("logLik", "deviance", "AIC", "BIC")
+        names(fs) <- c("logLik", "deviance", "AIC", "BIC", "AICc")
         cat("\n")
         print(fs, quote = FALSE, print.gap = 2)
         cat("\n")
@@ -6868,7 +6990,7 @@ function (x, digits = x$digits, showfit = FALSE, signif.stars = getOption("show.
                   .Machine$double.eps * 10, 0, digits), format = "f"), 
                 ifelse(is.na(x$se.tau2), "", paste0(" (SE = ", 
                   formatC(x$se.tau2, digits = digits, format = "f"), 
-                  ")")), "\n")
+                  ")")), "\n", sep = "")
             cat("tau (square root of estimated tau^2 value):             ", 
                 ifelse(x$tau2 >= 0, formatC(sqrt(x$tau2), digits = ifelse(x$tau2 <= 
                   .Machine$double.eps * 10, 0, digits), format = "f"), 
@@ -7025,7 +7147,7 @@ function (x, digits = x$digits, showfit = FALSE, ...)
     if (showfit) {
         cat("\n")
         fs <- c(formatC(x$fit.stats$ML, digits = digits, format = "f"))
-        names(fs) <- c("logLik", "deviance", "AIC", "BIC")
+        names(fs) <- c("logLik", "deviance", "AIC", "BIC", "AICc")
         cat("\n")
         print(fs, quote = FALSE, print.gap = 2)
         cat("\n")
@@ -7147,6 +7269,238 @@ function (x, digits = x$digits, showfit = FALSE, ...)
     }
     invisible()
 }
+print.rma.mv <-
+function (x, digits = x$digits, showfit = FALSE, signif.stars = getOption("show.signif.stars"), 
+    signif.legend = signif.stars, ...) 
+{
+    if (!is.element("rma.mv", class(x))) 
+        stop("Argument 'x' must be an object of class \"rma.mv\".")
+    cutoff <- paste(c(".", rep(0, digits - 1), 1), collapse = "")
+    ncutoff <- as.numeric(cutoff)
+    cat("\n")
+    cat("Multivariate Meta-Analysis Model (k = ", x$k, "; ", 
+        sep = "")
+    cat("method: ", x$method, ")", sep = "")
+    if (showfit) {
+        cat("\n")
+        if (x$method == "REML") {
+            fs <- c(formatC(round(x$fit.stats$REML, digits = digits), 
+                digits = digits, format = "f"))
+        }
+        else {
+            fs <- c(formatC(round(x$fit.stats$ML, digits = digits), 
+                digits = digits, format = "f"))
+        }
+        names(fs) <- c("logLik", "Deviance", "AIC", "BIC", "AICc")
+        cat("\n")
+        print(fs, quote = FALSE, print.gap = 2)
+        cat("\n")
+    }
+    else {
+        cat("\n\n")
+    }
+    sigma2 <- formatC(x$sigma2, digits = digits, format = "f")
+    tau2 <- formatC(x$tau2, digits = digits, format = "f")
+    rho <- formatC(x$rho, digits = digits, format = "f")
+    sigma <- formatC(sqrt(x$sigma2), digits = digits, format = "f")
+    tau <- formatC(sqrt(x$tau2), digits = digits, format = "f")
+    cat("Variance Components: ")
+    right <- TRUE
+    if (!x$withS && !x$withG) {
+        cat("none\n\n")
+    }
+    else {
+        cat("\n\n")
+        if (x$withS) {
+            vc <- cbind(sigma2, sigma, x$s.nlevels, ifelse(x$vc.fix$sigma2, 
+                "yes", "no"), x$s.names, ifelse(x$Rfix, "yes", 
+                "no"))
+            colnames(vc) <- c("estim", "sqrt", "nlvls", "fixed", 
+                "factor", "R")
+            if (!x$withR) 
+                vc <- vc[, -6, drop = FALSE]
+            if (length(x$sigma2) == 1) {
+                rownames(vc) <- "sigma^2  "
+            }
+            else {
+                rownames(vc) <- paste("sigma^2.", 1:length(x$sigma2), 
+                  sep = "")
+            }
+            print(vc, quote = FALSE, right = right, print.gap = 2)
+            cat("\n")
+        }
+        if (x$withG) {
+            mng <- max(nchar(x$g.names))
+            cat("outer factor: ", paste0(x$g.names[2], paste(rep(" ", 
+                max(0, mng - nchar(x$g.names[2]))), collapse = ""), 
+                collapse = ""), " (nlvls = ", x$g.nlevels[2], 
+                ")\n", sep = "")
+            cat("inner factor: ", paste0(x$g.names[1], paste(rep(" ", 
+                max(0, mng - nchar(x$g.names[1]))), collapse = ""), 
+                collapse = ""), " (nlvls = ", x$g.nlevels.f[1], 
+                ")\n", sep = "")
+            cat("\n")
+            if (x$struct == "CS") {
+                vc <- cbind(tau2, tau, ifelse(x$vc.fix$tau2, 
+                  "yes", "no"))
+                vc <- rbind(vc, c(rho, "", ifelse(x$vc.fix$rho, 
+                  "yes", "no")))
+                colnames(vc) <- c("estim", "sqrt", "fixed")
+                rownames(vc) <- c("tau^2    ", "rho")
+                print(vc, quote = FALSE, right = right, print.gap = 2)
+            }
+            if (x$struct == "HCS") {
+                vc <- cbind(tau2, tau, x$g.levels.k, ifelse(x$vc.fix$tau2, 
+                  "yes", "no"), x$g.levels[[1]])
+                vc <- rbind(vc, c(rho, "", "", ifelse(x$vc.fix$rho, 
+                  "yes", "no"), ""))
+                colnames(vc) <- c("estim", "sqrt", "k.lvl", "fixed", 
+                  "level")
+                if (length(x$tau2) == 1) {
+                  rownames(vc) <- c("tau^2   ", "rho")
+                }
+                else {
+                  rownames(vc) <- c(paste("tau^2.", 1:length(x$tau2), 
+                    "  ", sep = ""), "rho")
+                }
+                print(vc, quote = FALSE, right = right, print.gap = 2)
+            }
+            if (x$struct == "UN") {
+                vc <- cbind(tau2, tau, x$g.levels.k, ifelse(x$vc.fix$tau2, 
+                  "yes", "no"), x$g.levels[[1]])
+                colnames(vc) <- c("estim", "sqrt", "k.lvl", "fixed", 
+                  "level")
+                if (length(x$tau2) == 1) {
+                  rownames(vc) <- c("tau^2")
+                }
+                else {
+                  rownames(vc) <- paste("tau^2.", 1:length(x$tau2), 
+                    "  ", sep = "")
+                }
+                print(vc, quote = FALSE, right = right, print.gap = 2)
+                cat("\n")
+                if (length(x$rho) == 1) {
+                  G <- matrix(NA, nrow = 2, ncol = 2)
+                }
+                else {
+                  G <- matrix(NA, nrow = x$g.nlevels.f[1], ncol = x$g.nlevels.f[1])
+                }
+                G[upper.tri(G)] <- rho
+                G[lower.tri(G)] <- t(G)[lower.tri(G)]
+                diag(G) <- 1
+                if (length(x$rho) == 1) {
+                  G.info <- matrix(NA, nrow = 2, ncol = 2)
+                }
+                else {
+                  G.info <- matrix(NA, nrow = x$g.nlevels.f[1], 
+                    ncol = x$g.nlevels.f[1])
+                }
+                G.info[upper.tri(G.info)] <- x$g.levels.comb.k
+                G.info[lower.tri(G.info)] <- t(G.info)[lower.tri(G.info)]
+                G.info[upper.tri(G.info)] <- ifelse(x$vc.fix$rho, 
+                  "yes", "no")
+                diag(G.info) <- "-"
+                vc <- cbind(G, "", G.info)
+                colnames(vc) <- c(paste("rho.", abbreviate(x$g.levels[[1]]), 
+                  sep = ""), "", abbreviate(x$g.levels[[1]]))
+                rownames(vc) <- x$g.levels[[1]]
+                print(vc, quote = FALSE, right = right, print.gap = 2)
+            }
+            cat("\n")
+        }
+    }
+    if (!is.na(x$QE)) {
+        QEp <- x$QEp
+        if (QEp > ncutoff) {
+            QEp <- paste("=", formatC(QEp, digits = digits, format = "f"))
+        }
+        else {
+            QEp <- paste0("< ", cutoff)
+        }
+        if (x$int.only) {
+            cat("Test for Heterogeneity: \n")
+            cat("Q(df = ", x$k - x$p, ") = ", formatC(x$QE, digits = digits, 
+                format = "f"), ", p-val ", QEp, "\n\n", sep = "")
+        }
+        else {
+            cat("Test for Residual Heterogeneity: \n")
+            cat("QE(df = ", x$k - x$p, ") = ", formatC(x$QE, 
+                digits = digits, format = "f"), ", p-val ", QEp, 
+                "\n\n", sep = "")
+        }
+    }
+    QMp <- x$QMp
+    if (QMp > ncutoff) {
+        QMp <- paste("=", formatC(QMp, digits = digits, format = "f"))
+    }
+    else {
+        QMp <- paste0("< ", cutoff)
+    }
+    if (x$p > 1) {
+        cat("Test of Moderators (coefficient(s) ", paste(x$btt, 
+            collapse = ","), "): \n", sep = "")
+        cat("QM(df = ", x$m, ") = ", formatC(x$QM, digits = digits, 
+            format = "f"), ", p-val ", QMp, "\n\n", sep = "")
+    }
+    if (x$int.only) {
+        res.table <- c(x$b, x$se, x$zval, x$pval, x$ci.lb, x$ci.ub)
+        names(res.table) <- c("estimate", "se", "zval", "pval", 
+            "ci.lb", "ci.ub")
+        if (x$knha || x$robust) 
+            names(res.table)[3] <- c("tval")
+        res.table <- formatC(res.table, digits = digits, format = "f")
+        signif <- symnum(x$pval, corr = FALSE, na = FALSE, cutpoints = c(0, 
+            0.001, 0.01, 0.05, 0.1, 1), symbols = c("***", "**", 
+            "*", ".", " "))
+        if (signif.stars) {
+            res.table <- c(formatC(res.table, digits = digits, 
+                format = "f"), signif)
+            names(res.table)[7] <- ""
+        }
+        else {
+            res.table <- formatC(res.table, digits = digits, 
+                format = "f")
+        }
+        res.table[4][x$pval > ncutoff] <- formatC(x$pval[x$pval > 
+            ncutoff], digits = digits, format = "f")
+        res.table[4][x$pval < ncutoff] <- paste0("<", cutoff)
+    }
+    else {
+        res.table <- cbind(x$b, x$se, x$zval, x$pval, x$ci.lb, 
+            x$ci.ub)
+        dimnames(res.table)[[2]] <- c("estimate", "se", "zval", 
+            "pval", "ci.lb", "ci.ub")
+        if (x$knha || x$robust) 
+            dimnames(res.table)[[2]][3] <- c("tval")
+        signif <- symnum(x$pval, corr = FALSE, na = FALSE, cutpoints = c(0, 
+            0.001, 0.01, 0.05, 0.1, 1), symbols = c("***", "**", 
+            "*", ".", " "))
+        if (signif.stars) {
+            res.table <- cbind(formatC(res.table, digits = digits, 
+                format = "f"), signif)
+            dimnames(res.table)[[2]][7] <- ""
+        }
+        else {
+            res.table <- formatC(res.table, digits = digits, 
+                format = "f")
+        }
+        res.table[x$pval > ncutoff, 4] <- formatC(x$pval[x$pval > 
+            ncutoff], digits = digits, format = "f")
+        res.table[x$pval < ncutoff, 4] <- paste0("<", cutoff)
+    }
+    cat("Model Results:")
+    cat("\n\n")
+    if (x$int.only) {
+        print(res.table, quote = FALSE, right = TRUE)
+    }
+    else {
+        print(res.table, quote = FALSE, right = TRUE, print.gap = 2)
+    }
+    cat("\n")
+    if (signif.legend) 
+        cat("---\nSignif. codes: ", attr(signif, "legend"), "\n\n")
+    invisible()
+}
 print.rma.peto <-
 function (x, digits = x$digits, showfit = FALSE, ...) 
 {
@@ -7159,7 +7513,7 @@ function (x, digits = x$digits, showfit = FALSE, ...)
     if (showfit) {
         cat("\n")
         fs <- c(formatC(x$fit.stats$ML, digits = digits, format = "f"))
-        names(fs) <- c("logLik", "deviance", "AIC", "BIC")
+        names(fs) <- c("logLik", "deviance", "AIC", "BIC", "AICc")
         cat("\n")
         print(fs, quote = FALSE, print.gap = 2)
         cat("\n")
@@ -7261,7 +7615,7 @@ function (x, digits = x$digits, showfit = FALSE, signif.stars = getOption("show.
             fs <- c(formatC(round(x$fit.stats$ML, digits = digits), 
                 digits = digits, format = "f"))
         }
-        names(fs) <- c("logLik", "deviance", "AIC", "BIC")
+        names(fs) <- c("logLik", "deviance", "AIC", "BIC", "AICc")
         cat("\n")
         print(fs, quote = FALSE, print.gap = 2)
         cat("\n")
@@ -7465,6 +7819,242 @@ function (x, digits = x$digits, showfit = TRUE, signif.stars = getOption("show.s
         signif.legend = signif.legend, ...)
     invisible()
 }
+profile.rma.mv <-
+function (fitted, sigma2, tau2, rho, xlim, ylim, steps = 20, 
+    progbar = TRUE, plot = TRUE, pch = 19, ...) 
+{
+    if (!is.element("rma.mv", class(fitted))) 
+        stop("Argument 'fitted' must be an object of class \"rma.mv\".")
+    if (steps < 2) 
+        stop("Argument 'steps' must be >= 2.")
+    x <- fitted
+    if (missing(sigma2) && missing(tau2) && missing(rho)) 
+        stop("Must specify one of the arguments 'sigma2', 'tau2', or 'rho'.")
+    if (sum(!missing(sigma2), !missing(tau2), !missing(rho)) > 
+        1L) 
+        stop("Must specify only one of the arguments 'sigma2', 'tau2', or 'rho'.")
+    if (!missing(sigma2) && (all(is.na(x$vc.fix$sigma2)) || all(x$vc.fix$sigma2))) 
+        stop("Model does not contain any (estimated) 'sigma2' components.")
+    if (!missing(tau2) && (all(is.na(x$vc.fix$tau2)) || all(x$vc.fix$tau2))) 
+        stop("Model does not contain any (estimated) 'tau2' components.")
+    if (!missing(rho) && c(all(is.na(x$vc.fix$rho)) || all(x$vc.fix$rho))) 
+        stop("Model does not contain any (estimated) 'rho' components.")
+    if (!missing(sigma2) && (length(sigma2) > 1L)) 
+        stop("Can only specify one 'sigma2' component.")
+    if (!missing(tau2) && (length(tau2) > 1L)) 
+        stop("Can only specify one 'tau2' component.")
+    if (!missing(rho) && (length(rho) > 1L)) 
+        stop("Can only specify one 'rho' component.")
+    if (!missing(sigma2) && is.logical(sigma2)) 
+        stop("Must specify the number for the 'sigma2' component.")
+    if (!missing(tau2) && is.logical(tau2)) 
+        stop("Must specify the number for the 'tau2' component.")
+    if (!missing(rho) && is.logical(rho)) 
+        stop("Must specify the number for the 'rho' component.")
+    if (!missing(sigma2) && (sigma2 > length(x$vc.fix$sigma2) || 
+        sigma2 <= 0)) 
+        stop("No such 'sigma2' component in the model.")
+    if (!missing(tau2) && (tau2 > length(x$vc.fix$tau2) || tau2 <= 
+        0)) 
+        stop("No such 'tau2' component in the model.")
+    if (!missing(rho) && (rho > length(x$vc.fix$rho) || rho <= 
+        0)) 
+        stop("No such 'rho' component in the model.")
+    if (!missing(sigma2) && x$vc.fix$sigma2[sigma2]) 
+        stop("Specified 'sigma2' component was fixed.")
+    if (!missing(tau2) && x$vc.fix$tau2[tau2]) 
+        stop("Specified 'tau2' component was fixed.")
+    if (!missing(rho) && x$vc.fix$rho[rho]) 
+        stop("Specified 'rho' component was fixed.")
+    if (!missing(sigma2)) {
+        vc <- x$sigma2[sigma2]
+        comp <- "s"
+    }
+    if (!missing(tau2)) {
+        vc <- x$tau2[tau2]
+        comp <- "t"
+    }
+    if (!missing(rho)) {
+        vc <- x$rho[rho]
+        comp <- "r"
+    }
+    if (missing(xlim)) {
+        if (comp != "r") {
+            vc.lb <- max(0, log(vc))
+            vc.ub <- max(0, exp(vc))
+        }
+        else {
+            vc.lb <- max(-1, vc - 0.5)
+            vc.ub <- min(+1, vc + 0.5)
+        }
+        if (is.na(vc.lb) || is.na(vc.ub)) 
+            stop("Cannot set 'xlim' automatically. Please set this argument manually.")
+        xlim <- c(vc.lb, vc.ub)
+    }
+    else {
+        if (length(xlim) != 2L) 
+            stop("Argument 'xlim' should be a vector of length 2.")
+        xlim <- sort(xlim)
+    }
+    vcs <- seq(xlim[1], xlim[2], length = steps)
+    if (length(vcs) <= 1) 
+        stop("Cannot set 'xlim' automatically. Please set this argument manually.")
+    lls <- rep(NA, length(vcs))
+    b <- matrix(NA, nrow = length(vcs), ncol = x$p)
+    ci.lb <- matrix(NA, nrow = length(vcs), ncol = x$p)
+    ci.ub <- matrix(NA, nrow = length(vcs), ncol = x$p)
+    if (progbar) 
+        pbar <- txtProgressBar(min = 0, max = steps, style = 3)
+    for (i in 1:length(vcs)) {
+        sigma2.arg <- ifelse(x$vc.fix$sigma2, x$sigma2, NA)
+        tau2.arg <- ifelse(x$vc.fix$tau2, x$tau2, NA)
+        rho.arg <- ifelse(x$vc.fix$rho, x$rho, NA)
+        if (comp == "s") 
+            sigma2.arg[sigma2] <- vcs[i]
+        if (comp == "t") 
+            tau2.arg[tau2] <- vcs[i]
+        if (comp == "r") 
+            rho.arg[rho] <- vcs[i]
+        res <- try(rma.mv(x$yi, x$V, mods = x$X, random = x$random, 
+            struct = x$struct, intercept = FALSE, method = x$method, 
+            tdist = x$knha, level = x$level, R = x$R, data = x$mf.r, 
+            sigma2 = sigma2.arg, tau2 = tau2.arg, rho = rho.arg, 
+            control = x$control), silent = TRUE)
+        if (inherits(res, "try-error")) 
+            next
+        lls[i] <- c(logLik(res))
+        b[i, ] <- c(res$b)
+        ci.lb[i, ] <- c(res$ci.lb)
+        ci.ub[i, ] <- c(res$ci.ub)
+        if (progbar) 
+            setTxtProgressBar(pbar, i)
+    }
+    if (progbar) 
+        close(pbar)
+    b <- data.frame(b)
+    ci.lb <- data.frame(ci.lb)
+    ci.ub <- data.frame(ci.ub)
+    names(b) <- rownames(res$b)
+    names(ci.lb) <- rownames(res$b)
+    names(ci.ub) <- rownames(res$b)
+    res <- list(vc = vcs, ll = lls, b = b, ci.lb = ci.lb, ci.ub = ci.ub)
+    names(res)[1] <- switch(comp, s = "sigma2", t = "tau2", r = "rho")
+    class(res) <- c("profile.rma.mv")
+    if (plot) {
+        if (missing(ylim)) {
+            ylim <- range(lls, na.rm = TRUE)
+            ylim[1] <- ylim[1] - 0.1
+            ylim[2] <- ylim[2] + 0.1
+        }
+        if (comp == "s") 
+            xlab <- bquote(sigma[.(sigma2)]^2 ~ "Value")
+        if (comp == "t") 
+            xlab <- bquote(tau[.(tau2)]^2 ~ "Value")
+        if (comp == "r") 
+            xlab <- bquote(rho[.(rho)] ~ "Value")
+        plot(vcs, lls, type = "o", xlab = xlab, ylab = paste(ifelse(x$method == 
+            "REML", "Restricted", ""), " Log-Likelihood", sep = ""), 
+            bty = "l", pch = pch, ylim = ylim, ...)
+        abline(v = vc, lty = "dotted")
+        abline(h = logLik(x), lty = "dotted")
+        if (comp == "s") 
+            title(bquote("Profile plot for" ~ sigma[.(sigma2)]^2))
+        if (comp == "t") 
+            title(bquote("Profile plot for" ~ tau[.(tau2)]^2))
+        if (comp == "r") 
+            title(bquote("Profile plot for" ~ rho[.(rho)]))
+    }
+    invisible(res)
+}
+profile.rma.uni <-
+function (fitted, xlim, ylim, steps = 20, progbar = TRUE, plot = TRUE, 
+    pch = 19, ...) 
+{
+    if (!is.element("rma.uni", class(fitted))) 
+        stop("Argument 'fitted' must be an object of class \"rma.uni\".")
+    if (steps < 2) 
+        stop("Argument 'steps' must be >= 2.")
+    x <- fitted
+    if (missing(xlim)) {
+        o.warn <- getOption("warn")
+        options(warn = -1)
+        tau2.ci <- try(confint(x), silent = TRUE)
+        options(warn = o.warn)
+        if (inherits(tau2.ci, "try-error")) {
+            tau2.lb <- NA
+            tau2.ub <- NA
+        }
+        else {
+            tau2.lb <- min(x$tau2, tau2.ci$random[1, 2])
+            tau2.ub <- max(x$tau2, tau2.ci$random[1, 3])
+        }
+        if (is.na(tau2.lb) || is.na(tau2.ub)) {
+            tau2.lb <- max(0, x$tau2 - 1.96 * x$se.tau2)
+            tau2.ub <- max(0, x$tau2 + 1.96 * x$se.tau2)
+        }
+        if (is.na(tau2.lb) || is.na(tau2.ub)) {
+            tau2.lb <- max(0, log(x$tau2))
+            tau2.ub <- max(0, exp(x$tau2))
+        }
+        if (is.na(tau2.lb) || is.na(tau2.ub)) 
+            stop("Cannot set 'xlim' automatically. Please set this argument manually.")
+        xlim <- c(tau2.lb, tau2.ub)
+    }
+    else {
+        if (length(xlim) != 2L) 
+            stop("Argument 'xlim' should be a vector of length 2.")
+        xlim <- sort(xlim)
+    }
+    tau2s <- seq(xlim[1], xlim[2], length = steps)
+    if (length(tau2s) <= 1) 
+        stop("Cannot set 'xlim' automatically. Please set this argument manually.")
+    lls <- rep(NA, length(tau2s))
+    b <- matrix(NA, nrow = length(tau2s), ncol = x$p)
+    ci.lb <- matrix(NA, nrow = length(tau2s), ncol = x$p)
+    ci.ub <- matrix(NA, nrow = length(tau2s), ncol = x$p)
+    if (progbar) 
+        pbar <- txtProgressBar(min = 0, max = steps, style = 3)
+    for (i in 1:length(tau2s)) {
+        res <- try(rma(x$yi, x$vi, mods = x$X, method = x$method, 
+            weighted = x$weighted, intercept = FALSE, knha = x$knha, 
+            level = x$level, control = x$control, tau2 = tau2s[i]), 
+            silent = TRUE)
+        if (inherits(res, "try-error")) 
+            next
+        lls[i] <- c(logLik(res))
+        b[i, ] <- c(res$b)
+        ci.lb[i, ] <- c(res$ci.lb)
+        ci.ub[i, ] <- c(res$ci.ub)
+        if (progbar) 
+            setTxtProgressBar(pbar, i)
+    }
+    if (progbar) 
+        close(pbar)
+    b <- data.frame(b)
+    ci.lb <- data.frame(ci.lb)
+    ci.ub <- data.frame(ci.ub)
+    names(b) <- rownames(res$b)
+    names(ci.lb) <- rownames(res$b)
+    names(ci.ub) <- rownames(res$b)
+    res <- list(tau2 = tau2s, ll = lls, b = b, ci.lb = ci.lb, 
+        ci.ub = ci.ub)
+    class(res) <- c("profile.rma.uni")
+    if (plot) {
+        if (missing(ylim)) {
+            ylim <- range(lls, na.rm = TRUE)
+            ylim[1] <- ylim[1] - 0.1
+            ylim[2] <- ylim[2] + 0.1
+        }
+        xlab <- expression(paste(tau^2, " Value"))
+        plot(tau2s, lls, type = "o", xlab = xlab, ylab = paste(ifelse(x$method == 
+            "REML", "Restricted", ""), " Log-Likelihood", sep = ""), 
+            bty = "l", pch = pch, ylim = ylim, ...)
+        abline(v = x$tau2, lty = "dotted")
+        abline(h = logLik(x), lty = "dotted")
+        title(expression(paste("Profile plot for ", tau^2)))
+    }
+    invisible(res)
+}
 qqnorm.rma.glmm <-
 function (y, ...) 
 {
@@ -7627,7 +8217,7 @@ function (y, type = "rstandard", pch = 19, envelope = TRUE, level = y$level,
         dat <- matrix(rnorm(x$k * reps), nrow = x$k, ncol = reps)
         if (x$weighted) {
             wi <- 1/(x$vi + x$tau2)
-            W <- .diag(wi)
+            W <- diag(wi, nrow = x$k, ncol = x$k)
             stXWX <- .invcalc(X = x$X, W = W, k = x$k)
             H <- x$X %*% stXWX %*% crossprod(x$X, W)
         }
@@ -8075,6 +8665,8 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
         tau2 <- NULL
     if (missing(control)) 
         control <- list()
+    if (!is.logical(verbose) && verbose > 1) 
+        message("Extracting/computing yi/vi values ...")
     if (missing(data)) 
         data <- NULL
     if (is.null(data)) {
@@ -8095,16 +8687,17 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
     ai <- bi <- ci <- di <- x1i <- x2i <- t1i <- t2i <- NA
     mf.yi <- mf[[match("yi", names(mf))]]
     yi <- eval(mf.yi, data, enclos = sys.frame(sys.parent()))
+    is.formula <- FALSE
     if (!is.null(yi)) {
-        yi.is.formula <- ifelse(class(yi) == "formula", TRUE, 
-            FALSE)
-        if (yi.is.formula) {
+        if (class(yi) == "formula") {
             options(na.action = "na.pass")
             mods <- model.matrix(yi, data = data)
+            attr(mods, "assign") <- NULL
             yi <- model.response(model.frame(yi, data = data))
             options(na.action = na.act)
             names(yi) <- NULL
             intercept <- FALSE
+            is.formula <- TRUE
         }
         if (!is.null(attr(yi, "measure"))) 
             measure <- attr(yi, "measure")
@@ -8133,9 +8726,9 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
         if (is.null(ni) && !is.null(attr(yi, "ni"))) 
             ni <- attr(yi, "ni")
         if (length(yi) != length(vi)) 
-            stop("Length of yi and vi (or sei) vectors is not the same.")
+            stop("Length of yi and vi (or sei) vectors are not the same.")
         if (!is.null(ni) && (length(yi) != length(ni))) 
-            stop("Length of yi and ni vectors is not the same.")
+            stop("Length of yi and ni vectors are not the same.")
     }
     else {
         if (is.element(measure, c("RR", "OR", "PETO", "RD", "AS", 
@@ -8260,22 +8853,26 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
         vi <- dat$vi
         ni <- attr(yi, "ni")
     }
-    is.formula <- ifelse(class(mods) == "formula", TRUE, FALSE)
-    if (is.formula) {
+    k <- length(yi)
+    ids <- seq.int(k)
+    if (!is.logical(verbose) && verbose > 1) 
+        message("Creating model matrix ...\n")
+    if (ifelse(class(mods) == "formula", TRUE, FALSE)) {
         options(na.action = "na.pass")
         mods <- model.matrix(mods, data = data)
         attr(mods, "assign") <- NULL
         options(na.action = na.act)
         intercept <- FALSE
+        is.formula <- TRUE
     }
     if (is.vector(mods)) 
         mods <- cbind(mods)
     if (is.data.frame(mods)) 
         mods <- as.matrix(mods)
-    if (!is.null(mods) && (nrow(mods) != length(yi))) 
-        stop("Number of rows of the design matrix does not match length of yi.")
-    k <- length(yi)
-    ids <- seq.int(k)
+    if (!is.null(mods) && (nrow(mods) != k)) 
+        stop("Number of rows of the model matrix does not match length of yi.")
+    if (!is.logical(verbose) && verbose > 1) 
+        message("Generating/extracting study labels ...")
     if (is.null(slab)) {
         if (!is.null(attr(yi, "slab"))) {
             slab.null <- FALSE
@@ -8289,11 +8886,13 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
     else {
         if (any(duplicated(slab))) 
             stop("Study labels must be unique.")
-        if (length(slab) != length(yi)) 
+        if (length(slab) != k) 
             stop("Study labels not of same length as data.")
         slab.null <- FALSE
     }
     if (!is.null(subset)) {
+        if (!is.logical(verbose) && verbose > 1) 
+            message("Subsetting ...")
         yi <- yi[subset]
         vi <- vi[subset]
         ni <- ni[subset]
@@ -8312,6 +8911,18 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
         attr(yi, "measure") <- measure
         attr(yi, "ni") <- ni
     }
+    if (any(vi <= 0, na.rm = TRUE)) {
+        allvipos <- FALSE
+        warning("There are outcomes with non-positive sampling variances.")
+        vi.neg <- vi < 0
+        if (any(vi.neg, na.rm = TRUE)) {
+            vi[vi.neg] <- 0
+            warning("Negative sampling variances constrained to zero.")
+        }
+    }
+    else {
+        allvipos <- TRUE
+    }
     ai.f <- ai
     bi.f <- bi
     ci.f <- ci
@@ -8327,6 +8938,8 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
     k.f <- k
     YVM.na <- is.na(cbind(yi, vi, mods))
     if (any(YVM.na)) {
+        if (!is.logical(verbose) && verbose > 1) 
+            message("Handling NAs ...")
         not.na <- apply(YVM.na, MARGIN = 1, sum) == 0L
         if (na.act == "na.omit" || na.act == "na.exclude" || 
             na.act == "na.pass") {
@@ -8350,17 +8963,6 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
     if (k == 1) {
         method <- "FE"
         knha <- FALSE
-    }
-    if (any(vi <= 0)) {
-        allvipos <- FALSE
-        warning("There are outcomes with non-positive sampling variances.")
-        if (any(vi < 0)) {
-            vi[vi <= 0] <- 0
-            warning("Negative sampling variances constrained to zero.")
-        }
-    }
-    else {
-        allvipos <- TRUE
     }
     if (is.null(mods) && !intercept) {
         warning("Must either include an intercept (intercept=TRUE) and/or moderators in model.\n  Coerced intercept into the model.")
@@ -8393,9 +8995,6 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
     else {
         int.only <- FALSE
     }
-    evstXX <- eigen(t(X) %*% X, symmetric = TRUE)$values
-    if (any(evstXX <= .Machine$double.eps)) 
-        stop("Design matrix not of full rank. Cannot fit model.")
     if (method == "FE") {
         if (p > k) {
             stop("Number of parameters to be estimated is larger than the number of observations.")
@@ -8437,10 +9036,14 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
     m <- length(btt)
     con <- list(tau2.init = NULL, tau2.min = 0, tau2.max = 50, 
         threshold = 10^-5, maxiter = 100, stepadj = 1, REMLf = TRUE, 
-        verbose = FALSE)
+        verbose = FALSE, tol = 1e-07)
     if (verbose) 
         con$verbose <- verbose
-    con[pmatch(names(control), names(con))] <- control
+    verbose <- con$verbose
+    con.pos <- pmatch(names(control), names(con))
+    con[c(na.omit(con.pos))] <- control[!is.na(con.pos)]
+    if (any(eigen(crossprod(X), symmetric = TRUE)$values <= con$tol)) 
+        stop("Model matrix not of full rank. Cannot fit model.")
     iter <- 0
     se.tau2 <- I2 <- H2 <- QE <- QEp <- NA
     s2w <- 1
@@ -8448,11 +9051,14 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
     robust <- FALSE
     Y <- as.matrix(yi)
     if (!is.numeric(tau2)) {
+        if (!is.logical(verbose) && verbose > 1) 
+            message("Estimating tau^2 value ...")
+        tau2.fix <- FALSE
         if (method == "HS") {
             if (!allvipos) 
                 stop("HS estimator cannot be used with non-positive sampling variances.")
             wi <- 1/vi
-            W <- .diag(wi)
+            W <- diag(wi, nrow = k, ncol = k)
             stXWX <- .invcalc(X = X, W = W, k = k)
             P <- W - W %*% X %*% stXWX %*% crossprod(X, W)
             RSS <- crossprod(Y, P) %*% Y
@@ -8465,17 +9071,18 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
             stXX <- .invcalc(X = X, W = diag(k), k = k)
             P <- diag(k) - X %*% tcrossprod(stXX, X)
             RSS <- crossprod(Y, P) %*% Y
-            trPV <- .tr(P %*% .diag(vi))
+            V <- diag(vi, nrow = k, ncol = k)
+            trPV <- .tr(P %*% V)
             tau2 <- (RSS - trPV)/(k - p)
-            se.tau2 <- sqrt(1/(k - p)^2 * (2 * .tr(P %*% .diag(vi) %*% 
-                P %*% .diag(vi)) + 4 * max(tau2, 0) * trPV + 
-                2 * max(tau2, 0)^2 * (k - p)))
+            se.tau2 <- sqrt(1/(k - p)^2 * (2 * .tr(P %*% V %*% 
+                P %*% V) + 4 * max(tau2, 0) * trPV + 2 * max(tau2, 
+                0)^2 * (k - p)))
         }
         if (method == "DL") {
             if (!allvipos) 
                 stop("DL estimator cannot be used with non-positive sampling variances.")
             wi <- 1/vi
-            W <- .diag(wi)
+            W <- diag(wi, nrow = k, ncol = k)
             stXWX <- .invcalc(X = X, W = W, k = k)
             P <- W - W %*% X %*% stXWX %*% crossprod(X, W)
             RSS <- crossprod(Y, P) %*% Y
@@ -8486,21 +9093,21 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
         }
         if (method == "SJ") {
             if (is.null(con$tau2.init)) {
-                tau2.0 <- var(yi) * (k - 1)/k
+                tau2.0 <- c(var(yi) * (k - 1)/k)
             }
             else {
                 tau2.0 <- con$tau2.init
             }
             wi <- 1/(vi + tau2.0)
-            W <- .diag(wi)
+            W <- diag(wi, nrow = k, ncol = k)
             stXWX <- .invcalc(X = X, W = W, k = k)
             P <- W - W %*% X %*% stXWX %*% crossprod(X, W)
             RSS <- crossprod(Y, P) %*% Y
+            V <- diag(vi, nrow = k, ncol = k)
             tau2 <- tau2.0 * RSS/(k - p)
             se.tau2 <- sqrt(tau2.0^2/(k - p)^2 * (2 * .tr(P %*% 
-                .diag(vi) %*% P %*% .diag(vi)) + 4 * max(tau2, 
-                0) * .tr(P %*% .diag(vi) %*% P) + 2 * max(tau2, 
-                0)^2 * .tr(P %*% P)))
+                V %*% P %*% V) + 4 * max(tau2, 0) * .tr(P %*% 
+                V %*% P) + 2 * max(tau2, 0)^2 * .tr(P %*% P)))
         }
         if (method == "DLit") {
             conv <- 1
@@ -8512,13 +9119,13 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
                 tau2 <- con$tau2.init
             }
             while (change > con$threshold) {
-                if (con$verbose) 
+                if (verbose) 
                   cat("Iteration", iter, "\ttau^2 =", round(tau2, 
                     digits), "\n")
                 iter <- iter + 1
                 tau2.old <- tau2
                 wi <- 1/(vi + tau2)
-                W <- .diag(wi)
+                W <- diag(wi, nrow = k, ncol = k)
                 stXWX <- .invcalc(X = X, W = W, k = k)
                 P <- W - W %*% X %*% stXWX %*% crossprod(X, W)
                 RSS <- crossprod(Y, P) %*% Y
@@ -8546,13 +9153,13 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
                 tau2 <- con$tau2.init
             }
             while (change > con$threshold) {
-                if (con$verbose) 
+                if (verbose) 
                   cat("Iteration", iter, "\ttau^2 =", round(tau2, 
                     digits), "\n")
                 iter <- iter + 1
                 tau2.old <- tau2
                 wi <- 1/(vi + tau2)
-                W <- .diag(wi)
+                W <- diag(wi, nrow = k, ncol = k)
                 stXWX <- .invcalc(X = X, W = W, k = k)
                 P <- W - W %*% X %*% stXWX %*% crossprod(X, W)
                 RSS <- crossprod(Y, P) %*% Y
@@ -8593,13 +9200,13 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
                 tau2 <- con$tau2.init
             }
             while (change > con$threshold) {
-                if (con$verbose) 
+                if (verbose) 
                   cat("Iteration", iter, "\ttau^2 =", round(tau2, 
                     digits), "\n")
                 iter <- iter + 1
                 tau2.old <- tau2
                 wi <- 1/(vi + tau2)
-                W <- .diag(wi)
+                W <- diag(wi, nrow = k, ncol = k)
                 stXWX <- .invcalc(X = X, W = W, k = k)
                 P <- W - W %*% X %*% stXWX %*% crossprod(X, W)
                 if (method == "ML") {
@@ -8631,22 +9238,24 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
                 se.tau2 <- sqrt(2/sum(wi^2))
             if (method == "REML") 
                 se.tau2 <- sqrt(2/.tr(PP))
-            if (method == "EB") 
+            if (method == "EB") {
+                V <- diag(vi, nrow = k, ncol = k)
                 se.tau2 <- sqrt((k/(k - p))^2/sum(wi)^2 * (2 * 
-                  .tr(P %*% .diag(vi) %*% P %*% .diag(vi)) + 
-                  4 * max(tau2, 0) * .tr(P %*% .diag(vi) %*% 
-                    P) + 2 * max(tau2, 0)^2 * .tr(P %*% P)))
+                  .tr(P %*% V %*% P %*% V) + 4 * max(tau2, 0) * 
+                  .tr(P %*% V %*% P) + 2 * max(tau2, 0)^2 * .tr(P %*% 
+                  P)))
+            }
         }
         tau2 <- max(con$tau2.min, c(tau2))
-        if (con$verbose && is.element(method, c("ML", "REML", 
-            "EB"))) 
+        if (verbose && is.element(method, c("ML", "REML", "EB"))) 
             cat("Fisher scoring algorithm converged after", iter, 
-                "iterations.", "\n")
+                "iterations.\n")
     }
     else {
+        tau2.fix <- TRUE
         if (method == "HS") {
             wi <- 1/vi
-            W <- .diag(wi)
+            W <- diag(wi, nrow = k, ncol = k)
             stXWX <- .invcalc(X = X, W = W, k = k)
             P <- W - W %*% X %*% stXWX %*% crossprod(X, W)
             se.tau2 <- sqrt(1/sum(wi)^2 * (2 * (k - p) + 4 * 
@@ -8657,14 +9266,15 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
             stXX <- .invcalc(X = X, W = diag(k), k = k)
             P <- diag(k) - X %*% tcrossprod(stXX, X)
             RSS <- crossprod(Y, P) %*% Y
-            trPV <- .tr(P %*% .diag(vi))
-            se.tau2 <- sqrt(1/(k - p)^2 * (2 * .tr(P %*% .diag(vi) %*% 
-                P %*% .diag(vi)) + 4 * max(tau2, 0) * trPV + 
-                2 * max(tau2, 0)^2 * (k - p)))
+            V <- diag(vi, nrow = k, ncol = k)
+            trPV <- .tr(P %*% V)
+            se.tau2 <- sqrt(1/(k - p)^2 * (2 * .tr(P %*% V %*% 
+                P %*% V) + 4 * max(tau2, 0) * trPV + 2 * max(tau2, 
+                0)^2 * (k - p)))
         }
         if (method == "DL") {
             wi <- 1/vi
-            W <- .diag(wi)
+            W <- diag(wi, nrow = k, ncol = k)
             stXWX <- .invcalc(X = X, W = W, k = k)
             P <- W - W %*% X %*% stXWX %*% crossprod(X, W)
             trP <- .tr(P)
@@ -8673,19 +9283,19 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
         }
         if (method == "SJ") {
             if (is.null(con$tau2.init)) {
-                tau2.0 <- var(yi) * (k - 1)/k
+                tau2.0 <- c(var(yi) * (k - 1)/k)
             }
             else {
                 tau2.0 <- con$tau2.init
             }
             wi <- 1/(vi + tau2.0)
-            W <- .diag(wi)
+            W <- diag(wi, nrow = k, ncol = k)
             stXWX <- .invcalc(X = X, W = W, k = k)
             P <- W - W %*% X %*% stXWX %*% crossprod(X, W)
+            V <- diag(vi, nrow = k, ncol = k)
             se.tau2 <- sqrt(tau2.0^2/(k - p)^2 * (2 * .tr(P %*% 
-                .diag(vi) %*% P %*% .diag(vi)) + 4 * max(tau2, 
-                0) * .tr(P %*% .diag(vi) %*% P) + 2 * max(tau2, 
-                0)^2 * .tr(P %*% P)))
+                V %*% P %*% V) + 4 * max(tau2, 0) * .tr(P %*% 
+                V %*% P) + 2 * max(tau2, 0)^2 * .tr(P %*% P)))
         }
         if (method == "ML") {
             wi <- 1/(vi + tau2)
@@ -8693,19 +9303,20 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
         }
         if (method == "REML") {
             wi <- 1/(vi + tau2)
-            W <- .diag(wi)
+            W <- diag(wi, nrow = k, ncol = k)
             stXWX <- .invcalc(X = X, W = W, k = k)
             P <- W - W %*% X %*% stXWX %*% crossprod(X, W)
             se.tau2 <- sqrt(2/.tr(P %*% P))
         }
         if (method == "EB") {
             wi <- 1/(vi + tau2)
-            W <- .diag(wi)
+            W <- diag(wi, nrow = k, ncol = k)
             stXWX <- .invcalc(X = X, W = W, k = k)
             P <- W - W %*% X %*% stXWX %*% crossprod(X, W)
+            V <- diag(vi, nrow = k, ncol = k)
             se.tau2 <- sqrt((k/(k - p))^2/sum(wi)^2 * (2 * .tr(P %*% 
-                .diag(vi) %*% P %*% .diag(vi)) + 4 * tau2 * .tr(P %*% 
-                .diag(vi) %*% P) + 2 * tau2^2 * .tr(P %*% P)))
+                V %*% P %*% V) + 4 * tau2 * .tr(P %*% V %*% P) + 
+                2 * tau2^2 * .tr(P %*% P)))
         }
     }
     if (method == "FE") {
@@ -8713,20 +9324,10 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
         if (!allvipos && weighted) 
             stop("Weighted estimation cannot be used with a fixed-effects\n  model when there are non-positive sampling variances.")
     }
-    if (allvipos) {
-        wi <- 1/vi
-        W <- .diag(wi)
-        stXWX <- .invcalc(X = X, W = W, k = k)
-        P <- W - W %*% X %*% stXWX %*% crossprod(X, W)
-        QE <- max(0, c(crossprod(Y, P) %*% Y))
-        QEp <- ifelse(k - p >= 1, pchisq(QE, df = k - p, lower.tail = FALSE), 
-            1)
-        vi.avg <- (k - p)/.tr(P)
-        I2 <- 100 * tau2/(vi.avg + tau2)
-        H2 <- tau2/vi.avg + 1
-    }
+    if (!is.logical(verbose) && verbose > 1) 
+        message("Model fitting ...")
     wi <- 1/(vi + tau2)
-    W <- .diag(wi)
+    W <- diag(wi, nrow = k, ncol = k)
     if (weighted) {
         stXWX <- .invcalc(X = X, W = W, k = k)
         b <- stXWX %*% crossprod(X, W) %*% Y
@@ -8734,9 +9335,9 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
         P <- W - W %*% X %*% stXWX %*% crossprod(X, W)
         RSS.f <- crossprod(Y, P) %*% Y
         if (robust) {
-            resid <- c(Y - X %*% b)
-            vb <- vb %*% t(X) %*% W %*% diag(resid^2) %*% W %*% 
-                X %*% vb
+            ei <- c(Y - X %*% b)
+            vb <- vb %*% t(X) %*% W %*% diag(ei^2, nrow = k, 
+                ncol = k) %*% W %*% X %*% vb
             vb <- vb * k/(k - p)
         }
         if (knha) {
@@ -8771,15 +9372,16 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
     else {
         stXX <- .invcalc(X = X, W = diag(k), k = k)
         b <- stXX %*% crossprod(X, Y)
-        vb <- tcrossprod(stXX, X) %*% .diag(vi + tau2) %*% X %*% 
-            stXX
+        vb <- tcrossprod(stXX, X) %*% diag(vi + tau2, nrow = k, 
+            ncol = k) %*% X %*% stXX
         P <- W - W %*% X %*% tcrossprod(stXX, X) - X %*% stXX %*% 
             crossprod(X, W) + X %*% stXX %*% crossprod(X, W) %*% 
             X %*% tcrossprod(stXX, X)
         RSS.f <- crossprod(Y, P) %*% Y
         if (robust) {
-            resid <- c(Y - X %*% b)
-            vb <- stXX %*% t(X) %*% diag(resid^2) %*% X %*% stXX
+            ei <- c(Y - X %*% b)
+            vb <- stXX %*% t(X) %*% diag(ei^2, nrow = k, ncol = k) %*% 
+                X %*% stXX
             vb <- vb * k/(k - p)
         }
         if (knha) {
@@ -8815,12 +9417,26 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
     }
     ci.lb <- c(b - crit * se)
     ci.ub <- c(b + crit * se)
-    R2 <- NULL
+    if (!is.logical(verbose) && verbose > 1) 
+        message("Heterogeneity testing ...")
+    if (allvipos) {
+        wi <- 1/vi
+        W.FE <- diag(wi, nrow = k, ncol = k)
+        stXWX <- .invcalc(X = X, W = W.FE, k = k)
+        P <- W.FE - W.FE %*% X %*% stXWX %*% crossprod(X, W.FE)
+        QE <- max(0, c(crossprod(Y, P) %*% Y))
+        QEp <- ifelse(k - p >= 1, pchisq(QE, df = k - p, lower.tail = FALSE), 
+            1)
+        vi.avg <- (k - p)/.tr(P)
+        I2 <- 100 * tau2/(vi.avg + tau2)
+        H2 <- tau2/vi.avg + 1
+    }
     if (!int.only && int.incl && method != "FE") {
-        if (con$verbose) 
-            cat("Fitting the RE model for R^2 computation.\n")
+        if (!is.logical(verbose) && verbose > 1) 
+            message("Fitting RE model for R^2 computation ...")
         res.RE <- rma(yi, vi, method = method, weighted = weighted, 
-            knha = knha, verbose = verbose, control = con, digits = digits)
+            knha = knha, verbose = ifelse(verbose, TRUE, FALSE), 
+            control = con, digits = digits)
         tau2.RE <- res.RE$tau2
         if (identical(tau2.RE, 0)) {
             R2 <- NA
@@ -8830,7 +9446,12 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
                 2)
         }
     }
-    parms <- p + ifelse(method == "FE", 0, 1)
+    else {
+        R2 <- NULL
+    }
+    if (!is.logical(verbose) && verbose > 1) 
+        message("Computing fit statistics and log likelihood ...")
+    parms <- p + ifelse(method == "FE" || tau2.fix, 0, 1)
     ll.ML <- -1/2 * (k) * log(2 * base::pi) - 1/2 * sum(log(vi + 
         tau2)) - 1/2 * RSS.f
     ll.REML <- -1/2 * (k - p) * log(2 * base::pi) + ifelse(con$REMLf, 
@@ -8846,14 +9467,21 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
     }
     AIC.ML <- -2 * ll.ML + 2 * parms
     BIC.ML <- -2 * ll.ML + parms * log(k)
+    AICc.ML <- -2 * ll.ML + 2 * parms * max(k, parms + 2)/(max(k, 
+        parms + 2) - parms - 1)
     dev.REML <- -2 * (ll.REML - 0)
     AIC.REML <- -2 * ll.REML + 2 * parms
     BIC.REML <- -2 * ll.REML + parms * log(k - p)
-    fit.stats <- matrix(c(ll.ML, dev.ML, AIC.ML, BIC.ML, ll.REML, 
-        dev.REML, AIC.REML, BIC.REML), ncol = 2, byrow = FALSE)
-    dimnames(fit.stats) <- list(c("ll", "dev", "AIC", "BIC"), 
-        c("ML", "REML"))
+    AICc.REML <- -2 * ll.REML + 2 * parms * max(k - p, parms + 
+        2)/(max(k - p, parms + 2) - parms - 1)
+    fit.stats <- matrix(c(ll.ML, dev.ML, AIC.ML, BIC.ML, AICc.ML, 
+        ll.REML, dev.REML, AIC.REML, BIC.REML, AICc.REML), ncol = 2, 
+        byrow = FALSE)
+    dimnames(fit.stats) <- list(c("ll", "dev", "AIC", "BIC", 
+        "AICc"), c("ML", "REML"))
     fit.stats <- data.frame(fit.stats)
+    if (!is.logical(verbose) && verbose > 1) 
+        message("Preparing output ...")
     p.eff <- p
     k.eff <- k
     res <- list(b, se, zval, pval, ci.lb, ci.ub, vb, tau2, se.tau2, 
@@ -8862,7 +9490,7 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
         yi.f, vi.f, X.f, ai.f, bi.f, ci.f, di.f, x1i.f, x2i.f, 
         t1i.f, t2i.f, ni, ni.f, ids, not.na, slab, slab.null, 
         measure, method, weighted, knha, robust, s2w, btt, intercept, 
-        digits, level, con, add, to, drop00, fit.stats)
+        digits, level, control, verbose, add, to, drop00, fit.stats)
     names(res) <- c("b", "se", "zval", "pval", "ci.lb", "ci.ub", 
         "vb", "tau2", "se.tau2", "k", "k.f", "k.eff", "p", "p.eff", 
         "parms", "m", "QE", "QEp", "QM", "QMp", "I2", "H2", "R2", 
@@ -8871,7 +9499,8 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
         "x1i.f", "x2i.f", "t1i.f", "t2i.f", "ni", "ni.f", "ids", 
         "not.na", "slab", "slab.null", "measure", "method", "weighted", 
         "knha", "robust", "s2w", "btt", "intercept", "digits", 
-        "level", "control", "add", "to", "drop00", "fit.stats")
+        "level", "control", "verbose", "add", "to", "drop00", 
+        "fit.stats")
     class(res) <- c("rma.uni", "rma")
     return(res)
 }
@@ -8904,7 +9533,14 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
         btt <- NULL
     if (missing(control)) 
         control <- list()
+    if (is.element(measure, c("OR", "IRR")) && model == "UM.RS" && 
+        nAGQ > 1) {
+        warning("Currently not possible to use model='UM.RS' with nAGQ > 1. nAGQ automatically set to 1.")
+        nAGQ <- 1
+    }
     knha <- tdist
+    if (!is.logical(verbose) && verbose > 1) 
+        message("Extracting/computing yi/vi values ...")
     if (missing(data)) 
         data <- NULL
     if (is.null(data)) {
@@ -8978,6 +9614,10 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
     yi <- dat$yi
     vi <- dat$vi
     ni <- attr(yi, "ni")
+    k <- length(yi)
+    ids <- seq.int(k)
+    if (!is.logical(verbose) && verbose > 1) 
+        message("Creating model matrix ...")
     is.formula <- ifelse(class(mods) == "formula", TRUE, FALSE)
     if (is.formula) {
         options(na.action = "na.pass")
@@ -8990,10 +9630,10 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
         mods <- cbind(mods)
     if (is.data.frame(mods)) 
         mods <- as.matrix(mods)
-    if (!is.null(mods) && (nrow(mods) != length(yi))) 
-        stop("Number of rows of the design matrix does not match length of yi.")
-    k <- length(yi)
-    ids <- seq.int(k)
+    if (!is.null(mods) && (nrow(mods) != k)) 
+        stop("Number of rows of the model matrix does not match length of yi.")
+    if (!is.logical(verbose) && verbose > 1) 
+        message("Generating/extracting study labels ...")
     if (is.null(slab)) {
         if (!is.null(attr(yi, "slab"))) {
             slab.null <- FALSE
@@ -9007,11 +9647,13 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
     else {
         if (any(duplicated(slab))) 
             stop("Study labels must be unique.")
-        if (length(slab) != length(yi)) 
+        if (length(slab) != k) 
             stop("Study labels not of same length as data.")
         slab.null <- FALSE
     }
     if (!is.null(subset)) {
+        if (!is.logical(verbose) && verbose > 1) 
+            message("Subsetting ...")
         yi <- yi[subset]
         vi <- vi[subset]
         ni <- ni[subset]
@@ -9071,6 +9713,8 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
     if (is.element(measure, c("OR"))) {
         aibicidimods.na <- is.na(cbind(ai, bi, ci, di, mods))
         if (any(aibicidimods.na)) {
+            if (!is.logical(verbose) && verbose > 1) 
+                message("Handling NAs in table data ...")
             not.na <- apply(aibicidimods.na, MARGIN = 1, sum) == 
                 0L
             if (na.act == "na.omit" || na.act == "na.exclude" || 
@@ -9094,6 +9738,8 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
         x1ix2it1it2imods.na <- is.na(cbind(x1i, x2i, t1i, t2i, 
             mods))
         if (any(x1ix2it1it2imods.na)) {
+            if (!is.logical(verbose) && verbose > 1) 
+                message("Handling NAs in table data ...")
             not.na <- apply(x1ix2it1it2imods.na, MARGIN = 1, 
                 sum) == 0L
             if (na.act == "na.omit" || na.act == "na.exclude" || 
@@ -9116,6 +9762,8 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
     if (is.element(measure, c("PLO"))) {
         ximimods.na <- is.na(cbind(xi, mi, mods))
         if (any(ximimods.na)) {
+            if (!is.logical(verbose) && verbose > 1) 
+                message("Handling NAs in table data ...")
             not.na <- apply(ximimods.na, MARGIN = 1, sum) == 
                 0L
             if (na.act == "na.omit" || na.act == "na.exclude" || 
@@ -9136,6 +9784,8 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
     if (is.element(measure, c("IRLN"))) {
         xitimods.na <- is.na(cbind(xi, ti, mods))
         if (any(xitimods.na)) {
+            if (!is.logical(verbose) && verbose > 1) 
+                message("Handling NAs in table data ...")
             not.na <- apply(xitimods.na, MARGIN = 1, sum) == 
                 0L
             if (na.act == "na.omit" || na.act == "na.exclude" || 
@@ -9157,6 +9807,8 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
         stop("Processing terminated since k = 0.")
     yivi.na <- is.na(cbind(yi, vi, mods.f))
     if (any(yivi.na)) {
+        if (!is.logical(verbose) && verbose > 1) 
+            message("Handling NAs in yi/vi ...")
         not.na.yivi <- apply(yivi.na, MARGIN = 1, sum) == 0L
         if (na.act == "na.omit" || na.act == "na.exclude" || 
             na.act == "na.pass") {
@@ -9222,9 +9874,6 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
     else {
         int.only <- FALSE
     }
-    evstXX <- eigen(t(X) %*% X, symmetric = TRUE)$values
-    if (any(evstXX <= .Machine$double.eps)) 
-        stop("Design matrix not of full rank. Cannot fit model.")
     if (method == "FE" && p > k) 
         stop("Number of parameters to be estimated is larger than the number of observations.")
     if (method != "FE" && (p + 1) > k) 
@@ -9250,30 +9899,126 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
         }
     }
     m <- length(btt)
-    con <- list(verbose = FALSE, epsilon = 1e-08, maxit = 25, 
-        maxIter = 300, maxFN = 900, routine = "optim", method = "BFGS", 
-        reltol = 1e-08, REPORT = 1, rel.tol = 1e-08, subdivisions = 100, 
-        lower = -Inf, upper = Inf, dnchgcalc = "dFNCHypergeo", 
-        dnchgprec = 1e-10, scale = TRUE)
+    con <- list(verbose = FALSE, optimizer = "optim", optmethod = "BFGS", 
+        scale = TRUE, tol = 1e-07, dnchgcalc = "dFNCHypergeo", 
+        dnchgprec = 1e-10)
+    con.pos <- pmatch(names(control), names(con))
+    con[c(na.omit(con.pos))] <- control[!is.na(con.pos)]
     if (verbose) 
         con$verbose <- verbose
-    con[pmatch(names(control), names(con))] <- control
-    control.glm <- list(trace = con$verbose, epsilon = con$epsilon, 
-        maxit = con$maxit)
-    control.glmer <- list(msVerbose = con$verbose, maxIter = con$maxIter, 
-        maxFN = con$maxFN)
-    control.optim <- list(trace = ifelse(con$verbose, 1, 0), 
-        reltol = con$reltol, REPORT = con$REPORT)
-    control.nlminb <- list(trace = ifelse(con$verbose, 1, 0))
-    control.minqa <- list(iprint = ifelse(con$verbose, 3, 0))
-    control.int <- list(rel.tol = con$rel.tol, subdivisions = con$subdivisions, 
-        lower = con$lower, upper = con$upper)
-    if (!is.element(con$routine, c("optim", "nlminb", "uobyqa", 
+    verbose <- con$verbose
+    silent <- !verbose
+    pos.optCtrl <- pmatch(names(control), "optCtrl", nomatch = 0)
+    if (sum(pos.optCtrl) > 0) {
+        optCtrl <- control[[which(pos.optCtrl == 1)]]
+    }
+    else {
+        optCtrl <- list()
+    }
+    con.pos <- pmatch(names(optCtrl), "REPORT", nomatch = 0)
+    if (sum(con.pos) > 0) {
+        optCtrl[which(con.pos == 1)] <- 1
+        names(optCtrl)[which(con.pos == 1)] <- "REPORT"
+    }
+    else {
+        optCtrl$REPORT <- 1
+    }
+    optCtrl$trace <- con$verbose
+    pos.nlminbCtrl <- pmatch(names(control), "nlminbCtrl", nomatch = 0)
+    if (sum(pos.nlminbCtrl) > 0) {
+        nlminbCtrl <- control[[which(pos.nlminbCtrl == 1)]]
+    }
+    else {
+        nlminbCtrl <- list()
+    }
+    nlminbCtrl$trace <- ifelse(con$verbose > 0, 1, 0)
+    pos.minqaCtrl <- pmatch(names(control), "minqaCtrl", nomatch = 0)
+    if (sum(pos.minqaCtrl) > 0) {
+        minqaCtrl <- control[[which(pos.minqaCtrl == 1)]]
+    }
+    else {
+        minqaCtrl <- list()
+    }
+    minqaCtrl$iprint <- ifelse(con$verbose > 0, 3, 0)
+    pos.clogitCtrl <- pmatch(names(control), "clogitCtrl", nomatch = 0)
+    if (sum(pos.clogitCtrl) > 0) {
+        clogitCtrl <- control[[which(pos.clogitCtrl == 1)]]
+    }
+    else {
+        clogitCtrl <- list()
+    }
+    pos.clogisticCtrl <- pmatch(names(control), "clogisticCtrl", 
+        nomatch = 0)
+    if (sum(pos.clogisticCtrl) > 0) {
+        clogisticCtrl <- control[[which(pos.clogisticCtrl == 
+            1)]]
+    }
+    else {
+        clogisticCtrl <- list()
+    }
+    pos.glmCtrl <- pmatch(names(control), "glmCtrl", nomatch = 0)
+    if (sum(pos.glmCtrl) > 0) {
+        glmCtrl <- control[[which(pos.glmCtrl == 1)]]
+    }
+    else {
+        glmCtrl <- list()
+    }
+    glmCtrl$trace <- ifelse(con$verbose > 0, TRUE, FALSE)
+    pos.glmerCtrl <- pmatch(names(control), "glmerCtrl", nomatch = 0)
+    if (sum(pos.glmerCtrl) > 0) {
+        glmerCtrl <- control[[which(pos.glmerCtrl == 1)]]
+    }
+    else {
+        glmerCtrl <- list()
+    }
+    pos.intCtrl <- pmatch(names(control), "intCtrl", nomatch = 0)
+    if (sum(pos.intCtrl) > 0) {
+        intCtrl <- control[[which(pos.intCtrl == 1)]]
+    }
+    else {
+        intCtrl <- list()
+    }
+    con.pos <- pmatch(names(intCtrl), "lower", nomatch = 0)
+    if (sum(con.pos) > 0) {
+        intCtrl[which(con.pos == 1)] <- -Inf
+        names(intCtrl)[which(con.pos == 1)] <- "lower"
+    }
+    else {
+        intCtrl$lower <- -Inf
+    }
+    con.pos <- pmatch(names(intCtrl), "upper", nomatch = 0)
+    if (sum(con.pos) > 0) {
+        intCtrl[which(con.pos == 1)] <- Inf
+        names(intCtrl)[which(con.pos == 1)] <- "upper"
+    }
+    else {
+        intCtrl$upper <- Inf
+    }
+    con.pos <- pmatch(names(intCtrl), "subdivisions", nomatch = 0)
+    if (sum(con.pos) > 0) {
+        intCtrl[which(con.pos == 1)] <- 100L
+        names(intCtrl)[which(con.pos == 1)] <- "subdivisions"
+    }
+    else {
+        intCtrl$subdivisions <- 100L
+    }
+    con.pos <- pmatch(names(intCtrl), "rel.tol", nomatch = 0)
+    if (sum(con.pos) > 0) {
+        intCtrl[which(con.pos == 1)] <- .Machine$double.eps^0.25
+        names(intCtrl)[which(con.pos == 1)] <- "rel.tol"
+    }
+    else {
+        intCtrl$rel.tol <- .Machine$double.eps^0.25
+    }
+    if (!is.element(con$optimizer, c("optim", "nlminb", "uobyqa", 
         "newuoa", "bobyqa", "clogit", "clogistic"))) 
-        stop("Unknown routine specified.")
+        stop("Unknown optimizer specified.")
     if (con$dnchgcalc != "dnoncenhypergeom" && con$dnchgcalc != 
         "dFNCHypergeo") 
         stop("Unknown dnchgcalc method specified.")
+    if (is.element(con$optimizer, c("clogit", "clogistic")) && 
+        method == "ML") 
+        stop("Cannot use 'clogit' or 'clogistic' with method='ML'.")
     if (is.element(measure, c("OR", "IRR"))) {
         if ((model == "UM.FS" && method == "ML") || (model == 
             "UM.RS") || (model == "CM.AL" && method == "ML") || 
@@ -9282,15 +10027,31 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
                 stop("Please install the 'lme4' package to fit this model.")
         }
     }
+    if (is.element(measure, c("PLO", "IRLN")) && method == "ML") {
+        if (!require(lme4)) 
+            stop("Please install the 'lme4' package to fit this model.")
+    }
+    if (is.element(measure, c("OR", "IRR"))) {
+        if ((model == "UM.FS" && method == "ML") || (model == 
+            "UM.RS") || (model == "CM.AL" && method == "ML") || 
+            (model == "CM.EL" && method == "ML")) {
+            if (!require(lme4)) 
+                stop("Please install the 'lme4' package to fit this model.")
+        }
+    }
+    if (is.element(measure, c("PLO", "IRLN")) && method == "ML") {
+        if (!require(lme4)) 
+            stop("Please install the 'lme4' package to fit this model.")
+    }
     if (measure == "OR" && model == "CM.EL") {
-        if (is.element(con$routine, c("uobyqa", "newuoa", "bobyqa"))) {
+        if (is.element(con$optimizer, c("uobyqa", "newuoa", "bobyqa"))) {
             if (!require(minqa)) 
                 stop("Please install the 'minqa' package to fit this model.")
-            minqa <- get(con$routine)
-            con$routine <- "minqa"
+            minqa <- get(con$optimizer)
+            con$optimizer <- "minqa"
         }
-        if (con$routine == "optim" || con$routine == "nlminb" || 
-            con$routine == "minqa") {
+        if (con$optimizer == "optim" || con$optimizer == "nlminb" || 
+            con$optimizer == "minqa") {
             if (!require(numDeriv)) 
                 stop("Please install the 'numDeriv' package to fit this model.")
             if (con$dnchgcalc == "dFNCHypergeo") {
@@ -9298,22 +10059,17 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
                   stop("Please install the 'BiasedUrn' package to fit this model.")
             }
         }
-        if (con$routine == "clogit") {
+        if (con$optimizer == "clogit") {
             if (!require(survival)) 
                 stop("Please install the 'survival' package to fit this model.")
         }
-        if (con$routine == "clogistic") {
+        if (con$optimizer == "clogistic") {
             if (!require(Epi)) 
                 stop("Please install the 'Epi' package to fit this model.")
         }
     }
-    if (is.element(measure, c("PLO", "IRLN"))) {
-        if (method == "ML") {
-            if (!require(lme4)) 
-                stop("Please install the 'lme4' package to fit this model.")
-        }
-    }
-    silent <- !con$verbose
+    if (any(eigen(crossprod(X), symmetric = TRUE)$values <= con$tol)) 
+        stop("Model matrix not of full rank. Cannot fit model.")
     se.tau2 <- I2 <- H2 <- QE <- QEp <- NA
     alpha <- ifelse(level > 1, (100 - level)/100, 1 - level)
     robust <- FALSE
@@ -9347,28 +10103,27 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
             X.fit <- cbind(group1 * X.fit[, , drop = FALSE])
             row.names(X.fit) <- seq.int(2 * k)
             if (model == "UM.FS") {
-                if (con$verbose) 
-                  message("Fitting FE model.")
+                if (verbose) 
+                  message("Fitting FE model ...")
                 if (k > 1) {
                   res.FE <- try(glm(dat.grp ~ -1 + X.fit + study, 
-                    offset = dat.off, family = dat.fam, control = control.glm), 
+                    offset = dat.off, family = dat.fam, control = glmCtrl), 
                     silent = silent)
                 }
                 else {
                   res.FE <- try(glm(dat.grp ~ -1 + X.fit + const, 
-                    offset = dat.off, family = dat.fam, control = control.glm), 
+                    offset = dat.off, family = dat.fam, control = glmCtrl), 
                     silent = silent)
                 }
                 if (inherits(res.FE, "try-error")) 
                   stop("Cannot fit FE model.")
-                if (con$verbose) 
-                  message("Fitting saturated model.")
+                if (verbose) 
+                  message("Fitting saturated model ...")
                 if (k > 1) {
                   X.QE <- model.matrix(~-1 + X.fit + study + 
                     study:group1)
                   res.QE <- try(glm(dat.grp ~ -1 + X.QE, offset = dat.off, 
-                    family = dat.fam, control = control.glm), 
-                    silent = silent)
+                    family = dat.fam, control = glmCtrl), silent = silent)
                 }
                 else {
                   res.QE <- res.FE
@@ -9382,15 +10137,15 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
                 vb2.QE <- vcov(res.QE)[-seq.int(k + p), -seq.int(k + 
                   p), drop = FALSE]
                 if (method == "ML") {
-                  if (con$verbose) 
-                    message("Fitting ML model.")
+                  if (verbose) 
+                    message("Fitting ML model ...")
                   res.ML <- try(glmer(dat.grp ~ -1 + X.fit + 
                     study + (group12 - 1 | study), family = dat.fam, 
-                    nAGQ = nAGQ, verbose = con$verbose, control = control.glmer), 
-                    silent = silent)
+                    nAGQ = nAGQ, verbose = verbose, control = do.call(glmerControl, 
+                      glmerCtrl)), silent = silent)
                   if (inherits(res.ML, "try-error")) 
                     stop("Cannot fit ML model.")
-                  ll.ML <- ll.QE - 1/2 * lme4::deviance(res.ML)
+                  ll.ML <- ll.QE - 1/2 * deviance(res.ML)
                 }
                 if (method == "FE") {
                   b <- cbind(coef(res.FE)[seq.int(p)])
@@ -9404,8 +10159,8 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
                 }
                 if (method == "ML") {
                   b <- cbind(fixef(res.ML)[seq.int(p)])
-                  vb <- as.matrix(lme4::vcov(res.ML))[seq.int(p), 
-                    seq.int(p), drop = FALSE]
+                  vb <- as.matrix(vcov(res.ML))[seq.int(p), seq.int(p), 
+                    drop = FALSE]
                   tau2 <- VarCorr(res.ML)[[1]][1]
                   sigma2 <- NA
                   parms <- p + k + 1
@@ -9414,55 +10169,54 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
                 }
             }
             if (model == "UM.RS") {
-                if (con$verbose) 
-                  message("Fitting FE model.")
+                if (verbose) 
+                  message("Fitting FE model ...")
                 res.FE <- try(glmer(dat.grp ~ -1 + X.fit + const + 
                   (1 | study), offset = dat.off, family = dat.fam, 
-                  nAGQ = nAGQ, verbose = con$verbose, control = control.glmer), 
-                  silent = silent)
+                  nAGQ = nAGQ, verbose = verbose, control = do.call(glmerControl, 
+                    glmerCtrl)), silent = silent)
                 if (inherits(res.FE, "try-error")) 
                   stop("Cannot fit FE model.")
-                if (con$verbose) 
-                  message("Fitting saturated model.")
+                if (verbose) 
+                  message("Fitting saturated model ...")
                 if (k > 1) {
                   X.QE <- model.matrix(~-1 + X.fit + const + 
                     study:group1)
                   res.QE <- try(glm(dat.grp ~ -1 + X.QE, offset = dat.off, 
-                    family = dat.fam, control = control.glm), 
-                    silent = silent)
+                    family = dat.fam, control = glmCtrl), silent = silent)
                   X.QE <- X.QE[, !is.na(coef(res.QE)), drop = FALSE]
                   res.QE <- try(glmer(dat.grp ~ -1 + X.QE + (1 | 
                     study), offset = dat.off, family = dat.fam, 
                     start = c(sqrt(VarCorr(res.FE)[[1]][1])), 
-                    nAGQ = nAGQ, verbose = con$verbose, control = control.glmer), 
-                    silent = silent)
+                    nAGQ = nAGQ, verbose = verbose, control = do.call(glmerControl, 
+                      glmerCtrl)), silent = silent)
                 }
                 else {
                   res.QE <- res.FE
                 }
                 if (inherits(res.QE, "try-error")) 
                   stop("Cannot fit saturated model.")
-                ll.FE <- c(lme4::logLik(res.FE))
-                ll.QE <- c(lme4::logLik(res.QE))
+                ll.FE <- c(logLik(res.FE))
+                ll.QE <- c(logLik(res.QE))
                 b2.QE <- cbind(fixef(res.QE)[-seq.int(p + 1)])
-                vb2.QE <- as.matrix(lme4::vcov(res.QE))[-seq.int(p + 
+                vb2.QE <- as.matrix(vcov(res.QE))[-seq.int(p + 
                   1), -seq.int(p + 1), drop = FALSE]
                 if (method == "ML") {
-                  if (con$verbose) 
-                    message("Fitting ML model.")
+                  if (verbose) 
+                    message("Fitting ML model ...")
                   res.ML <- try(glmer(dat.grp ~ -1 + X.fit + 
                     const + (1 | study) + (group12 - 1 | study), 
                     offset = dat.off, family = dat.fam, nAGQ = nAGQ, 
-                    verbose = con$verbose, control = control.glmer), 
-                    silent = silent)
+                    verbose = verbose, control = do.call(glmerControl, 
+                      glmerCtrl)), silent = silent)
                   if (inherits(res.ML, "try-error")) 
                     stop("Cannot fit ML model.")
-                  ll.ML <- c(lme4::logLik(res.ML))
+                  ll.ML <- c(logLik(res.ML))
                 }
                 if (method == "FE") {
                   b <- cbind(fixef(res.FE)[seq.int(p)])
-                  vb <- as.matrix(lme4::vcov(res.FE))[seq.int(p), 
-                    seq.int(p), drop = FALSE]
+                  vb <- as.matrix(vcov(res.FE))[seq.int(p), seq.int(p), 
+                    drop = FALSE]
                   tau2 <- 0
                   sigma2 <- VarCorr(res.FE)[[1]][1]
                   parms <- p + 1 + 1
@@ -9471,8 +10225,8 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
                 }
                 if (method == "ML") {
                   b <- cbind(fixef(res.ML)[seq.int(p)])
-                  vb <- as.matrix(lme4::vcov(res.ML))[seq.int(p), 
-                    seq.int(p), drop = FALSE]
+                  vb <- as.matrix(vcov(res.ML))[seq.int(p), seq.int(p), 
+                    drop = FALSE]
                   tau2 <- VarCorr(res.ML)[[2]][1]
                   sigma2 <- VarCorr(res.ML)[[1]][1]
                   parms <- p + 1 + 2
@@ -9494,19 +10248,18 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
             }
             study <- factor(seq.int(k))
             X.fit <- X
-            if (con$verbose) 
-                message("Fitting FE model.")
+            if (verbose) 
+                message("Fitting FE model ...")
             res.FE <- try(glm(dat.grp ~ -1 + X.fit, offset = dat.off, 
-                family = binomial, control = control.glm), silent = silent)
+                family = binomial, control = glmCtrl), silent = silent)
             if (inherits(res.FE, "try-error")) 
                 stop("Cannot fit FE model.")
-            if (con$verbose) 
-                message("Fitting saturated model.")
+            if (verbose) 
+                message("Fitting saturated model ...")
             if (k > 1) {
                 X.QE <- model.matrix(~-1 + X.fit + study)
                 res.QE <- try(glm(dat.grp ~ -1 + X.QE, offset = dat.off, 
-                  family = binomial, control = control.glm), 
-                  silent = silent)
+                  family = binomial, control = glmCtrl), silent = silent)
             }
             else {
                 res.QE <- res.FE
@@ -9519,23 +10272,24 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
             vb2.QE <- vcov(res.QE)[-seq.int(p), -seq.int(p), 
                 drop = FALSE]
             if (method == "ML") {
-                if (con$verbose) 
-                  message("Fitting ML model.")
-                if (con$verbose) {
+                if (verbose) 
+                  message("Fitting ML model ...")
+                if (verbose) {
                   res.ML <- try(glmer(dat.grp ~ -1 + X.fit + 
                     (1 | study), offset = dat.off, family = binomial, 
-                    nAGQ = nAGQ, verbose = con$verbose, control = control.glmer), 
-                    silent = silent)
+                    nAGQ = nAGQ, verbose = verbose, control = do.call(glmerControl, 
+                      glmerCtrl)), silent = silent)
                 }
                 else {
                   res.ML <- suppressMessages(try(glmer(dat.grp ~ 
                     -1 + X.fit + (1 | study), offset = dat.off, 
-                    family = binomial, nAGQ = nAGQ, verbose = con$verbose, 
-                    control = control.glmer), silent = silent))
+                    family = binomial, nAGQ = nAGQ, verbose = verbose, 
+                    control = do.call(glmerControl, glmerCtrl)), 
+                    silent = silent))
                 }
                 if (inherits(res.ML, "try-error")) 
                   stop("Cannot fit ML model.")
-                ll.ML <- ll.QE - 1/2 * lme4::deviance(res.ML)
+                ll.ML <- ll.QE - 1/2 * deviance(res.ML)
             }
             if (method == "FE") {
                 b <- cbind(coef(res.FE)[seq.int(p)])
@@ -9548,8 +10302,8 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
             }
             if (method == "ML") {
                 b <- cbind(fixef(res.ML)[seq.int(p)])
-                vb <- as.matrix(lme4::vcov(res.ML))[seq.int(p), 
-                  seq.int(p), drop = FALSE]
+                vb <- as.matrix(vcov(res.ML))[seq.int(p), seq.int(p), 
+                  drop = FALSE]
                 tau2 <- VarCorr(res.ML)[[1]][1]
                 sigma2 <- NA
                 parms <- p + 1
@@ -9558,108 +10312,111 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
             }
         }
         if (measure == "OR" && model == "CM.EL") {
-            if (con$verbose) 
-                message("Fitting FE model.")
-            if (con$routine == "optim" || con$routine == "nlminb" || 
-                con$routine == "minqa") {
-                if (con$routine == "optim") {
+            if (verbose) 
+                message("Fitting FE model ...")
+            if (con$optimizer == "optim" || con$optimizer == 
+                "nlminb" || con$optimizer == "minqa") {
+                if (con$optimizer == "optim") {
                   res.FE <- try(optim(par = c(coef(res.FE)[seq.int(p)], 
-                    0), .dnchg, method = con$method, hessian = TRUE, 
+                    0), .dnchg, method = con$optmethod, hessian = TRUE, 
                     ai = ai, bi = bi, ci = ci, di = di, X.fit = X.fit, 
-                    random = FALSE, verbose = con$verbose, digits = digits, 
+                    random = FALSE, verbose = verbose, digits = digits, 
                     dnchgcalc = con$dnchgcalc, dnchgprec = con$dnchgprec, 
-                    control = control.optim), silent = silent)
+                    control = optCtrl), silent = silent)
                 }
-                if (con$routine == "nlminb") {
+                if (con$optimizer == "nlminb") {
                   res.FE <- try(nlminb(start = c(coef(res.FE)[seq.int(p)], 
                     0), .dnchg, ai = ai, bi = bi, ci = ci, di = di, 
-                    X.fit = X.fit, random = FALSE, verbose = con$verbose, 
+                    X.fit = X.fit, random = FALSE, verbose = verbose, 
                     digits = digits, dnchgcalc = con$dnchgcalc, 
-                    dnchgprec = con$dnchgprec, control = control.nlminb), 
+                    dnchgprec = con$dnchgprec, control = nlminbCtrl), 
                     silent = silent)
                 }
-                if (con$routine == "minqa") {
+                if (con$optimizer == "minqa") {
                   res.FE <- try(minqa(par = c(coef(res.FE)[seq.int(p)], 
                     0), .dnchg, ai = ai, bi = bi, ci = ci, di = di, 
-                    X.fit = X.fit, random = FALSE, verbose = con$verbose, 
+                    X.fit = X.fit, random = FALSE, verbose = verbose, 
                     digits = digits, dnchgcalc = con$dnchgcalc, 
-                    dnchgprec = con$dnchgprec, control = control.minqa), 
+                    dnchgprec = con$dnchgprec, control = minqaCtrl), 
                     silent = silent)
                 }
-                if (con$routine == "optim" || con$routine == 
+                if (con$optimizer == "optim" || con$optimizer == 
                   "nlminb") {
                   if (inherits(res.FE, "try-error") || res.FE$convergence != 
                     0) 
                     stop("Cannot fit FE model.")
                 }
-                if (con$routine == "minqa") {
+                if (con$optimizer == "minqa") {
                   if (inherits(res.FE, "try-error") || res.FE$ierr != 
                     0) 
                     stop("Cannot fit FE model.")
                 }
+                if (!is.logical(verbose) && verbose > 1) 
+                  message("Computing Hessian ...")
                 h.FE <- hessian(.dnchg, x = res.FE$par, ai = ai, 
                   bi = bi, ci = ci, di = di, X.fit = X.fit, random = FALSE, 
-                  verbose = con$verbose, digits = digits, dnchgcalc = con$dnchgcalc, 
+                  verbose = verbose, digits = digits, dnchgcalc = con$dnchgcalc, 
                   dnchgprec = con$dnchgprec)
-                if (con$verbose) 
-                  message("Fitting saturated model.")
+                if (verbose) 
+                  message("Fitting saturated model ...")
                 if (k > 1) {
                   is.aliased <- is.na(coef(res.QE))
                   X.QE <- X.QE[, !is.aliased, drop = FALSE]
-                  if (con$routine == "optim") {
+                  if (con$optimizer == "optim") {
                     res.QE <- try(optim(par = c(coef(res.QE)[!is.aliased], 
-                      0), .dnchg, method = con$method, hessian = TRUE, 
+                      0), .dnchg, method = con$optmethod, hessian = TRUE, 
                       ai = ai, bi = bi, ci = ci, di = di, X.fit = X.QE, 
-                      random = FALSE, verbose = con$verbose, 
-                      digits = digits, dnchgcalc = con$dnchgcalc, 
-                      dnchgprec = con$dnchgprec, control = control.optim), 
-                      silent = silent)
+                      random = FALSE, verbose = verbose, digits = digits, 
+                      dnchgcalc = con$dnchgcalc, dnchgprec = con$dnchgprec, 
+                      control = optCtrl), silent = silent)
                   }
-                  if (con$routine == "nlminb") {
+                  if (con$optimizer == "nlminb") {
                     res.QE <- try(nlminb(start = c(coef(res.QE)[!is.aliased], 
                       0), .dnchg, ai = ai, bi = bi, ci = ci, 
                       di = di, X.fit = X.QE, random = FALSE, 
-                      verbose = con$verbose, digits = digits, 
-                      dnchgcalc = con$dnchgcalc, dnchgprec = con$dnchgprec, 
-                      control = control.nlminb), silent = silent)
+                      verbose = verbose, digits = digits, dnchgcalc = con$dnchgcalc, 
+                      dnchgprec = con$dnchgprec, control = nlminbCtrl), 
+                      silent = silent)
                   }
-                  if (con$routine == "minqa") {
+                  if (con$optimizer == "minqa") {
                     res.QE <- try(minqa(par = c(coef(res.QE)[!is.aliased], 
                       0), .dnchg, ai = ai, bi = bi, ci = ci, 
                       di = di, X.fit = X.QE, random = FALSE, 
-                      verbose = con$verbose, digits = digits, 
-                      dnchgcalc = con$dnchgcalc, dnchgprec = con$dnchgprec, 
-                      control = control.minqa), silent = silent)
+                      verbose = verbose, digits = digits, dnchgcalc = con$dnchgcalc, 
+                      dnchgprec = con$dnchgprec, control = minqaCtrl), 
+                      silent = silent)
                   }
-                  if (con$routine == "optim" || con$routine == 
+                  if (con$optimizer == "optim" || con$optimizer == 
                     "nlminb") {
                     if (inherits(res.QE, "try-error") || res.QE$convergence != 
                       0) 
                       stop("Cannot fit saturated model.")
                   }
-                  if (con$routine == "minqa") {
+                  if (con$optimizer == "minqa") {
                     if (inherits(res.QE, "try-error") || res.QE$ierr != 
                       0) 
-                      stop("Cannot fit FE model.")
+                      stop("Cannot fit saturated model.")
                   }
+                  if (!is.logical(verbose) && verbose > 1) 
+                    message("Computing Hessian ...")
                   h.QE <- hessian(.dnchg, x = res.QE$par, ai = ai, 
                     bi = bi, ci = ci, di = di, X.fit = X.QE, 
-                    random = FALSE, verbose = con$verbose, digits = digits, 
+                    random = FALSE, verbose = verbose, digits = digits, 
                     dnchgcalc = con$dnchgcalc, dnchgprec = con$dnchgprec)
                 }
                 else {
                   res.QE <- res.FE
                   h.QE <- h.FE
                 }
-                if (con$routine == "optim") {
+                if (con$optimizer == "optim") {
                   ll.FE <- -1 * res.FE$value
                   ll.QE <- -1 * res.QE$value
                 }
-                if (con$routine == "nlminb") {
+                if (con$optimizer == "nlminb") {
                   ll.FE <- -1 * res.FE$objective
                   ll.QE <- -1 * res.QE$objective
                 }
-                if (con$routine == "minqa") {
+                if (con$optimizer == "minqa") {
                   ll.FE <- -1 * res.FE$fval
                   ll.QE <- -1 * res.QE$fval
                 }
@@ -9684,131 +10441,144 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
                   h.B
                 QE.Wld <- c(t(b2.QE) %*% Ivb2.QE %*% b2.QE)
             }
-            if (con$routine == "clogit" || con$routine == "clogistic") {
-                event <- c(sapply(seq.int(k), function(i) c(rep(1, 
-                  ai[i]), rep(0, bi[i]), rep(1, ci[i]), rep(0, 
-                  di[i]))))
-                group1 <- c(sapply(seq.int(k), function(i) c(rep(1, 
-                  ai[i]), rep(1, bi[i]), rep(0, ci[i]), rep(0, 
-                  di[i]))))
+            if (con$optimizer == "clogit" || con$optimizer == 
+                "clogistic") {
+                event <- unlist(lapply(seq.int(k), function(i) c(rep.int(1, 
+                  ai[i]), rep.int(0, bi[i]), rep.int(1, ci[i]), 
+                  rep.int(0, di[i]))))
+                group1 <- unlist(lapply(seq.int(k), function(i) c(rep.int(1, 
+                  ai[i]), rep.int(1, bi[i]), rep.int(0, ci[i]), 
+                  rep.int(0, di[i]))))
                 study.l <- factor(rep(seq.int(k), times = ni))
-                X.fit.l <- X[rep(seq.int(k), times = ni), ]
+                X.fit.l <- X[rep(seq.int(k), times = ni), , drop = FALSE]
                 X.fit.l <- cbind(group1 * X.fit.l)
                 const <- rep(1, length(event))
                 if (k > 1) {
-                  if (con$routine == "clogit") 
-                    res.FE <- try(clogit(event ~ X.fit.l + strata(study.l), 
-                      iter.max = control.glm$maxit), silent = silent)
-                  if (con$routine == "clogistic") 
-                    res.FE <- try(clogistic(event ~ X.fit.l, 
-                      strata = study.l, iter.max = control.glm$maxit, 
-                      model = FALSE, x = FALSE, y = FALSE), silent = silent)
+                  if (con$optimizer == "clogit") {
+                    args.clogit <- clogitCtrl
+                    args.clogit$formula <- event ~ X.fit.l + 
+                      strata(study.l)
+                    res.FE <- try(do.call(clogit, args.clogit), 
+                      silent = silent)
+                  }
+                  if (con$optimizer == "clogistic") {
+                    args.clogistic <- clogisticCtrl
+                    args.clogistic$formula <- event ~ X.fit.l
+                    args.clogistic$strata <- study.l
+                    res.FE <- try(do.call(clogistic, args.clogistic), 
+                      silent = silent)
+                  }
                 }
                 else {
-                  stop(paste("Cannot use '", con$routine, "' routine when k=1.", 
+                  stop(paste("Cannot use '", con$optimizer, "' optimizer when k=1.", 
                     sep = ""))
                 }
                 if (inherits(res.FE, "try-error")) 
                   stop("Cannot fit FE model.")
-                if (con$verbose) 
-                  message("Fitting saturated model.")
+                if (verbose) 
+                  message("Fitting saturated model ...")
                 X.QE.l <- model.matrix(~-1 + X.fit.l + study.l:group1)
                 X.QE.l <- X.QE.l[, !is.na(coef(res.QE)), drop = FALSE]
                 X.QE <- X.QE[, !is.na(coef(res.QE)), drop = FALSE]
-                if (con$routine == "clogit") {
-                  if (con$verbose) {
-                    res.QE <- try(clogit(event ~ X.QE.l + strata(study.l), 
-                      iter.max = control.glm$maxit), silent = silent)
+                if (con$optimizer == "clogit") {
+                  args.clogit <- clogitCtrl
+                  args.clogit$formula <- event ~ X.QE.l + strata(study.l)
+                  if (verbose) {
+                    res.QE <- try(do.call(clogit, args.clogit), 
+                      silent = silent)
                   }
                   else {
-                    res.QE <- suppressWarnings(try(clogit(event ~ 
-                      X.QE.l + strata(study.l), iter.max = control.glm$maxit), 
-                      silent = silent))
+                    res.QE <- suppressWarnings(try(do.call(clogit, 
+                      args.clogit), silent = silent))
                   }
                 }
-                if (con$routine == "clogistic") 
-                  res.QE <- try(clogistic(event ~ X.QE.l, strata = study.l, 
-                    iter.max = control.glm$maxit, model = FALSE, 
-                    x = FALSE, y = FALSE), silent = silent)
+                if (con$optimizer == "clogistic") {
+                  args.clogistic <- clogisticCtrl
+                  args.clogistic$formula <- event ~ X.QE.l
+                  args.clogistic$strata <- study.l
+                  res.QE <- try(do.call(clogistic, args.clogistic), 
+                    silent = silent)
+                }
                 if (inherits(res.QE, "try-error")) 
                   stop("Cannot fit saturated model.")
                 ll.FE <- -1 * .dnchg(c(cbind(coef(res.FE)), 0), 
                   ai = ai, bi = bi, ci = ci, di = di, X.fit = X.fit, 
-                  random = FALSE, verbose = con$verbose, digits = digits, 
+                  random = FALSE, verbose = verbose, digits = digits, 
                   dnchgcalc = con$dnchgcalc, dnchgprec = con$dnchgprec)
                 ll.QE <- -1 * .dnchg(c(cbind(coef(res.QE)), 0), 
                   ai = ai, bi = bi, ci = ci, di = di, X.fit = X.QE, 
-                  random = FALSE, verbose = con$verbose, digits = digits, 
+                  random = FALSE, verbose = verbose, digits = digits, 
                   dnchgcalc = con$dnchgcalc, dnchgprec = con$dnchgprec)
                 b2.QE <- cbind(coef(res.QE)[-seq.int(p)])
                 vb2.QE <- vcov(res.QE)[-seq.int(p), -seq.int(p), 
                   drop = FALSE]
             }
             if (method == "ML") {
-                if (con$verbose) 
-                  message("Fitting ML model.")
-                if (con$routine == "optim") {
+                if (verbose) 
+                  message("Fitting ML model ...")
+                if (con$optimizer == "optim") {
                   res.ML <- try(optim(par = c(b, log(tau2 + 0.001)), 
-                    .dnchg, method = con$method, hessian = TRUE, 
+                    .dnchg, method = con$optmethod, hessian = TRUE, 
                     ai = ai, bi = bi, ci = ci, di = di, X.fit = X.fit, 
-                    random = TRUE, verbose = con$verbose, digits = digits, 
+                    random = TRUE, verbose = verbose, digits = digits, 
                     dnchgcalc = con$dnchgcalc, dnchgprec = con$dnchgprec, 
-                    control.int = control.int, control = control.optim), 
-                    silent = silent)
+                    intCtrl = intCtrl, control = optCtrl), silent = silent)
                 }
-                if (con$routine == "nlminb") {
+                if (con$optimizer == "nlminb") {
                   res.ML <- try(nlminb(start = c(b, log(tau2 + 
                     0.001)), .dnchg, ai = ai, bi = bi, ci = ci, 
-                    di = di, X.fit = X.fit, random = TRUE, verbose = con$verbose, 
+                    di = di, X.fit = X.fit, random = TRUE, verbose = verbose, 
                     digits = digits, dnchgcalc = con$dnchgcalc, 
-                    dnchgprec = con$dnchgprec, control.int = control.int, 
-                    control = control.nlminb), silent = silent)
+                    dnchgprec = con$dnchgprec, intCtrl = intCtrl, 
+                    control = nlminbCtrl), silent = silent)
                 }
-                if (con$routine == "minqa") {
+                if (con$optimizer == "minqa") {
                   res.ML <- try(minqa(par = c(b, log(tau2 + 0.001)), 
                     .dnchg, ai = ai, bi = bi, ci = ci, di = di, 
-                    X.fit = X.fit, random = TRUE, verbose = con$verbose, 
+                    X.fit = X.fit, random = TRUE, verbose = verbose, 
                     digits = digits, dnchgcalc = con$dnchgcalc, 
-                    dnchgprec = con$dnchgprec, control.int = control.int, 
-                    control = control.minqa), silent = silent)
+                    dnchgprec = con$dnchgprec, intCtrl = intCtrl, 
+                    control = minqaCtrl), silent = silent)
                 }
-                if (con$routine == "optim" || con$routine == 
+                if (con$optimizer == "optim" || con$optimizer == 
                   "nlminb") {
                   if (inherits(res.ML, "try-error") || res.ML$convergence != 
                     0) 
-                    stop("Cannot fit GLMM model.")
+                    stop("Cannot fit ML model.")
                 }
-                if (con$routine == "minqa") {
+                if (con$optimizer == "minqa") {
                   if (inherits(res.ML, "try-error") || res.ML$ierr != 
                     0) 
-                    stop("Cannot fit FE model.")
+                    stop("Cannot fit ML model.")
                 }
+                if (!is.logical(verbose) && verbose > 1) 
+                  message("Computing Hessian ...")
                 h.ML <- hessian(.dnchg, x = res.ML$par, method.args = list(r = 8), 
                   ai = ai, bi = bi, ci = ci, di = di, X.fit = X.fit, 
-                  random = TRUE, verbose = con$verbose, digits = digits, 
+                  random = TRUE, verbose = verbose, digits = digits, 
                   dnchgcalc = con$dnchgcalc, dnchgprec = con$dnchgprec, 
-                  control.int = control.int)
-                if (con$routine == "optim") {
+                  intCtrl = intCtrl)
+                if (con$optimizer == "optim") {
                   ll.ML <- -1 * res.ML$value
                 }
-                if (con$routine == "nlminb") {
+                if (con$optimizer == "nlminb") {
                   ll.ML <- -1 * res.ML$objective
                 }
-                if (con$routine == "minqa") {
+                if (con$optimizer == "minqa") {
                   ll.ML <- -1 * res.ML$fval
                 }
             }
             if (method == "FE") {
-                if (con$routine == "optim" || con$routine == 
-                  "nlminb" || con$routine == "minqa") {
+                if (con$optimizer == "optim" || con$optimizer == 
+                  "nlminb" || con$optimizer == "minqa") {
                   b <- cbind(res.FE$par[seq.int(p)])
                   chol.h <- try(chol(h.FE[seq.int(p), seq.int(p)]), 
                     silent = silent)
                   if (class(chol.h) == "try-error") 
-                    stop("Cannot invert Hessian for fixed-effects model.")
+                    stop("Cannot invert Hessian for FE model.")
                   vb <- chol2inv(chol.h)
                 }
-                if (con$routine == "clogit" || con$routine == 
+                if (con$optimizer == "clogit" || con$optimizer == 
                   "clogistic") {
                   b <- cbind(coef(res.FE))
                   vb <- vcov(res.FE)
@@ -9823,7 +10593,7 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
                 b <- cbind(res.ML$par[seq.int(p)])
                 chol.h <- try(chol(h.ML), silent = silent)
                 if (class(chol.h) == "try-error") 
-                  stop("Cannot invert Hessian for random/mixed-effects model.")
+                  stop("Cannot invert Hessian for ML model.")
                 vb.f <- chol2inv(chol.h)
                 vb <- vb.f[seq.int(p), seq.int(p), drop = FALSE]
                 tau2 <- exp(res.ML$par[p + 1])
@@ -9848,24 +10618,24 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
         }
         study <- factor(seq.int(k))
         X.fit <- X
-        if (con$verbose) 
-            message("Fitting FE model.")
+        if (verbose) 
+            message("Fitting FE model ...")
         res.FE <- try(glm(dat.grp ~ -1 + X.fit, offset = dat.off, 
-            family = dat.fam, control = control.glm), silent = silent)
+            family = dat.fam, control = glmCtrl), silent = silent)
         if (inherits(res.FE, "try-error")) 
             stop("Cannot fit FE model.")
-        if (con$verbose) 
-            message("Fitting saturated model.")
+        if (verbose) 
+            message("Fitting saturated model ...")
         if (k > 1) {
             X.QE <- model.matrix(~-1 + X.fit + study)
-            if (con$verbose) {
+            if (verbose) {
                 res.QE <- try(glm(dat.grp ~ -1 + X.QE, offset = dat.off, 
-                  family = dat.fam, control = control.glm), silent = silent)
+                  family = dat.fam, control = glmCtrl), silent = silent)
             }
             else {
                 res.QE <- suppressWarnings(try(glm(dat.grp ~ 
                   -1 + X.QE, offset = dat.off, family = dat.fam, 
-                  control = control.glm), silent = silent))
+                  control = glmCtrl), silent = silent))
             }
         }
         else {
@@ -9878,23 +10648,24 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
         b2.QE <- cbind(na.omit(coef(res.QE)[-seq.int(p)]))
         vb2.QE <- vcov(res.QE)[-seq.int(p), -seq.int(p), drop = FALSE]
         if (method == "ML") {
-            if (con$verbose) 
-                message("Fitting ML model.")
-            if (con$verbose) {
+            if (verbose) 
+                message("Fitting ML model ...")
+            if (verbose) {
                 res.ML <- try(glmer(dat.grp ~ -1 + X.fit + (1 | 
                   study), offset = dat.off, family = dat.fam, 
-                  nAGQ = nAGQ, verbose = con$verbose, control = control.glmer), 
-                  silent = silent)
+                  nAGQ = nAGQ, verbose = verbose, control = do.call(glmerControl, 
+                    glmerCtrl)), silent = silent)
             }
             else {
                 res.ML <- suppressMessages(try(glmer(dat.grp ~ 
                   -1 + X.fit + (1 | study), offset = dat.off, 
-                  family = dat.fam, nAGQ = nAGQ, verbose = con$verbose, 
-                  control = control.glmer), silent = silent))
+                  family = dat.fam, nAGQ = nAGQ, verbose = verbose, 
+                  control = do.call(glmerControl, glmerCtrl)), 
+                  silent = silent))
             }
             if (inherits(res.ML, "try-error")) 
                 stop("Cannot fit ML model.")
-            ll.ML <- ll.QE - 1/2 * lme4::deviance(res.ML)
+            ll.ML <- ll.QE - 1/2 * deviance(res.ML)
         }
         if (method == "FE") {
             b <- cbind(coef(res.FE)[seq.int(p)])
@@ -9907,7 +10678,7 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
         }
         if (method == "ML") {
             b <- cbind(fixef(res.ML)[seq.int(p)])
-            vb <- as.matrix(lme4::vcov(res.ML))[seq.int(p), seq.int(p), 
+            vb <- as.matrix(vcov(res.ML))[seq.int(p), seq.int(p), 
                 drop = FALSE]
             tau2 <- VarCorr(res.ML)[[1]][1]
             sigma2 <- NA
@@ -9917,7 +10688,9 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
         }
     }
     rownames(vb) <- colnames(vb) <- rownames(b) <- colnames(X)
-    if (measure != "OR" || model != "CM.EL" || con$routine != 
+    if (!is.logical(verbose) && verbose > 1) 
+        message("Heterogeneity testing ...")
+    if (measure != "OR" || model != "CM.EL" || con$optimizer != 
         "optim") {
         if (dim(vb2.QE)[1] > 0) {
             chol.h <- try(chol(vb2.QE), silent = silent)
@@ -9942,7 +10715,7 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
         QEp.LRT <- 1
     }
     wi <- 1/vi.I2
-    W <- .diag(wi)
+    W <- diag(wi, nrow = k.I2, ncol = k.I2)
     stXWX <- .invcalc(X = X.I2, W = W, k = k.I2)
     P <- W - W %*% X.I2 %*% stXWX %*% crossprod(X.I2, W)
     vi.avg <- (k.I2 - p)/.tr(P)
@@ -9976,19 +10749,27 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
     }
     ci.lb <- c(b - crit * se)
     ci.ub <- c(b + crit * se)
+    if (!is.logical(verbose) && verbose > 1) 
+        message("Computing fit statistics and log likelihood ...")
     ll.ML <- ifelse(method == "FE", ll.FE, ll.ML)
     ll.REML <- NA
     dev.ML <- -2 * (ll.ML - ll.QE)
-    AIC.ML <- -2 * ll.ML + 2 * (parms)
-    BIC.ML <- -2 * ll.ML + (parms) * log(k.eff)
+    AIC.ML <- -2 * ll.ML + 2 * parms
+    BIC.ML <- -2 * ll.ML + parms * log(k.eff)
+    AICc.ML <- -2 * ll.ML + 2 * parms * max(k.eff, parms + 2)/(max(k.eff, 
+        parms + 2) - parms - 1)
     dev.REML <- NA
     AIC.REML <- NA
     BIC.REML <- NA
-    fit.stats <- matrix(c(ll.ML, dev.ML, AIC.ML, BIC.ML, ll.REML, 
-        dev.REML, AIC.REML, BIC.REML), ncol = 2, byrow = FALSE)
-    dimnames(fit.stats) <- list(c("ll", "dev", "AIC", "BIC"), 
-        c("ML", "REML"))
+    AICc.REML <- NA
+    fit.stats <- matrix(c(ll.ML, dev.ML, AIC.ML, AICc.ML, BIC.ML, 
+        ll.REML, dev.REML, AIC.REML, BIC.REML, AICc.REML), ncol = 2, 
+        byrow = FALSE)
+    dimnames(fit.stats) <- list(c("ll", "dev", "AIC", "BIC", 
+        "AICc"), c("ML", "REML"))
     fit.stats <- data.frame(fit.stats)
+    if (!is.logical(verbose) && verbose > 1) 
+        message("Preparing output ...")
     weighted <- TRUE
     robust <- FALSE
     res <- list(b, se, zval, pval, ci.lb, ci.ub, vb, tau2, se.tau2, 
@@ -9999,7 +10780,7 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
         t1i.f, t2i.f, xi, mi, ti, xi.f, mi.f, ti.f, ni, ni.f, 
         ids, not.na, not.na.yivi, slab, slab.null, measure, method, 
         model, weighted, knha, robust, btt, intercept, digits, 
-        level, con, add, to, drop00, fit.stats)
+        level, control, verbose, add, to, drop00, fit.stats)
     names(res) <- c("b", "se", "zval", "pval", "ci.lb", "ci.ub", 
         "vb", "tau2", "se.tau2", "sigma2", "k", "k.f", "k.yi", 
         "k.eff", "p", "p.eff", "parms", "m", "QE.Wld", "QEp.Wld", 
@@ -10011,14 +10792,14 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
         "ni", "ni.f", "ids", "not.na", "not.na.yivi", "slab", 
         "slab.null", "measure", "method", "model", "weighted", 
         "knha", "robust", "btt", "intercept", "digits", "level", 
-        "control", "add", "to", "drop00", "fit.stats")
+        "control", "verbose", "add", "to", "drop00", "fit.stats")
     class(res) <- c("rma.glmm", "rma")
     return(res)
 }
 rma.mh <-
 function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, measure = "OR", 
     data, slab, subset, add = 1/2, to = "only0", drop00 = TRUE, 
-    correct = TRUE, level = 95, digits = 4) 
+    correct = TRUE, level = 95, digits = 4, verbose = FALSE) 
 {
     if (!is.element(measure, c("OR", "RR", "RD", "IRR", "IRD"))) 
         stop("Mantel-Haenszel method can only be used with measures OR, RR, RD, IRR, and IRD.")
@@ -10038,6 +10819,8 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, measure = "OR",
         stop("Unknown 'to' argument specified.")
     if (!is.element(to[2], c("all", "only0", "if0all", "none"))) 
         stop("Unknown 'to' argument specified.")
+    if (verbose) 
+        message("Extracting/computing yi/vi values ...")
     if (missing(data)) 
         data <- NULL
     if (is.null(data)) {
@@ -10074,6 +10857,8 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, measure = "OR",
         ni <- ai + bi + ci + di
         k <- length(ai)
         ids <- seq.int(k)
+        if (verbose) 
+            message("Generating/extracting study labels ...")
         if (is.null(slab)) {
             slab.null <- TRUE
             slab <- seq.int(k)
@@ -10081,11 +10866,13 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, measure = "OR",
         else {
             if (any(duplicated(slab))) 
                 stop("Study labels must be unique.")
-            if (length(slab) != length(ai)) 
+            if (length(slab) != k) 
                 stop("Study labels not of same length as data.")
             slab.null <- FALSE
         }
         if (!is.null(subset)) {
+            if (verbose) 
+                message("Subsetting ...")
             ai <- ai[subset]
             bi <- bi[subset]
             ci <- ci[subset]
@@ -10109,6 +10896,8 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, measure = "OR",
         k.f <- k
         aibicidi.na <- is.na(cbind(ai, bi, ci, di))
         if (any(aibicidi.na)) {
+            if (verbose) 
+                message("Handling NAs in table data ...")
             not.na <- apply(aibicidi.na, MARGIN = 1, sum) == 
                 0L
             if (na.act == "na.omit" || na.act == "na.exclude" || 
@@ -10130,6 +10919,8 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, measure = "OR",
             stop("Processing terminated since k = 0.")
         yivi.na <- is.na(cbind(yi, vi))
         if (any(yivi.na)) {
+            if (verbose) 
+                message("Handling NAs in yi/vi ...")
             not.na.yivi <- apply(yivi.na, MARGIN = 1, sum) == 
                 0L
             if (na.act == "na.omit" || na.act == "na.exclude" || 
@@ -10188,6 +10979,8 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, measure = "OR",
         ni <- t1i + t2i
         k <- length(x1i)
         ids <- seq.int(k)
+        if (verbose) 
+            message("Generating/extracting study labels ...")
         if (is.null(slab)) {
             slab.null <- TRUE
             slab <- seq.int(k)
@@ -10195,11 +10988,13 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, measure = "OR",
         else {
             if (any(duplicated(slab))) 
                 stop("Study labels must be unique.")
-            if (length(slab) != length(ai)) 
+            if (length(slab) != k) 
                 stop("Study labels not of same length as data.")
             slab.null <- FALSE
         }
         if (!is.null(subset)) {
+            if (verbose) 
+                message("Subsetting ...")
             x1i <- x1i[subset]
             x2i <- x2i[subset]
             t1i <- t1i[subset]
@@ -10223,6 +11018,8 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, measure = "OR",
         k.f <- k
         x1ix2it1it2i.na <- is.na(cbind(x1i, x2i, t1i, t2i))
         if (any(x1ix2it1it2i.na)) {
+            if (verbose) 
+                message("Handling NAs in table data ...")
             not.na <- apply(x1ix2it1it2i.na, MARGIN = 1, sum) == 
                 0L
             if (na.act == "na.omit" || na.act == "na.exclude" || 
@@ -10244,6 +11041,8 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, measure = "OR",
             stop("Processing terminated since k = 0.")
         yivi.na <- is.na(cbind(yi, vi))
         if (any(yivi.na)) {
+            if (verbose) 
+                message("Handling NAs in yi/vi ...")
             not.na.yivi <- apply(yivi.na, MARGIN = 1, sum) == 
                 0L
             if (na.act == "na.omit" || na.act == "na.exclude" || 
@@ -10282,6 +11081,8 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, measure = "OR",
         Ti <- t1i + t2i
     }
     CO <- COp <- MH <- MHp <- BD <- BDp <- TA <- TAp <- k.pos <- NA
+    if (verbose) 
+        message("Model fitting ...")
     if (measure == "OR") {
         Pi <- ai/Ni + di/Ni
         Qi <- bi/Ni + ci/Ni
@@ -10454,6 +11255,8 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, measure = "OR",
         names(b) <- "intrcpt"
         vb <- matrix(se^2, dimnames = list("intrcpt", "intrcpt"))
     }
+    if (verbose) 
+        message("Heterogeneity testing ...")
     wi <- 1/vi
     QE <- sum(wi * (yi - b)^2)
     if (k.yi - 1 >= 1) {
@@ -10462,6 +11265,8 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, measure = "OR",
     else {
         QEp <- 1
     }
+    if (verbose) 
+        message("Computing fit statistics and log likelihood ...")
     ll.ML <- -1/2 * (k.yi) * log(2 * base::pi) - 1/2 * sum(log(vi)) - 
         1/2 * QE
     ll.REML <- -1/2 * (k.yi - 1) * log(2 * base::pi) + 1/2 * 
@@ -10471,14 +11276,21 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, measure = "OR",
         log = TRUE)))
     AIC.ML <- -2 * ll.ML + 2
     BIC.ML <- -2 * ll.ML + log(k.yi)
+    AICc.ML <- -2 * ll.ML + 2 * max(k.yi, 3)/(max(k.yi, 3) - 
+        2)
     dev.REML <- -2 * (ll.REML - 0)
     AIC.REML <- -2 * ll.REML + 2
     BIC.REML <- -2 * ll.REML + log(k.yi - 1)
-    fit.stats <- matrix(c(ll.ML, dev.ML, AIC.ML, BIC.ML, ll.REML, 
-        dev.REML, AIC.REML, BIC.REML), ncol = 2, byrow = FALSE)
-    dimnames(fit.stats) <- list(c("ll", "dev", "AIC", "BIC"), 
-        c("ML", "REML"))
+    AICc.REML <- -2 * ll.REML + 2 * max(k.yi - 1, 3)/(max(k.yi - 
+        1, 3) - 2)
+    fit.stats <- matrix(c(ll.ML, dev.ML, AIC.ML, BIC.ML, AICc.ML, 
+        ll.REML, dev.REML, AIC.REML, BIC.REML, AICc.REML), ncol = 2, 
+        byrow = FALSE)
+    dimnames(fit.stats) <- list(c("ll", "dev", "AIC", "BIC", 
+        "AICc"), c("ML", "REML"))
     fit.stats <- data.frame(fit.stats)
+    if (verbose) 
+        message("Preparing output ...")
     parms <- 1
     p <- 1
     p.eff <- 1
@@ -10512,9 +11324,880 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, measure = "OR",
     class(res) <- c("rma.mh", "rma")
     return(res)
 }
+rma.mv <-
+function (yi, V, mods, random, struct = "CS", intercept = TRUE, 
+    data, slab, subset, method = "REML", tdist = FALSE, level = 95, 
+    digits = 4, btt, R, sigma2, tau2, rho, verbose = FALSE, control) 
+{
+    if (!is.element(method, c("FE", "ML", "REML"))) 
+        stop("Unknown 'method' specified.")
+    if (!is.element(struct, c("CS", "HCS", "UN"))) 
+        stop("Unknown 'struct' specified.")
+    na.act <- getOption("na.action")
+    if (!is.element(na.act, c("na.omit", "na.exclude", "na.fail", 
+        "na.pass"))) 
+        stop("Unknown 'na.action' specified under options().")
+    if (missing(random)) 
+        random <- NULL
+    if (missing(btt)) 
+        btt <- NULL
+    if (missing(R)) 
+        R <- NULL
+    if (missing(sigma2)) 
+        sigma2 <- NULL
+    if (missing(tau2)) 
+        tau2 <- NULL
+    if (missing(rho)) 
+        rho <- NULL
+    if (missing(control)) 
+        control <- list()
+    knha <- tdist
+    if (!is.logical(verbose) && verbose > 1) 
+        message("Extracting/computing yi/vi values ...")
+    if (missing(data)) 
+        data <- NULL
+    if (is.null(data)) {
+        has.data <- FALSE
+        data <- sys.frame(sys.parent())
+    }
+    else {
+        has.data <- TRUE
+        if (!is.data.frame(data)) {
+            data <- data.frame(data)
+        }
+    }
+    mf <- match.call()
+    mf.slab <- mf[[match("slab", names(mf))]]
+    mf.subset <- mf[[match("subset", names(mf))]]
+    mf.mods <- mf[[match("mods", names(mf))]]
+    slab <- eval(mf.slab, data, enclos = sys.frame(sys.parent()))
+    subset <- eval(mf.subset, data, enclos = sys.frame(sys.parent()))
+    mods <- eval(mf.mods, data, enclos = sys.frame(sys.parent()))
+    mf.yi <- mf[[match("yi", names(mf))]]
+    mf.V <- mf[[match("V", names(mf))]]
+    mf.ni <- mf[[match("ni", names(mf))]]
+    yi <- eval(mf.yi, data, enclos = sys.frame(sys.parent()))
+    V <- eval(mf.V, data, enclos = sys.frame(sys.parent()))
+    ni <- eval(mf.ni, data, enclos = sys.frame(sys.parent()))
+    is.formula <- FALSE
+    if (class(yi) == "formula") {
+        options(na.action = "na.pass")
+        mods <- model.matrix(yi, data = data)
+        attr(mods, "assign") <- NULL
+        yi <- model.response(model.frame(yi, data = data))
+        options(na.action = na.act)
+        names(yi) <- NULL
+        intercept <- FALSE
+        is.formula <- TRUE
+    }
+    k <- length(yi)
+    ids <- seq.int(k)
+    measure <- "GEN"
+    if (!is.null(attr(yi, "measure"))) 
+        measure <- attr(yi, "measure")
+    attr(yi, "measure") <- measure
+    if (is.vector(V) || dim(V)[1] == 1 || dim(V)[2] == 1) 
+        V <- diag(V, nrow = k, ncol = k)
+    if (is.data.frame(V)) 
+        V <- as.matrix(V)
+    dimnames(V)[[1]] <- dimnames(V)[[2]] <- NULL
+    if (dim(V)[1] != dim(V)[2]) 
+        stop("V must be a square matrix.")
+    if (!identical(V, t(V))) 
+        stop("V must be a symmetric matrix.")
+    if (dim(V)[1] != k) 
+        stop("Length of yi and length/dimensions of V are not the same.")
+    if (is.null(ni) && !is.null(attr(yi, "ni"))) 
+        ni <- attr(yi, "ni")
+    if (!is.null(ni) && (length(ni) != k)) 
+        stop("Length of yi and ni vectors are not the same.")
+    if (!is.logical(verbose) && verbose > 1) 
+        message("Creating model matrix ...")
+    if (ifelse(class(mods) == "formula", TRUE, FALSE)) {
+        options(na.action = "na.pass")
+        mods <- model.matrix(mods, data = data)
+        attr(mods, "assign") <- NULL
+        options(na.action = na.act)
+        intercept <- FALSE
+        is.formula <- TRUE
+    }
+    if (is.vector(mods)) 
+        mods <- cbind(mods)
+    if (is.data.frame(mods)) 
+        mods <- as.matrix(mods)
+    if (!is.null(mods) && (nrow(mods) != k)) 
+        stop("Number of rows of the model matrix does not match length of yi.")
+    if (method != "FE" && !is.null(random)) {
+        if (!is.logical(verbose) && verbose > 1) 
+            message("Processing 'random' argument ...")
+        if (!is.list(random)) 
+            random <- list(random)
+        mf.r <- lapply(random, get_all_vars, data = data)
+        mf.r.ncols <- sapply(mf.r, ncol)
+        if (any(mf.r.ncols > 2)) 
+            stop("No more than two elements allowed in each formula of the 'random' argument.")
+        if (sum(mf.r.ncols == 2) > 1) 
+            stop("Only one formula with two elements allowed in the 'random' argument.")
+        if (any(mf.r.ncols == 2)) {
+            if (length(mf.r) > 1) {
+                mf.g <- mf.r[which(mf.r.ncols == 2)]
+                mf.s <- mf.r[-which(mf.r.ncols == 2)]
+            }
+            else {
+                mf.g <- mf.r
+                mf.s <- NULL
+            }
+        }
+        else {
+            mf.g <- NULL
+            mf.s <- mf.r
+        }
+        withS <- !is.null(mf.s)
+        withG <- !is.null(mf.g)
+        mf.r.nrows <- sapply(mf.r, nrow)
+        if (any(mf.r.nrows != k)) 
+            stop("Number of rows in 'random' argument does not match length of the data.")
+    }
+    else {
+        mf.s <- NULL
+        mf.g <- NULL
+        mf.r <- NULL
+        withS <- FALSE
+        withG <- FALSE
+    }
+    s.names <- sapply(mf.s, names)
+    g.names <- sapply(mf.g, names)
+    if (!is.logical(verbose) && verbose > 1) 
+        message("Generating/extracting study labels ...")
+    if (is.null(slab)) {
+        if (!is.null(attr(yi, "slab"))) {
+            slab.null <- FALSE
+            slab <- attr(yi, "slab")
+        }
+        else {
+            slab.null <- TRUE
+            slab <- seq.int(k)
+        }
+    }
+    else {
+        if (any(duplicated(slab))) 
+            stop("Study labels must be unique.")
+        if (length(slab) != k) 
+            stop("Study labels not of same length as data.")
+        slab.null <- FALSE
+    }
+    if (!is.null(subset)) {
+        if (!is.logical(verbose) && verbose > 1) 
+            message("Subsetting ...")
+        yi <- yi[subset]
+        V <- V[subset, subset, drop = FALSE]
+        ni <- ni[subset]
+        mods <- mods[subset, , drop = FALSE]
+        slab <- slab[subset]
+        mf.s <- lapply(mf.s, function(x) x[subset, , drop = FALSE])
+        mf.g <- lapply(mf.g, function(x) x[subset, , drop = FALSE])
+        mf.r <- lapply(mf.r, function(x) x[subset, , drop = FALSE])
+        ids <- ids[subset]
+        k <- length(yi)
+        attr(yi, "measure") <- measure
+        attr(yi, "ni") <- ni
+    }
+    vi <- diag(V)
+    if (any(vi <= 0, na.rm = TRUE)) {
+        allvipos <- FALSE
+        warning("There are outcomes with non-positive sampling variances.")
+        vi.neg <- vi < 0
+        if (any(vi.neg, na.rm = TRUE)) {
+            V[vi.neg, , drop = FALSE] <- 0
+            V[, vi.neg, drop = FALSE] <- 0
+            vi[vi.neg] <- 0
+            warning("Negative sampling variances constrained to zero.")
+        }
+    }
+    else {
+        allvipos <- TRUE
+    }
+    yi.f <- yi
+    vi.f <- vi
+    V.f <- V
+    ni.f <- ni
+    mods.f <- mods
+    k.f <- k
+    if (withS) {
+        if (!is.logical(verbose) && verbose > 1) 
+            message("Processing random intercepts ...")
+        mf.s <- lapply(mf.s, function(x) factor(x[[1]]))
+        if (any(sapply(lapply(mf.s, is.na), any))) 
+            stop("No NAs allowed in variables specified in the 'random' argument.")
+        s.nvals <- length(mf.s)
+        if (is.null(sigma2)) 
+            sigma2 <- rep(NA, s.nvals)
+        if (length(sigma2) == 1) 
+            sigma2 <- rep(sigma2, s.nvals)
+        if (length(sigma2) != s.nvals) 
+            stop(paste("Length of 'sigma2' argument (", length(sigma2), 
+                ") does not match actual number of variance components (", 
+                s.nvals, ").", sep = ""))
+        if (any(sigma2 < 0, na.rm = TRUE)) 
+            stop("Specified value(s) of 'sigma2' must be non-negative.")
+        s.nlevels <- sapply(mf.s, nlevels)
+        s.levels <- lapply(mf.s, levels)
+        if (is.null(R)) {
+            withR <- FALSE
+            Rfix <- rep(FALSE, s.nvals)
+            R <- NULL
+        }
+        else {
+            if (!is.logical(verbose) && verbose > 1) 
+                message("Processing 'R' argument ...")
+            withR <- TRUE
+            if (is.data.frame(R) || !is.list(R)) 
+                R <- list(R)
+            if (is.null(names(R))) 
+                stop("Argument 'R' should provide a *named* list.")
+            R <- R[!sapply(R, is.null)]
+            R <- lapply(R, as.matrix)
+            R <- R[s.names]
+            names(R) <- s.names
+            Rfix <- !sapply(R, is.null)
+            if (any(sapply(R[Rfix], function(x) dim(x)[1] != 
+                dim(x)[2]))) 
+                stop("Elements of 'R' must be square matrices.")
+            if (any(sapply(R[Rfix], function(x) !identical(unname(x), 
+                t(unname(x)))))) 
+                stop("Elements of 'R' must be symmetric matrices.")
+            for (j in 1:length(R)) {
+                if (!Rfix[j]) 
+                  next
+                if (is.null(rownames(R[[j]]))) 
+                  rownames(R[[j]]) <- colnames(R[[j]])
+                if (is.null(colnames(R[[j]]))) 
+                  colnames(R[[j]]) <- rownames(R[[j]])
+                if (is.null(colnames(R[[j]]))) 
+                  stop("Elements of 'R' must have dimension names.")
+            }
+            R[Rfix] <- lapply(R[Rfix], unique, MARGIN = 1)
+            R[Rfix] <- lapply(R[Rfix], unique, MARGIN = 2)
+            if (any(sapply(R[Rfix], function(x) length(colnames(x)) != 
+                length(unique(colnames(x)))))) 
+                stop("Each element of 'R' must have unique dimension names.")
+            R[Rfix] <- lapply(R[Rfix], cov2cor)
+            is.in.R <- s.levels
+            for (j in 1:length(R)) {
+                if (!Rfix[j]) 
+                  next
+                is.in.R[[j]] <- is.element(s.levels[[j]], colnames(R[[j]]))
+            }
+            if (any(!unlist(is.in.R[Rfix]))) 
+                stop("There are levels in 'random' argument for which there is no information in the corresponding 'R' matrix.")
+        }
+        Z.S <- vector("list", s.nvals)
+        for (j in 1:s.nvals) {
+            if (s.nlevels[j] == 1) {
+                Z.S[[j]] <- cbind(rep(1, k))
+            }
+            else {
+                Z.S[[j]] <- model.matrix(~mf.s[[j]] - 1)
+            }
+        }
+        if (withR) {
+            for (j in 1:length(R)) {
+                if (!Rfix[j]) 
+                  next
+                R[[j]] <- R[[j]][s.levels[[j]], s.levels[[j]]]
+            }
+        }
+    }
+    else {
+        s.nvals <- 1
+        sigma2 <- 0
+        Z.S <- NULL
+        s.nlevels <- NULL
+        s.levels <- NULL
+        withR <- FALSE
+        Rfix <- FALSE
+        R <- NULL
+    }
+    if (withG) {
+        if (!is.logical(verbose) && verbose > 1) 
+            message("Processing '~ inner | outer' term ...")
+        mf.g <- data.frame(inner = factor(mf.g[[1]][[1]]), outer = factor(mf.g[[1]][[2]]))
+        if (any(is.na(mf.g))) 
+            stop("No NAs allowed in variables specified in the 'random' argument.")
+        g.nlevels <- c(nlevels(mf.g[[1]]), nlevels(mf.g[[2]]))
+        g.levels <- list(levels(mf.g[[1]]), levels(mf.g[[2]]))
+        if (struct == "CS") {
+            t.nvals <- 1
+            r.nvals <- 1
+        }
+        if (struct == "HCS") {
+            t.nvals <- g.nlevels[1]
+            r.nvals <- 1
+        }
+        if (struct == "UN") {
+            t.nvals <- g.nlevels[1]
+            r.nvals <- ifelse(g.nlevels[1] > 1, g.nlevels[1] * 
+                (g.nlevels[1] - 1)/2, 1)
+        }
+        if (is.null(tau2)) 
+            tau2 <- rep(NA, t.nvals)
+        if (is.null(rho)) 
+            rho <- rep(NA, r.nvals)
+        if (length(tau2) == 1 && struct != "CS") 
+            tau2 <- rep(tau2, t.nvals)
+        if (length(rho) == 1 && struct == "UN") 
+            rho <- rep(rho, r.nvals)
+        if (length(tau2) != t.nvals) 
+            stop(paste("Length of 'tau2' argument (", length(tau2), 
+                ") does not match actual number of variance components (", 
+                t.nvals, ").", sep = ""))
+        if (length(rho) != r.nvals) 
+            stop(paste("Length of 'rho' argument (", length(rho), 
+                ") does not match actual number of correlations (", 
+                r.nvals, ").", sep = ""))
+        if (any(tau2 < 0, na.rm = TRUE)) 
+            stop("Specified value(s) of 'tau2' must be non-negative.")
+        if (any(rho > 1 | rho < -1, na.rm = TRUE)) 
+            stop("Specified value(s) of 'rho' must be in [-1,1].")
+        if (g.nlevels[1] == 1) {
+            Z.G1 <- cbind(rep(1, k))
+        }
+        else {
+            Z.G1 <- model.matrix(~mf.g[[1]] - 1)
+        }
+        Z.G2 <- model.matrix(~mf.g[[2]] - 1)
+    }
+    else {
+        t.nvals <- 1
+        r.nvals <- 1
+        tau2 <- 0
+        rho <- 0
+        Z.G1 <- NULL
+        Z.G2 <- NULL
+        g.nlevels <- NULL
+        g.levels <- NULL
+    }
+    YVM.na <- is.na(cbind(yi, V, mods))
+    if (any(YVM.na)) {
+        if (!is.logical(verbose) && verbose > 1) 
+            message("Handling NAs ...")
+        not.na <- apply(YVM.na, MARGIN = 1, sum) == 0L
+        if (na.act == "na.omit" || na.act == "na.exclude" || 
+            na.act == "na.pass") {
+            yi <- yi[not.na]
+            V <- V[not.na, not.na, drop = FALSE]
+            vi <- vi[not.na]
+            ni <- ni[not.na]
+            mods <- mods[not.na, , drop = FALSE]
+            mf.s <- lapply(mf.s, function(x) x[not.na])
+            mf.g <- mf.g[not.na, , drop = FALSE]
+            mf.r <- lapply(mf.r, function(x) x[not.na, , drop = FALSE])
+            Z.S <- lapply(Z.S, function(x) x[not.na, , drop = FALSE])
+            Z.G1 <- Z.G1[not.na, , drop = FALSE]
+            Z.G2 <- Z.G2[not.na, , drop = FALSE]
+            k <- length(yi)
+            warning("Rows with NAs omitted from model fitting.")
+            attr(yi, "measure") <- measure
+            attr(yi, "ni") <- ni
+        }
+        if (na.act == "na.fail") 
+            stop("Missing values in data.")
+    }
+    else {
+        not.na <- rep(TRUE, k)
+    }
+    if (k <= 1) 
+        stop("Processing terminated since k <= 1.")
+    if (is.null(mods) && !intercept) {
+        warning("Must either include an intercept (intercept=TRUE) and/or moderators in model.\n  Coerced intercept into the model.")
+        intercept <- TRUE
+    }
+    if (intercept) {
+        X <- cbind(intrcpt = rep(1, k), mods)
+        X.f <- cbind(intrcpt = rep(1, k.f), mods.f)
+    }
+    else {
+        X <- mods
+        X.f <- mods.f
+    }
+    is.int <- apply(X == 1L, 2, sum) == k
+    if (any(is.int)) {
+        int.incl <- TRUE
+        int.indx <- which(is.int, arr.ind = TRUE)
+        X <- cbind(intrcpt = 1, X[, -int.indx, drop = FALSE])
+        X.f <- cbind(intrcpt = 1, X.f[, -int.indx, drop = FALSE])
+        if (is.formula) 
+            intercept <- TRUE
+    }
+    else {
+        int.incl <- FALSE
+    }
+    p <- NCOL(X)
+    if ((p == 1L) && (all(sapply(X, identical, 1)))) {
+        int.only <- TRUE
+    }
+    else {
+        int.only <- FALSE
+    }
+    if (is.null(btt)) {
+        if (p > 1) {
+            if (int.incl) {
+                btt <- seq.int(2, p)
+            }
+            else {
+                btt <- seq.int(p)
+            }
+        }
+        else {
+            btt <- 1
+        }
+    }
+    else {
+        btt <- btt[(btt >= 1) & (btt <= p)]
+        btt <- unique(round(btt))
+        if (length(intersect(btt, seq.int(p))) == 0L) {
+            stop("Non-existent coefficients specified with 'btt'.")
+        }
+    }
+    bntt <- setdiff(seq.int(p), btt)
+    m <- length(btt)
+    if (withS) {
+        mf.s <- lapply(mf.s, factor)
+        s.nlevels <- sapply(mf.s, nlevels)
+        s.levels <- lapply(mf.s, levels)
+        if (any(is.na(sigma2) & s.nlevels == 1)) {
+            sigma2[is.na(sigma2) & (s.nlevels == 1)] <- 0
+            warning("Single-level factor(s) found in 'random' argument. Corresponding sigma2 value(s) fixed at 0.")
+        }
+    }
+    if (withG) {
+        g.nlevels.f <- g.nlevels
+        g.levels.f <- g.levels
+        mf.g <- data.frame(inner = factor(mf.g[[1]]), outer = factor(mf.g[[2]]))
+        g.nlevels <- c(nlevels(mf.g[[1]]), nlevels(mf.g[[2]]))
+        g.levels <- list(levels(mf.g[[1]]), levels(mf.g[[2]]))
+        g.levels.r <- !is.element(g.levels.f[[1]], g.levels[[1]])
+        if (any(g.levels.r)) 
+            warning("One or more levels of inner factor removed due to NAs.")
+        if (g.nlevels[1] == 1 && struct != "UN" && is.na(rho)) {
+            rho <- 0
+            warning("Inner factor has only a single level, so fixed value of 'rho' at 0.")
+        }
+        g.levels.k <- table(factor(mf.g[[1]], levels = g.levels.f[[1]]))
+        if (struct == "HCS" || struct == "UN") {
+            if (any(is.na(tau2) & g.levels.k == 1)) {
+                tau2[is.na(tau2) & g.levels.k == 1] <- 0
+                warning("Inner factor has k=1 for one or more levels. Corresponding tau2 value(s) fixed at 0.")
+            }
+        }
+        g.levels.comb.k <- crossprod(Z.G2, Z.G1)
+        g.levels.comb.k <- split(g.levels.comb.k, 1:nrow(g.levels.comb.k))
+        if (all(unlist(lapply(g.levels.comb.k, sum)) == 1)) {
+            if (struct == "CS" || struct == "HCS" && is.na(rho)) {
+                rho <- 0
+                warning("Each level of the outer factor contains only a single level of the inner factor, so fixed value of 'rho' at 0.")
+            }
+        }
+        g.levels.comb.k <- lapply(g.levels.comb.k, function(x) outer(x, 
+            x, FUN = "&"))
+        g.levels.comb.k <- Reduce("+", g.levels.comb.k)
+        g.levels.comb.k <- g.levels.comb.k[upper.tri(g.levels.comb.k)]
+        if (struct == "UN" && any(g.levels.comb.k == 0 & is.na(rho))) {
+            rho[g.levels.comb.k == 0] <- 0
+            warning("Some combinations of the levels of the inner factor never occurred. Corresponding 'rho' value(s) fixed at 0.")
+        }
+        if (struct == "UN" && g.nlevels.f[1] == 1 && is.na(rho)) {
+            rho <- 0
+            warning("Inner factor has only a single level, so fixed value of 'rho' at 0.")
+        }
+        if (struct == "CS") {
+            G <- matrix(rho, nrow = g.nlevels.f[1], ncol = g.nlevels.f[1])
+            diag(G) <- 1
+            G <- diag(sqrt(rep(tau2, g.nlevels.f[1])), nrow = g.nlevels.f[1], 
+                ncol = g.nlevels.f[1]) %*% G %*% diag(sqrt(rep(tau2, 
+                g.nlevels.f[1])), nrow = g.nlevels.f[1], ncol = g.nlevels.f[1])
+            diag(G) <- tau2
+        }
+        if (struct == "HCS") {
+            G <- matrix(rho, nrow = g.nlevels.f[1], ncol = g.nlevels.f[1])
+            diag(G) <- 1
+            G <- diag(sqrt(tau2), nrow = g.nlevels.f[1], ncol = g.nlevels.f[1]) %*% 
+                G %*% diag(sqrt(tau2), nrow = g.nlevels.f[1], 
+                ncol = g.nlevels.f[1])
+            diag(G) <- tau2
+        }
+        if (struct == "UN") {
+            G <- matrix(NA, nrow = g.nlevels.f[1], ncol = g.nlevels.f[1])
+            G[upper.tri(G)] <- rho
+            G[lower.tri(G)] <- t(G)[lower.tri(G)]
+            diag(G) <- 1
+            G <- diag(sqrt(tau2), nrow = g.nlevels.f[1], ncol = g.nlevels.f[1]) %*% 
+                G %*% diag(sqrt(tau2), nrow = g.nlevels.f[1], 
+                ncol = g.nlevels.f[1])
+            diag(G) <- tau2
+        }
+        if (any(g.levels.r) && struct == "CS") {
+            G[g.levels.r, ] <- 0
+            G[, g.levels.r] <- 0
+        }
+        if (any(g.levels.r) && struct == "HCS") {
+            G[g.levels.r, ] <- 0
+            G[, g.levels.r] <- 0
+            tau2[g.levels.r] <- 0
+            warning("Fixed 'tau2' at 0 for removed level(s).")
+        }
+        if (any(g.levels.r) && struct == "UN") {
+            G[g.levels.r, ] <- 0
+            G[, g.levels.r] <- 0
+            tau2[g.levels.r] <- 0
+            rho <- G[upper.tri(G)]
+            warning("Fixed 'tau2' and corresponding 'rho' value(s) at 0 for removed level(s).")
+        }
+        if (g.nlevels.f[1] == 2) {
+            if (struct == "CS" && !is.na(tau2) && tau2 == 0) 
+                rho <- 0
+            if (struct != "CS" && ((!is.na(tau2[1]) && tau2[1] == 
+                0) || (!is.na(tau2[2]) && tau2[2] == 0))) 
+                rho <- 0
+        }
+    }
+    else {
+        G <- NULL
+        g.levels.f <- NULL
+        g.levels.r <- NULL
+        g.levels.k <- NULL
+        g.levels.comb.k <- NULL
+        g.nlevels.f <- NULL
+    }
+    Y <- as.matrix(yi)
+    if (!is.logical(verbose) && verbose > 1) 
+        message("Extracting/computing initial values ...")
+    res.FE <- try(.modfit(Y = Y, X = X, V = V, k = k, tol = 1e-07), 
+        silent = TRUE)
+    if (inherits(res.FE, "try-error")) {
+        sigma2.init <- rep(0.01, s.nvals)
+        tau2.init <- rep(0.01, t.nvals)
+        rho.init <- rep(0.5, r.nvals)
+    }
+    else {
+        total.het <- max(0.01 * (s.nvals + t.nvals), var(c(Y - 
+            X %*% res.FE$b)) - 1/mean(1/diag(V)))
+        sigma2.init <- rep(total.het/(s.nvals + t.nvals), s.nvals)
+        tau2.init <- rep(total.het/(s.nvals + t.nvals), t.nvals)
+        rho.init <- rep(0.5, r.nvals)
+    }
+    con <- list(verbose = FALSE, optimizer = "optim", optmethod = "Nelder-Mead", 
+        sigma2.init = sigma2.init, tau2.init = tau2.init, rho.init = rho.init, 
+        REMLf = TRUE, tol = 1e-07, posdefify = FALSE)
+    con.pos <- pmatch(names(control), names(con))
+    con[c(na.omit(con.pos))] <- control[!is.na(con.pos)]
+    if (verbose) 
+        con$verbose <- verbose
+    verbose <- con$verbose
+    silent <- !verbose
+    con <- list(verbose = verbose, optimizer = con$optimizer, 
+        optmethod = con$optmethod, sigma2.init = log(ifelse(con$sigma2.init < 
+            0, NA, con$sigma2.init)), tau2.init = log(ifelse(con$tau2.init < 
+            0, NA, con$tau2.init)), rho.init = transf.rtoz(ifelse(con$rho.init < 
+            -1 | con$rho.init > 1, NA, con$rho.init)), REMLf = con$REMLf, 
+        tol = con$tol, posdefify = con$posdefify)
+    if (withS && any(is.na(con$sigma2.init))) 
+        stop("Values of 'sigma2.init' must be non-negative.")
+    if (withG && any(is.na(con$tau2.init))) 
+        stop("Values of 'tau2.init' must be non-negative.")
+    if (withG && any(is.na(con$rho.init))) 
+        stop("Values of 'rho.init' must be in [-1,1].")
+    optimizer <- match.arg(con$optimizer, c("optim", "nlminb", 
+        "uobyqa", "newuoa", "bobyqa"))
+    optmethod <- con$optmethod
+    tol <- con$tol
+    posdefify <- con$posdefify
+    optcontrol <- control[is.na(con.pos)]
+    if (length(optcontrol) == 0) 
+        optcontrol <- list()
+    reml <- ifelse(method == "REML", TRUE, FALSE)
+    if (is.element(optimizer, c("uobyqa", "newuoa", "bobyqa"))) {
+        if (!require(minqa)) 
+            stop("Please install the 'minqa' package to use this optimizer.")
+    }
+    if (posdefify) {
+        if (!require(Matrix)) 
+            stop("Please install the 'Matrix' package to use the 'posdefify' option.")
+    }
+    if (withS) {
+        if (length(con$sigma2.init) != s.nvals) 
+            stop(paste("Length of 'sigma2.init' argument (", 
+                length(con$sigma2.init), ") does not match actual number of variance components (", 
+                s.nvals, ").", sep = ""))
+    }
+    else {
+        con$sigma2.init <- -Inf
+    }
+    if (withG) {
+        if (length(con$tau2.init) != t.nvals) 
+            stop(paste("Length of 'tau2.init' argument (", length(con$tau2.init), 
+                ") does not match actual number of variance components (", 
+                t.nvals, ").", sep = ""))
+    }
+    else {
+        con$tau2.init <- -Inf
+    }
+    if (withG) {
+        if (length(con$rho.init) != r.nvals) 
+            stop(paste("Length of 'rho.init' argument (", length(con$rho.init), 
+                ") does not match actual number of correlations (", 
+                r.nvals, ").", sep = ""))
+    }
+    else {
+        con$rho.init <- 0
+    }
+    if (any(eigen(crossprod(X), symmetric = TRUE)$values <= tol)) 
+        stop("Model matrix not of full rank. Cannot fit model.")
+    if (withS) {
+        sigma2.fix <- !is.na(sigma2)
+    }
+    else {
+        sigma2.fix <- NA
+    }
+    if (withG) {
+        tau2.fix <- !is.na(tau2)
+        rho.fix <- !is.na(rho)
+    }
+    else {
+        tau2.fix <- NA
+        rho.fix <- NA
+    }
+    vc.fix <- list(sigma2 = sigma2.fix, tau2 = tau2.fix, rho = rho.fix)
+    if (verbose) {
+        cat("\nVariance Components in Model:")
+        if (!withS && !withG) {
+            cat(" none\n\n")
+        }
+        else {
+            cat("\n\n")
+            vcs <- rbind(c(sigma2 = round(exp(con$sigma2.init), 
+                digits = digits), tau2 = round(exp(con$tau2.init), 
+                digits = digits), rho = round(transf.ztor(con$rho.init), 
+                digits = digits)), c(sigma2, tau2, rho))
+            vcs <- data.frame(vcs)
+            rownames(vcs) <- c("initial", "specified")
+            vcs <- rbind(included = ifelse(c(rep(withS, s.nvals), 
+                rep(withG, t.nvals), rep(withG, r.nvals)), "Yes", 
+                "No"), fixed = unlist(vc.fix), vcs)
+            print(vcs)
+            cat("\n")
+        }
+    }
+    alpha <- ifelse(level > 1, (100 - level)/100, 1 - level)
+    robust <- FALSE
+    if (!is.logical(verbose) && verbose > 1) 
+        message("Model fitting ...")
+    if (optimizer == "optim") 
+        par.arg <- "par"
+    if (optimizer == "nlminb") 
+        par.arg <- "start"
+    if (is.element(optimizer, c("uobyqa", "newuoa", "bobyqa"))) 
+        par.arg <- "par"
+    optcall <- paste(optimizer, "(", par.arg, "=c(ifelse(is.na(sigma2), con$sigma2.init, sigma2), ifelse(is.na(tau2), con$tau2.init, tau2), ifelse(is.na(rho), con$rho.init, rho)), .ll.rma.mv, ", 
+        ifelse(optimizer == "optim", "method=optmethod, ", ""), 
+        "Y=Y, V=V, X=X, sigma2=sigma2, tau2=tau2, rho=rho, reml=reml, k=k, p=p, s.nvals=s.nvals, t.nvals=t.nvals, r.nvals=r.nvals, withS=withS, withG=withG, Z.S=Z.S, Z.G1=Z.G1, Z.G2=Z.G2, struct=struct, g.levels.r=g.levels.r, R=R, Rfix=Rfix, tol=tol, posdefify=posdefify, verbose=verbose, digits=digits, REMLf=con$REMLf, control=optcontrol)", 
+        sep = "")
+    opt.res <- try(eval(parse(text = optcall)), silent = silent)
+    if (inherits(opt.res, "try-error")) 
+        stop("Error during optimization.")
+    if (is.element(optimizer, c("optim", "nlminb")) && opt.res$convergence != 
+        0) 
+        stop(paste0("Optimizer (", optimizer, ") did not achieve convergence (convergence = ", 
+            opt.res$convergence, ")."))
+    if (is.element(optimizer, c("uobyqa", "newuoa", "bobyqa")) && 
+        opt.res$ierr != 0) 
+        stop(paste0("Optimizer (", optimizer, ") did not achieve convergence (ierr = ", 
+            opt.res$ierr, ")."))
+    if (optimizer == "optim") 
+        ll <- -1 * c(opt.res$value)
+    if (optimizer == "nlminb") 
+        ll <- -1 * c(opt.res$objective)
+    if (is.element(optimizer, c("uobyqa", "newuoa", "bobyqa"))) 
+        ll <- -1 * c(opt.res$fval)
+    if (verbose) {
+        cat("\n")
+        print(opt.res)
+    }
+    if (p < k) {
+        sigma2 <- ifelse(is.na(sigma2), exp(opt.res$par[1:s.nvals]), 
+            sigma2)
+        tau2 <- ifelse(is.na(tau2), exp(opt.res$par[(s.nvals + 
+            1):(s.nvals + t.nvals)]), tau2)
+        rho <- ifelse(is.na(rho), transf.ztor(opt.res$par[(s.nvals + 
+            t.nvals + 1):(s.nvals + t.nvals + r.nvals)]), rho)
+        sigma2 <- ifelse(sigma2 <= .Machine$double.eps * 10, 
+            0, sigma2)
+        tau2 <- ifelse(tau2 <= .Machine$double.eps * 10, 0, tau2)
+    }
+    else {
+        sigma2[is.na(sigma2)] <- 0
+        tau2[is.na(tau2)] <- 0
+        rho[is.na(rho)] <- 0
+    }
+    M <- V
+    if (withS) {
+        for (j in seq.int(s.nvals)) {
+            if (Rfix[j]) {
+                M <- M + sigma2[j] * (Z.S[[j]] %*% R[[j]] %*% 
+                  t(Z.S[[j]]))
+            }
+            else {
+                M <- M + sigma2[j] * tcrossprod(Z.S[[j]])
+            }
+        }
+    }
+    if (withG) {
+        ncol.Z.G1 <- ncol(Z.G1)
+        if (struct == "CS") {
+            G <- matrix(rho, nrow = ncol.Z.G1, ncol = ncol.Z.G1)
+            diag(G) <- 1
+            G <- diag(sqrt(rep(tau2, ncol.Z.G1)), nrow = ncol.Z.G1, 
+                ncol = ncol.Z.G1) %*% G %*% diag(sqrt(rep(tau2, 
+                ncol.Z.G1)), nrow = ncol.Z.G1, ncol = ncol.Z.G1)
+            diag(G) <- tau2
+        }
+        if (struct == "HCS") {
+            G <- matrix(rho, nrow = ncol.Z.G1, ncol = ncol.Z.G1)
+            diag(G) <- 1
+            G <- diag(sqrt(tau2), nrow = ncol.Z.G1, ncol = ncol.Z.G1) %*% 
+                G %*% diag(sqrt(tau2), nrow = ncol.Z.G1, ncol = ncol.Z.G1)
+            diag(G) <- tau2
+        }
+        if (struct == "UN") {
+            G <- matrix(NA, nrow = ncol.Z.G1, ncol = ncol.Z.G1)
+            G[upper.tri(G)] <- rho
+            G[lower.tri(G)] <- t(G)[lower.tri(G)]
+            diag(G) <- 1
+            G <- diag(sqrt(tau2), nrow = ncol.Z.G1, ncol = ncol.Z.G1) %*% 
+                G %*% diag(sqrt(tau2), nrow = ncol.Z.G1, ncol = ncol.Z.G1)
+            diag(G) <- tau2
+            if (posdefify) {
+                G <- as.matrix(nearPD(G)$mat)
+                tau2 <- diag(G)
+                rho <- G[upper.tri(G)]
+            }
+        }
+        if (any(g.levels.r)) {
+            G[g.levels.r, ] <- 0
+            G[, g.levels.r] <- 0
+        }
+        M <- M + (Z.G1 %*% G %*% t(Z.G1)) * tcrossprod(Z.G2)
+    }
+    res <- .modfit(Y = Y, X = X, V = M, k = k, tol = tol)
+    W <- chol2inv(chol(M))
+    P <- W - W %*% X %*% res$vb %*% t(X) %*% W
+    RSS.f <- crossprod(Y, P) %*% Y
+    b <- res$b
+    vb <- res$vb
+    se <- sqrt(diag(vb))
+    names(se) <- NULL
+    zval <- c(b/se)
+    pval <- 2 * pnorm(abs(zval), lower.tail = FALSE)
+    QM <- c(t(b)[btt] %*% chol2inv(chol(vb[btt, btt])) %*% b[btt])
+    if (knha || robust) {
+        QM <- QM/m
+        QMp <- pf(QM, df1 = m, df2 = k - p, lower.tail = FALSE)
+        pval <- 2 * pt(abs(zval), df = k - p, lower.tail = FALSE)
+        crit <- qt(alpha/2, df = k - p, lower.tail = FALSE)
+    }
+    else {
+        QMp <- pchisq(QM, df = m, lower.tail = FALSE)
+        pval <- 2 * pnorm(abs(zval), lower.tail = FALSE)
+        crit <- qnorm(alpha/2, lower.tail = FALSE)
+    }
+    ci.lb <- c(b - crit * se)
+    ci.ub <- c(b + crit * se)
+    if (!is.logical(verbose) && verbose > 1) 
+        message("Heterogeneity testing ...")
+    QE.df <- k - p
+    if (QE.df > 0L) {
+        res.FE <- try(.modfit(Y = Y, X = X, V = V, k = k, tol = tol), 
+            silent = silent)
+        if (inherits(res.FE, "try-error")) {
+            QE <- NA
+            QEp <- NA
+        }
+        else {
+            W.FE <- chol2inv(chol(V))
+            P <- W.FE - W.FE %*% X %*% res.FE$vb %*% t(X) %*% 
+                W.FE
+            QE <- crossprod(Y, P) %*% Y
+            QEp <- pchisq(QE, df = QE.df, lower.tail = FALSE)
+        }
+    }
+    else {
+        QE <- 0
+        QEp <- 1
+    }
+    ll.QE <- -1/2 * (k) * log(2 * base::pi) - 1/2 * determinant(V, 
+        logarithm = TRUE)$modulus
+    if (!is.logical(verbose) && verbose > 1) 
+        message("Computing fit statistics and log likelihood ...")
+    parms <- p + ifelse(withS, sum(ifelse(sigma2.fix, 0, 1)), 
+        0) + ifelse(withG, sum(ifelse(tau2.fix, 0, 1)), 0) + 
+        ifelse(withG, sum(ifelse(rho.fix, 0, 1)), 0)
+    ll.ML <- -1/2 * (k) * log(2 * base::pi) - 1/2 * determinant(M, 
+        logarithm = TRUE)$modulus - 1/2 * RSS.f
+    ll.REML <- -1/2 * (k - p) * log(2 * base::pi) + ifelse(con$REMLf, 
+        1/2 * determinant(crossprod(X, X), logarithm = TRUE)$modulus, 
+        0) - 1/2 * determinant(M, logarithm = TRUE)$modulus - 
+        1/2 * determinant(crossprod(X, W) %*% X, logarithm = TRUE)$modulus - 
+        1/2 * RSS.f
+    dev.ML <- -2 * (ll.ML - ll.QE)
+    AIC.ML <- -2 * ll.ML + 2 * parms
+    BIC.ML <- -2 * ll.ML + parms * log(k)
+    AICc.ML <- -2 * ll.ML + 2 * parms * max(k, parms + 2)/(max(k, 
+        parms + 2) - parms - 1)
+    dev.REML <- -2 * ll.REML
+    dev.REML <- -2 * (ll.REML - 0)
+    AIC.REML <- -2 * ll.REML + 2 * parms
+    BIC.REML <- -2 * ll.REML + parms * log(k - p)
+    AICc.REML <- -2 * ll.REML + 2 * parms * max(k - p, parms + 
+        2)/(max(k - p, parms + 2) - parms - 1)
+    fit.stats <- matrix(c(ll.ML, dev.ML, AIC.ML, BIC.ML, AICc.ML, 
+        ll.REML, dev.REML, AIC.REML, BIC.REML, AICc.REML), ncol = 2, 
+        byrow = FALSE)
+    dimnames(fit.stats) <- list(c("ll", "dev", "AIC", "BIC", 
+        "AICc"), c("ML", "REML"))
+    fit.stats <- data.frame(fit.stats)
+    if (!is.logical(verbose) && verbose > 1) 
+        message("Preparing output ...")
+    p.eff <- p
+    k.eff <- k
+    weighted <- TRUE
+    robust <- FALSE
+    res <- list(b, se, zval, pval, ci.lb, ci.ub, vb, sigma2, 
+        tau2, rho, k, k.f, k.eff, p, p.eff, parms, m, QE, QEp, 
+        QM, QMp, int.only, int.incl, allvipos, yi, vi, V, X, 
+        yi.f, vi.f, V.f, X.f, ni, ni.f, ids, not.na, slab, slab.null, 
+        measure, method, weighted, knha, robust, btt, intercept, 
+        digits, level, control, fit.stats, vc.fix, M, withS, 
+        withG, s.nvals, t.nvals, r.nvals, s.names, g.names, s.nlevels, 
+        g.nlevels.f, g.nlevels, g.levels.f, g.levels.k, g.levels.comb.k, 
+        struct, withR, Rfix, R, mf.r, random)
+    names(res) <- c("b", "se", "zval", "pval", "ci.lb", "ci.ub", 
+        "vb", "sigma2", "tau2", "rho", "k", "k.f", "k.eff", "p", 
+        "p.eff", "parms", "m", "QE", "QEp", "QM", "QMp", "int.only", 
+        "int.incl", "allvipos", "yi", "vi", "V", "X", "yi.f", 
+        "vi.f", "V.f", "X.f", "ni", "ni.f", "ids", "not.na", 
+        "slab", "slab.null", "measure", "method", "weighted", 
+        "knha", "robust", "btt", "intercept", "digits", "level", 
+        "control", "fit.stats", "vc.fix", "M", "withS", "withG", 
+        "s.nvals", "t.nvals", "r.nvals", "s.names", "g.names", 
+        "s.nlevels", "g.nlevels.f", "g.nlevels", "g.levels", 
+        "g.levels.k", "g.levels.comb.k", "struct", "withR", "Rfix", 
+        "R", "mf.r", "random")
+    class(res) <- c("rma.mv", "rma")
+    res
+}
 rma.peto <-
 function (ai, bi, ci, di, n1i, n2i, data, slab, subset, add = 1/2, 
-    to = "only0", drop00 = TRUE, level = 95, digits = 4) 
+    to = "only0", drop00 = TRUE, level = 95, digits = 4, verbose = FALSE) 
 {
     if (length(add) == 1) 
         add <- c(add, 0)
@@ -10533,6 +12216,8 @@ function (ai, bi, ci, di, n1i, n2i, data, slab, subset, add = 1/2,
     if (!is.element(to[2], c("all", "only0", "if0all", "none"))) 
         stop("Unknown 'to' argument specified.")
     measure <- "PETO"
+    if (verbose) 
+        message("Extracting/computing yi/vi values ...")
     if (missing(data)) 
         data <- NULL
     if (is.null(data)) {
@@ -10567,6 +12252,8 @@ function (ai, bi, ci, di, n1i, n2i, data, slab, subset, add = 1/2,
     ni <- ai + bi + ci + di
     k <- length(ai)
     ids <- seq.int(k)
+    if (verbose) 
+        message("Generating/extracting study labels ...")
     if (is.null(slab)) {
         slab.null <- TRUE
         slab <- seq.int(k)
@@ -10574,11 +12261,13 @@ function (ai, bi, ci, di, n1i, n2i, data, slab, subset, add = 1/2,
     else {
         if (any(duplicated((slab)))) 
             stop("Study labels must be unique.")
-        if (length(slab) != length(ai)) 
+        if (length(slab) != k) 
             stop("Study labels not of same length as data.")
         slab.null <- FALSE
     }
     if (!is.null(subset)) {
+        if (verbose) 
+            message("Subsetting ...")
         ai <- ai[subset]
         bi <- bi[subset]
         ci <- ci[subset]
@@ -10602,6 +12291,8 @@ function (ai, bi, ci, di, n1i, n2i, data, slab, subset, add = 1/2,
     k.f <- k
     aibicidi.na <- is.na(cbind(ai, bi, ci, di))
     if (any(aibicidi.na)) {
+        if (verbose) 
+            message("Handling NAs in table data ...")
         not.na <- apply(aibicidi.na, MARGIN = 1, sum) == 0L
         if (na.act == "na.omit" || na.act == "na.exclude" || 
             na.act == "na.pass") {
@@ -10622,6 +12313,8 @@ function (ai, bi, ci, di, n1i, n2i, data, slab, subset, add = 1/2,
         stop("Processing terminated since k = 0.")
     yivi.na <- is.na(cbind(yi, vi))
     if (any(yivi.na)) {
+        if (verbose) 
+            message("Handling NAs in yi/vi ...")
         not.na.yivi <- apply(yivi.na, MARGIN = 1, sum) == 0L
         if (na.act == "na.omit" || na.act == "na.exclude" || 
             na.act == "na.pass") {
@@ -10665,6 +12358,8 @@ function (ai, bi, ci, di, n1i, n2i, data, slab, subset, add = 1/2,
     n1i <- ai + bi
     n2i <- ci + di
     Ni <- ai + bi + ci + di
+    if (verbose) 
+        message("Model fitting ...")
     xt <- ai + ci
     yt <- bi + di
     Ei <- xt * n1i/Ni
@@ -10680,6 +12375,8 @@ function (ai, bi, ci, di, n1i, n2i, data, slab, subset, add = 1/2,
     ci.ub <- b + qnorm(alpha/2, lower.tail = FALSE) * se
     names(b) <- "intrcpt"
     vb <- matrix(se^2, dimnames = list("intrcpt", "intrcpt"))
+    if (verbose) 
+        message("Heterogeneity testing ...")
     k.pos <- sum(Vi > 0)
     Vi[Vi == 0] <- NA
     QE <- sum((ai - Ei)^2/Vi, na.rm = TRUE) - sum(ai - Ei)^2/sum(Vi, 
@@ -10692,6 +12389,8 @@ function (ai, bi, ci, di, n1i, n2i, data, slab, subset, add = 1/2,
     }
     wi <- 1/vi
     RSS <- sum(wi * (yi - b)^2)
+    if (verbose) 
+        message("Computing fit statistics and log likelihood ...")
     ll.ML <- -1/2 * (k.yi) * log(2 * base::pi) - 1/2 * sum(log(vi)) - 
         1/2 * RSS
     ll.REML <- -1/2 * (k.yi - 1) * log(2 * base::pi) + 1/2 * 
@@ -10701,14 +12400,21 @@ function (ai, bi, ci, di, n1i, n2i, data, slab, subset, add = 1/2,
         log = TRUE)))
     AIC.ML <- -2 * ll.ML + 2
     BIC.ML <- -2 * ll.ML + log(k.yi)
+    AICc.ML <- -2 * ll.ML + 2 * max(k.yi, 3)/(max(k.yi, 3) - 
+        2)
     dev.REML <- -2 * (ll.REML - 0)
     AIC.REML <- -2 * ll.REML + 2
     BIC.REML <- -2 * ll.REML + log(k.yi - 1)
-    fit.stats <- matrix(c(ll.ML, dev.ML, AIC.ML, BIC.ML, ll.REML, 
-        dev.REML, AIC.REML, BIC.REML), ncol = 2, byrow = FALSE)
-    dimnames(fit.stats) <- list(c("ll", "dev", "AIC", "BIC"), 
-        c("ML", "REML"))
+    AICc.REML <- -2 * ll.REML + 2 * max(k.yi - 1, 3)/(max(k.yi - 
+        1, 3) - 2)
+    fit.stats <- matrix(c(ll.ML, dev.ML, AIC.ML, BIC.ML, AICc.ML, 
+        ll.REML, dev.REML, AIC.REML, BIC.REML, AICc.REML), ncol = 2, 
+        byrow = FALSE)
+    dimnames(fit.stats) <- list(c("ll", "dev", "AIC", "BIC", 
+        "AICc"), c("ML", "REML"))
     fit.stats <- data.frame(fit.stats)
+    if (verbose) 
+        message("Preparing output ...")
     parms <- 1
     p <- 1
     p.eff <- 1
@@ -10770,6 +12476,8 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
         tau2 <- NULL
     if (missing(control)) 
         control <- list()
+    if (!is.logical(verbose) && verbose > 1) 
+        message("Extracting/computing yi/vi values ...")
     if (missing(data)) 
         data <- NULL
     if (is.null(data)) {
@@ -10790,16 +12498,17 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
     ai <- bi <- ci <- di <- x1i <- x2i <- t1i <- t2i <- NA
     mf.yi <- mf[[match("yi", names(mf))]]
     yi <- eval(mf.yi, data, enclos = sys.frame(sys.parent()))
+    is.formula <- FALSE
     if (!is.null(yi)) {
-        yi.is.formula <- ifelse(class(yi) == "formula", TRUE, 
-            FALSE)
-        if (yi.is.formula) {
+        if (class(yi) == "formula") {
             options(na.action = "na.pass")
             mods <- model.matrix(yi, data = data)
+            attr(mods, "assign") <- NULL
             yi <- model.response(model.frame(yi, data = data))
             options(na.action = na.act)
             names(yi) <- NULL
             intercept <- FALSE
+            is.formula <- TRUE
         }
         if (!is.null(attr(yi, "measure"))) 
             measure <- attr(yi, "measure")
@@ -10828,9 +12537,9 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
         if (is.null(ni) && !is.null(attr(yi, "ni"))) 
             ni <- attr(yi, "ni")
         if (length(yi) != length(vi)) 
-            stop("Length of yi and vi (or sei) vectors is not the same.")
+            stop("Length of yi and vi (or sei) vectors are not the same.")
         if (!is.null(ni) && (length(yi) != length(ni))) 
-            stop("Length of yi and ni vectors is not the same.")
+            stop("Length of yi and ni vectors are not the same.")
     }
     else {
         if (is.element(measure, c("RR", "OR", "PETO", "RD", "AS", 
@@ -10955,22 +12664,26 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
         vi <- dat$vi
         ni <- attr(yi, "ni")
     }
-    is.formula <- ifelse(class(mods) == "formula", TRUE, FALSE)
-    if (is.formula) {
+    k <- length(yi)
+    ids <- seq.int(k)
+    if (!is.logical(verbose) && verbose > 1) 
+        message("Creating model matrix ...\n")
+    if (ifelse(class(mods) == "formula", TRUE, FALSE)) {
         options(na.action = "na.pass")
         mods <- model.matrix(mods, data = data)
         attr(mods, "assign") <- NULL
         options(na.action = na.act)
         intercept <- FALSE
+        is.formula <- TRUE
     }
     if (is.vector(mods)) 
         mods <- cbind(mods)
     if (is.data.frame(mods)) 
         mods <- as.matrix(mods)
-    if (!is.null(mods) && (nrow(mods) != length(yi))) 
-        stop("Number of rows of the design matrix does not match length of yi.")
-    k <- length(yi)
-    ids <- seq.int(k)
+    if (!is.null(mods) && (nrow(mods) != k)) 
+        stop("Number of rows of the model matrix does not match length of yi.")
+    if (!is.logical(verbose) && verbose > 1) 
+        message("Generating/extracting study labels ...")
     if (is.null(slab)) {
         if (!is.null(attr(yi, "slab"))) {
             slab.null <- FALSE
@@ -10984,11 +12697,13 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
     else {
         if (any(duplicated(slab))) 
             stop("Study labels must be unique.")
-        if (length(slab) != length(yi)) 
+        if (length(slab) != k) 
             stop("Study labels not of same length as data.")
         slab.null <- FALSE
     }
     if (!is.null(subset)) {
+        if (!is.logical(verbose) && verbose > 1) 
+            message("Subsetting ...")
         yi <- yi[subset]
         vi <- vi[subset]
         ni <- ni[subset]
@@ -11007,6 +12722,18 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
         attr(yi, "measure") <- measure
         attr(yi, "ni") <- ni
     }
+    if (any(vi <= 0, na.rm = TRUE)) {
+        allvipos <- FALSE
+        warning("There are outcomes with non-positive sampling variances.")
+        vi.neg <- vi < 0
+        if (any(vi.neg, na.rm = TRUE)) {
+            vi[vi.neg] <- 0
+            warning("Negative sampling variances constrained to zero.")
+        }
+    }
+    else {
+        allvipos <- TRUE
+    }
     ai.f <- ai
     bi.f <- bi
     ci.f <- ci
@@ -11022,6 +12749,8 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
     k.f <- k
     YVM.na <- is.na(cbind(yi, vi, mods))
     if (any(YVM.na)) {
+        if (!is.logical(verbose) && verbose > 1) 
+            message("Handling NAs ...")
         not.na <- apply(YVM.na, MARGIN = 1, sum) == 0L
         if (na.act == "na.omit" || na.act == "na.exclude" || 
             na.act == "na.pass") {
@@ -11045,17 +12774,6 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
     if (k == 1) {
         method <- "FE"
         knha <- FALSE
-    }
-    if (any(vi <= 0)) {
-        allvipos <- FALSE
-        warning("There are outcomes with non-positive sampling variances.")
-        if (any(vi < 0)) {
-            vi[vi <= 0] <- 0
-            warning("Negative sampling variances constrained to zero.")
-        }
-    }
-    else {
-        allvipos <- TRUE
     }
     if (is.null(mods) && !intercept) {
         warning("Must either include an intercept (intercept=TRUE) and/or moderators in model.\n  Coerced intercept into the model.")
@@ -11088,9 +12806,6 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
     else {
         int.only <- FALSE
     }
-    evstXX <- eigen(t(X) %*% X, symmetric = TRUE)$values
-    if (any(evstXX <= .Machine$double.eps)) 
-        stop("Design matrix not of full rank. Cannot fit model.")
     if (method == "FE") {
         if (p > k) {
             stop("Number of parameters to be estimated is larger than the number of observations.")
@@ -11132,10 +12847,14 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
     m <- length(btt)
     con <- list(tau2.init = NULL, tau2.min = 0, tau2.max = 50, 
         threshold = 10^-5, maxiter = 100, stepadj = 1, REMLf = TRUE, 
-        verbose = FALSE)
+        verbose = FALSE, tol = 1e-07)
     if (verbose) 
         con$verbose <- verbose
-    con[pmatch(names(control), names(con))] <- control
+    verbose <- con$verbose
+    con.pos <- pmatch(names(control), names(con))
+    con[c(na.omit(con.pos))] <- control[!is.na(con.pos)]
+    if (any(eigen(crossprod(X), symmetric = TRUE)$values <= con$tol)) 
+        stop("Model matrix not of full rank. Cannot fit model.")
     iter <- 0
     se.tau2 <- I2 <- H2 <- QE <- QEp <- NA
     s2w <- 1
@@ -11143,11 +12862,14 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
     robust <- FALSE
     Y <- as.matrix(yi)
     if (!is.numeric(tau2)) {
+        if (!is.logical(verbose) && verbose > 1) 
+            message("Estimating tau^2 value ...")
+        tau2.fix <- FALSE
         if (method == "HS") {
             if (!allvipos) 
                 stop("HS estimator cannot be used with non-positive sampling variances.")
             wi <- 1/vi
-            W <- .diag(wi)
+            W <- diag(wi, nrow = k, ncol = k)
             stXWX <- .invcalc(X = X, W = W, k = k)
             P <- W - W %*% X %*% stXWX %*% crossprod(X, W)
             RSS <- crossprod(Y, P) %*% Y
@@ -11160,17 +12882,18 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
             stXX <- .invcalc(X = X, W = diag(k), k = k)
             P <- diag(k) - X %*% tcrossprod(stXX, X)
             RSS <- crossprod(Y, P) %*% Y
-            trPV <- .tr(P %*% .diag(vi))
+            V <- diag(vi, nrow = k, ncol = k)
+            trPV <- .tr(P %*% V)
             tau2 <- (RSS - trPV)/(k - p)
-            se.tau2 <- sqrt(1/(k - p)^2 * (2 * .tr(P %*% .diag(vi) %*% 
-                P %*% .diag(vi)) + 4 * max(tau2, 0) * trPV + 
-                2 * max(tau2, 0)^2 * (k - p)))
+            se.tau2 <- sqrt(1/(k - p)^2 * (2 * .tr(P %*% V %*% 
+                P %*% V) + 4 * max(tau2, 0) * trPV + 2 * max(tau2, 
+                0)^2 * (k - p)))
         }
         if (method == "DL") {
             if (!allvipos) 
                 stop("DL estimator cannot be used with non-positive sampling variances.")
             wi <- 1/vi
-            W <- .diag(wi)
+            W <- diag(wi, nrow = k, ncol = k)
             stXWX <- .invcalc(X = X, W = W, k = k)
             P <- W - W %*% X %*% stXWX %*% crossprod(X, W)
             RSS <- crossprod(Y, P) %*% Y
@@ -11181,21 +12904,21 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
         }
         if (method == "SJ") {
             if (is.null(con$tau2.init)) {
-                tau2.0 <- var(yi) * (k - 1)/k
+                tau2.0 <- c(var(yi) * (k - 1)/k)
             }
             else {
                 tau2.0 <- con$tau2.init
             }
             wi <- 1/(vi + tau2.0)
-            W <- .diag(wi)
+            W <- diag(wi, nrow = k, ncol = k)
             stXWX <- .invcalc(X = X, W = W, k = k)
             P <- W - W %*% X %*% stXWX %*% crossprod(X, W)
             RSS <- crossprod(Y, P) %*% Y
+            V <- diag(vi, nrow = k, ncol = k)
             tau2 <- tau2.0 * RSS/(k - p)
             se.tau2 <- sqrt(tau2.0^2/(k - p)^2 * (2 * .tr(P %*% 
-                .diag(vi) %*% P %*% .diag(vi)) + 4 * max(tau2, 
-                0) * .tr(P %*% .diag(vi) %*% P) + 2 * max(tau2, 
-                0)^2 * .tr(P %*% P)))
+                V %*% P %*% V) + 4 * max(tau2, 0) * .tr(P %*% 
+                V %*% P) + 2 * max(tau2, 0)^2 * .tr(P %*% P)))
         }
         if (method == "DLit") {
             conv <- 1
@@ -11207,13 +12930,13 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
                 tau2 <- con$tau2.init
             }
             while (change > con$threshold) {
-                if (con$verbose) 
+                if (verbose) 
                   cat("Iteration", iter, "\ttau^2 =", round(tau2, 
                     digits), "\n")
                 iter <- iter + 1
                 tau2.old <- tau2
                 wi <- 1/(vi + tau2)
-                W <- .diag(wi)
+                W <- diag(wi, nrow = k, ncol = k)
                 stXWX <- .invcalc(X = X, W = W, k = k)
                 P <- W - W %*% X %*% stXWX %*% crossprod(X, W)
                 RSS <- crossprod(Y, P) %*% Y
@@ -11241,13 +12964,13 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
                 tau2 <- con$tau2.init
             }
             while (change > con$threshold) {
-                if (con$verbose) 
+                if (verbose) 
                   cat("Iteration", iter, "\ttau^2 =", round(tau2, 
                     digits), "\n")
                 iter <- iter + 1
                 tau2.old <- tau2
                 wi <- 1/(vi + tau2)
-                W <- .diag(wi)
+                W <- diag(wi, nrow = k, ncol = k)
                 stXWX <- .invcalc(X = X, W = W, k = k)
                 P <- W - W %*% X %*% stXWX %*% crossprod(X, W)
                 RSS <- crossprod(Y, P) %*% Y
@@ -11288,13 +13011,13 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
                 tau2 <- con$tau2.init
             }
             while (change > con$threshold) {
-                if (con$verbose) 
+                if (verbose) 
                   cat("Iteration", iter, "\ttau^2 =", round(tau2, 
                     digits), "\n")
                 iter <- iter + 1
                 tau2.old <- tau2
                 wi <- 1/(vi + tau2)
-                W <- .diag(wi)
+                W <- diag(wi, nrow = k, ncol = k)
                 stXWX <- .invcalc(X = X, W = W, k = k)
                 P <- W - W %*% X %*% stXWX %*% crossprod(X, W)
                 if (method == "ML") {
@@ -11326,22 +13049,24 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
                 se.tau2 <- sqrt(2/sum(wi^2))
             if (method == "REML") 
                 se.tau2 <- sqrt(2/.tr(PP))
-            if (method == "EB") 
+            if (method == "EB") {
+                V <- diag(vi, nrow = k, ncol = k)
                 se.tau2 <- sqrt((k/(k - p))^2/sum(wi)^2 * (2 * 
-                  .tr(P %*% .diag(vi) %*% P %*% .diag(vi)) + 
-                  4 * max(tau2, 0) * .tr(P %*% .diag(vi) %*% 
-                    P) + 2 * max(tau2, 0)^2 * .tr(P %*% P)))
+                  .tr(P %*% V %*% P %*% V) + 4 * max(tau2, 0) * 
+                  .tr(P %*% V %*% P) + 2 * max(tau2, 0)^2 * .tr(P %*% 
+                  P)))
+            }
         }
         tau2 <- max(con$tau2.min, c(tau2))
-        if (con$verbose && is.element(method, c("ML", "REML", 
-            "EB"))) 
+        if (verbose && is.element(method, c("ML", "REML", "EB"))) 
             cat("Fisher scoring algorithm converged after", iter, 
-                "iterations.", "\n")
+                "iterations.\n")
     }
     else {
+        tau2.fix <- TRUE
         if (method == "HS") {
             wi <- 1/vi
-            W <- .diag(wi)
+            W <- diag(wi, nrow = k, ncol = k)
             stXWX <- .invcalc(X = X, W = W, k = k)
             P <- W - W %*% X %*% stXWX %*% crossprod(X, W)
             se.tau2 <- sqrt(1/sum(wi)^2 * (2 * (k - p) + 4 * 
@@ -11352,14 +13077,15 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
             stXX <- .invcalc(X = X, W = diag(k), k = k)
             P <- diag(k) - X %*% tcrossprod(stXX, X)
             RSS <- crossprod(Y, P) %*% Y
-            trPV <- .tr(P %*% .diag(vi))
-            se.tau2 <- sqrt(1/(k - p)^2 * (2 * .tr(P %*% .diag(vi) %*% 
-                P %*% .diag(vi)) + 4 * max(tau2, 0) * trPV + 
-                2 * max(tau2, 0)^2 * (k - p)))
+            V <- diag(vi, nrow = k, ncol = k)
+            trPV <- .tr(P %*% V)
+            se.tau2 <- sqrt(1/(k - p)^2 * (2 * .tr(P %*% V %*% 
+                P %*% V) + 4 * max(tau2, 0) * trPV + 2 * max(tau2, 
+                0)^2 * (k - p)))
         }
         if (method == "DL") {
             wi <- 1/vi
-            W <- .diag(wi)
+            W <- diag(wi, nrow = k, ncol = k)
             stXWX <- .invcalc(X = X, W = W, k = k)
             P <- W - W %*% X %*% stXWX %*% crossprod(X, W)
             trP <- .tr(P)
@@ -11368,19 +13094,19 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
         }
         if (method == "SJ") {
             if (is.null(con$tau2.init)) {
-                tau2.0 <- var(yi) * (k - 1)/k
+                tau2.0 <- c(var(yi) * (k - 1)/k)
             }
             else {
                 tau2.0 <- con$tau2.init
             }
             wi <- 1/(vi + tau2.0)
-            W <- .diag(wi)
+            W <- diag(wi, nrow = k, ncol = k)
             stXWX <- .invcalc(X = X, W = W, k = k)
             P <- W - W %*% X %*% stXWX %*% crossprod(X, W)
+            V <- diag(vi, nrow = k, ncol = k)
             se.tau2 <- sqrt(tau2.0^2/(k - p)^2 * (2 * .tr(P %*% 
-                .diag(vi) %*% P %*% .diag(vi)) + 4 * max(tau2, 
-                0) * .tr(P %*% .diag(vi) %*% P) + 2 * max(tau2, 
-                0)^2 * .tr(P %*% P)))
+                V %*% P %*% V) + 4 * max(tau2, 0) * .tr(P %*% 
+                V %*% P) + 2 * max(tau2, 0)^2 * .tr(P %*% P)))
         }
         if (method == "ML") {
             wi <- 1/(vi + tau2)
@@ -11388,19 +13114,20 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
         }
         if (method == "REML") {
             wi <- 1/(vi + tau2)
-            W <- .diag(wi)
+            W <- diag(wi, nrow = k, ncol = k)
             stXWX <- .invcalc(X = X, W = W, k = k)
             P <- W - W %*% X %*% stXWX %*% crossprod(X, W)
             se.tau2 <- sqrt(2/.tr(P %*% P))
         }
         if (method == "EB") {
             wi <- 1/(vi + tau2)
-            W <- .diag(wi)
+            W <- diag(wi, nrow = k, ncol = k)
             stXWX <- .invcalc(X = X, W = W, k = k)
             P <- W - W %*% X %*% stXWX %*% crossprod(X, W)
+            V <- diag(vi, nrow = k, ncol = k)
             se.tau2 <- sqrt((k/(k - p))^2/sum(wi)^2 * (2 * .tr(P %*% 
-                .diag(vi) %*% P %*% .diag(vi)) + 4 * tau2 * .tr(P %*% 
-                .diag(vi) %*% P) + 2 * tau2^2 * .tr(P %*% P)))
+                V %*% P %*% V) + 4 * tau2 * .tr(P %*% V %*% P) + 
+                2 * tau2^2 * .tr(P %*% P)))
         }
     }
     if (method == "FE") {
@@ -11408,20 +13135,10 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
         if (!allvipos && weighted) 
             stop("Weighted estimation cannot be used with a fixed-effects\n  model when there are non-positive sampling variances.")
     }
-    if (allvipos) {
-        wi <- 1/vi
-        W <- .diag(wi)
-        stXWX <- .invcalc(X = X, W = W, k = k)
-        P <- W - W %*% X %*% stXWX %*% crossprod(X, W)
-        QE <- max(0, c(crossprod(Y, P) %*% Y))
-        QEp <- ifelse(k - p >= 1, pchisq(QE, df = k - p, lower.tail = FALSE), 
-            1)
-        vi.avg <- (k - p)/.tr(P)
-        I2 <- 100 * tau2/(vi.avg + tau2)
-        H2 <- tau2/vi.avg + 1
-    }
+    if (!is.logical(verbose) && verbose > 1) 
+        message("Model fitting ...")
     wi <- 1/(vi + tau2)
-    W <- .diag(wi)
+    W <- diag(wi, nrow = k, ncol = k)
     if (weighted) {
         stXWX <- .invcalc(X = X, W = W, k = k)
         b <- stXWX %*% crossprod(X, W) %*% Y
@@ -11429,9 +13146,9 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
         P <- W - W %*% X %*% stXWX %*% crossprod(X, W)
         RSS.f <- crossprod(Y, P) %*% Y
         if (robust) {
-            resid <- c(Y - X %*% b)
-            vb <- vb %*% t(X) %*% W %*% diag(resid^2) %*% W %*% 
-                X %*% vb
+            ei <- c(Y - X %*% b)
+            vb <- vb %*% t(X) %*% W %*% diag(ei^2, nrow = k, 
+                ncol = k) %*% W %*% X %*% vb
             vb <- vb * k/(k - p)
         }
         if (knha) {
@@ -11466,15 +13183,16 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
     else {
         stXX <- .invcalc(X = X, W = diag(k), k = k)
         b <- stXX %*% crossprod(X, Y)
-        vb <- tcrossprod(stXX, X) %*% .diag(vi + tau2) %*% X %*% 
-            stXX
+        vb <- tcrossprod(stXX, X) %*% diag(vi + tau2, nrow = k, 
+            ncol = k) %*% X %*% stXX
         P <- W - W %*% X %*% tcrossprod(stXX, X) - X %*% stXX %*% 
             crossprod(X, W) + X %*% stXX %*% crossprod(X, W) %*% 
             X %*% tcrossprod(stXX, X)
         RSS.f <- crossprod(Y, P) %*% Y
         if (robust) {
-            resid <- c(Y - X %*% b)
-            vb <- stXX %*% t(X) %*% diag(resid^2) %*% X %*% stXX
+            ei <- c(Y - X %*% b)
+            vb <- stXX %*% t(X) %*% diag(ei^2, nrow = k, ncol = k) %*% 
+                X %*% stXX
             vb <- vb * k/(k - p)
         }
         if (knha) {
@@ -11510,12 +13228,26 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
     }
     ci.lb <- c(b - crit * se)
     ci.ub <- c(b + crit * se)
-    R2 <- NULL
+    if (!is.logical(verbose) && verbose > 1) 
+        message("Heterogeneity testing ...")
+    if (allvipos) {
+        wi <- 1/vi
+        W.FE <- diag(wi, nrow = k, ncol = k)
+        stXWX <- .invcalc(X = X, W = W.FE, k = k)
+        P <- W.FE - W.FE %*% X %*% stXWX %*% crossprod(X, W.FE)
+        QE <- max(0, c(crossprod(Y, P) %*% Y))
+        QEp <- ifelse(k - p >= 1, pchisq(QE, df = k - p, lower.tail = FALSE), 
+            1)
+        vi.avg <- (k - p)/.tr(P)
+        I2 <- 100 * tau2/(vi.avg + tau2)
+        H2 <- tau2/vi.avg + 1
+    }
     if (!int.only && int.incl && method != "FE") {
-        if (con$verbose) 
-            cat("Fitting the RE model for R^2 computation.\n")
+        if (!is.logical(verbose) && verbose > 1) 
+            message("Fitting RE model for R^2 computation ...")
         res.RE <- rma(yi, vi, method = method, weighted = weighted, 
-            knha = knha, verbose = verbose, control = con, digits = digits)
+            knha = knha, verbose = ifelse(verbose, TRUE, FALSE), 
+            control = con, digits = digits)
         tau2.RE <- res.RE$tau2
         if (identical(tau2.RE, 0)) {
             R2 <- NA
@@ -11525,7 +13257,12 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
                 2)
         }
     }
-    parms <- p + ifelse(method == "FE", 0, 1)
+    else {
+        R2 <- NULL
+    }
+    if (!is.logical(verbose) && verbose > 1) 
+        message("Computing fit statistics and log likelihood ...")
+    parms <- p + ifelse(method == "FE" || tau2.fix, 0, 1)
     ll.ML <- -1/2 * (k) * log(2 * base::pi) - 1/2 * sum(log(vi + 
         tau2)) - 1/2 * RSS.f
     ll.REML <- -1/2 * (k - p) * log(2 * base::pi) + ifelse(con$REMLf, 
@@ -11541,14 +13278,21 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
     }
     AIC.ML <- -2 * ll.ML + 2 * parms
     BIC.ML <- -2 * ll.ML + parms * log(k)
+    AICc.ML <- -2 * ll.ML + 2 * parms * max(k, parms + 2)/(max(k, 
+        parms + 2) - parms - 1)
     dev.REML <- -2 * (ll.REML - 0)
     AIC.REML <- -2 * ll.REML + 2 * parms
     BIC.REML <- -2 * ll.REML + parms * log(k - p)
-    fit.stats <- matrix(c(ll.ML, dev.ML, AIC.ML, BIC.ML, ll.REML, 
-        dev.REML, AIC.REML, BIC.REML), ncol = 2, byrow = FALSE)
-    dimnames(fit.stats) <- list(c("ll", "dev", "AIC", "BIC"), 
-        c("ML", "REML"))
+    AICc.REML <- -2 * ll.REML + 2 * parms * max(k - p, parms + 
+        2)/(max(k - p, parms + 2) - parms - 1)
+    fit.stats <- matrix(c(ll.ML, dev.ML, AIC.ML, BIC.ML, AICc.ML, 
+        ll.REML, dev.REML, AIC.REML, BIC.REML, AICc.REML), ncol = 2, 
+        byrow = FALSE)
+    dimnames(fit.stats) <- list(c("ll", "dev", "AIC", "BIC", 
+        "AICc"), c("ML", "REML"))
     fit.stats <- data.frame(fit.stats)
+    if (!is.logical(verbose) && verbose > 1) 
+        message("Preparing output ...")
     p.eff <- p
     k.eff <- k
     res <- list(b, se, zval, pval, ci.lb, ci.ub, vb, tau2, se.tau2, 
@@ -11557,7 +13301,7 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
         yi.f, vi.f, X.f, ai.f, bi.f, ci.f, di.f, x1i.f, x2i.f, 
         t1i.f, t2i.f, ni, ni.f, ids, not.na, slab, slab.null, 
         measure, method, weighted, knha, robust, s2w, btt, intercept, 
-        digits, level, con, add, to, drop00, fit.stats)
+        digits, level, control, verbose, add, to, drop00, fit.stats)
     names(res) <- c("b", "se", "zval", "pval", "ci.lb", "ci.ub", 
         "vb", "tau2", "se.tau2", "k", "k.f", "k.eff", "p", "p.eff", 
         "parms", "m", "QE", "QEp", "QM", "QMp", "I2", "H2", "R2", 
@@ -11566,7 +13310,8 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
         "x1i.f", "x2i.f", "t1i.f", "t2i.f", "ni", "ni.f", "ids", 
         "not.na", "slab", "slab.null", "measure", "method", "weighted", 
         "knha", "robust", "s2w", "btt", "intercept", "digits", 
-        "level", "control", "add", "to", "drop00", "fit.stats")
+        "level", "control", "verbose", "add", "to", "drop00", 
+        "fit.stats")
     class(res) <- c("rma.uni", "rma")
     return(res)
 }
@@ -11638,10 +13383,10 @@ function (model, digits = model$digits, ...)
         "na.pass"))) 
         stop("Unknown 'na.action' specified under options().")
     x <- model
-    V <- .diag(x$vi + x$tau2)
+    V <- diag(x$vi + x$tau2, nrow = x$k, ncol = x$k)
     if (x$weighted) {
         wi <- 1/(x$vi + x$tau2)
-        W <- .diag(wi)
+        W <- diag(wi, nrow = x$k, ncol = x$k)
         stXWX <- .invcalc(X = x$X, W = W, k = x$k)
         H <- x$X %*% stXWX %*% crossprod(x$X, W)
     }
@@ -11694,14 +13439,14 @@ function (model, digits = model$digits, ...)
         if (is.element(x$measure, c("RR", "OR", "RD"))) {
             res <- try(rma.mh(ai = x$ai.f[-i], bi = x$bi.f[-i], 
                 ci = x$ci.f[-i], di = x$di.f[-i], measure = x$measure, 
-                add = x$add, to = x$to, drop00 = x$drop00, correct = x$correct, 
-                ...), silent = TRUE)
+                add = x$add, to = x$to, drop00 = x$drop00, correct = x$correct), 
+                silent = TRUE)
         }
         else {
             res <- try(rma.mh(x1i = x$x1i.f[-i], x2i = x$x2i.f[-i], 
                 t1i = x$t1i.f[-i], t2i = x$t2i.f[-i], measure = x$measure, 
-                add = x$add, to = x$to, drop00 = x$drop00, correct = x$correct, 
-                ...), silent = TRUE)
+                add = x$add, to = x$to, drop00 = x$drop00, correct = x$correct), 
+                silent = TRUE)
         }
         if (inherits(res, "try-error")) 
             next
@@ -11745,7 +13490,7 @@ function (model, digits = model$digits, ...)
     for (i in seq.int(x$k.f)[x$not.na]) {
         res <- try(rma.peto(ai = x$ai.f[-i], bi = x$bi.f[-i], 
             ci = x$ci.f[-i], di = x$di.f[-i], add = x$add, to = x$to, 
-            drop00 = x$drop00, ...), silent = TRUE)
+            drop00 = x$drop00), silent = TRUE)
         if (inherits(res, "try-error")) 
             next
         delpred[i] <- res$b
@@ -11789,7 +13534,7 @@ function (model, digits = model$digits, ...)
     for (i in seq.int(x$k.f)[x$not.na]) {
         res <- try(rma(x$yi.f[-i], x$vi.f[-i], mods = cbind(x$X.f[-i, 
             ]), method = x$method, weighted = x$weighted, intercept = FALSE, 
-            knha = x$knha, control = x$control, ...), silent = TRUE)
+            knha = x$knha, control = x$control), silent = TRUE)
         if (inherits(res, "try-error")) 
             next
         tau2.del[i] <- res$tau2

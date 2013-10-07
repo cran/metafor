@@ -1,0 +1,94 @@
+\name{profile.rma.uni}
+\alias{profile.rma.uni}
+\alias{profile.rma.mv}
+\title{Profile Plot for 'rma.uni' and 'rma.mv' Objects}
+\description{Function to profile the (restricted) log-likelihood for objects of class \code{"rma.uni"} and \code{"rma.mv"}.}
+\usage{
+\method{profile}{rma.uni}(fitted, xlim, ylim, steps=20, progbar=TRUE, plot=TRUE, pch=19, \ldots)
+\method{profile}{rma.mv}(fitted, sigma2, tau2, rho, xlim, ylim,
+        steps=20, progbar=TRUE, plot=TRUE, pch=19, \ldots)
+}
+\arguments{
+   \item{fitted}{an object of class \code{"rma.uni"} or \code{"rma.mv"}.}
+   \item{sigma2}{integer specifying for which \eqn{\sigma^2} value the likelihood should be profiled (only relevant for \code{"rma.mv"} objects).}
+   \item{tau2}{integer specifying for which \eqn{\tau^2} value the likelihood should be profiled (only relevant for \code{"rma.mv"} objects).}
+   \item{rho}{integer specifying for which \eqn{\rho} value the likelihood should be profiled (only relevant for \code{"rma.mv"} objects).}
+   \item{xlim}{optional vector specifying the lower and upper limit of the parameter over which the profiling should be done. If unspecified, the function tries to set these limits automatically.}
+   \item{ylim}{optional vector specifying the y-axis limits when plotting the profiled likelihood. If unspecified, the function tries to set these limits automatically.}
+   \item{steps}{number of points between \code{xlim[1]} and \code{xlim[2]} (inclusive) for which the likelihood should be obtained (default is 20).}
+   \item{progbar}{logical indicating whether a progress bar should be shown (default is \code{TRUE}).}
+   \item{plot}{logical indicating whether the profile plot should be drawn after profiling is finished (default is \code{TRUE}).}
+   \item{pch}{plotting symbol to use. By default, a filled circle is used. See \code{\link{points}} for other options.}
+   \item{\dots}{other arguments.}
+}
+\details{
+   The function fixes a particular variance component or correlation parameter of the model and then computes the maximized (restricted) log-likelihood over the remaining parameters of the model. By doing this for a range of values for the parameter that was fixed, a profile of the (restricted) log-likelihood is obtained.
+
+   For objects of class \code{"rma.uni"}, the function profiles over parameter \eqn{\tau^2}. If \code{method="ML"} or \code{method="REML"} when fitting the model with the \code{\link{rma.uni}} function, the profiled regular/restricted log-likelihood should be maximized at the ML/REML estimate of \eqn{\tau^2}.
+
+   For objects of class \code{"rma.mv"} obtained with the \code{\link{rma.mv}} function, one must use the \code{sigma2}, \code{tau2}, and \code{rho} arguments to specify over which parameter the profiling should be done. Only one of these arguments can be used at a time. A single integer is used to specify the number of the parameter. Each profile plot should show a clear peak at the corresponding ML/REML estimate. If the profiled likelihood is flat (over the entire parameter space or large portions of it), then this suggests that at least some of the parameters of the model are not identifiable (and the parameter estimates obtained are essentially arbitrary).
+}
+\value{
+   An object of class \code{"profile.rma.uni"} or \code{"profile.rma.mv"}. The object is a list containing the following components:
+   \item{sigma2}{values of \eqn{\sigma^2} over which the likelihood was profiled (only when profiling was actually done over \eqn{\sigma^2}).}
+   \item{tau2}{values of \eqn{\tau^2} over which the likelihood was profiled (only when profiling was actually done over \eqn{\tau^2}).}
+   \item{rho}{values of \eqn{\rho} over which the likelihood was profiled (only when profiling was actually done over \eqn{\rho}).}
+   \item{ll}{(restricted) log-likelihood at the corresponding parameter value.}
+   \item{b}{a matrix with the estimated model coefficients at the corresponding parameter value.}
+   \item{ci.lb}{a matrix with the lower confidence interval bounds for the model coefficients at the corresponding parameter value.}
+   \item{ci.ub}{a matrix with the upper confidence interval bounds for the model coefficients at the corresponding parameter value.}
+   Note that the list is returned invisibly.
+}
+\note{
+   Profiling can be slow when \eqn{k} is large and/or the model is complex (the latter applies to \code{"rma.mv"}).
+}
+\author{
+   Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr
+   package homepage: \url{http://www.metafor-project.org/} \cr
+   author homepage: \url{http://www.wvbauer.com/}
+}
+\references{
+   Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \url{http://www.jstatsoft.org/v36/i03/}.
+}
+\seealso{
+   \code{\link{rma.uni}}, \code{\link{rma.mv}}
+}
+\examples{
+### load BCG vaccine data
+data(dat.bcg)
+
+### calculate log odds ratios and corresponding sampling variances
+dat <- escalc(measure="OR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
+
+### random-effects model using rma.uni()
+res <- rma(yi, vi, data=dat)
+
+### profile over tau^2
+profile(res)
+
+### change data into long format
+dat.long <- to.long(measure="OR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
+
+### set levels of group variable ("exp" = experimental/vaccinated; "con" = control/non-vaccinated)
+levels(dat.long$group) <- c("exp", "con")
+
+### set "con" to reference level
+dat.long$group <- relevel(dat.long$group, ref="con")
+
+### calculate log odds and corresponding sampling variances
+dat.long <- escalc(measure="PLO", xi=out1, mi=out2, data=dat.long)
+
+### bivariate random-effects model using rma.mv()
+res <- rma.mv(yi, vi, mods = ~ group, random = ~ group | study, struct="UN", data=dat.long)
+res
+
+### profile over tau^2_1, tau^2_2, and rho
+### note: for rho, adjust region over which profiling is done ("zoom in" on area around estimate)
+\dontrun{
+par(mfrow=c(3,1))
+profile(res, tau2=1)
+profile(res, tau2=2)
+profile(res, rho=1, xlim=c(.90, .98))
+}
+}
+\keyword{hplot}

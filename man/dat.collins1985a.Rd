@@ -16,15 +16,13 @@
 }
 }
 \details{
-   The data contained in this dataset were obtained from Table I in van Houwelingen, Zwinderman, and Stijnen (1993).
+   The data in this dataset were obtained from Table I in van Houwelingen, Zwinderman, and Stijnen (1993).
 }
 \source{
-   Collins, R., & Langman, M. (1985). Treatment with histamine H2 antagonists in acute upper gastrointestinal hemorrhage. \emph{New England Journal of Medicine}, \bold{313}, 660--666.
-
    van Houwelingen, H. C., Zwinderman, K. H., & Stijnen, T. (1993). A bivariate approach to meta-analysis. \emph{Statistics in Medicine}, \bold{12}, 2273--2284.
 }
 \references{
-   Curtis, P. S., & Wang, X. (1998). A meta-analysis of elevated CO2 effects on woody plant mass, form, and physiology. \emph{Oecologia}, \bold{113}, 299--313.
+   Collins, R., & Langman, M. (1985). Treatment with histamine H2 antagonists in acute upper gastrointestinal hemorrhage. \emph{New England Journal of Medicine}, \bold{313}, 660--666.
 }
 \examples{
 ### load data
@@ -45,7 +43,7 @@ res <- rma.glmm(measure="OR", ai=xci, n1i=nci, ci=xti, n2i=nti,
                 data=dat.collins1985a, model="CM.EL", method="FE")
 summary(res)
 
-### plot the log likelihoods of the odds ratios
+### plot the log-likelihoods of the odds ratios
 llplot(measure="OR", ai=xci, n1i=nci, ci=xti, n2i=nti, data=dat.collins1985a,
        lwd=1, refline=NA, xlim=c(-4,4), drop00=FALSE)
 

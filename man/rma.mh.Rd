@@ -1,18 +1,18 @@
 \name{rma.mh}
 \alias{rma.mh}
 \title{Meta-Analysis via the Mantel-Haenszel Method}
-\description{Function to fit a fixed-effects model via the Mantel-Haenszel method.}
+\description{Function to fit fixed-effects models to \eqn{2 \times 2}{2x2} table and person-time data via the Mantel-Haenszel method. See below and the documentation of the \pkg{\link{metafor-package}} for more details on these models.}
 \usage{
 rma.mh(ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
        measure="OR", data, slab, subset,
        add=1/2, to="only0", drop00=TRUE,
-       correct=TRUE, level=95, digits=4)
+       correct=TRUE, level=95, digits=4, verbose=FALSE)
 }
 \arguments{
-   \item{ai}{vector to specify the 2x2 table frequencies (upper left cell). See below and the documentation of the \code{\link{escalc}} function for more details.}
-   \item{bi}{vector to specify the 2x2 table frequencies (upper right cell). See below and the documentation of the \code{\link{escalc}} function for more details.}
-   \item{ci}{vector to specify the 2x2 table frequencies (lower left cell). See below and the documentation of the \code{\link{escalc}} function for more details.}
-   \item{di}{vector to specify the 2x2 table frequencies (lower right cell). See below and the documentation of the \code{\link{escalc}} function for more details.}
+   \item{ai}{vector to specify the \eqn{2 \times 2}{2x2} table frequencies (upper left cell). See below and the documentation of the \code{\link{escalc}} function for more details.}
+   \item{bi}{vector to specify the \eqn{2 \times 2}{2x2} table frequencies (upper right cell). See below and the documentation of the \code{\link{escalc}} function for more details.}
+   \item{ci}{vector to specify the \eqn{2 \times 2}{2x2} table frequencies (lower left cell). See below and the documentation of the \code{\link{escalc}} function for more details.}
+   \item{di}{vector to specify the \eqn{2 \times 2}{2x2} table frequencies (lower right cell). See below and the documentation of the \code{\link{escalc}} function for more details.}
    \item{n1i}{vector to specify the group sizes or row totals (first group). See below and the documentation of the \code{\link{escalc}} function for more details.}
    \item{n2i}{vector to specify the group sizes or row totals (second group). See below and the documentation of the \code{\link{escalc}} function for more details.}
    \item{x1i}{vector to specify the number of events (first group). See below and the documentation of the \code{\link{escalc}} function for more details.}
@@ -29,9 +29,10 @@ rma.mh(ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
    \item{correct}{logical indicating whether to apply a continuity correction when computing the Cochran-Mantel-Haenszel test statistic.}
    \item{level}{numerical value between 0 and 100 specifying the confidence interval level (default is 95).}
    \item{digits}{integer specifying the number of decimal places to which the printed results should be rounded (default is 4).}
+   \item{verbose}{logical indicating whether output should be generated on the progress of the model fitting (default is \code{FALSE}).}
 }
 \details{
-   When the outcome measure is either the odds ratio (measure=\code{"OR"}), relative risk (\code{measure="RR"}), or risk difference (\code{measure="RD"}), the studies are assumed to provide data in terms of 2x2 tables of the form:
+   When the outcome measure is either the odds ratio (measure=\code{"OR"}), relative risk (\code{measure="RR"}), or risk difference (\code{measure="RD"}), the studies are assumed to provide data in terms of \eqn{2 \times 2}{2x2} tables of the form:
    \tabular{lccc}{
            \tab outcome 1 \tab outcome 2 \tab total      \cr
    group 1 \tab \code{ai} \tab \code{bi} \tab \code{n1i} \cr
@@ -46,10 +47,10 @@ rma.mh(ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
    } where \code{x1i} and \code{x2i} denote the number of events in the first and the second group, respectively, and \code{t1i} and \code{t2i} the corresponding total person-times at risk.
 
    An approach for aggregating table data of these types was suggested by Mantel and Haenszel (1959) and later extended by various authors (see references). The Mantel-Haenszel method provides a weighted estimate under a fixed-effects model. The method is particularly advantageous when aggregating a large number of studies with small sample sizes (the so-called sparse data or increasing strata case).
-   
+
    When analyzing odds ratios, the Cochran-Mantel-Haenszel (CMH) test (Cochran, 1954; Mantel & Haenszel, 1959) and Tarone's test for heterogeneity (Tarone, 1985) are also provided (by default, the CMH test statistic is computed with the continuity correction; this can be switched off with \code{correct=FALSE}). When analyzing incidence rate ratios, the Mantel-Haenszel (MH) test (Rothman et al., 2008) for person-time data is also provided (again, the \code{correct} argument controls whether the continuity correction is applied). When analyzing odds ratios, relative risks, or incidence rate ratios, the printed results are given both in terms of the log and the raw units (for easier interpretation).
 
-   The Mantel-Haenszel method itself does not require the calculation of the individual outcome values and directly makes use of the table/event counts. Zero cells/events are not a problem (except in extreme cases, such as when one of the two outcomes never occurs in any of the 2x2 tables or when there are no events for one of the two groups in any of the tables). Therefore, it is unnecessary to add some constant to the cell counts (or the number of events) when there are zero cells/events. However, for plotting and various other functions, it is necessary to calculate the individual outcome values for the \eqn{k} studies. Here, zero cells/events can be problematic, so adding a constant value to the cell counts (or the number of events) ensures that all \eqn{k} values can be calculated. The \code{add} and \code{to} arguments are used to specify what value should be added to the 2x2 cell frequencies (or the number of events) and under what circumstances when calculating the individual outcome values and when applying the Mantel-Haenszel method. The documentation of the \code{\link{escalc}} function explains how the \code{add} and \code{to} arguments work. If only one value for these arguments is specified, then these values are used when calculating the individual outcomes and no adjustment to the cell counts (or the number of events) is made when applying the Mantel-Haenszel method. Alternatively, when specifying two values for these arguments, the first value applies when calculating the individual outcomes and the second value when applying the Mantel-Haenszel method. Note that \code{drop00} is set to \code{TRUE} by default, since studies where \code{ai=ci=0} or \code{bi=di=0} or studies where \code{x1i=x2i=0} are also automatically \sQuote{dropped} when applying the Mantel-Haenszel method.
+   The Mantel-Haenszel method itself does not require the calculation of the individual outcome values and directly makes use of the table/event counts. Zero cells/events are not a problem (except in extreme cases, such as when one of the two outcomes never occurs in any of the \eqn{2 \times 2}{2x2} tables or when there are no events for one of the two groups in any of the tables). Therefore, it is unnecessary to add some constant to the cell counts (or the number of events) when there are zero cells/events. However, for plotting and various other functions, it is necessary to calculate the individual outcome values for the \eqn{k} studies. Here, zero cells/events can be problematic, so adding a constant value to the cell counts (or the number of events) ensures that all \eqn{k} values can be calculated. The \code{add} and \code{to} arguments are used to specify what value should be added to the cell frequencies (or the number of events) and under what circumstances when calculating the individual outcome values and when applying the Mantel-Haenszel method. The documentation of the \code{\link{escalc}} function explains how the \code{add} and \code{to} arguments work. If only one value for these arguments is specified, then these values are used when calculating the individual outcomes and no adjustment to the cell counts (or the number of events) is made when applying the Mantel-Haenszel method. Alternatively, when specifying two values for these arguments, the first value applies when calculating the individual outcomes and the second value when applying the Mantel-Haenszel method. Note that \code{drop00} is set to \code{TRUE} by default, since studies where \code{ai=ci=0} or \code{bi=di=0} or studies where \code{x1i=x2i=0} are also automatically \sQuote{dropped} when applying the Mantel-Haenszel method.
 }
 \value{
    An object of class \code{c("rma.mh","rma")}. The object is a list containing the following components:
@@ -67,7 +68,7 @@ rma.mh(ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
    \item{TAp}{corresponding p-value (only when \code{measure="OR"}).}
    \item{k}{number of tables included in the analysis.}
    \item{yi, vi}{the vector of individual outcomes and corresponding sampling variances.}
-   \item{fit.stats}{a list with the log likelihood, deviance, AIC, and BIC values under the unrestricted and restricted likelihood.}
+   \item{fit.stats}{a list with the log-likelihood, deviance, AIC, BIC, and AICc values under the unrestricted and restricted likelihood.}
    \item{\dots}{some additional elements/values.}
 
    The results of the fitted model are neatly formated and printed with the \code{\link{print.rma.mh}} function. If fit statistics should also be given, use \code{\link{summary.rma}} (or use the \code{\link{fitstats.rma}} function to extract them).
@@ -107,7 +108,7 @@ rma.mh(ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
    Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \url{http://www.jstatsoft.org/v36/i03/}.
 }
 \seealso{
-   \code{\link{rma.uni}}, \code{\link{rma.glmm}}, \code{\link{rma.peto}}
+   \code{\link{rma.uni}}, \code{\link{rma.glmm}}, \code{\link{rma.peto}}, \code{\link{rma.mv}}
 }
 \examples{
 ### load BCG vaccine data

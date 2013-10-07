@@ -1,6 +1,7 @@
 exportPattern("^[^\\.]")
 
 import(stats)
+import(Formula)
 
 #importFrom(nlme, BIC)
 #if (!exists("BIC", where=asNamespace("stats"))) {
@@ -69,10 +70,13 @@ S3method(print, ranktest.rma)
 S3method(print, regtest.rma)
 S3method(print, rma.glmm)
 S3method(print, rma.mh)
+S3method(print, rma.mv)
 S3method(print, rma.peto)
 S3method(print, rma.uni)
 S3method(print, summary.escalc)
 S3method(print, summary.rma)
+S3method(profile, rma.mv)
+S3method(profile, rma.uni)
 S3method(qqnorm, rma.glmm)
 S3method(qqnorm, rma.mh)
 S3method(qqnorm, rma.peto)

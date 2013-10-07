@@ -1,7 +1,7 @@
 \name{rma.glmm}
 \alias{rma.glmm}
-\title{Meta-Analysis via the Generalized Linear (Mixed-Effects) Model}
-\description{Function to fit the meta-analytic fixed- and random-effects models with or without moderators via the generalized linear (mixed-effects) model. See the documentation of the \pkg{\link{metafor-package}} for more details on these models.}
+\title{Meta-Analysis via Generalized Linear (Mixed-Effects) Models}
+\description{Function to fit meta-analytic fixed- and random/mixed-effects models with or without moderators via generalized linear (mixed-effects) models. See below and the documentation of the \pkg{\link{metafor-package}} for more details on these models.}
 \usage{
 rma.glmm(ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi, ti, ni,
          mods, measure, intercept=TRUE, data, slab, subset,
@@ -26,7 +26,7 @@ rma.glmm(ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi, ti, ni,
    \item{ni}{see below and the documentation of the \code{\link{escalc}} function for more details.}
    \item{mods}{optional argument to include one or more moderators in the model. A single moderator can be given as a vector of length \eqn{k} specifying the values of the moderator. Multiple moderators are specified by giving a matrix with \eqn{k} rows and \eqn{p'} columns. Alternatively, a model \code{\link{formula}} can be used to specify the model. See \sQuote{Details}.}
    \item{measure}{character string indicating the outcome measure to use for the meta-analysis. Possible options are the odds ratio (\code{"OR"}), the incidence rate ratio (\code{"IRR"}), the logit transformed proportion (\code{"PLO"}), or the log transformed incidence rate (\code{"IRLN"}).}
-   \item{intercept}{logical, indicating whether an intercept term should be added to the model (default is \code{TRUE}).}
+   \item{intercept}{logical indicating whether an intercept term should be added to the model (default is \code{TRUE}).}
    \item{data}{optional data frame containing the data supplied to the function.}
    \item{slab}{optional vector with unique labels for the \eqn{k} studies.}
    \item{subset}{optional vector indicating the subset of studies that should be used for the analysis. This can be a logical vector of length \eqn{k} or a numeric vector indicating the indices of the observations to include.}
@@ -40,8 +40,8 @@ rma.glmm(ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi, ti, ni,
    \item{level}{numerical value between 0 and 100 specifying the confidence interval level (default is 95).}
    \item{digits}{integer specifying the number of decimal places to which the printed results should be rounded (default is 4).}
    \item{btt}{optional vector of indices specifying which coefficients to include in the omnibus test of moderators. See \sQuote{Details}.}
-   \item{nAGQ}{positive integer specifying the number of points per axis for evaluating the adaptive Gauss-Hermite approximation to the log likelihood. This defaults to 7. Setting this to 1 corresponds to the Laplacian approximation. See \sQuote{Note}.}
-   \item{verbose}{logical indicating whether output should be generated for the fitting algorithms used (default is \code{FALSE}). See \sQuote{Note}.}
+   \item{nAGQ}{positive integer specifying the number of points per axis for evaluating the adaptive Gauss-Hermite approximation to the log-likelihood. This defaults to 7. Setting this to 1 corresponds to the Laplacian approximation. See \sQuote{Note}.}
+   \item{verbose}{logical indicating whether output should be generated on the progress of the model fitting (default is \code{FALSE}). Can also be an integer. Values > 1 generate more verbose output. See \sQuote{Note}.}
    \item{control}{optional list of control values for the estimation algorithms. If unspecified, default values are defined inside the function. See \sQuote{Note}.}
 }
 \details{
@@ -59,24 +59,24 @@ rma.glmm(ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi, ti, ni,
 
    \bold{Specifying the Model}
 
-   A variety of general model types are available when analyzing 2x2 table data (i.e., when \code{measure="OR"}) or two-group event count data (i.e., when \code{measure="IRR"}).
+   A variety of general model types are available when analyzing \eqn{2 \times 2}{2x2} table data (i.e., when \code{measure="OR"}) or two-group event count data (i.e., when \code{measure="IRR"}):
    \itemize{
    \item \code{model="UM.FS"} for an unconditional generalized linear mixed-effects model with fixed study effects
    \item \code{model="UM.RS"} for an unconditional generalized linear mixed-effects model with random study effects
    \item \code{model="CM.AL"} for a conditional generalized linear mixed-effects model (approximate likelihood)
    \item \code{model="CM.EL"} for a conditional generalized linear mixed-effects model (exact likelihood).
    }
-   For \code{measure="OR"}, models \code{"UM.FS"} and \code{"UM.RS"} are essentially (mixed-effects) logistic regression models, while for \code{measure="IRR"}, these models are (mixed-effects) Poisson regression models. A choice must be made on how to model study level variability (i.e., differences in outcomes across studies irrespective of group membership). One can choose between using fixed study effects (which means that \eqn{k} dummy variables are added to the model) or random study effects (which means adding a random effect at the study level).
+   For \code{measure="OR"}, models \code{"UM.FS"} and \code{"UM.RS"} are essentially (mixed-effects) logistic regression models, while for \code{measure="IRR"}, these models are (mixed-effects) Poisson regression models. A choice must be made on how to model study level variability (i.e., differences in outcomes across studies irrespective of group membership). One can choose between using fixed study effects (which means that \eqn{k} dummy variables are added to the model) or random study effects (which means that random effects corresponding to the study factor are added to the model).
 
    The conditional model (\code{model="CM.EL"}) avoids having to model study level variability by conditioning on the total numbers of cases/events in each study. For \code{measure="OR"}, this leads to a non-central hypergeometric distribution for the data within each study and the corresponding model is then a (mixed-effects) conditional logistic model. Fitting this model can be difficult and computationally expensive. When the number of cases in each study is small relative to the group sizes, one can approximate the exact likelihood by a binomial distribution, which leads to a regular (mixed-effects) logistic regression model (\code{model="CM.AL"}). For \code{measure="IRR"}, the conditional model leads directly to a binomial distribution for the data within each study and the resulting model is again a (mixed-effects) logistic regression model (no approximate likelihood model is needed here).
 
-   When analyzing proportions (i.e., when \code{measure="PLO"}) or incidence rates (i.e., when \code{measure="IRLN"}) of individual groups, the model type is always a (mixed-effects) logistic or Poisson regression model, respectively (i.e., the \code{model} argument is not relevant here).
+   When analyzing proportions (i.e., \code{measure="PLO"}) or incidence rates (i.e., \code{measure="IRLN"}) of individual groups, the model type is always a (mixed-effects) logistic or Poisson regression model, respectively (i.e., the \code{model} argument is not relevant here).
 
    Aside from choosing the general model type, one has to decide whether to fit a fixed- or random-effects model to the data. A \emph{fixed-effects model} is fitted by setting \code{method="FE"}. A \emph{random-effects model} is fitted by setting \code{method="ML"} (the default). Note that random-effects models with dichotomous data are often referred to as \sQuote{binomial-normal} models in the meta-analytic literature. Analogously, for event count data, such models could be referred to as \sQuote{Poisson-normal} models.
 
-   One or more moderators can be included in all of these models via the \code{mods} argument. A single moderator can be given as a (row or column) vector of length \eqn{k} specifying the values of the moderator. Multiple moderators are specified by giving an appropriate design matrix with \eqn{k} rows and \eqn{p'} columns (e.g., using \code{mods = cbind(mod1, mod2, mod3)}, where \code{mod1}, \code{mod2}, and \code{mod3} correspond to the names of the variables for the three moderator variables). The intercept is included in the model by default unless \code{intercept=FALSE}.
+   One or more moderators can be included in all of these models via the \code{mods} argument. A single moderator can be given as a (row or column) vector of length \eqn{k} specifying the values of the moderator. Multiple moderators are specified by giving an appropriate model matrix (i.e., \eqn{\mathbf{X}}{X}) with \eqn{k} rows and \eqn{p'} columns (e.g., using \code{mods = cbind(mod1, mod2, mod3)}, where \code{mod1}, \code{mod2}, and \code{mod3} correspond to the names of the variables for the three moderator variables). The intercept is added to the model matrix by default unless \code{intercept=FALSE}.
 
-   Alternatively, one can use standard \code{\link{formula}} syntax to specify the model. In this case, the \code{mods} argument should be set equal to a one-sided formula of the form \code{mods = ~ model} (e.g., \code{mods = ~ mod1 + mod2 + mod3}). Interactions, polynomial terms, and factors can be easily added to the model in this manner. When specifying a model formula via the \code{mods} argument, the \code{intercept} argument is ignored. Instead, the inclusion/exclusion of the intercept term is controlled by the specified formula (e.g., \code{mods = ~ mod1 + mod2 + mod3 - 1} would lead to the removal of the intercept term). With moderators, a \emph{fixed-effects with moderators model} is then fitted by setting \code{method="FE"}, while a \emph{mixed-effects model} is fitted by setting \code{method="ML"}.
+   Alternatively, one can use the standard \code{\link{formula}} syntax to specify the model. In this case, the \code{mods} argument should be set equal to a one-sided formula of the form \code{mods = ~ model} (e.g., \code{mods = ~ mod1 + mod2 + mod3}). Interactions, polynomial terms, and factors can be easily added to the model in this manner. When specifying a model formula via the \code{mods} argument, the \code{intercept} argument is ignored. Instead, the inclusion/exclusion of the intercept term is controlled by the specified formula (e.g., \code{mods = ~ mod1 + mod2 + mod3 - 1} would lead to the removal of the intercept term). With moderators, a \emph{fixed-effects with moderators model} is then fitted by setting \code{method="FE"}, while a \emph{mixed-effects model} is fitted by setting \code{method="ML"}.
 
    \bold{Fixed-, Saturated-, and Random/Mixed-Effects Models}
 
@@ -93,7 +93,7 @@ rma.glmm(ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi, ti, ni,
 
    \bold{Categorical Moderators}
 
-   Categorical moderator variables can be included in the model in the same way that appropriately (dummy) coded categorical independent variables can be included in linear models. One can either do the dummy coding manually or use a model formula together with the \code{\link{factor}} function to let \R handle the coding automatically.
+   Categorical moderator variables can be included in the model via the \code{mods} argument in the same way that appropriately (dummy) coded categorical independent variables can be included in linear models. One can either do the dummy coding manually or use a model formula together with the \code{\link{factor}} function to let \R handle the coding automatically.
 
    \bold{Tests and Confidence Intervals}
 
@@ -101,7 +101,7 @@ rma.glmm(ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi, ti, ni,
 
    \bold{Tests for (Residual) Heterogeneity}
 
-   Two different tests for (residual) heterogeneity are automatically carried out by the function. The first is a Wald-type test, which tests the coefficients corresponding to the dummy variables added in the saturated model for significance. The second is a likelihood ratio test, which tests the same set of coefficients, but does so by comparing the deviance of the fixed-effects and the saturated model. These two tests are not identical for the types of models fitted by the \code{rma.glmm} function and may even lead to conflicting conclusions.
+   Two different tests for (residual) heterogeneity are automatically carried out by the function. The first is a Wald-type test, which tests the coefficients corresponding to the dummy variables added in the saturated model for significance. The second is a likelihood ratio test, which tests the same set of coefficients, but does so by computing \eqn{-2} times the difference in the log-likelihood of the fixed-effects and the saturated model. These two tests are not identical for the types of models fitted by the \code{rma.glmm} function and may even lead to conflicting conclusions.
 
    \bold{Individual Outcomes}
 
@@ -130,8 +130,8 @@ rma.glmm(ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi, ti, ni,
    \item{I2}{value of \eqn{I^2}.}
    \item{H2}{value of \eqn{H^2}.}
    \item{int.only}{logical that indicates whether the model is an intercept-only model.}
-   \item{yi, vi, X}{the vector of outcomes, the corresponding sampling variances, and the design matrix of the model.}
-   \item{fit.stats}{a list with the log likelihood, deviance, AIC, and BIC values.}
+   \item{yi, vi, X}{the vector of outcomes, the corresponding sampling variances, and the model matrix of the model.}
+   \item{fit.stats}{a list with the log-likelihood, deviance, AIC, BIC, and AICc values.}
    \item{\dots}{some additional elements/values.}
 
    The results of the fitted model are neatly formated and printed with the \code{\link{print.rma.uni}} function. If fit statistics should also be given, use \code{\link{summary.rma}} (or use the \code{\link{fitstats.rma}} function to extract them).
@@ -139,20 +139,24 @@ rma.glmm(ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi, ti, ni,
 \note{
    Fitting the various types of models requires several different iterative algorithms:
    \itemize{
-   \item For \code{model="UM.FS"} and \code{model="CM.AL"}, iteratively reweighted least squares (IWLS) as implemented in the \code{\link{glm}} function is used for fitting the fixed-effects and the saturated models. For \code{method="ML"}, adaptive Gauss-Hermite quadrature as implemented in the \code{\link[lme4]{lmer}} function is used. The same applies when \code{model="CM.EL"} is used in combination with \code{measure="IRR"} or when \code{measure="PLO"} or \code{measure="IRLN"} (regardless of which general model type is then specified).
-   \item For \code{model="UM.RS"}, adaptive Gauss-Hermite quadrature as implemented in the \code{\link[lme4]{lmer}} function is used to fit all of the models.
-   \item For \code{model="CM.EL"} and \code{measure="OR"}, the quasi-Newton method (\code{"BFGS"}) as implemented in the \code{\link{optim}} function is used for fitting the fixed-effects and the saturated models. For \code{method="ML"}, the same algorithm is used, together with adaptive quadrature as implemented in the \code{\link{integrate}} function (for the integration over the density of the non-central hypergeometric distribution).
-   } When \code{model="CM.EL"} and \code{measure="OR"}, actually \code{model="CM.AL"} is first used to obtain starting values for \code{\link{optim}}, so either 4 (if \code{method="FE"}) or 6 (if \code{method="ML"}) models need to be fitted in total.
+   \item For \code{model="UM.FS"} and \code{model="CM.AL"}, iteratively reweighted least squares (IWLS) as implemented in the \code{\link{glm}} function is used for fitting the fixed-effects and the saturated models. For \code{method="ML"}, adaptive Gauss-Hermite quadrature as implemented in the \code{\link[lme4]{glmer}} function is used. The same applies when \code{model="CM.EL"} is used in combination with \code{measure="IRR"} or when \code{measure="PLO"} or \code{measure="IRLN"} (regardless of which general model type is then specified).
+   \item For \code{model="UM.RS"}, adaptive Gauss-Hermite quadrature as implemented in the \code{\link[lme4]{glmer}} function is used to fit all of the models.
+   \item For \code{model="CM.EL"} and \code{measure="OR"}, the quasi-Newton method (\code{"BFGS"}) as implemented in the \code{\link{optim}} function is used by default for fitting the fixed-effects and the saturated models. For \code{method="ML"}, the same algorithm is used, together with adaptive quadrature as implemented in the \code{\link{integrate}} function (for the integration over the density of the non-central hypergeometric distribution).
+   } When \code{model="CM.EL"} and \code{measure="OR"}, actually \code{model="CM.AL"} is used first to obtain starting values for \code{\link{optim}}, so either 4 (if \code{method="FE"}) or 6 (if \code{method="ML"}) models need to be fitted in total.
 
-   Some important control parameters for the various algorithms can be adjusted via the \code{control} argument. In particular,
+   Various control parameters can be adjusted via the \code{control} argument:
    \itemize{
-   \item for \code{\link{glm}}, the \code{epsilon} (default is \code{1e-8}) and \code{maxit} (default is \code{25}) arguments,
-   \item for \code{\link[lme4]{lmer}}, the \code{maxIter} (default is \code{300}) and \code{maxFN} (default is \code{900}) arguments,
-   \item for \code{\link{optim}}, the \code{method} (default is \code{"BFGS"}) and \code{reltol} (default is \code{1e-8}) arguments,
-   \item for \code{\link{integrate}}, the \code{rel.tol} (default is \code{1e-8}) and \code{subdivisions} (default is \code{100}) arguments.
-   } Also, for \code{\link[lme4]{lmer}}, the \code{nAGQ} argument is used to specify the number of quadrature points. The default value is 7, which should provide sufficient accuracy in the evaluation of the log likelihood in most cases, but at the expense of speed. Setting this to 1 corresponds to the Laplacian approximation (which is faster, but less accurate).
+      \item \code{optimizer} is set by default to \code{\link[stats:optim]{"optim"}}, but can be set to \code{\link[stats:nlminb]{"nlminb"}} or one of the optimizers in the \pkg{minqa} package (i.e., \code{\link[minqa:bobyqa]{"bobyqa"}}, \code{\link[minqa:newuoa]{"newuoa"}}, or \code{\link[minqa:uobyqa]{"uobyqa"}}),
+      \item \code{optmethod} is used to set the \code{method} argument for \code{\link{optim}} (default is \code{"BFGS"}),
+      \item \code{optCtrl} is a list of named arguments to be passed on to the \code{control} argument of the \code{\link{optim}} function,
+      \item \code{nlminbCtrl} is a list of named arguments to be passed on to the \code{control} argument of the \code{\link{nlminb}} function,
+      \item \code{minqaCtrl} is a list of named arguments to be passed on to the \code{control} argument of the chosen optimizer from the \pkg{minqa} package (i.e., \code{\link[minqa]{bobyqa}}, \code{\link[minqa]{newuoa}}, or \code{\link[minqa]{uobyqa}}),
+      \item \code{glmCtrl} is a list of named arguments to be passed on to the \code{control} argument of the \code{\link{glm}} function,
+      \item \code{glmerCtrl} is a list of named arguments to be passed on to the \code{control} argument of the \code{\link[lme4]{glmer}} function, and
+      \item \code{intCtrl} is a list of named arguments (i.e., \code{rel.tol} and \code{subdivisions}) to be passed on to the \code{\link{integrate}} function.
+   } Also, for \code{\link[lme4]{glmer}}, the \code{nAGQ} argument is used to specify the number of quadrature points. The default value is 7, which should provide sufficient accuracy in the evaluation of the log-likelihood in most cases, but at the expense of speed. Setting this to 1 corresponds to the Laplacian approximation (which is faster, but less accurate).
 
-   Information on the evolution of the various algorithms is obtained by setting \code{verbose=TRUE} or with \code{control=list(verbose=TRUE)}. Since fitting the various models can be computationally expensive, this option is quite useful to determine how the fitting is progressing.
+   Information on the progress of the various algorithms is obtained by setting \code{verbose=TRUE} or with \code{control=list(verbose=TRUE)}. Since fitting the various models can be computationally expensive, this option is quite useful to determine how the model fitting is progressing.
 
    For \code{model="CM.EL"} and \code{measure="OR"}, optimization involves repeated calculation of the density of the non-central hypergeometric distribution. When \code{method="ML"}, this also requires integration over the same density. This is currently implemented in a rather brute-force manner and may not be numerically stable, especially when models with moderators are fitted. Stability can be improved by scaling the moderators in a similar manner (i.e., don't use a moderator that is coded 0 and 1, while another uses values in the 1000s). For models with an intercept and moderators, the function actually rescales (non-dummy) variables to z-scores during the model fitting (results are given after back-scaling, so this should be transparent to the user). For models without an intercept, this is not done, so sensitivity analyses are highly recommended here (to ensure that the results do not depend on the scaling of the moderators).
 }
@@ -173,7 +177,7 @@ rma.glmm(ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi, ti, ni,
    Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \url{http://www.jstatsoft.org/v36/i03/}.
 }
 \seealso{
-   \code{\link{rma.uni}}, \code{\link{rma.mh}}, \code{\link{rma.peto}}
+   \code{\link{rma.uni}}, \code{\link{rma.mh}}, \code{\link{rma.peto}}, \code{\link{rma.mv}}
 }
 \examples{
 ### load BCG vaccine data

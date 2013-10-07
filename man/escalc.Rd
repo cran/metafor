@@ -24,10 +24,10 @@ escalc(measure, formula, \dots)
    \item{measure}{a character string indicating which effect size or outcome measure should be calculated. See \sQuote{Details} for possible options and how the data should be specified.}
    \item{formula}{when using the formula interface of the function (see \sQuote{Details} below), a model formula specifying the data structure should be specified via this argument. When not using the formula interface, this argument should be ignored and the data required to calculate the effect sizes or outcomes are then passed to the function via the following set of arguments. See \sQuote{Details}.}
    \item{weights}{vector of weights to specify the group sizes or cell frequencies (only needed when using the formula interface). See \sQuote{Details}.}
-   \item{ai}{vector to specify the 2x2 table frequencies (upper left cell).}
-   \item{bi}{vector to specify the 2x2 table frequencies (upper right cell).}
-   \item{ci}{vector to specify the 2x2 table frequencies (lower left cell).}
-   \item{di}{vector to specify the 2x2 table frequencies (lower right cell).}
+   \item{ai}{vector to specify the \eqn{2 \times 2}{2x2} table frequencies (upper left cell).}
+   \item{bi}{vector to specify the \eqn{2 \times 2}{2x2} table frequencies (upper right cell).}
+   \item{ci}{vector to specify the \eqn{2 \times 2}{2x2} table frequencies (lower left cell).}
+   \item{di}{vector to specify the \eqn{2 \times 2}{2x2} table frequencies (lower right cell).}
    \item{n1i}{vector to specify the group sizes or row totals (first group/row).}
    \item{n2i}{vector to specify the group sizes or row totals (second group/row).}
    \item{x1i}{vector to specify the number of events (first group).}
@@ -80,7 +80,7 @@ escalc(measure, formula, \dots)
 
       \subsection{Measures for Dichotomous Variables}{
 
-         In various fields (such as the health and medical sciences), the response variable measured is often dichotomous (binary), so that the data from a study comparing two different groups can be expressed in terms of a 2x2 table, such as:
+         In various fields (such as the health and medical sciences), the response variable measured is often dichotomous (binary), so that the data from a study comparing two different groups can be expressed in terms of a \eqn{2 \times 2}{2x2} table, such as:
          \tabular{lccc}{
                  \tab outcome 1 \tab outcome 2 \tab total      \cr
          group 1 \tab \code{ai} \tab \code{bi} \tab \code{n1i} \cr
@@ -89,7 +89,7 @@ escalc(measure, formula, \dots)
 
          For example, in a set of randomized clinical trials, group 1 and group 2 may refer to the treatment and placebo/control group, respectively, with outcome 1 denoting some event of interest (e.g., death, complications, failure to improve under the treatment) and outcome 2 its complement. Similarly, in a set of cohort studies, group 1 and group 2 may denote those who engage in and those who do not engage in a potentially harmful behavior (e.g., smoking), with outcome 1 denoting the development of a particular disease (e.g., lung cancer) during the follow-up period. Finally, in a set of case-control studies, group 1 and group 2 may refer to those with the disease (i.e., cases) and those free of the disease (i.e., controls), with outcome 1 denoting, for example, exposure to some risk environmental risk factor and outcome 2 non-exposure. Note that in all of these examples, the stratified sampling scheme fixes the row totals (i.e., the group sizes) by design.
 
-         A meta-analysis of studies reporting results in terms of 2x2 tables can be based on one of several different outcome measures, including the relative risk (risk ratio), the odds ratio, the risk difference, and the arcsine transformed risk difference (e.g., Fleiss & Berlin, 2009, Ruecker et al., 2009). For any of these outcome measures, one needs to specify the cell frequencies via the \code{ai}, \code{bi}, \code{ci}, and \code{di} arguments (or alternatively, one can use the \code{ai}, \code{ci}, \code{n1i}, and \code{n2i} arguments).
+         A meta-analysis of studies reporting results in terms of \eqn{2 \times 2}{2x2} tables can be based on one of several different outcome measures, including the relative risk (risk ratio), the odds ratio, the risk difference, and the arcsine transformed risk difference (e.g., Fleiss & Berlin, 2009, Ruecker et al., 2009). For any of these outcome measures, one needs to specify the cell frequencies via the \code{ai}, \code{bi}, \code{ci}, and \code{di} arguments (or alternatively, one can use the \code{ai}, \code{ci}, \code{n1i}, and \code{n2i} arguments).
 
          The options for the \code{measure} argument are then:
          \itemize{
@@ -100,11 +100,11 @@ escalc(measure, formula, \dots)
          \item \code{"PETO"} for the \emph{log odds ratio} estimated with Peto's method (Yusuf et al., 1985).
          } Note that the log is taken of the relative risk and the odds ratio, which makes these outcome measures symmetric around 0 and yields corresponding sampling distributions that are closer to normality.
 
-         Cell entries with a zero count can be problematic, especially for the relative risk and the odds ratio. Adding a small constant to the cells of the 2x2 tables is a common solution to this problem. When \code{to="only0"} (the default), the value of \code{add} (the default is 1/2) is added to each cell of those 2x2 tables with at least one cell equal to 0. When \code{to="all"}, the value of \code{add} is added to each cell of all 2x2 tables. When \code{to="if0all"}, the value of \code{add} is added to each cell of all 2x2 tables, but only when there is at least one 2x2 table with a zero cell. Setting \code{to="none"} or \code{add=0} has the same effect: No adjustment to the observed table frequencies is made. Depending on the outcome measure and the data, this may lead to division by zero inside of the function (when this occurs, the resulting value is recoded to \code{NA}). Also, studies where \code{ai=ci=0} or \code{bi=di=0} may be considered to be uninformative about the size of the effect and dropping such studies has sometimes been recommended (Higgins & Green, 2008). This can be done by setting \code{drop00=TRUE}. The counts for such studies will then be set to \code{NA}.
+         Cell entries with a zero count can be problematic, especially for the relative risk and the odds ratio. Adding a small constant to the cells of the \eqn{2 \times 2}{2x2} tables is a common solution to this problem. When \code{to="only0"} (the default), the value of \code{add} (the default is 1/2) is added to each cell of those \eqn{2 \times 2}{2x2} tables with at least one cell equal to 0. When \code{to="all"}, the value of \code{add} is added to each cell of all \eqn{2 \times 2}{2x2} tables. When \code{to="if0all"}, the value of \code{add} is added to each cell of all \eqn{2 \times 2}{2x2} tables, but only when there is at least one \eqn{2 \times 2}{2x2} table with a zero cell. Setting \code{to="none"} or \code{add=0} has the same effect: No adjustment to the observed table frequencies is made. Depending on the outcome measure and the data, this may lead to division by zero inside of the function (when this occurs, the resulting value is recoded to \code{NA}). Also, studies where \code{ai=ci=0} or \code{bi=di=0} may be considered to be uninformative about the size of the effect and dropping such studies has sometimes been recommended (Higgins & Green, 2008). This can be done by setting \code{drop00=TRUE}. The counts for such studies will then be set to \code{NA}.
 
          A dataset corresponding to data of this type is provided in \code{\link{dat.bcg}}.
 
-         Assuming that the dichotomous outcome is actually a dichotomized version of the responses on an underlying quantitative scale, it is also possible to estimate the standardized mean difference based on 2x2 table data, using either the probit transformed risk difference or a transformation of the odds ratio (e.g., Chinn, 2000; Hasselblad & Hedges, 1995; Sanchez-Meca et al., 2003). The options for the \code{measure} argument are then:
+         Assuming that the dichotomous outcome is actually a dichotomized version of the responses on an underlying quantitative scale, it is also possible to estimate the standardized mean difference based on \eqn{2 \times 2}{2x2} table data, using either the probit transformed risk difference or a transformation of the odds ratio (e.g., Chinn, 2000; Hasselblad & Hedges, 1995; Sanchez-Meca et al., 2003). The options for the \code{measure} argument are then:
          \itemize{
          \item \code{"PBIT"} for the \emph{probit transformed risk difference} as an estimate of the standardized mean difference.
          \item \code{"OR2D"} for \emph{transformed odds ratio} as an estimate of the standardized mean difference.
@@ -130,7 +130,7 @@ escalc(measure, formula, \dots)
          \item \code{"IRSD"} for the \emph{square-root transformed incidence rate difference}.
          } Note that the log is taken of the incidence rate ratio, which makes this outcome measure symmetric around 0 and yields a corresponding sampling distribution that is closer to normality.
 
-         Studies with zero events in one or both groups can be problematic, especially for the incidence rate ratio. Adding a small constant to the number of events is a common solution to this problem. When \code{to="only0"} (the default), the value of \code{add} (the default is 1/2) is added to \code{x1i} and \code{x2i} only in the studies that have zero events in one or both groups. When \code{to="all"}, the value of \code{add} is added to \code{x1i} and \code{x2i} in all studies. When \code{to="if0all"}, the value of \code{add} is added to \code{x1i} and \code{x2i} in all studies, but only when there is at least one study with zero events in one or both groups. Setting \code{to="none"} or \code{add=0} has the same effect: No adjustment to the observed number of events is made. Depending on the outcome measure and the data, this may lead to division by zero inside of the function (when this occurs, the resulting value is recoded to \code{NA}). Like for 2x2 table data, studies where \code{x1i=x2i=0} may be considered to be uninformative about the size of the effect and dropping such studies has sometimes been recommended. This can be done by setting \code{drop00=TRUE}. The counts for such studies will then be set to \code{NA}.
+         Studies with zero events in one or both groups can be problematic, especially for the incidence rate ratio. Adding a small constant to the number of events is a common solution to this problem. When \code{to="only0"} (the default), the value of \code{add} (the default is 1/2) is added to \code{x1i} and \code{x2i} only in the studies that have zero events in one or both groups. When \code{to="all"}, the value of \code{add} is added to \code{x1i} and \code{x2i} in all studies. When \code{to="if0all"}, the value of \code{add} is added to \code{x1i} and \code{x2i} in all studies, but only when there is at least one study with zero events in one or both groups. Setting \code{to="none"} or \code{add=0} has the same effect: No adjustment to the observed number of events is made. Depending on the outcome measure and the data, this may lead to division by zero inside of the function (when this occurs, the resulting value is recoded to \code{NA}). Like for \eqn{2 \times 2}{2x2} table data, studies where \code{x1i=x2i=0} may be considered to be uninformative about the size of the effect and dropping such studies has sometimes been recommended. This can be done by setting \code{drop00=TRUE}. The counts for such studies will then be set to \code{NA}.
 
          A dataset corresponding to data of this type is provided in \code{\link{dat.hart1999}}.
 
@@ -183,9 +183,9 @@ escalc(measure, formula, \dots)
 
       \subsection{Measures for Two Dichotomous Variables}{
 
-         When the goal of a meta-analysis is to examine the relationship between two dichotomous variables, the data for each study can again be presented in the form of a 2x2 table, except that there may not be a clear distinction between the group (i.e., the row) and the outcome (i.e., the column) variable. Moreover, the table may be a result of cross-sectional (i.e., multinomial) sampling, where none of the table margins (except the total sample size) is fixed by the study design.
+         When the goal of a meta-analysis is to examine the relationship between two dichotomous variables, the data for each study can again be presented in the form of a \eqn{2 \times 2}{2x2} table, except that there may not be a clear distinction between the group (i.e., the row) and the outcome (i.e., the column) variable. Moreover, the table may be a result of cross-sectional (i.e., multinomial) sampling, where none of the table margins (except the total sample size) is fixed by the study design.
 
-         The phi coefficient and the odds ratio are commonly used measures of association for 2x2 table data (e.g., Fleiss & Berlin, 2009). The latter is particularly advantageous, as it is directly comparable to values obtained from stratified sampling (as described earlier). Yule's Q and Yule's Y (Yule, 1912) are additional measures of association for 2x2 table data (although they are not typically used in meta-analyses). Finally, assuming that the two dichotomous variables are actually dichotomized versions of the responses on two underlying quantitative scales (and assuming that the two variables follow a bivariate normal distribution), it is also possible to estimate the correlation between the two variables using the tetrachoric correlation coefficient (Pearson, 1900; Kirk, 1973).
+         The phi coefficient and the odds ratio are commonly used measures of association for \eqn{2 \times 2}{2x2} table data (e.g., Fleiss & Berlin, 2009). The latter is particularly advantageous, as it is directly comparable to values obtained from stratified sampling (as described earlier). Yule's Q and Yule's Y (Yule, 1912) are additional measures of association for \eqn{2 \times 2}{2x2} table data (although they are not typically used in meta-analyses). Finally, assuming that the two dichotomous variables are actually dichotomized versions of the responses on two underlying quantitative scales (and assuming that the two variables follow a bivariate normal distribution), it is also possible to estimate the correlation between the two variables using the tetrachoric correlation coefficient (Pearson, 1900; Kirk, 1973).
 
          For any of these outcome measures, one needs to specify the cell frequencies via the \code{ai}, \code{bi}, \code{ci}, and \code{di} arguments. The options for the \code{measure} argument are then:
          \itemize{
@@ -274,7 +274,7 @@ escalc(measure, formula, \dots)
          \item \code{"ARAW"} for \emph{raw alpha} values.
          \item \code{"AHW"} for \emph{transformed alpha values} (Hakstian & Whalen, 1976).
          \item \code{"ABT"} for \emph{transformed alpha values} (Bonett, 2002).
-         } Note that the transformations implemented here are slightly different from the ones described by Hakstian and Whalen (1976) and Bonett (2002). In particular, for \code{"AHW"}, the transformation \eqn{1-(1-\alpha)^{1/3}}{1-(1-\alpha)^(1/3)} is used, while for \code{"ABT"}, the transformation \eqn{-ln(1-\alpha)} is used. This ensures that the transformed values are monotonically increasing functions of \eqn{alpha}.
+         } Note that the transformations implemented here are slightly different from the ones described by Hakstian and Whalen (1976) and Bonett (2002). In particular, for \code{"AHW"}, the transformation \eqn{1-(1-\alpha)^{1/3}}{1-(1-\alpha)^(1/3)} is used, while for \code{"ABT"}, the transformation \eqn{-ln(1-\alpha)} is used. This ensures that the transformed values are monotonically increasing functions of \eqn{\alpha}.
 
          A dataset corresponding to data of this type is provided in \code{\link{dat.bonett2010}}.
 
@@ -292,7 +292,7 @@ escalc(measure, formula, \dots)
 
          \subsection{Measures for Dichotomous Variables}{
 
-            For 2x2 table data, the \code{formula} argument takes the form \code{outcome ~ group | study}, where \code{group} is a two-level factor specifying the rows of the tables, \code{outcome} is a two-level factor specifying the columns of the tables (the two possible outcomes), and \code{study} is a factor specifying the study factor. The \code{weights} argument is used to specify the frequencies in the various cells.
+            For \eqn{2 \times 2}{2x2} table data, the \code{formula} argument takes the form \code{outcome ~ group | study}, where \code{group} is a two-level factor specifying the rows of the tables, \code{outcome} is a two-level factor specifying the columns of the tables (the two possible outcomes), and \code{study} is a factor specifying the study factor. The \code{weights} argument is used to specify the frequencies in the various cells.
 
          }
 

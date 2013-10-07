@@ -23,7 +23,7 @@
 
    The effect size measure used for the meta-analysis was the standardized mean difference (\code{yi}), with positive values indicating that the supposed \sQuote{bloomers} had, on average, higher IQ scores than those in the control group. The \code{weeks} variable indicates the number of weeks of prior contact between teachers and students before the expectancy induction. Testing was done either in a group setting or individually, which is indicated by the \code{setting} variable. Finally, the \code{tester} variable indicates whether the test administrators were either aware or blind to the researcher-provided designations of the children's intellectual potential.
 
-   The data contained in this dataset were obtained from Raudenbush & Bryk (1985) with information on the \code{setting} and \code{tester} variables extracted from Raudenbush (1984).
+   The data in this dataset were obtained from Raudenbush and Bryk (1985) with information on the \code{setting} and \code{tester} variables extracted from Raudenbush (1984).
 }
 \source{
    Raudenbush, S. W. (1984). Magnitude of teacher expectancy effects on pupil IQ as a function of the credibility of expectancy induction: A synthesis of findings from 18 experiments. \emph{Journal of Educational Psychology}, \bold{76}, 85--97.

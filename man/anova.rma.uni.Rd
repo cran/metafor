@@ -29,17 +29,17 @@
    \item{m}{number of coefficients included in the Wald-type test of coefficients.}
    \item{\dots}{some additional elements/values.}
    When two models are specified, the object is a list containing the following components:
-   \item{fit.stats.f}{log likelihood, deviance, AIC, and BIC for the full model.}
-   \item{fit.stats.r}{log likelihood, deviance, AIC, and BIC for the reduced model.}
+   \item{fit.stats.f}{log-likelihood, deviance, AIC, BIC, and AICc for the full model.}
+   \item{fit.stats.r}{log-likelihood, deviance, AIC, BIC, and AICc for the reduced model.}
    \item{p.f}{number of parameters in the full model.}
    \item{p.r}{number of parameters in the reduced model.}
    \item{LRT}{likelihood ratio test statistic.}
    \item{pval}{p-value for the likelihood ratio test.}
    \item{QE.f}{test statistic for the test of (residual) heterogeneity from the full model.}
    \item{QE.r}{test statistic for the test of (residual) heterogeneity from the reduced model.}
-   \item{tau2.f}{tau2 value from the full model.}
-   \item{tau2.r}{tau2 value from the reduced model.}
-   \item{R2}{amount of (residual) heterogeneity in the reduced model that is accounted for in the full model. \code{NA} for fixed-effects models or if the amount of heterogeneity in the reduced model is equal to zero. This can be regarded as a pseudo R^2 statistic (Raudenbush, 2009).}
+   \item{tau2.f}{estimated \eqn{\tau^2} value from the full model.}
+   \item{tau2.r}{estimated \eqn{\tau^2} value from the reduced model.}
+   \item{R2}{amount of (residual) heterogeneity in the reduced model that is accounted for in the full model. \code{NA} for fixed-effects models or if the amount of heterogeneity in the reduced model is equal to zero. This can be regarded as a pseudo \eqn{R^2} statistic (Raudenbush, 2009).}
    \item{\dots}{some additional elements/values.}
 
    The results are formated and printed with the \code{\link{print.anova.rma.uni}} function.

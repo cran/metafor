@@ -1,3 +1,58 @@
+Changes in Version 1.9-2 (2013-10-07)
+=====================================
+
+   o added function rma.mv() to fit multivariate/multilevel meta-analytic
+     models via appropriate linear (mixed-effects) models; this function
+     allows for modeling of non-independent sampling errors and/or true
+     effects and can be used for network meta-analyses, meta-analyses
+     accounting for phylogenetic relatedness, and other complicated
+     meta-analytic data structures
+
+   o added the AICc to the information criteria computed by the various
+     model fitting functions
+
+   o if the value of tau2 is fixed by the user via the corresponding
+     argument in rma.uni(), then tau2 is no longer counted as an additional
+     parameter for the computation of the information criteria (i.e., AIC,
+     BIC, and AICc)
+
+   o rma.uni(), rma.glmm(), and rma.mv() now use a more stringent check
+     whether the model matrix is of full rank
+
+   o added profile() method functions for objects of class 'rma.uni' and
+     'rma.mv' (can be used to obtain a plot of the profiled log-likelihood
+     as a function of a specific variance component or correlation parameter
+     of the model)
+
+   o predict.rma() function now has an 'intercept' argument that allows the
+     user to decide whether the intercept term should be included when
+     calculating the predicted values (rare that this should be changed from
+     the default)
+
+   o for rma.uni(), rma.glmm(), and rma.mv(), the 'control' argument can now
+     also accept an integer value; values > 1 generate more verbose output
+     about the progress inside of the function
+
+   o rma.glmm() has been updated to work with lme4 1.0.x for fitting various
+     models; as a result, model="UM.RS" can only use nAGQ=1 at the moment
+     (hopefully this will change in the future)
+
+   o the 'control' argument of rma.glmm() can now be used to pass all
+     desired control arguments to the various functions and optimizers used
+     for the model fitting (admittedly the use of lists within this argument
+     is a bit unwieldy, but much more flexible)
+
+   o rma.mh() and rma.peto() arguments also now have a 'verbose' argument
+     (not really needed, but added for sake of consistency across functions)
+
+   o a bit of code reorganization (should be user transparent)
+
+   o vignettes ("metafor" and "metafor_diagram") are now just 'other files'
+     in the doc directory (as these were not true vignettes to begin with)
+
+   o some improvements to the documentation (as always)
+
+
 Changes in Version 1.9-1 (2013-07-20)
 =====================================
 
@@ -116,7 +171,7 @@ Changes in Version 1.8-0 (2013-04-11)
    o sampling variance for the biserial correlation coefficient ("RBIS") is
      now calculated in a slightly more accurate way
 
-   o llplot() now properly scales the log likelihoods
+   o llplot() now properly scales the log-likelihoods
 
    o argument 'which' in the plot.infl.rma.uni() function has been replaced
      with argument 'plotinf' which can now also be set to FALSE to suppress
@@ -143,7 +198,7 @@ Changes in Version 1.8-0 (2013-04-11)
      now provided when tau^2 is prespecified
 
    o rma.uni() and rma.glmm() now use a better method to check whether the
-     design matrix is of full rank
+     model matrix is of full rank
 
    o I^2 and H^2 statistics are now also calculated for mixed-effects models
      by the rma.uni() and rma.glmm() function; confint.rma.uni() provides
@@ -183,7 +238,7 @@ Changes in Version 1.7-0 (2013-02-05)
      argument may potentially be used to allow the user to define
      alternative weights)
 
-   o rma.uni() now checks whether the design matrix is not of full rank and
+   o rma.uni() now checks whether the model matrix is not of full rank and
      issues an error accordingly (instead of the rather cryptic error that
      was issued before)
 
@@ -252,7 +307,7 @@ Changes in Version 1.7-0 (2013-02-05)
      function
 
    o the permutest.rma.uni() function now uses an algorithm to find only the
-     unique permutations of the design matrix (which may be much smaller
+     unique permutations of the model matrix (which may be much smaller
      than the total number of permutations), making the exact permutation
      test feasible in a larger set of circumstances (thanks to John Hodgson
      for making me aware of this issue and to Hans-Jörg Viechtbauer for
@@ -332,9 +387,9 @@ Changes in Version 1.7-0 (2013-02-05)
      full likelihood equation (without leaving out additive constants)
 
    o the model deviance is now calculated as -2 times the difference between
-     the model log likelihood and the log likelihood under the saturated
+     the model log-likelihood and the log-likelihood under the saturated
      model (this is a more appropriate definition of the deviance than just
-     taking -2 times the model log likelihood)
+     taking -2 times the model log-likelihood)
 
    o naming scheme of illustrative datasets bundled with the package has
      been changed; now datasets are called <dat.authoryear>; therefore, the
@@ -550,7 +605,7 @@ Changes in Version 1.0-1 (2010-01-28)
    o version jump in conjunction with the upcoming publication of a paper in
      the Journal of Statistical Software describing the 'metafor' package
 
-   o instead of specifying a design matrix, the user can now specify a model
+   o instead of specifying a model matrix, the user can now specify a model
      formula for the 'mods' argument in the rma() function (e.g., like in
      the lm() function)
 

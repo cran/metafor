@@ -5,13 +5,14 @@
    The function computes predicted values, corresponding standard errors, confidence intervals, and (approximate) credibility intervals for objects of class \code{"rma"}.
 }
 \usage{
-\method{predict}{rma}(object, newmods, addx=FALSE, level=object$level,
-        digits=object$digits, transf=FALSE, targs, \dots)
+\method{predict}{rma}(object, newmods, intercept=object$intercept, addx=FALSE,
+        level=object$level, digits=object$digits, transf=FALSE, targs, \dots)
 }
 \arguments{
    \item{object}{an object of class \code{"rma"}.}
    \item{newmods}{optional vector or matrix specifying the values of the moderator values for which the predicted values should be calculated. See \sQuote{Details}.}
-   \item{addx}{logical, specifying whether the values of the moderator variables should be added to the returned object. See \sQuote{Examples}.}
+   \item{intercept}{logical specifying whether the intercept term should be included when calculating the predicted values for \code{newmods}.}
+   \item{addx}{logical specifying whether the values of the moderator variables should be added to the returned object. See \sQuote{Examples}.}
    \item{level}{numerical value between 0 and 100 specifying the confidence and credibility interval level (the default is to take the value from the object).}
    \item{digits}{integer specifying the number of decimal places to which the printed results should be rounded (the default is to take the value from the object).}
    \item{transf}{optional argument specifying the name of a function that should be used to transform the predicted values and interval bounds (e.g., \code{transf=exp}). Defaults to \code{FALSE}, which means that no transformation is used.}
@@ -25,7 +26,7 @@
 
    For models including one or more moderators, \code{predict(object)} returns the estimated (average) outcomes for values of the moderator(s) equal to those of the \eqn{k} studies included in the meta-analysis (i.e., the fitted values for the \eqn{k} studies).
 
-   For models including \eqn{q} moderator variables, new moderator values for \eqn{k_new} new studies can be specified by setting \code{newmods} equal to an \eqn{k_new \times q}{k_new x q} matrix with the corresponding new moderator values. If the original model includes an intercept, then it does not need to be explicitly specified under \code{newmods}. Also, any factors in the original model get turned into the appropriate contrast variables within the \code{rma} function, so that \code{newmods} should actually include the values for the contrast variables. Examples are shown below.
+   For models including \eqn{q} moderator variables, new moderator values for \eqn{k_{new}}{k_new} new studies can be specified by setting \code{newmods} equal to an \eqn{k_{new} \times q}{k_new x q} matrix with the corresponding new moderator values. If the original model includes an intercept, then it should not be explicitly specified under \code{newmods}, as it will be added by default (unless one sets \code{intercept=FALSE}). Also, any factors in the original model get turned into the appropriate contrast variables within the \code{rma} function, so that \code{newmods} should actually include the values for the contrast variables. Examples are shown below.
 
    For random/mixed-effects models, an approximate credibility interval is also calculated. The interval estimates where \code{level} \% of the true outcomes fall in the hypothetical population of studies. Note that this interval is calculated under the assumption that the value of \eqn{\tau^2} is known (and not estimated). A proper method for calculating a credibility interval that accounts for the uncertainty in the estimate of \eqn{\tau^2} will be implemented in the future.
 }

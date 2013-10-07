@@ -17,12 +17,13 @@
 \details{
    Hine et al. (1989) conducted a meta-analysis of death rates in randomized controlled trials in which prophylactic lidocaine was administered to patients with confirmed or suspected acute myocardial infarction. The dataset describes the mortality at the end of the assigned treatment period for control and intravenous lidocaine treatment groups for six studies. The question of interest is whether there is a detrimental effect of lidocaine. Because the studies were conducted to compare rates of arrhythmias following a heart attack, the studies, taken individually, are too small to detect important differences in mortality rates.
 
-   The data contained in this dataset were obtained from Table I in Normand (1999, p. 322).
+   The data in this dataset were obtained from Table I in Normand (1999, p. 322).
 }
 \source{
-   Hine, L. K., Laird, N., Hewitt, P., & Chalmers, T. C. (1989). Meta-analytic evidence against prophylactic use of lidocaine in acute myocardial infarction. \emph{Archives of Internal Medicine}, \bold{149}, 2694--2698.
-
    Normand, S. T. (1999). Meta-analysis: Formulating, evaluating, combining, and reporting. \emph{Statistics in Medicine}, \bold{18}, 321--359.
+}
+\references{
+   Hine, L. K., Laird, N., Hewitt, P., & Chalmers, T. C. (1989). Meta-analytic evidence against prophylactic use of lidocaine in acute myocardial infarction. \emph{Archives of Internal Medicine}, \bold{149}, 2694--2698.
 }
 \examples{
 ### load data

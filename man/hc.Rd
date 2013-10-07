@@ -35,7 +35,7 @@ hc(object, \dots)
    The results are formated and printed with the \code{\link{print.hc.rma.uni}} function.
 }
 \note{
-   The method makes use of the \code{\link{uniroot}} function. By default, the desired accuracy is set equal to \code{.Machine$double.eps^0.25} and the maximum number of iterations to \code{1000}. The desired accuracy (\code{tol}) and the maximum number of iterations (\code{maxiter}) can be adjusted with \code{control=list(tol=value, maxiter=value)}.
+   The method makes use of the \code{\link{uniroot}} function. By default, the desired accuracy is set equal to \code{.Machine$double.eps^0.25} and the maximum number of iterations to \code{1000}. The desired accuracy (\code{tol}) and the maximum number of iterations (\code{maxiter}) can be adjusted with the \code{control} argument (i.e., \code{control=list(tol=value, maxiter=value)}).
 }
 \author{
    Original code by Henmi and Copas (2010). Corrected for typos by Michael Dewey (\email{info@aghmed.fsnet.co.uk}). Incorporated into the package with some small adjustments for consistency with the other functions in the package by Wolfgang Viechtbauer (\email{wvb@metafor-project.org}).

@@ -30,7 +30,7 @@
 
    Dividing the observed residuals by their corresponding standard errors yields (internally) standardized residuals. These can be obtained with \code{rstandard}.
 
-   The \code{rstudent} function calculates externally standardized residuals (studentized deleted residuals). The externally standardized residual for the \eqn{i^{th}}{ith} case is obtained by deleting the \eqn{i^{th}}{ith} case from the dataset, fitting the model based on the remaining cases, calculating the predicted value for the \eqn{i^{th}}{ith} case based on the fitted model, taking the difference between the observed and the predicted value for the \eqn{i^{th}}{ith} case (the deleted residual), and then standardizing the deleted residual. The standard error of the deleted residual is equal to the square root of the sampling variance of the \eqn{i^{th}}{ith} case plus the variance of the predicted value plus the amount of (residual) heterogeneity from the fitted model (for fixed-effects models, this last part is always equal to zero).
+   The \code{rstudent} function calculates externally standardized residuals (studentized deleted residuals). The externally standardized residual for the \eqn{i}th case is obtained by deleting the \eqn{i}th case from the dataset, fitting the model based on the remaining cases, calculating the predicted value for the \eqn{i}th case based on the fitted model, taking the difference between the observed and the predicted value for the \eqn{i}th case (the deleted residual), and then standardizing the deleted residual. The standard error of the deleted residual is equal to the square root of the sampling variance of the \eqn{i}th case plus the variance of the predicted value plus the amount of (residual) heterogeneity from the fitted model (for fixed-effects models, this last part is always equal to zero).
 
    If a particular study fits the model, its standardized residual follows (asymptotically) a standard normal distribution. A large standardized residual for a study therefore may suggest that the study does not fit the assumed model (i.e., it may be an outlier).
 
@@ -47,7 +47,7 @@
 \note{
    Right now, the externally standardized residuals are calculated by refitting the model \eqn{k} times. Depending on how large \eqn{k} is, it may take a few moments to finish the calculations.
 
-   It may not be possible to fit the model after deletion of the \eqn{i^{th}}{ith} case from the dataset. This will result in \code{NA} values for that case when calling \code{rstudent}.
+   It may not be possible to fit the model after deletion of the \eqn{i}th case from the dataset. This will result in \code{NA} values for that case when calling \code{rstudent}.
 }
 \author{
    Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr
@@ -62,7 +62,7 @@
    Viechtbauer, W., & Cheung, M. W.-L. (2010). Outlier and influence diagnostics for meta-analysis. \emph{Research Synthesis Methods}, \bold{1}, 112--125.
 }
 \seealso{
-   \code{\link{rma.uni}}, \code{\link{rma.mh}}, \code{\link{rma.peto}}, \code{\link{rma.glmm}}, \code{\link{influence.rma.uni}}
+   \code{\link{rma.uni}}, \code{\link{rma.mh}}, \code{\link{rma.peto}}, \code{\link{rma.glmm}}, \code{\link{rma.mv}}, \code{\link{influence.rma.uni}}
 }
 \examples{
 ### load BCG vaccine data

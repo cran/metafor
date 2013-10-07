@@ -1,18 +1,18 @@
 \name{rma.peto}
 \alias{rma.peto}
 \title{Meta-Analysis via Peto's Method}
-\description{Function to fit a fixed-effects model for data from 2x2 tables via Peto's method.}
+\description{Function to fit fixed-effects models to \eqn{2 \times 2}{2x2} table data via Peto's method. See below and the documentation of the \pkg{\link{metafor-package}} for more details on these models.}
 \usage{
 rma.peto(ai, bi, ci, di, n1i, n2i,
          data, slab, subset,
          add=1/2, to="only0", drop00=TRUE,
-         level=95, digits=4)
+         level=95, digits=4, verbose=FALSE)
 }
 \arguments{
-   \item{ai}{vector to specify the 2x2 table frequencies (upper left cell). See below and the documentation of the \code{\link{escalc}} function for more details.}
-   \item{bi}{vector to specify the 2x2 table frequencies (upper right cell). See below and the documentation of the \code{\link{escalc}} function for more details.}
-   \item{ci}{vector to specify the 2x2 table frequencies (lower left cell). See below and the documentation of the \code{\link{escalc}} function for more details.}
-   \item{di}{vector to specify the 2x2 table frequencies (lower right cell). See below and the documentation of the \code{\link{escalc}} function for more details.}
+   \item{ai}{vector to specify the \eqn{2 \times 2}{2x2} table frequencies (upper left cell). See below and the documentation of the \code{\link{escalc}} function for more details.}
+   \item{bi}{vector to specify the \eqn{2 \times 2}{2x2} table frequencies (upper right cell). See below and the documentation of the \code{\link{escalc}} function for more details.}
+   \item{ci}{vector to specify the \eqn{2 \times 2}{2x2} table frequencies (lower left cell). See below and the documentation of the \code{\link{escalc}} function for more details.}
+   \item{di}{vector to specify the \eqn{2 \times 2}{2x2} table frequencies (lower right cell). See below and the documentation of the \code{\link{escalc}} function for more details.}
    \item{n1i}{vector to specify the group sizes or row totals (first group). See below and the documentation of the \code{\link{escalc}} function for more details.}
    \item{n2i}{vector to specify the group sizes or row totals (second group). See below and the documentation of the \code{\link{escalc}} function for more details.}
    \item{data}{optional data frame containing the data supplied to the function.}
@@ -23,18 +23,19 @@ rma.peto(ai, bi, ci, di, n1i, n2i,
    \item{drop00}{logical indicating whether studies with no cases (or only cases) in both groups should be dropped when calculating the observed outcomes of the individual studies (the outcomes for such studies are set to \code{NA}). See below and the documentation of the \code{\link{escalc}} function for more details.}
    \item{level}{numerical value between 0 and 100 specifying the confidence interval level (default is 95).}
    \item{digits}{integer specifying the number of decimal places to which the printed results should be rounded (default is 4).}
+   \item{verbose}{logical indicating whether output should be generated on the progress of the model fitting (default is \code{FALSE}).}
 }
 \details{
-   The studies are assumed to provide data in terms of 2x2 tables of the form:
+   The studies are assumed to provide data in terms of \eqn{2 \times 2}{2x2} tables of the form:
    \tabular{lccc}{
            \tab outcome 1 \tab outcome 2 \tab total      \cr
    group 1 \tab \code{ai} \tab \code{bi} \tab \code{n1i} \cr
    group 2 \tab \code{ci} \tab \code{di} \tab \code{n2i}
    } where \code{ai}, \code{bi}, \code{ci}, and \code{di} denote the cell frequencies and \code{n1i} and \code{n2i} the row totals. For example, in a set of randomized clinical trials (RCTs) or cohort studies, group 1 and group 2 may refer to the treatment (exposed) and placebo/control (not exposed) group, with outcome 1 denoting some event of interest (e.g., death) and outcome 2 its complement. In a set of case-control studies, group 1 and group 2 may refer to the group of cases and the group of controls, with outcome 1 denoting, for example, exposure to some risk factor and outcome 2 non-exposure.
 
-   An approach for aggregating 2x2 table data of this type was suggested by Peto (see Yusuf et al., 1985). The method provides a weighted estimate of the (log) odds ratio under a fixed-effects model. The method is particularly advantageous when the event of interest is rare, but it should only be used when the group sizes within the individual studies are not too dissimilar and effect sizes are generally small (Greenland & Salvan, 1990; Sweeting et al., 2004; Bradburn et al., 2007). Note that the printed results are given both in terms of the log and the raw units (for easier interpretation).
+   An approach for aggregating \eqn{2 \times 2}{2x2} table data of this type was suggested by Peto (see Yusuf et al., 1985). The method provides a weighted estimate of the (log) odds ratio under a fixed-effects model. The method is particularly advantageous when the event of interest is rare, but it should only be used when the group sizes within the individual studies are not too dissimilar and effect sizes are generally small (Greenland & Salvan, 1990; Sweeting et al., 2004; Bradburn et al., 2007). Note that the printed results are given both in terms of the log and the raw units (for easier interpretation).
 
-   Peto's method itself does not require the calculation of the individual (log) odds ratios and directly makes use of the 2x2 table counts. Zero cells are not a problem (except in extreme cases, such as when one of the two outcomes never occurs in any of the tables). Therefore, it is unnecessary to add some constant to the cell counts when there are zero cells. However, for plotting and various other functions, it is necessary to calculate the individual (log) odds ratios for the \eqn{k} tables. Here, zero cells can be problematic, so adding a constant value to the cell counts ensures that all \eqn{k} values can be calculated. The \code{add} and \code{to} arguments are used to specify what value should be added to the 2x2 cell frequencies and under what circumstances when calculating the individual (log) odds ratios and when applying Peto's method. The documentation of the \code{\link{escalc}} function explains how the \code{add} and \code{to} arguments work. If only one value for these arguments is specified, then these values are used when calculating the individual outcomes and no adjustment to the cell counts is made when applying Peto's method. Alternatively, when specifying two values for these arguments, the first value applies when calculating the individual outcomes and the second value when applying Peto's method. Note that \code{drop00} is set to \code{TRUE} by default, since studies where \code{ai=ci=0} or \code{bi=di=0} are also automatically \sQuote{dropped} when applying Peto's method.
+   Peto's method itself does not require the calculation of the individual (log) odds ratios and directly makes use of the \eqn{2 \times 2}{2x2} table counts. Zero cells are not a problem (except in extreme cases, such as when one of the two outcomes never occurs in any of the tables). Therefore, it is unnecessary to add some constant to the cell counts when there are zero cells. However, for plotting and various other functions, it is necessary to calculate the individual (log) odds ratios for the \eqn{k} tables. Here, zero cells can be problematic, so adding a constant value to the cell counts ensures that all \eqn{k} values can be calculated. The \code{add} and \code{to} arguments are used to specify what value should be added to the cell frequencies and under what circumstances when calculating the individual (log) odds ratios and when applying Peto's method. The documentation of the \code{\link{escalc}} function explains how the \code{add} and \code{to} arguments work. If only one value for these arguments is specified, then these values are used when calculating the individual outcomes and no adjustment to the cell counts is made when applying Peto's method. Alternatively, when specifying two values for these arguments, the first value applies when calculating the individual outcomes and the second value when applying Peto's method. Note that \code{drop00} is set to \code{TRUE} by default, since studies where \code{ai=ci=0} or \code{bi=di=0} are also automatically \sQuote{dropped} when applying Peto's method.
 }
 \value{
    An object of class \code{c("rma.peto","rma")}. The object is a list containing the following components:
@@ -48,7 +49,7 @@ rma.peto(ai, bi, ci, di, n1i, n2i,
    \item{QEp}{p-value for the test of heterogeneity.}
    \item{k}{number of tables included in the analysis.}
    \item{yi, vi}{the vector of individual log odds ratios and corresponding sampling variances.}
-   \item{fit.stats}{a list with the log likelihood, deviance, AIC, and BIC values under the unrestricted and restricted likelihood.}
+   \item{fit.stats}{a list with the log-likelihood, deviance, AIC, BIC, and AICc values under the unrestricted and restricted likelihood.}
    \item{\dots}{some additional elements/values.}
 
    The results of the fitted model are neatly formated and printed with the \code{\link{print.rma.peto}} function. If fit statistics should also be given, use \code{\link{summary.rma}} (or use the \code{\link{fitstats.rma}} function to extract them).
@@ -79,7 +80,7 @@ rma.peto(ai, bi, ci, di, n1i, n2i,
    Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \url{http://www.jstatsoft.org/v36/i03/}.
 }
 \seealso{
-   \code{\link{rma.uni}}, \code{\link{rma.glmm}}, \code{\link{rma.mh}}
+   \code{\link{rma.uni}}, \code{\link{rma.glmm}}, \code{\link{rma.mh}}, \code{\link{rma.mv}}
 }
 \examples{
 ### load data

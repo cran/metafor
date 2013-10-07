@@ -20,12 +20,13 @@
    
    The goal of the meta-analysis was to examine the overall criterion-related validity of employment interviews and to examine whether the validity depends on the type and structure of the interview.
 
-   The data contained in this dataset were obtained from Table A.2 in Rothstein, Sutton, & Borenstein (2005, p. 325-329). Note that the \code{type} and \code{struct} variables contain some \code{NA}s.
+   The data in this dataset were obtained from Table A.2 in Rothstein, Sutton, and Borenstein (2005, p. 325-329). Note that the \code{type} and \code{struct} variables contain some \code{NA}s.
 }
 \source{
-   McDaniel, M. A., Whetzel, D. L., Schmidt, F. L., & Maurer, S. D. (1994). The validity of employment interviews: A comprehensive review and meta-analysis. \emph{Journal of Applied Psychology}, \bold{79}, 599--616.
-
    Rothstein, H. R., Sutton, A. J., & Borenstein, M. (Eds.). (2005). \emph{Publication bias in meta-analysis: Prevention, assessment, and adjustments}. Chichester, England: Wiley.
+}
+\references{
+   McDaniel, M. A., Whetzel, D. L., Schmidt, F. L., & Maurer, S. D. (1994). The validity of employment interviews: A comprehensive review and meta-analysis. \emph{Journal of Applied Psychology}, \bold{79}, 599--616.
 }
 \examples{
 ### load data

@@ -11,10 +11,10 @@ to.table(measure, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
 }
 \arguments{
    \item{measure}{a character string indicating the effect size or outcome measure corresponding to the summary data supplied. See below and the documentation of the \code{\link{escalc}} function for more details.}
-   \item{ai}{vector to specify the 2x2 table frequencies (upper left cell).}
-   \item{bi}{vector to specify the 2x2 table frequencies (upper right cell).}
-   \item{ci}{vector to specify the 2x2 table frequencies (lower left cell).}
-   \item{di}{vector to specify the 2x2 table frequencies (lower right cell).}
+   \item{ai}{vector to specify the \eqn{2 \times 2}{2x2} table frequencies (upper left cell).}
+   \item{bi}{vector to specify the \eqn{2 \times 2}{2x2} table frequencies (upper right cell).}
+   \item{ci}{vector to specify the \eqn{2 \times 2}{2x2} table frequencies (lower left cell).}
+   \item{di}{vector to specify the \eqn{2 \times 2}{2x2} table frequencies (lower right cell).}
    \item{n1i}{vector to specify the group sizes or row totals (first group/row).}
    \item{n2i}{vector to specify the group sizes or row totals (second group/row).}
    \item{x1i}{vector to specify the number of events (first group).}
@@ -43,14 +43,14 @@ to.table(measure, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
 \details{
    The \code{\link{escalc}} function describes a wide variety of effect size and outcome measures that can be computed for a meta-analysis. The summary data used to compute those measures are typically contained in vectors, each element corresponding to a study. The \code{to.table} function takes this information and constructs an array of \eqn{k} tables from these data.
 
-   For example, in various fields (such as the health and medical sciences), the response variable measured is often dichotomous (binary), so that the data from a study comparing two different groups can be expressed in terms of a 2x2 table, such as:
+   For example, in various fields (such as the health and medical sciences), the response variable measured is often dichotomous (binary), so that the data from a study comparing two different groups can be expressed in terms of a \eqn{2 \times 2}{2x2} table, such as:
    \tabular{lccc}{
            \tab outcome 1 \tab outcome 2 \tab total      \cr
    group 1 \tab \code{ai} \tab \code{bi} \tab \code{n1i} \cr
    group 2 \tab \code{ci} \tab \code{di} \tab \code{n2i}
    } where \code{ai}, \code{bi}, \code{ci}, and \code{di} denote the cell frequencies (i.e., the number of people falling into a particular category) and \code{n1i} and \code{n2i} the row totals (i.e., the group sizes).
 
-   The cell frequencies in \eqn{k} such 2x2 tables can be specified via the \code{ai}, \code{bi}, \code{ci}, and \code{di} arguments (or alternatively, via the \code{ai}, \code{ci}, \code{n1i}, and \code{n2i} arguments). The function then creates the corresponding \eqn{2 \times 2 \times k} array of tables. The \code{measure} argument should then be set equal to one of the outcome measures that can be computed based on this type of data, such as \code{"RR"}, \code{"OR"}, \code{"RD"} (it is not relevant which specific measure is chosen, as long as it corresponds to the specified summary data). See the documentation of the \code{\link{escalc}} function for more details on the types of data formats available.
+   The cell frequencies in \eqn{k} such \eqn{2 \times 2}{2x2} tables can be specified via the \code{ai}, \code{bi}, \code{ci}, and \code{di} arguments (or alternatively, via the \code{ai}, \code{ci}, \code{n1i}, and \code{n2i} arguments). The function then creates the corresponding \eqn{2 \times 2 \times k} array of tables. The \code{measure} argument should then be set equal to one of the outcome measures that can be computed based on this type of data, such as \code{"RR"}, \code{"OR"}, \code{"RD"} (it is not relevant which specific measure is chosen, as long as it corresponds to the specified summary data). See the documentation of the \code{\link{escalc}} function for more details on the types of data formats available.
 
    The examples below illustrate the use of this function.
 }

@@ -2,7 +2,7 @@
 \alias{fitstats}
 \title{Extract Fit Statistics and Information Criteria}
 \description{
-   The function \code{fitstats} is generic. It can be used to extract the log likelihood, deviance, and information criteria (e.g., AIC and BIC) for suitable objects.
+   The function \code{fitstats} is generic. It can be used to extract the log-likelihood, deviance, and information criteria (AIC, BIC, and AICc) for suitable objects.
 }
 \usage{
 fitstats(object, \dots)
@@ -15,7 +15,7 @@ fitstats(object, \dots)
    Currently, there is only a method for handling objects of class \code{"rma"} with the \code{fitstats} function. Accordingly, the corresponding method is called \code{\link{fitstats.rma}}. See the documentation for that function for more details.
 }
 \value{
-   Log likelihood, deviance, AIC, and BIC values either under the regular or restricted likelihood.
+   Log-likelihood, deviance, AIC, BIC, and AICc values either under the regular or restricted likelihood.
 }
 \author{
    Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr
