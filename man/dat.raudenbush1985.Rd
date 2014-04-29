@@ -32,10 +32,10 @@
 }
 \examples{
 ### load data
-data(dat.raudenbush1985)
+dat <- get(data(dat.raudenbush1985))
 
 ### random-effects model
-res <- rma(yi, vi, data=dat.raudenbush1985)
+res <- rma(yi, vi, data=dat)
 res
 }
 \keyword{datasets}

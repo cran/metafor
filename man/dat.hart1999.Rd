@@ -28,10 +28,10 @@
 }
 \examples{
 ### load data
-data(dat.hart1999)
+dat <- get(data(dat.hart1999))
 
 ### calculate log incidence rate ratios and corresponding sampling variances
-dat <- escalc(measure="IRR", x1i=x1i, x2i=x2i, t1i=t1i, t2i=t2i, data=dat.hart1999)
+dat <- escalc(measure="IRR", x1i=x1i, x2i=x2i, t1i=t1i, t2i=t2i, data=dat)
 dat
 
 ### meta-analysis of log incidence rate ratios using a random-effects model
@@ -57,7 +57,7 @@ segments(x0=-9, y0=8.25, x1=-4, y1=8.25)
 par(op)
 
 ### meta-analysis of incidence rate differences using a random-effects model
-res <- rma(measure="IRD", x1i=x1i, x2i=x2i, t1i=t1i, t2i=t2i, data=dat.hart1999)
+res <- rma(measure="IRD", x1i=x1i, x2i=x2i, t1i=t1i, t2i=t2i, data=dat)
 res
 }
 \keyword{datasets}

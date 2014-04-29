@@ -24,11 +24,11 @@ rma.glmm(ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi, ti, ni,
    \item{mi}{see below and the documentation of the \code{\link{escalc}} function for more details.}
    \item{ti}{see below and the documentation of the \code{\link{escalc}} function for more details.}
    \item{ni}{see below and the documentation of the \code{\link{escalc}} function for more details.}
-   \item{mods}{optional argument to include one or more moderators in the model. A single moderator can be given as a vector of length \eqn{k} specifying the values of the moderator. Multiple moderators are specified by giving a matrix with \eqn{k} rows and \eqn{p'} columns. Alternatively, a model \code{\link{formula}} can be used to specify the model. See \sQuote{Details}.}
+   \item{mods}{optional argument to include one or more moderators in the model. A single moderator can be given as a vector of length \eqn{k} specifying the values of the moderator. Multiple moderators are specified by giving a matrix with \eqn{k} rows and as many columns as there are moderator variables. Alternatively, a model \code{\link{formula}} can be used to specify the model. See \sQuote{Details}.}
    \item{measure}{character string indicating the outcome measure to use for the meta-analysis. Possible options are the odds ratio (\code{"OR"}), the incidence rate ratio (\code{"IRR"}), the logit transformed proportion (\code{"PLO"}), or the log transformed incidence rate (\code{"IRLN"}).}
    \item{intercept}{logical indicating whether an intercept term should be added to the model (default is \code{TRUE}).}
    \item{data}{optional data frame containing the data supplied to the function.}
-   \item{slab}{optional vector with unique labels for the \eqn{k} studies.}
+   \item{slab}{optional vector with labels for the \eqn{k} studies.}
    \item{subset}{optional vector indicating the subset of studies that should be used for the analysis. This can be a logical vector of length \eqn{k} or a numeric vector indicating the indices of the observations to include.}
    \item{add}{non-negative number indicating the amount to add to zero cells, counts, or frequencies when calculating the individual outcomes. See below and the documentation of the \code{\link{escalc}} function for more details.}
    \item{to}{character string indicating when the values under \code{add} should be added (either \code{"only0"}, \code{"all"}, \code{"if0all"}, or \code{"none"}). See below and the documentation of the \code{\link{escalc}} function for more details.}
@@ -59,7 +59,7 @@ rma.glmm(ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi, ti, ni,
 
    \bold{Specifying the Model}
 
-   A variety of general model types are available when analyzing \eqn{2 \times 2}{2x2} table data (i.e., when \code{measure="OR"}) or two-group event count data (i.e., when \code{measure="IRR"}):
+   A variety of model types are available when analyzing \eqn{2 \times 2}{2x2} table data (i.e., when \code{measure="OR"}) or two-group event count data (i.e., when \code{measure="IRR"}):
    \itemize{
    \item \code{model="UM.FS"} for an unconditional generalized linear mixed-effects model with fixed study effects
    \item \code{model="UM.RS"} for an unconditional generalized linear mixed-effects model with random study effects
@@ -74,7 +74,7 @@ rma.glmm(ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi, ti, ni,
 
    Aside from choosing the general model type, one has to decide whether to fit a fixed- or random-effects model to the data. A \emph{fixed-effects model} is fitted by setting \code{method="FE"}. A \emph{random-effects model} is fitted by setting \code{method="ML"} (the default). Note that random-effects models with dichotomous data are often referred to as \sQuote{binomial-normal} models in the meta-analytic literature. Analogously, for event count data, such models could be referred to as \sQuote{Poisson-normal} models.
 
-   One or more moderators can be included in all of these models via the \code{mods} argument. A single moderator can be given as a (row or column) vector of length \eqn{k} specifying the values of the moderator. Multiple moderators are specified by giving an appropriate model matrix (i.e., \eqn{\mathbf{X}}{X}) with \eqn{k} rows and \eqn{p'} columns (e.g., using \code{mods = cbind(mod1, mod2, mod3)}, where \code{mod1}, \code{mod2}, and \code{mod3} correspond to the names of the variables for the three moderator variables). The intercept is added to the model matrix by default unless \code{intercept=FALSE}.
+   One or more moderators can be included in all of these models via the \code{mods} argument. A single moderator can be given as a (row or column) vector of length \eqn{k} specifying the values of the moderator. Multiple moderators are specified by giving an appropriate model matrix (i.e., \eqn{\mathbf{X}}{X}) with \eqn{k} rows and as many columns as there are moderator variables (e.g., \code{mods = cbind(mod1, mod2, mod3)}, where \code{mod1}, \code{mod2}, and \code{mod3} correspond to the names of the variables for three moderator variables). The intercept is added to the model matrix by default unless \code{intercept=FALSE}.
 
    Alternatively, one can use the standard \code{\link{formula}} syntax to specify the model. In this case, the \code{mods} argument should be set equal to a one-sided formula of the form \code{mods = ~ model} (e.g., \code{mods = ~ mod1 + mod2 + mod3}). Interactions, polynomial terms, and factors can be easily added to the model in this manner. When specifying a model formula via the \code{mods} argument, the \code{intercept} argument is ignored. Instead, the inclusion/exclusion of the intercept term is controlled by the specified formula (e.g., \code{mods = ~ mod1 + mod2 + mod3 - 1} would lead to the removal of the intercept term). With moderators, a \emph{fixed-effects with moderators model} is then fitted by setting \code{method="FE"}, while a \emph{mixed-effects model} is fitted by setting \code{method="ML"}.
 
@@ -82,14 +82,14 @@ rma.glmm(ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi, ti, ni,
 
    When fitting a particular model, actually up to three different models are fitted within the function:
    \itemize{
-   \item the fixed-effects model (i.e., where \eqn{\tau^2} is set to 0),
+   \item the fixed-effects model (i.e., where \if{latex}{\eqn{\tau^2}}\if{html}{\eqn{\tau²}}\if{text}{\eqn{\tau^2}} is set to 0),
    \item the saturated model (i.e., the model with a deviance of 0), and
-   \item the random/mixed-effects model (i.e., where \eqn{\tau^2} is estimated) (only if \code{method="ML"}).
+   \item the random/mixed-effects model (i.e., where \if{latex}{\eqn{\tau^2}}\if{html}{\eqn{\tau²}}\if{text}{\eqn{\tau^2}} is estimated) (only if \code{method="ML"}).
    } The saturated model is obtained by adding as many dummy variables to the model as needed so that the model deviance is equal to zero. Even when \code{method="ML"}, the fixed-effects and saturated models are fitted, as they are used to compute the test statistics for the Wald-type and likelihood ratio tests for (residual) heterogeneity (see below).
 
    \bold{Omnibus Test of Parameters}
 
-   For models including moderators, an omnibus test of all the model coefficients is conducted that excludes the intercept (the first coefficient) if it is included in the model. If no intercept is included in the model, then the omnibus test includes all of the coefficients in the model including the first. Alternatively, one can manually specify the indices of the coefficients to test via the \code{btt} argument. For example, use \code{btt=c(3,4)} to only include the third and fourth coefficient from the model in the test (if an intercept is included in the model, then it corresponds to the first coefficient in the model).
+   For models including moderators, an omnibus test of all the model coefficients is conducted that excludes the intercept (the first coefficient) if it is included in the model. If no intercept is included in the model, then the omnibus test includes all of the coefficients in the model including the first. Alternatively, one can manually specify the indices of the coefficients to test via the \code{btt} argument. For example, with \code{btt=c(3,4)}, only the third and fourth coefficient from the model would be included in the test (if an intercept is included in the model, then it corresponds to the first coefficient in the model).
 
    \bold{Categorical Moderators}
 
@@ -105,7 +105,7 @@ rma.glmm(ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi, ti, ni,
 
    \bold{Individual Outcomes}
 
-   The various models do not require the calculation of the individual outcome values and directly make use of the table/event counts. Zero cells/events are not a problem (except in extreme cases, such as when one of the two outcomes never occurs or when there are no events in any of the studies). Therefore, it is unnecessary to add some constant to the cell counts (or the number of events) when there are zero cells/events. However, for plotting and various other functions, it is necessary to calculate the individual outcome values for the \eqn{k} studies. Here, zero cells/events can be problematic, so adding a constant value to the cell counts (or the number of events) ensures that all \eqn{k} values can be calculated. The \code{add} and \code{to} arguments are used to specify what value should be added to the cell frequencies (or the number of events) and under what circumstances when calculating the individual outcome values. The documentation of the \code{\link{escalc}} function explains how the \code{add} and \code{to} arguments work. Note that \code{drop00} is set to \code{TRUE} by default, since studies where \code{ai=ci=0} or \code{bi=di=0} or studies where \code{x1i=x2i=0} are uninformative about the size of the effect (the counts for such studies are set to \code{NA}).
+   The various models do not require the calculation of the individual outcome values and directly make use of the table/event counts. Zero cells/events are not a problem (except in extreme cases, such as when one of the two outcomes never occurs or when there are no events in any of the studies). Therefore, it is unnecessary to add some constant to the cell counts (or the number of events) when there are zero cells/events. However, for plotting and various other functions, it is necessary to calculate the individual outcome values for the \eqn{k} studies. Here, zero cells/events can be problematic, so adding a constant value to the cell counts (or the number of events) ensures that all \eqn{k} values can be calculated. The \code{add} and \code{to} arguments are used to specify what value should be added to the cell frequencies (or the number of events) and under what circumstances when calculating the individual outcome values. The documentation of the \code{\link{escalc}} function explains how the \code{add} and \code{to} arguments work. Note that \code{drop00} is set to \code{TRUE} by default, since studies where \code{ai=ci=0} or \code{bi=di=0} or studies where \code{x1i=x2i=0} are uninformative about the size of the effect.
 }
 \value{
    An object of class \code{c("rma.glmm","rma")}. The object is a list containing the following components:
@@ -127,19 +127,19 @@ rma.glmm(ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi, ti, ni,
    \item{QEp.LRT}{p-value for the likelihood ratio test of (residual) heterogeneity.}
    \item{QM}{test statistic for the omnibus test of coefficients.}
    \item{QMp}{p-value for the omnibus test of coefficients.}
-   \item{I2}{value of \eqn{I^2}.}
-   \item{H2}{value of \eqn{H^2}.}
+   \item{I2}{value of \if{latex}{\eqn{I^2}}\if{html}{\eqn{I²}}\if{text}{\eqn{I^2}}.}
+   \item{H2}{value of \if{latex}{\eqn{H^2}}\if{html}{\eqn{H²}}\if{text}{\eqn{H^2}}.}
    \item{int.only}{logical that indicates whether the model is an intercept-only model.}
-   \item{yi, vi, X}{the vector of outcomes, the corresponding sampling variances, and the model matrix of the model.}
+   \item{yi, vi, X}{the vector of outcomes, the corresponding sampling variances, and the model matrix.}
    \item{fit.stats}{a list with the log-likelihood, deviance, AIC, BIC, and AICc values.}
    \item{\dots}{some additional elements/values.}
 
-   The results of the fitted model are neatly formated and printed with the \code{\link{print.rma.uni}} function. If fit statistics should also be given, use \code{\link{summary.rma}} (or use the \code{\link{fitstats.rma}} function to extract them).
+   The results of the fitted model are neatly formated and printed with the \code{\link{print.rma.glmm}} function. If fit statistics should also be given, use \code{\link{summary.rma}} (or use the \code{\link{fitstats.rma}} function to extract them).
 }
 \note{
    Fitting the various types of models requires several different iterative algorithms:
    \itemize{
-   \item For \code{model="UM.FS"} and \code{model="CM.AL"}, iteratively reweighted least squares (IWLS) as implemented in the \code{\link{glm}} function is used for fitting the fixed-effects and the saturated models. For \code{method="ML"}, adaptive Gauss-Hermite quadrature as implemented in the \code{\link[lme4]{glmer}} function is used. The same applies when \code{model="CM.EL"} is used in combination with \code{measure="IRR"} or when \code{measure="PLO"} or \code{measure="IRLN"} (regardless of which general model type is then specified).
+   \item For \code{model="UM.FS"} and \code{model="CM.AL"}, iteratively reweighted least squares (IWLS) as implemented in the \code{\link{glm}} function is used for fitting the fixed-effects and the saturated models. For \code{method="ML"}, adaptive Gauss-Hermite quadrature as implemented in the \code{\link[lme4]{glmer}} function is used. The same applies when \code{model="CM.EL"} is used in combination with \code{measure="IRR"} or when \code{measure="PLO"} or \code{measure="IRLN"} (regardless of the model type).
    \item For \code{model="UM.RS"}, adaptive Gauss-Hermite quadrature as implemented in the \code{\link[lme4]{glmer}} function is used to fit all of the models.
    \item For \code{model="CM.EL"} and \code{measure="OR"}, the quasi-Newton method (\code{"BFGS"}) as implemented in the \code{\link{optim}} function is used by default for fitting the fixed-effects and the saturated models. For \code{method="ML"}, the same algorithm is used, together with adaptive quadrature as implemented in the \code{\link{integrate}} function (for the integration over the density of the non-central hypergeometric distribution).
    } When \code{model="CM.EL"} and \code{measure="OR"}, actually \code{model="CM.AL"} is used first to obtain starting values for \code{\link{optim}}, so either 4 (if \code{method="FE"}) or 6 (if \code{method="ML"}) models need to be fitted in total.
@@ -148,9 +148,7 @@ rma.glmm(ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi, ti, ni,
    \itemize{
       \item \code{optimizer} is set by default to \code{\link[stats:optim]{"optim"}}, but can be set to \code{\link[stats:nlminb]{"nlminb"}} or one of the optimizers in the \pkg{minqa} package (i.e., \code{\link[minqa:bobyqa]{"bobyqa"}}, \code{\link[minqa:newuoa]{"newuoa"}}, or \code{\link[minqa:uobyqa]{"uobyqa"}}),
       \item \code{optmethod} is used to set the \code{method} argument for \code{\link{optim}} (default is \code{"BFGS"}),
-      \item \code{optCtrl} is a list of named arguments to be passed on to the \code{control} argument of the \code{\link{optim}} function,
-      \item \code{nlminbCtrl} is a list of named arguments to be passed on to the \code{control} argument of the \code{\link{nlminb}} function,
-      \item \code{minqaCtrl} is a list of named arguments to be passed on to the \code{control} argument of the chosen optimizer from the \pkg{minqa} package (i.e., \code{\link[minqa]{bobyqa}}, \code{\link[minqa]{newuoa}}, or \code{\link[minqa]{uobyqa}}),
+      \item \code{optCtrl} is a list of named arguments to be passed on to the \code{control} argument of the chosen optimizer,
       \item \code{glmCtrl} is a list of named arguments to be passed on to the \code{control} argument of the \code{\link{glm}} function,
       \item \code{glmerCtrl} is a list of named arguments to be passed on to the \code{control} argument of the \code{\link[lme4]{glmer}} function, and
       \item \code{intCtrl} is a list of named arguments (i.e., \code{rel.tol} and \code{subdivisions}) to be passed on to the \code{\link{integrate}} function.
@@ -162,7 +160,7 @@ rma.glmm(ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi, ti, ni,
 }
 \author{
    Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr
-   package homepage: \url{http://www.metafor-project.org/} \cr
+   package website: \url{http://www.metafor-project.org/} \cr
    author homepage: \url{http://www.wvbauer.com/}
 }
 \references{
@@ -177,7 +175,9 @@ rma.glmm(ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi, ti, ni,
    Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \url{http://www.jstatsoft.org/v36/i03/}.
 }
 \seealso{
-   \code{\link{rma.uni}}, \code{\link{rma.mh}}, \code{\link{rma.peto}}, \code{\link{rma.mv}}
+   \code{\link{rma.uni}}, \code{\link{rma.mh}}, \code{\link{rma.peto}}, and \code{\link{rma.mv}} for other model fitting functions.
+
+   \code{\link{dat.nielweise2007}}, \code{\link{dat.nielweise2008}}, and \code{\link{dat.collins1985a}} for further examples of the use of the \code{rma.glmm} function.
 }
 \examples{
 ### load BCG vaccine data
@@ -185,7 +185,7 @@ data(dat.bcg)
 
 ### random-effects model using rma.uni() (standard RE model analysis)
 rma(measure="OR", ai=tpos, bi=tneg, ci=cpos, di=cneg,
-    data=dat.bcg, method="REML", verbose=TRUE)
+    data=dat.bcg, method="ML", verbose=TRUE)
 
 ### random-effects models using rma.glmm() (requires 'lme4' package)
 

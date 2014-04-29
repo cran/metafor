@@ -46,7 +46,7 @@ res
 predict(res, transf=transf.iabt)
 
 ### examine whether female/mixed samples yield different alphas (with raw alphas)
-res <- rma(measure="ARAW", mods=~caregivers, ai=ai, mi=mi, ni=ni, data=dat)
+res <- rma(measure="ARAW", ai=ai, mi=mi, ni=ni, mods = ~ caregivers, data=dat)
 res
 predict(res, newmods=c(0,1), digits=2)
 }

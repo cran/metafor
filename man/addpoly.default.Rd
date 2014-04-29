@@ -1,11 +1,11 @@
 \name{addpoly.default}
 \alias{addpoly.default}
-\title{Add Polygons to Forest Plots}
+\title{Add Polygons to Forest Plots (Default Method)}
 \description{Function to add one or more polygons to a forest plot.}
 \usage{
 \method{addpoly}{default}(x, vi, sei, ci.lb, ci.ub, rows=-1, level=95, digits=2,
         annotate=TRUE, mlab, transf=FALSE, atransf=FALSE, targs,
-        col="black", efac=1, cex, \dots)
+        efac=1, col, border, cex, \dots)
 }
 \arguments{
    \item{x}{vector with the values at which the polygons should be drawn.}
@@ -21,8 +21,9 @@
    \item{transf}{optional argument specifying the name of a function that should be used to transform the \code{x} values and confidence interval bounds. Defaults to \code{FALSE}, which means that no transformation is used.}
    \item{atransf}{optional argument specifying the name of a function that should be used to transform the annotations. Defaults to \code{FALSE}, which means that no transformation is used.}
    \item{targs}{optional arguments needed by the function specified via \code{transf} or \code{atransf}.}
-   \item{col}{color of the polygons that are drawn (default is \code{"black"}).}
    \item{efac}{vertical expansion factor for the polygons. The default value of 1 should usually work okay.}
+   \item{col}{optional character string specifying the name of a color to use for the polygons. If unspecified, the function sets a default color.}
+   \item{border}{optional character string specifying the name of a color to use for the border of the polygons. If unspecified, the function sets a default color.}
    \item{cex}{optional symbol expansion factor. If unspecified, the function tries to set this to a sensible value.}
    \item{\dots}{other arguments.}
 }
@@ -35,7 +36,7 @@
 }
 \author{
    Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr
-   package homepage: \url{http://www.metafor-project.org/} \cr
+   package website: \url{http://www.metafor-project.org/} \cr
    author homepage: \url{http://www.wvbauer.com/}
 }
 \references{
@@ -50,19 +51,23 @@ data(dat.bcg)
 
 ### meta-analysis of the log relative risks using a mixed-
 ### effects model with absolute latitude as a moderator
-res <- rma(ai=tpos, bi=tneg, ci=cpos, di=cneg, mods = ~ ablat,
-           slab=paste(author, year, sep=", "), data=dat.bcg,
-           measure="RR", method="REML")
+res <- rma(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, mods = ~ ablat,
+           slab=paste(author, year, sep=", "), data=dat.bcg)
 
 ### forest plot of the observed relative risks
-forest(res, addfit=FALSE, atransf=exp, ylim=c(-3.5,16))
+forest(res, addfit=FALSE, atransf=exp, xlim=c(-8,5), ylim=c(-4.5,16), cex=.8, 
+       order=order(dat.bcg$ablat), ilab=dat.bcg$ablat, ilab.xpos=-3.5)
 
 ### predicted average log relative risk for 10, 30, and 50 degrees absolute latitude
 x <- predict(res, newmods=c(10, 30, 50))
 
 ### add predicted average relative risks to forest plot
-addpoly(x$pred, sei=x$se, atransf=exp,
-        mlab=c("10 Degrees", "30 Degrees", "50 Degrees"))
+addpoly(x$pred, sei=x$se, atransf=exp, col="white", rows=-2,
+        mlab=c("- at 10 Degrees", "- at 30 Degrees", "- at 50 Degrees"), cex=.8)
 abline(h=0)
+text(-8,   -1, "Model-Based Estimates of RR:", pos=4, cex=.8)
+text(-8,   15, "Author(s) and Year",     pos=4, cex=.8)
+text(5,    15, "Relative Risk [95\% CI]", pos=2, cex=.8)
+text(-3.5, 15, "Latitude", cex=.8)
 }
 \keyword{aplot}

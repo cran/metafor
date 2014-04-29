@@ -3,7 +3,9 @@
 \alias{escalc.default}
 \alias{escalc.formula}
 \alias{[.escalc}
+\alias{[.summary.escalc}
 \alias{cbind.escalc}
+\alias{cbind.summary.escalc}
 \title{Calculate Effect Sizes and Outcome Measures}
 \description{
    The function can be used to calculate various effect sizes or outcome measures (and the corresponding sampling variances) that are commonly used in meta-analyses.
@@ -14,7 +16,8 @@ escalc(measure, formula, \dots)
 \method{escalc}{default}(measure, formula, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
        m1i, m2i, sd1i, sd2i, xi, mi, ri, ti, sdi, ni, data, slab, subset,
        add=1/2, to="only0", drop00=FALSE, vtype="LS",
-       var.names=c("yi","vi"), append=TRUE, replace=TRUE, digits=4, \dots)
+       var.names=c("yi","vi"), add.measure=FALSE,
+       append=TRUE, replace=TRUE, digits=4, \dots)
 
 \method{escalc}{formula}(measure, formula, weights, data,
        add=1/2, to="only0", drop00=FALSE, vtype="LS",
@@ -45,13 +48,14 @@ escalc(measure, formula, \dots)
    \item{sdi}{vector to specify the standard deviations.}
    \item{ni}{vector to specify the sample/group sizes.}
    \item{data}{optional data frame containing the variables given to the arguments above.}
-   \item{slab}{optional vector with unique labels for the studies.}
+   \item{slab}{optional vector with labels for the studies.}
    \item{subset}{optional vector indicating the subset of studies that should be used. This can be a logical vector or a numeric vector indicating the indices of the studies to include.}
    \item{add}{a non-negative number indicating the amount to add to zero cells, counts, or frequencies. See \sQuote{Details}.}
    \item{to}{a character string indicating when the values under \code{add} should be added (either \code{"all"}, \code{"only0"}, \code{"if0all"}, or \code{"none"}). See \sQuote{Details}.}
    \item{drop00}{logical indicating whether studies with no cases/events (or only cases) in both groups should be dropped when calculating the observed outcomes of the individual studies. See \sQuote{Details}.}
    \item{vtype}{a character string indicating the type of sampling variances to calculate (either \code{"LS"}, \code{"UB"}, \code{"ST"}, or \code{vtype="CS"}). See \sQuote{Details}.}
    \item{var.names}{a character string with two elements, specifying the name of the variable for the observed outcomes and the name of the variable for the corresponding sampling variances (default is \code{"yi"} and \code{"vi"}).}
+   \item{add.measure}{logical indicating whether a variable should be added to the data frame (with default name \code{"measure"}) that indicates the type of outcome measure computed. When using this option, \code{var.names} can have a third element to change this variable name.}
    \item{append}{logical indicating whether the data frame specified via the \code{data} argument (if one has been specified) should be returned together with the observed outcomes and corresponding sampling variances (default is \code{TRUE}).}
    \item{replace}{logical indicating whether existing values for \code{yi} and \code{vi} in the data frame should be replaced or not. Only relevant when \code{append=TRUE} and the data frame already contains the \code{yi} and \code{vi} variables. If \code{replace=TRUE} (the default), all of the existing values will be overwritten. If \code{replace=FALSE}, only \code{NA} values will be replaced. See \sQuote{Value} section below for more details.}
    \item{digits}{integer specifying the number of decimal places to which the printed results should be rounded (default is 4). Note that the values are stored without rounding in the returned object.}
@@ -80,35 +84,38 @@ escalc(measure, formula, \dots)
 
       \subsection{Measures for Dichotomous Variables}{
 
-         In various fields (such as the health and medical sciences), the response variable measured is often dichotomous (binary), so that the data from a study comparing two different groups can be expressed in terms of a \eqn{2 \times 2}{2x2} table, such as:
+         In various fields (such as the health and medical sciences), the response or outcome variable measured is often dichotomous (binary), so that the data from a study comparing two different groups can be expressed in terms of a \eqn{2 \times 2}{2x2} table, such as:
          \tabular{lccc}{
                  \tab outcome 1 \tab outcome 2 \tab total      \cr
          group 1 \tab \code{ai} \tab \code{bi} \tab \code{n1i} \cr
          group 2 \tab \code{ci} \tab \code{di} \tab \code{n2i}
          } where \code{ai}, \code{bi}, \code{ci}, and \code{di} denote the cell frequencies (i.e., the number of people falling into a particular category) and \code{n1i} and \code{n2i} the row totals (i.e., the group sizes).
 
-         For example, in a set of randomized clinical trials, group 1 and group 2 may refer to the treatment and placebo/control group, respectively, with outcome 1 denoting some event of interest (e.g., death, complications, failure to improve under the treatment) and outcome 2 its complement. Similarly, in a set of cohort studies, group 1 and group 2 may denote those who engage in and those who do not engage in a potentially harmful behavior (e.g., smoking), with outcome 1 denoting the development of a particular disease (e.g., lung cancer) during the follow-up period. Finally, in a set of case-control studies, group 1 and group 2 may refer to those with the disease (i.e., cases) and those free of the disease (i.e., controls), with outcome 1 denoting, for example, exposure to some risk environmental risk factor and outcome 2 non-exposure. Note that in all of these examples, the stratified sampling scheme fixes the row totals (i.e., the group sizes) by design.
+         For example, in a set of randomized clinical trials, group 1 and group 2 may refer to the treatment and placebo/control group, respectively, with outcome 1 denoting some event of interest (e.g., death, complications, failure to improve under the treatment) and outcome 2 its complement. Similarly, in a set of cohort studies, group 1 and group 2 may denote those who engage in and those who do not engage in a potentially harmful behavior (e.g., smoking), with outcome 1 denoting the development of a particular disease (e.g., lung cancer) during the follow-up period. Finally, in a set of case-control studies, group 1 and group 2 may refer to those with the disease (i.e., cases) and those free of the disease (i.e., controls), with outcome 1 denoting, for example, exposure to some risk environmental risk factor in the past and outcome 2 non-exposure. Note that in all of these examples, the stratified sampling scheme fixes the row totals (i.e., the group sizes) by design.
 
-         A meta-analysis of studies reporting results in terms of \eqn{2 \times 2}{2x2} tables can be based on one of several different outcome measures, including the relative risk (risk ratio), the odds ratio, the risk difference, and the arcsine transformed risk difference (e.g., Fleiss & Berlin, 2009, Ruecker et al., 2009). For any of these outcome measures, one needs to specify the cell frequencies via the \code{ai}, \code{bi}, \code{ci}, and \code{di} arguments (or alternatively, one can use the \code{ai}, \code{ci}, \code{n1i}, and \code{n2i} arguments).
+         A meta-analysis of studies reporting results in terms of \eqn{2 \times 2}{2x2} tables can be based on one of several different outcome measures, including the relative risk (risk ratio), the odds ratio, the risk difference, and the arcsine square-root transformed risk difference (e.g., Fleiss & Berlin, 2009, Rücker et al., 2009). For any of these outcome measures, one needs to specify the cell frequencies via the \code{ai}, \code{bi}, \code{ci}, and \code{di} arguments (or alternatively, one can use the \code{ai}, \code{ci}, \code{n1i}, and \code{n2i} arguments).
 
          The options for the \code{measure} argument are then:
          \itemize{
          \item \code{"RR"} for the \emph{log relative risk}.
          \item \code{"OR"} for the \emph{log odds ratio}.
          \item \code{"RD"} for the \emph{risk difference}.
-         \item \code{"AS"} for the \emph{arcsine transformed risk difference} (Ruecker et al., 2009).
+         \item \code{"AS"} for the \emph{arcsine square-root transformed risk difference} (Rücker et al., 2009).
          \item \code{"PETO"} for the \emph{log odds ratio} estimated with Peto's method (Yusuf et al., 1985).
          } Note that the log is taken of the relative risk and the odds ratio, which makes these outcome measures symmetric around 0 and yields corresponding sampling distributions that are closer to normality.
 
-         Cell entries with a zero count can be problematic, especially for the relative risk and the odds ratio. Adding a small constant to the cells of the \eqn{2 \times 2}{2x2} tables is a common solution to this problem. When \code{to="only0"} (the default), the value of \code{add} (the default is 1/2) is added to each cell of those \eqn{2 \times 2}{2x2} tables with at least one cell equal to 0. When \code{to="all"}, the value of \code{add} is added to each cell of all \eqn{2 \times 2}{2x2} tables. When \code{to="if0all"}, the value of \code{add} is added to each cell of all \eqn{2 \times 2}{2x2} tables, but only when there is at least one \eqn{2 \times 2}{2x2} table with a zero cell. Setting \code{to="none"} or \code{add=0} has the same effect: No adjustment to the observed table frequencies is made. Depending on the outcome measure and the data, this may lead to division by zero inside of the function (when this occurs, the resulting value is recoded to \code{NA}). Also, studies where \code{ai=ci=0} or \code{bi=di=0} may be considered to be uninformative about the size of the effect and dropping such studies has sometimes been recommended (Higgins & Green, 2008). This can be done by setting \code{drop00=TRUE}. The counts for such studies will then be set to \code{NA}.
+         Cell entries with a zero count can be problematic, especially for the relative risk and the odds ratio. Adding a small constant to the cells of the \eqn{2 \times 2}{2x2} tables is a common solution to this problem. When \code{to="only0"} (the default), the value of \code{add} (the default is 1/2) is added to each cell of those \eqn{2 \times 2}{2x2} tables with at least one cell equal to 0. When \code{to="all"}, the value of \code{add} is added to each cell of all \eqn{2 \times 2}{2x2} tables. When \code{to="if0all"}, the value of \code{add} is added to each cell of all \eqn{2 \times 2}{2x2} tables, but only when there is at least one \eqn{2 \times 2}{2x2} table with a zero cell. Setting \code{to="none"} or \code{add=0} has the same effect: No adjustment to the observed table frequencies is made. Depending on the outcome measure and the data, this may lead to division by zero inside of the function (when this occurs, the resulting value is recoded to \code{NA}). Also, studies where \code{ai=ci=0} or \code{bi=di=0} may be considered to be uninformative about the size of the effect and dropping such studies has sometimes been recommended (Higgins & Green, 2008). This can be done by setting \code{drop00=TRUE}. The values for such studies will then be set to \code{NA}.
 
          A dataset corresponding to data of this type is provided in \code{\link{dat.bcg}}.
 
-         Assuming that the dichotomous outcome is actually a dichotomized version of the responses on an underlying quantitative scale, it is also possible to estimate the standardized mean difference based on \eqn{2 \times 2}{2x2} table data, using either the probit transformed risk difference or a transformation of the odds ratio (e.g., Chinn, 2000; Hasselblad & Hedges, 1995; Sanchez-Meca et al., 2003). The options for the \code{measure} argument are then:
+         Assuming that the dichotomous outcome is actually a dichotomized version of the responses on an underlying quantitative scale, it is also possible to estimate the standardized mean difference based on \eqn{2 \times 2}{2x2} table data, using either the probit transformed risk difference or a transformation of the odds ratio (e.g., Cox & Snell, 1989; Chinn, 2000; Hasselblad & Hedges, 1995; Sanchez-Meca et al., 2003). The options for the \code{measure} argument are then:
          \itemize{
          \item \code{"PBIT"} for the \emph{probit transformed risk difference} as an estimate of the standardized mean difference.
-         \item \code{"OR2D"} for \emph{transformed odds ratio} as an estimate of the standardized mean difference.
-         } The probit transformation assumes that the responses on the underlying quantitative scale are normally distributed, while the odds ratio transformation assumes that the responses follow logistic distributions within each group.
+         \item \code{"OR2DN"} for the \emph{transformed odds ratio} as an estimate of the standardized mean difference (normal distributions).
+         \item \code{"OR2DL"} for the \emph{transformed odds ratio} as an estimate of the standardized mean difference (logistic distributions).
+         } The probit transformation assumes that the responses on the underlying quantitative scale are normally distributed. There are two versions of the odds ratio transformation, the first also assuming normal distributions within the two groups, while the second assumes that the responses follow logistic distributions.
+
+         A dataset corresponding to data of this type is provided in \code{\link{dat.gibson2002}}.
 
       }
 
@@ -121,7 +128,7 @@ escalc(measure, formula, \dots)
          group 2 \tab \code{x2i}       \tab \code{t2i}
          } where \code{x1i} and \code{x2i} denote the total number of events in the first and the second group, respectively, and \code{t1i} and \code{t2i} the corresponding total person-times at risk. Often, the person-time is measured in years, so that \code{t1i} and \code{t2i} denote the total number of follow-up years in the two groups.
 
-         Note that this form of data is fundamentally different from that described in the previous section, since the total follow-up time may differ even for groups of the same size and the individuals studied may experience the event of interest multiple times. Hence, different outcome measures than the ones described in the previous section must be considered when data are reported in this format. These inlude the incidence rate ratio, the incidence rate difference, and the square-root transformed incidence rate difference (Bagos & Nikolopoulos, 2009; Rothman et al., 2008). For any of these outcome measures, one needs to specify the total number of events via the \code{x1i} and \code{x2i} arguments and the corresponding total person-times via the \code{t1i} and \code{t2i} arguments.
+         This form of data is fundamentally different from what was described in the previous section, since the total follow-up time may differ even for groups of the same size and the individuals studied may experience the event of interest multiple times. Hence, different outcome measures than the ones described in the previous section must be considered when data are reported in this format. These inlude the incidence rate ratio, the incidence rate difference, and the square-root transformed incidence rate difference (Bagos & Nikolopoulos, 2009; Rothman et al., 2008). For any of these outcome measures, one needs to specify the total number of events via the \code{x1i} and \code{x2i} arguments and the corresponding total person-time values via the \code{t1i} and \code{t2i} arguments.
 
          The options for the \code{measure} argument are then:
          \itemize{
@@ -130,7 +137,7 @@ escalc(measure, formula, \dots)
          \item \code{"IRSD"} for the \emph{square-root transformed incidence rate difference}.
          } Note that the log is taken of the incidence rate ratio, which makes this outcome measure symmetric around 0 and yields a corresponding sampling distribution that is closer to normality.
 
-         Studies with zero events in one or both groups can be problematic, especially for the incidence rate ratio. Adding a small constant to the number of events is a common solution to this problem. When \code{to="only0"} (the default), the value of \code{add} (the default is 1/2) is added to \code{x1i} and \code{x2i} only in the studies that have zero events in one or both groups. When \code{to="all"}, the value of \code{add} is added to \code{x1i} and \code{x2i} in all studies. When \code{to="if0all"}, the value of \code{add} is added to \code{x1i} and \code{x2i} in all studies, but only when there is at least one study with zero events in one or both groups. Setting \code{to="none"} or \code{add=0} has the same effect: No adjustment to the observed number of events is made. Depending on the outcome measure and the data, this may lead to division by zero inside of the function (when this occurs, the resulting value is recoded to \code{NA}). Like for \eqn{2 \times 2}{2x2} table data, studies where \code{x1i=x2i=0} may be considered to be uninformative about the size of the effect and dropping such studies has sometimes been recommended. This can be done by setting \code{drop00=TRUE}. The counts for such studies will then be set to \code{NA}.
+         Studies with zero events in one or both groups can be problematic, especially for the incidence rate ratio. Adding a small constant to the number of events is a common solution to this problem. When \code{to="only0"} (the default), the value of \code{add} (the default is 1/2) is added to \code{x1i} and \code{x2i} only in the studies that have zero events in one or both groups. When \code{to="all"}, the value of \code{add} is added to \code{x1i} and \code{x2i} in all studies. When \code{to="if0all"}, the value of \code{add} is added to \code{x1i} and \code{x2i} in all studies, but only when there is at least one study with zero events in one or both groups. Setting \code{to="none"} or \code{add=0} has the same effect: No adjustment to the observed number of events is made. Depending on the outcome measure and the data, this may lead to division by zero inside of the function (when this occurs, the resulting value is recoded to \code{NA}). Like for \eqn{2 \times 2}{2x2} table data, studies where \code{x1i=x2i=0} may be considered to be uninformative about the size of the effect and dropping such studies has sometimes been recommended. This can be done by setting \code{drop00=TRUE}. The values for such studies will then be set to \code{NA}.
 
          A dataset corresponding to data of this type is provided in \code{\link{dat.hart1999}}.
 
@@ -143,20 +150,27 @@ escalc(measure, formula, \dots)
                  \tab mean       \tab standard deviation \tab group size \cr
          group 1 \tab \code{m1i} \tab \code{sd1i}        \tab \code{n1i} \cr
          group 2 \tab \code{m2i} \tab \code{sd2i}        \tab \code{n2i}
-         } where \code{m1i} and \code{m2i} are the observed means of the two groups, \code{sd1i} and \code{sd2i} the observed standard deviations, and \code{n1i} and \code{n2i} the number of individuals in each group. Again, the two groups may be experimentally created (e.g., a treatment and control group based on random assignment) or naturally occurring (e.g., men and women). In either case, the raw mean difference, the standardized mean difference, and the ratio of means (also called response ratio) are useful outcome measures when meta-analyzing studies of this type (e.g., Borenstein, 2009). In addition, the (log) odds ratio can be estimated based on data of this type, using a simple transformation of the standardized mean difference (e.g., Chinn, 2000; Hasselblad & Hedges, 1995).
+         } where \code{m1i} and \code{m2i} are the observed means of the two groups, \code{sd1i} and \code{sd2i} the observed standard deviations, and \code{n1i} and \code{n2i} the number of individuals in each group. Again, the two groups may be experimentally created (e.g., a treatment and control group based on random assignment) or naturally occurring (e.g., men and women). In either case, the raw mean difference, the standardized mean difference, and the ratio of means (also called response ratio) are useful outcome measures when meta-analyzing studies of this type (e.g., Borenstein, 2009).
 
          The options for the \code{measure} argument are then:
          \itemize{
          \item \code{"MD"} for the \emph{raw mean difference}.
          \item \code{"SMD"} for the \emph{standardized mean difference}.
-         \item \code{"SMDH"} for the \emph{standardized mean difference} without assuming equal population variances in the two groups (Bonett, 2008, 2009).
+         \item \code{"SMDH"} for the \emph{standardized mean difference} with heteroscedastic population variances in the two groups (Bonett, 2008, 2009).
          \item \code{"ROM"} for the \emph{log transformed ratio of means} (Hedges et al., 1999).
-         \item \code{"D2OR"} for the \emph{transformed standardized mean difference} as an estimate of the log odds ratio.
          } Note that the log is taken of the ratio of means, which makes this outcome measures symmetric around 0 and yields a corresponding sampling distribution that is closer to normality (however, note that if \code{m1i} and \code{m2i} have opposite signs, this outcome measure cannot be computed).
 
          The negative bias in the standardized mean difference is automatically corrected for within the function, yielding Hedges' g for \code{measure="SMD"} (Hedges, 1981). Similarly, the same bias correction is applied for \code{measure="SMDH"} (Bonett, 2009). Finally, for \code{measure="SMD"}, one can choose between \code{vtype="LS"} (the default) and \code{vtype="UB"}. The former uses a large sample approximation to compute the sampling variances. The latter provides unbiased estimates of the sampling variances.
 
          A dataset corresponding to data of this type is provided in \code{\link{dat.normand1999}} (for mean differences and standardized mean differences). A dataset showing the use of the ratio of means measure is provided in \code{\link{dat.curtis1998}}.
+
+         It is also possible to transform standardized mean differences into log odds ratios (e.g., Cox & Snell, 1989; Chinn, 2000; Hasselblad & Hedges, 1995; Sanchez-Meca et al., 2003). The options for the \code{measure} argument are then:
+         \itemize{
+         \item \code{"D2ORN"} for the \emph{transformed standardized mean difference} as an estimate of the log odds ratio (normal distributions).
+         \item \code{"D2ORL"} for the \emph{transformed standardized mean difference} as an estimate of the log odds ratio (logistic distributions).
+         } Both of these transformations provide an estimate of the log odds ratio, the first assuming that the responses within the two groups are normally distributed, while the second assumes that the responses follow logistic distributions.
+
+         A dataset illustrating the combined analysis of standardized mean differences and probit transformed risk differences is provided in \code{\link{dat.gibson2002}}.
 
       }
 
@@ -177,7 +191,7 @@ escalc(measure, formula, \dots)
          \item \code{"ZCOR"} for the \emph{Fisher's r-to-z transformed correlation coefficient} (Fisher, 1921).
          } For \code{measure="COR"} and \code{measure="UCOR"}, one can choose between \code{vtype="LS"} (the default) and \code{vtype="UB"}. The former uses a large sample approximation to compute the sampling variances. The latter provides approximately unbiased estimates of the sampling variances (see Hedges, 1989).
 
-         A dataset corresponding to data of this type is provided in \code{\link{dat.mcdaniel1994}}.
+         Datasets corresponding to data of this type are provided in \code{\link{dat.mcdaniel1994}} and \code{\link{dat.molloy2014}}.
 
       }
 
@@ -223,17 +237,17 @@ escalc(measure, formula, \dots)
          \item \code{"PR"} for the \emph{raw proportion}.
          \item \code{"PLN"} for the \emph{log transformed proportion}.
          \item \code{"PLO"} for the \emph{logit transformed proportion} (i.e., log odds).
-         \item \code{"PAS"} for the \emph{arcsine transformed proportion}.
+         \item \code{"PAS"} for the \emph{arcsine square-root transformed proportion} (i.e., the angular transformation).
          \item \code{"PFT"} for the \emph{Freeman-Tukey double arcsine transformed proportion} (Freeman & Tukey, 1950).
          } Zero cell entries can be problematic for certain outcome measures. When \code{to="only0"} (the default), the value of \code{add} (the default is 1/2) is added to \code{xi} and \code{mi} only for studies where \code{xi} or \code{mi} is equal to 0. When \code{to="all"}, the value of \code{add} is added to \code{xi} and \code{mi} in all studies. When \code{to="if0all"}, the value of \code{add} is added in all studies, but only when there is at least one study with a zero value for \code{xi} or \code{mi}. Setting \code{to="none"} or \code{add=0} has the same effect: No adjustment to the observed values is made. Depending on the outcome measure and the data, this may lead to division by zero inside of the function (when this occurs, the resulting value is recoded to \code{NA}).
 
-         A dataset corresponding to data of this type is provided in \code{\link{dat.pritz1997}}.
+         Datasets corresponding to data of this type are provided in \code{\link{dat.pritz1997}} and \code{\link{dat.debruin2009}}.
 
       }
 
       \subsection{Measures for Event Counts}{
 
-         Various measures can be used to characterize individual groups when the dependent variable assessed is an event count. Here, one needs to specify \code{xi} and \code{ti}, denoting the total number of events that occurred and the total person-time at risk, respectively. The options for the \code{measure} argument are then:
+         Various measures can be used to characterize individual groups when the dependent variable assessed is an event count. Here, one needs to specify \code{xi} and \code{ti}, denoting the total number of events that occurred and the total person-times at risk, respectively. The options for the \code{measure} argument are then:
          \itemize{
          \item \code{"IR"} for the \emph{raw incidence rate}.
          \item \code{"IRLN"} for the \emph{log transformed incidence rate}.
@@ -298,7 +312,7 @@ escalc(measure, formula, \dots)
 
          \subsection{Measures for Event Counts}{
 
-            For two-group comparisons with event counts, the \code{formula} argument takes the form \code{events/times ~ group | study}, where \code{group} is a two-level factor specifying the group factor and \code{study} is a factor specifying the study factor. The left-hand side of the formula is composed of two parts, with the first variable for the number of events and the second variable for the person-time at risk.
+            For two-group comparisons with event counts, the \code{formula} argument takes the form \code{events/times ~ group | study}, where \code{group} is a two-level factor specifying the group factor and \code{study} is a factor specifying the study factor. The left-hand side of the formula is composed of two parts, with the first variable for the number of events and the second variable for the person-times at risk.
 
          }
 
@@ -342,7 +356,7 @@ escalc(measure, formula, \dots)
 
          \subsection{Measures for Event Counts}{
 
-            For these outcome measures, the \code{formula} argument takes the form \code{events/times ~ 1 | study}, where \code{study} is a factor specifying the study factor. The left-hand side of the formula is composed of two parts, with the first variable for the number of events and the second variable for the person-time at risk.
+            For these outcome measures, the \code{formula} argument takes the form \code{events/times ~ 1 | study}, where \code{study} is a factor specifying the study factor. The left-hand side of the formula is composed of two parts, with the first variable for the number of events and the second variable for the person-times at risk.
 
          }
 
@@ -387,7 +401,7 @@ escalc(measure, formula, \dots)
 }
 \author{
    Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr
-   package homepage: \url{http://www.metafor-project.org/} \cr
+   package website: \url{http://www.metafor-project.org/} \cr
    author homepage: \url{http://www.wvbauer.com/}
 }
 \references{
@@ -406,6 +420,8 @@ escalc(measure, formula, \dots)
    Borenstein, M. (2009). Effect sizes for continuous data. In H. Cooper, L. V. Hedges, & J. C. Valentine (Eds.), \emph{The handbook of research synthesis and meta-analysis} (2nd ed., pp. 221--235). New York: Russell Sage Foundation.
 
    Chinn, S. (2000). A simple method for converting an odds ratio to effect size for use in meta-analysis. \emph{Statistics in Medicine}, \bold{19}, 3127--3131.
+
+   Cox, D. R., & Snell, E. J. (1989). \emph{Analysis of binary data} (2nd ed.). London: Chapman & Hall.
 
    Fisher, R. A. (1921). On the \dQuote{probable error} of a coefficient of correlation deduced from a small sample. \emph{Metron}, \bold{1}, 1--32.
 
@@ -433,9 +449,9 @@ escalc(measure, formula, \dots)
 
    Morris, S. B., & DeShon, R. P. (2002). Combining effect size estimates in meta-analysis with repeated measures and independent-groups designs. \emph{Psychological Methods}, \bold{7}, 105--125.
 
-   Ruecker, G., Schwarzer, G., Carpenter, J., & Olkin, I. (2009). Why add anything to nothing? The arcsine difference as a measure of treatment effect in meta-analysis with zero cells. \emph{Statistics in Medicine}, \bold{28}, 721--738.
+   Rücker, G., Schwarzer, G., Carpenter, J., & Olkin, I. (2009). Why add anything to nothing? The arcsine difference as a measure of treatment effect in meta-analysis with zero cells. \emph{Statistics in Medicine}, \bold{28}, 721--738.
 
-   Sanchez-Meca, J., Marin-Martinez, F., & Chacon-Moscoso, S. (2003). Effect-size indices for dichotomized outcomes in meta-analysis. \emph{Psychological Methods}, \bold{8}, 448--467.
+   Sánchez-Meca, J., Marín-Martínez, F., & Chacón-Moscoso, S. (2003). Effect-size indices for dichotomized outcomes in meta-analysis. \emph{Psychological Methods}, \bold{8}, 448--467.
 
    Olkin, I., & Pratt, J. W. (1958). Unbiased estimation of certain correlation coefficients. \emph{Annals of Mathematical Statistics}, \bold{29}, 201--211.
 
@@ -479,6 +495,6 @@ dat
 ### using formula interface (first rearrange data into long format)
 dat.long <- to.long(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg,
                     data=dat.bcg, append=FALSE, vlong=TRUE)
-escalc(outcome ~ group | study, weights=freq, data=dat.long, measure="RR")
+escalc(measure="RR", outcome ~ group | study, weights=freq, data=dat.long)
 }
 \keyword{datagen}

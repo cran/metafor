@@ -16,7 +16,7 @@
 }
 \author{
    Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr
-   package homepage: \url{http://www.metafor-project.org/} \cr
+   package website: \url{http://www.metafor-project.org/} \cr
    author homepage: \url{http://www.wvbauer.com/}
 }
 \references{
@@ -31,8 +31,8 @@ data(dat.bcg)
 
 ### meta-analysis of the log relative risks using a mixed-effects model
 ### with two moderators (absolute latitude and publication year)
-res <- rma(ai=tpos, bi=tneg, ci=cpos, di=cneg, mods = ~ ablat + year,
-           data=dat.bcg, measure="RR", method="REML")
+res <- rma(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, 
+           mods = ~ ablat + year, data=dat.bcg)
 vcov(res)
 }
 \keyword{models}

@@ -1,21 +1,23 @@
 \name{profile.rma.uni}
 \alias{profile.rma.uni}
 \alias{profile.rma.mv}
-\title{Profile Plot for 'rma.uni' and 'rma.mv' Objects}
+\title{Profile Plots for 'rma' Objects}
 \description{Function to profile the (restricted) log-likelihood for objects of class \code{"rma.uni"} and \code{"rma.mv"}.}
 \usage{
 \method{profile}{rma.uni}(fitted, xlim, ylim, steps=20, progbar=TRUE, plot=TRUE, pch=19, \ldots)
+
 \method{profile}{rma.mv}(fitted, sigma2, tau2, rho, xlim, ylim,
-        steps=20, progbar=TRUE, plot=TRUE, pch=19, \ldots)
+        steps=20, startmethod="init", progbar=TRUE, plot=TRUE, pch=19, \ldots)
 }
 \arguments{
    \item{fitted}{an object of class \code{"rma.uni"} or \code{"rma.mv"}.}
-   \item{sigma2}{integer specifying for which \eqn{\sigma^2} value the likelihood should be profiled (only relevant for \code{"rma.mv"} objects).}
-   \item{tau2}{integer specifying for which \eqn{\tau^2} value the likelihood should be profiled (only relevant for \code{"rma.mv"} objects).}
+   \item{sigma2}{integer specifying for which \if{latex}{\eqn{\sigma^2}}\if{html}{\eqn{\sigma²}}\if{text}{\eqn{\sigma^2}} value the likelihood should be profiled (only relevant for \code{"rma.mv"} objects).}
+   \item{tau2}{integer specifying for which \if{latex}{\eqn{\tau^2}}\if{html}{\eqn{\tau²}}\if{text}{\eqn{\tau^2}} value the likelihood should be profiled (only relevant for \code{"rma.mv"} objects).}
    \item{rho}{integer specifying for which \eqn{\rho} value the likelihood should be profiled (only relevant for \code{"rma.mv"} objects).}
    \item{xlim}{optional vector specifying the lower and upper limit of the parameter over which the profiling should be done. If unspecified, the function tries to set these limits automatically.}
    \item{ylim}{optional vector specifying the y-axis limits when plotting the profiled likelihood. If unspecified, the function tries to set these limits automatically.}
    \item{steps}{number of points between \code{xlim[1]} and \code{xlim[2]} (inclusive) for which the likelihood should be obtained (default is 20).}
+   \item{startmethod}{method for picking starting values for the optimization. Default is \code{"init"}, which starts each model fit at the default initial values. The alternative is \code{"prev"}, which starts at the estimates from the previous model fit (usually faster, but also less stable for ill-defined models).}
    \item{progbar}{logical indicating whether a progress bar should be shown (default is \code{TRUE}).}
    \item{plot}{logical indicating whether the profile plot should be drawn after profiling is finished (default is \code{TRUE}).}
    \item{pch}{plotting symbol to use. By default, a filled circle is used. See \code{\link{points}} for other options.}
@@ -24,14 +26,14 @@
 \details{
    The function fixes a particular variance component or correlation parameter of the model and then computes the maximized (restricted) log-likelihood over the remaining parameters of the model. By doing this for a range of values for the parameter that was fixed, a profile of the (restricted) log-likelihood is obtained.
 
-   For objects of class \code{"rma.uni"}, the function profiles over parameter \eqn{\tau^2}. If \code{method="ML"} or \code{method="REML"} when fitting the model with the \code{\link{rma.uni}} function, the profiled regular/restricted log-likelihood should be maximized at the ML/REML estimate of \eqn{\tau^2}.
+   For objects of class \code{"rma.uni"}, the function profiles over parameter \if{latex}{\eqn{\tau^2}}\if{html}{\eqn{\tau²}}\if{text}{\eqn{\tau^2}}. If \code{method="ML"} or \code{method="REML"} when fitting the model with the \code{\link{rma.uni}} function, the profiled regular/restricted log-likelihood should be maximized at the ML/REML estimate of \if{latex}{\eqn{\tau^2}}\if{html}{\eqn{\tau²}}\if{text}{\eqn{\tau^2}}.
 
    For objects of class \code{"rma.mv"} obtained with the \code{\link{rma.mv}} function, one must use the \code{sigma2}, \code{tau2}, and \code{rho} arguments to specify over which parameter the profiling should be done. Only one of these arguments can be used at a time. A single integer is used to specify the number of the parameter. Each profile plot should show a clear peak at the corresponding ML/REML estimate. If the profiled likelihood is flat (over the entire parameter space or large portions of it), then this suggests that at least some of the parameters of the model are not identifiable (and the parameter estimates obtained are essentially arbitrary).
 }
 \value{
    An object of class \code{"profile.rma.uni"} or \code{"profile.rma.mv"}. The object is a list containing the following components:
-   \item{sigma2}{values of \eqn{\sigma^2} over which the likelihood was profiled (only when profiling was actually done over \eqn{\sigma^2}).}
-   \item{tau2}{values of \eqn{\tau^2} over which the likelihood was profiled (only when profiling was actually done over \eqn{\tau^2}).}
+   \item{sigma2}{values of \if{latex}{\eqn{\sigma^2}}\if{html}{\eqn{\sigma²}}\if{text}{\eqn{\sigma^2}} over which the likelihood was profiled (only when profiling was actually done over \if{latex}{\eqn{\sigma^2}}\if{html}{\eqn{\sigma²}}\if{text}{\eqn{\sigma^2}}).}
+   \item{tau2}{values of \if{latex}{\eqn{\tau^2}}\if{html}{\eqn{\tau²}}\if{text}{\eqn{\tau^2}} over which the likelihood was profiled (only when profiling was actually done over \if{latex}{\eqn{\tau^2}}\if{html}{\eqn{\tau²}}\if{text}{\eqn{\tau^2}}).}
    \item{rho}{values of \eqn{\rho} over which the likelihood was profiled (only when profiling was actually done over \eqn{\rho}).}
    \item{ll}{(restricted) log-likelihood at the corresponding parameter value.}
    \item{b}{a matrix with the estimated model coefficients at the corresponding parameter value.}
@@ -44,7 +46,7 @@
 }
 \author{
    Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr
-   package homepage: \url{http://www.metafor-project.org/} \cr
+   package website: \url{http://www.metafor-project.org/} \cr
    author homepage: \url{http://www.wvbauer.com/}
 }
 \references{

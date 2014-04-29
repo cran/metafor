@@ -21,7 +21,7 @@ rma.mh(ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
    \item{t2i}{vector to specify the total person-times (second group). See below and the documentation of the \code{\link{escalc}} function for more details.}
    \item{measure}{character string indicating the outcome measure to use for the meta-analysis. Possible options are the odds ratio (\code{"OR"}), the relative risk (\code{"RR"}), the risk difference (\code{"RD"}), the incidence rate ratio (\code{"IRR"}), or the incidence rate difference (\code{"IRD"}).}
    \item{data}{optional data frame containing the data supplied to the function.}
-   \item{slab}{optional vector with unique labels for the \eqn{k} studies.}
+   \item{slab}{optional vector with labels for the \eqn{k} studies.}
    \item{subset}{optional vector indicating the subset of tables that should be used for the analysis. This can be a logical vector of length \eqn{k} or a numeric vector indicating the indices of the tables to include.}
    \item{add}{non-negative number indicating the amount to add to zero cells, counts, or frequencies when calculating the individual outcomes. Can also be a vector of two numbers, where the first number is used in the calculation of the individual outcomes and the second number is used when applying the Mantel-Haenszel method. See below and the documentation of the \code{\link{escalc}} function for more details.}
    \item{to}{character string indicating when the values under \code{add} should be added (either \code{"only0"}, \code{"all"}, \code{"if0all"}, or \code{"none"}). Can also be a character vector, where the first string again applies when calculating the individual outcomes and the second string when applying the Mantel-Haenszel method. See below and the documentation of the \code{\link{escalc}} function for more details.}
@@ -75,7 +75,7 @@ rma.mh(ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
 
    The \code{\link{residuals.rma}}, \code{\link{rstandard.rma.mh}}, and \code{\link{rstudent.rma.mh}} functions extract raw and standardized residuals. Leave-one-out diagnostics can be obtained with \code{\link{leave1out.rma.mh}}.
 
-   Forest, funnel, radial, L'Abbe, and Baujat plots can be obtained with \code{\link{forest.rma}}, \code{\link{funnel.rma}}, \code{\link{radial.rma}}, \code{\link{labbe.rma}}, and \code{\link{baujat.rma.mh}}. The \code{\link{qqnorm.rma.mh}} function provides normal QQ plots of the standardized residuals. One can also just call \code{\link{plot.rma.mh}} on the fitted model object to obtain various plots at once.
+   Forest, funnel, radial, L'Abbé, and Baujat plots can be obtained with \code{\link{forest.rma}}, \code{\link{funnel.rma}}, \code{\link{radial.rma}}, \code{\link{labbe.rma}}, and \code{\link{baujat.rma.mh}}. The \code{\link{qqnorm.rma.mh}} function provides normal QQ plots of the standardized residuals. One can also just call \code{\link{plot.rma.mh}} on the fitted model object to obtain various plots at once.
 
    A cumulative meta-analysis (i.e., adding one obervation at a time) can be obtained with \code{\link{cumul.rma.mh}}.
 
@@ -83,7 +83,7 @@ rma.mh(ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
 }
 \author{
    Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr
-   package homepage: \url{http://www.metafor-project.org/} \cr
+   package website: \url{http://www.metafor-project.org/} \cr
    author homepage: \url{http://www.wvbauer.com/}
 }
 \references{
@@ -108,16 +108,16 @@ rma.mh(ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
    Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \url{http://www.jstatsoft.org/v36/i03/}.
 }
 \seealso{
-   \code{\link{rma.uni}}, \code{\link{rma.glmm}}, \code{\link{rma.peto}}, \code{\link{rma.mv}}
+   \code{\link{rma.uni}}, \code{\link{rma.glmm}}, \code{\link{rma.peto}}, and \code{\link{rma.mv}} for other model fitting functions.
 }
 \examples{
 ### load BCG vaccine data
 data(dat.bcg)
 
 ### meta-analysis of the (log) odds ratios using the Mantel-Haenszel method
-rma.mh(ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg, measure="OR")
+rma.mh(measure="OR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
 
 ### meta-analysis of the (log) relative risks using the Mantel-Haenszel method
-rma.mh(ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg, measure="RR")
+rma.mh(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
 }
 \keyword{models}

@@ -4,21 +4,25 @@
 \alias{cooks.distance.rma.uni}
 \alias{dfbetas.rma.uni}
 \alias{hatvalues.rma.uni}
-\title{Compute Outlier and Influential Case Diagnostics for 'rma.uni' Objects}
+\title{Outlier and Influential Case Diagnostics for 'rma.uni' Objects}
 \description{
-   The functions computes various outlier and influential case diagnostics that indicate the influence of deleting one case/study at a time on the model fit and the fitted/residual values for objects of class \code{"rma.uni"}.
+   The functions compute various outlier and influential case diagnostics that indicate the influence of deleting one case/study at a time on the model fit and the fitted/residual values for objects of class \code{"rma.uni"}.
 }
 \usage{
-\method{influence}{rma.uni}(model, digits=model$digits, \dots)
-\method{print}{infl.rma.uni}(x, digits=x$digits, \dots)
+\method{influence}{rma.uni}(model, digits, \dots)
+
+\method{print}{infl.rma.uni}(x, digits, \dots)
+
 \method{cooks.distance}{rma.uni}(model, \dots)
 \method{dfbetas}{rma.uni}(model, \dots)
-\method{hatvalues}{rma.uni}(model, \dots)
+
+\method{hatvalues}{rma.uni}(model, type="diagonal", \dots)
 }
 \arguments{
    \item{model}{an object of class \code{"rma.uni"}.}
    \item{x}{an object of class \code{"infl.rma.uni"} (for \code{print}).}
-   \item{digits}{integer specifying the number of decimal places to which the printed results should be rounded (the default is to take the value from the object).}
+   \item{digits}{integer specifying the number of decimal places to which the printed results should be rounded (if unspecified, the default is to take the value from the object).}
+   \item{type}{character string indicating whether to only return the diagonal of the hat matrix (\code{"diagonal"}) or the entire matrix (\code{"matrix"}).}
    \item{\dots}{other arguments.}
 }
 \details{
@@ -41,7 +45,7 @@
 
    The covariance ratio is defined as the determinant of the variance-covariance matrix of the parameter estimates based on the dataset with the \eqn{i}th study removed divided by the determinant of the variance-covariance matrix of the parameter estimates based on the complete dataset. A value below 1 therefore indicates that removal of the \eqn{i}th study yields more precise estimates of the model coefficients.
 
-   The leave-one-out amount of (residual) heterogeneity is the estimated value of \eqn{\tau^2} based on the dataset with the \eqn{i}th study removed. Note that this is always equal to \code{0} for fixed-effects models.
+   The leave-one-out amount of (residual) heterogeneity is the estimated value of \if{latex}{\eqn{\tau^2}}\if{html}{\eqn{\tau²}}\if{text}{\eqn{\tau^2}} based on the dataset with the \eqn{i}th study removed. Note that this is always equal to \code{0} for fixed-effects models.
 
    Similarly, the leave-one-out test statistic for the test of (residual) heterogeneity is the value of the test statistic of the test for (residual) heterogeneity calculated based on the dataset with the \eqn{i}th study removed.
 
@@ -57,7 +61,7 @@
 }
 \value{
    An object of class \code{"infl.rma.uni"}. The object is a list containing the following components:
-   \item{inf}{a data frame with columns equal to the externally standardized residuals, DFFITS values, Cook's distances, covariance ratios, leave-one-out \eqn{\tau^2} estimates, leave-one-out (residual) heterogeneity test statistics, hat values, and weights.}
+   \item{inf}{a data frame with columns equal to the externally standardized residuals, DFFITS values, Cook's distances, covariance ratios, leave-one-out \if{latex}{\eqn{\tau^2}}\if{html}{\eqn{\tau²}}\if{text}{\eqn{\tau^2}} estimates, leave-one-out (residual) heterogeneity test statistics, hat values, and weights.}
    \item{dfb}{a data frame with columns equal to the DFBETAS values.}
    \item{is.infl}{a logical vector indicating whether a particular study is considered to be \sQuote{influential}.}
    \item{\dots}{some additional elements/values.}
@@ -73,7 +77,7 @@
 }
 \author{
    Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr
-   package homepage: \url{http://www.metafor-project.org/} \cr
+   package website: \url{http://www.metafor-project.org/} \cr
    author homepage: \url{http://www.wvbauer.com/}
 }
 \references{
@@ -96,8 +100,8 @@ data(dat.bcg)
 
 ### meta-analysis of the log relative risks using a mixed-effects model
 ### with two moderators (absolute latitude and publication year)
-res <- rma(ai=tpos, bi=tneg, ci=cpos, di=cneg, mods = ~ ablat + year,
-           data=dat.bcg, measure="RR", method="REML")
+res <- rma(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg,
+           mods = ~ ablat + year, data=dat.bcg)
 influence(res)
 plot(influence(res))
 

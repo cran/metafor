@@ -18,7 +18,7 @@
 \alias{transf.ztor.int}
 \alias{transf.exp.int}
 \alias{transf.ilogit.int}
-\title{Transformation Functions}
+\title{Transformation Function}
 \description{
    A set of transformation functions useful for meta-analyses.
 }
@@ -53,17 +53,17 @@ transf.ilogit.int(xi, targs, \dots)
 \details{
    The following transformation functions are currently implemented:
    \itemize{
-   \item \code{transf.rtoz}: Fisher's r-to-z transformation.
+   \item \code{transf.rtoz}: Fisher's r-to-z transformation for correlations.
    \item \code{transf.ztor}: inverse of the Fisher's r-to-z transformation.
-   \item \code{transf.logit}: logit (log odds) transformation.
+   \item \code{transf.logit}: logit (log odds) transformation for proportions.
    \item \code{transf.ilogit}: inverse of the logit transformation.
-   \item \code{transf.arcsin}: arcsine transformation.
+   \item \code{transf.arcsin}: arcsine square-root transformation for proportions.
    \item \code{transf.iarcsin}: inverse of the arcsine transformation.
    \item \code{transf.pft}: Freeman-Tukey (double arcsine) transformation for proportions. See Freeman & Tukey (1950). The \code{xi} argument is used to specify the proportions and the \code{ni} argument the corresponding sample sizes.
    \item \code{transf.ipft}: inverse of the Freeman-Tukey (double arcsine) transformation for proportions. See Miller (1978).
    \item \code{transf.ipft.hm}: inverse of the Freeman-Tukey (double arcsine) transformation for proportions using the harmonic mean of the sample sizes for the back-transformation. See Miller (1978). The sample sizes are specified via the \code{targs} argument (the list element should be called \code{ni}).
    \item \code{transf.isqrt}: inverse of the square-root transformation (i.e., function to square a number).
-   \item \code{transf.irft}: Freeman-Tukey transformation for incidence rates. See Freeman & Tukey (1950). The \code{xi} argument is used to specify the incidence rates and the \code{ti} argument the corresponding person-time at risk.
+   \item \code{transf.irft}: Freeman-Tukey transformation for incidence rates. See Freeman & Tukey (1950). The \code{xi} argument is used to specify the incidence rates and the \code{ti} argument the corresponding person-times at risk.
    \item \code{transf.iirft}: inverse of the Freeman-Tukey transformation for incidence rates.
    \item \code{transf.ahw}: Transformation of coefficient alpha as suggested by Hakstian & Whalen (1976).
    \item \code{transf.iahw}: Inverse of the transformation of coefficient alpha as suggested by Hakstian & Whalen (1976).
@@ -80,7 +80,7 @@ transf.ilogit.int(xi, targs, \dots)
 }
 \author{
    Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr
-   package homepage: \url{http://www.metafor-project.org/} \cr
+   package website: \url{http://www.metafor-project.org/} \cr
    author homepage: \url{http://www.wvbauer.com/}
 }
 \references{
@@ -101,8 +101,7 @@ transf.ilogit.int(xi, targs, \dots)
 data(dat.bcg)
 
 ### meta-analysis of the log relative risks using a random-effects model
-res <- rma(ai=tpos, bi=tneg, ci=cpos, di=cneg,
-           measure="RR", data=dat.bcg, method="REML")
+res <- rma(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
 
 ### average relative risk with 95\% CI
 predict(res, transf=exp)

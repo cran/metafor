@@ -26,30 +26,29 @@
 }
 \examples{
 ### load data
-data(dat.collins1985a)
+dat <- get(data(dat.collins1985a))
 
 ### calculate (log) odds ratio and sampling variance
-dat <- escalc(measure="OR", ai=xci, n1i=nci, ci=xti, n2i=nti,
-              data=dat.collins1985a, to="all")
+dat <- escalc(measure="OR", ai=xci, n1i=nci, ci=xti, n2i=nti, data=dat, to="all")
 summary(dat, digits=2, transf=exp)
 
 ### meta-analysis of log odds ratios using Peto's method
-res <- rma.peto(ai=xci, n1i=nci, ci=xti, n2i=nti, data=dat.collins1985a)
+res <- rma.peto(ai=xci, n1i=nci, ci=xti, n2i=nti, data=dat)
 summary(res)
 
 \dontrun{
 ### meta-analysis of log odds ratios using conditional logistic regression model
-res <- rma.glmm(measure="OR", ai=xci, n1i=nci, ci=xti, n2i=nti,
-                data=dat.collins1985a, model="CM.EL", method="FE")
+res <- rma.glmm(measure="OR", ai=xci, n1i=nci, ci=xti, n2i=nti, data=dat,
+                model="CM.EL", method="FE")
 summary(res)
 
 ### plot the log-likelihoods of the odds ratios
-llplot(measure="OR", ai=xci, n1i=nci, ci=xti, n2i=nti, data=dat.collins1985a,
+llplot(measure="OR", ai=xci, n1i=nci, ci=xti, n2i=nti, data=dat,
        lwd=1, refline=NA, xlim=c(-4,4), drop00=FALSE)
 
 ### meta-analysis of log odds ratios using conditional logistic regression model
-res <- rma.glmm(measure="OR", ai=xci, n1i=nci, ci=xti, n2i=nti,
-                data=dat.collins1985a, model="CM.EL", method="ML")
+res <- rma.glmm(measure="OR", ai=xci, n1i=nci, ci=xti, n2i=nti, data=dat,
+                model="CM.EL", method="ML")
 summary(res)
 }
 }

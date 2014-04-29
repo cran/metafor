@@ -1,17 +1,18 @@
 Package: metafor
-Version: 1.9-2
-Date: 2013-10-07
+Version: 1.9-3
+Date: 2014-04-29
 Title: Meta-Analysis Package for R
 Author: Wolfgang Viechtbauer <wvb@metafor-project.org>
 Maintainer: Wolfgang Viechtbauer <wvb@metafor-project.org>
-Depends: R (>= 3.0.0), stats, Formula
-Suggests: Matrix, lme4, numDeriv, polycor, BiasedUrn, survival, Epi,
-        minqa
+Depends: R (>= 3.0.0), stats, Formula, Matrix
+Suggests: lme4, numDeriv, polycor, BiasedUrn, survival, Epi, minqa,
+        multcomp, plyr, igraph, testthat
 Description: The metafor package provides a comprehensive collection of functions for conducting meta-analyses in R. The package includes functions to calculate various effect sizes or outcome measures, fit fixed-, random-, and mixed-effects models to such data, carry out moderator and meta-regression analyses, and create various types of meta-analytical plots (e.g., forest, funnel, radial, L'Abbe, Baujat plots). For meta-analyses of binomial and person-time data, the package also provides functions that implement specialized methods, including the Mantel-Haenszel method, Peto's method, and a variety of suitable generalized linear (mixed-effects) models (i.e., mixed-effects (conditional) logistic and Poisson regression models). Finally, the package provides functionality for fitting meta-analytic multivariate/multilevel models that account for non-independent sampling errors and/or true effects (e.g., due to the inclusion of multiple treatment studies, multiple endpoints, or other forms of clustering). Network meta-analyses and meta-analyses accounting for known correlation structures (e.g., due to phylogenetic relatedness) can also be conducted.
 License: GPL (>= 2)
 ByteCompile: TRUE
+Encoding: UTF-8
 URL: http://www.metafor-project.org/ http://www.wvbauer.com
-Packaged: 2013-10-07 10:47:08 UTC; Wolfgang
+Packaged: 2014-05-05 10:59:35 UTC; Wolfgang
 NeedsCompilation: no
 Repository: CRAN
-Date/Publication: 2013-10-07 15:04:54
+Date/Publication: 2014-05-05 14:44:35

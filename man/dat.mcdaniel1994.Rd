@@ -30,10 +30,10 @@
 }
 \examples{
 ### load data
-data(dat.mcdaniel1994)
+dat <- get(data(dat.mcdaniel1994))
 
 ### calculate r-to-z transformed correlations and corresponding sampling variances
-dat <- escalc(ri=ri, ni=ni, measure="ZCOR", data=dat.mcdaniel1994)
+dat <- escalc(measure="ZCOR", ri=ri, ni=ni, data=dat)
 dat
 
 ### meta-analysis of the transformed correlations using a random-effects model
@@ -45,11 +45,11 @@ predict(res, transf=transf.ztor)
 
 ### mixed-effects model with interview type as factor
 ### note: job-related interviews is the reference level
-rma(yi, vi, mods=~factor(type), data=dat)
+rma(yi, vi, mods = ~ factor(type), data=dat)
 
 ### mixed-effects model with interview structure as factor
 ### note: structured interviews is the reference level
-rma(yi, vi, mods=~factor(struct), data=dat)
+rma(yi, vi, mods = ~ factor(struct), data=dat)
 
 ### note: the interpretation of the results is difficult since all 
 ### situational interviews were structured, almost all psychological 
@@ -59,7 +59,7 @@ rma(yi, vi, mods=~factor(struct), data=dat)
 table(dat$type, dat$struct, useNA="always")
 
 ### meta-analysis of raw correlations using a random-effects model
-res <- rma(ri=ri, ni=ni, measure="COR", data=dat)
+res <- rma(measure="COR", ri=ri, ni=ni, data=dat.mcdaniel1994)
 res
 }
 \keyword{datasets}

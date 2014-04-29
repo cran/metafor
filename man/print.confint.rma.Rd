@@ -5,11 +5,11 @@
    Print method for objects of class \code{"confint.rma"}.
 }
 \usage{
-\method{print}{confint.rma}(x, digits=x$digits, \dots)
+\method{print}{confint.rma}(x, digits, \dots)
 }
 \arguments{
    \item{x}{an object of class \code{"confint.rma"}.}
-   \item{digits}{integer specifying the number of decimal places to which the printed results should be rounded (the default is to take the value from the object).}
+   \item{digits}{integer specifying the number of decimal places to which the printed results should be rounded (if unspecified, the default is to take the value from the object).}
    \item{\dots}{other arguments.}
 }
 \details{
@@ -25,7 +25,7 @@
 }
 \author{
    Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr
-   package homepage: \url{http://www.metafor-project.org/} \cr
+   package website: \url{http://www.metafor-project.org/} \cr
    author homepage: \url{http://www.wvbauer.com/}
 }
 \references{

@@ -2,27 +2,31 @@
 \alias{residuals.rma}
 \alias{rstandard.rma.uni}
 \alias{rstandard.rma.mh}
+\alias{rstandard.rma.mv}
 \alias{rstandard.rma.peto}
 \alias{rstudent.rma.uni}
 \alias{rstudent.rma.mh}
 \alias{rstudent.rma.peto}
-\title{Compute Residual Values based on 'rma' Objects}
+\title{Residual Values based on 'rma' Objects}
 \description{
-   The \code{residuals}, \code{rstandard}, and \code{rstudent} functions can be used to compute residuals, corresponding standard errors, and standardized residuals for models fitted with the \code{\link{rma.uni}}, \code{\link{rma.mh}}, and \code{\link{rma.peto}} functions.
+   The \code{residuals}, \code{rstandard}, and \code{rstudent} functions can be used to compute residuals, corresponding standard errors, and standardized residuals for models fitted with the \code{\link{rma.uni}}, \code{\link{rma.mh}}, \code{\link{rma.peto}}, and \code{\link{rma.mv}} functions.
 }
 \usage{
 \method{residuals}{rma}(object, \dots)
-\method{rstandard}{rma.uni}(model, digits=model$digits, \dots)
-\method{rstandard}{rma.mh}(model, digits=model$digits, \dots)
-\method{rstandard}{rma.peto}(model, digits=model$digits, \dots)
-\method{rstudent}{rma.uni}(model, digits=model$digits, \dots)
-\method{rstudent}{rma.mh}(model, digits=model$digits, \dots)
-\method{rstudent}{rma.peto}(model, digits=model$digits, \dots)
+
+\method{rstandard}{rma.uni}(model, digits, \dots)
+\method{rstandard}{rma.mh}(model, digits, \dots)
+\method{rstandard}{rma.mv}(model, digits, \dots)
+\method{rstandard}{rma.peto}(model, digits, \dots)
+
+\method{rstudent}{rma.uni}(model, digits, \dots)
+\method{rstudent}{rma.mh}(model, digits, \dots)
+\method{rstudent}{rma.peto}(model, digits, \dots)
 }
 \arguments{
    \item{object}{an object of class \code{"rma"} (for \code{residuals}).}
-   \item{model}{an object of class \code{"rma.uni"}, \code{"rma.mh"}, or \code{"rma.peto"} (for \code{rstandard} and \code{rstudent}).}
-   \item{digits}{integer specifying the number of decimal places to which the printed results should be rounded (the default is to take the value from the object).}
+   \item{model}{an object of class \code{"rma.uni"}, \code{"rma.mh"}, \code{"rma.peto"}, or \code{"rma.mv"} (for \code{rstandard} and \code{rstudent}).}
+   \item{digits}{integer specifying the number of decimal places to which the printed results should be rounded (if unspecified, the default is to take the value from the object).}
    \item{\dots}{other arguments.}
 }
 \details{
@@ -51,7 +55,7 @@
 }
 \author{
    Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr
-   package homepage: \url{http://www.metafor-project.org/} \cr
+   package website: \url{http://www.metafor-project.org/} \cr
    author homepage: \url{http://www.wvbauer.com/}
 }
 \references{
@@ -69,13 +73,12 @@
 data(dat.bcg)
 
 ### meta-analysis of the log relative risks using a random-effects model
-res <- rma(ai=tpos, bi=tneg, ci=cpos, di=cneg,
-           data=dat.bcg, measure="RR", method="REML")
+res <- rma(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
 rstudent(res)
 
 ### mixed-effects model with absolute latitude as a moderator
-res <- rma(ai=tpos, bi=tneg, ci=cpos, di=cneg, mods = ~ ablat,
-           measure="RR", data=dat.bcg, method="REML")
+res <- rma(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, mods = ~ ablat,
+           data=dat.bcg)
 rstudent(res)
 }
 \keyword{models}

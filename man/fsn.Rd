@@ -1,24 +1,23 @@
 \name{fsn}
 \alias{fsn}
-\title{Compute Fail-Safe N (File Drawer Analysis)}
-\description{Function to compute the fail-safe N.}
+\title{Fail-Safe N Analysis (File Drawer Analysis)}
+\description{Function to compute the fail-safe N (also called file drawer analysis).}
 \usage{
-fsn(yi, vi, sei, weights, data, type="Rosenthal", alpha=.05, target, subset, digits=4)
+fsn(yi, vi, sei, data, type="Rosenthal", alpha=.05, target, subset, digits=4)
 }
 \arguments{
    \item{yi}{vector with the observed effect sizes or outcomes. See \sQuote{Details}}
    \item{vi}{vector with the corresponding sampling variances. See \sQuote{Details}}
    \item{sei}{vector with the corresponding standard errors. See \sQuote{Details}}
-   \item{weights}{vector of length \eqn{k} with the corresponding inverse sampling variances. See \sQuote{Details}.}
    \item{data}{optional data frame containing the variables given to the arguments above.}
-   \item{type}{vector indicating the method to use for the calculation of the fail-safe N. Possible options are \code{"Rosenthal"}, \code{"Orwin"}, or \code{"Rosenberg"}. See below for more details.}
+   \item{type}{character string indicating the method to use for the calculation of the fail-safe N. Possible options are \code{"Rosenthal"}, \code{"Orwin"}, or \code{"Rosenberg"}. See below for more details.}
    \item{alpha}{target alpha level to use for the Rosenthal and Rosenberg methods (.05 by default).}
    \item{target}{target average effect size to use for the Orwin method. If undefined, then the target average effect size will be equal to the observed average effect size divided by 2.}
    \item{subset}{optional vector indicating the subset of studies that should be used for the calculation. This can be a logical vector of length \eqn{k} or a numeric vector indicating the indices of the observations to include.}
    \item{digits}{integer specifying the number of decimal places to which the printed results should be rounded (default is 4).}
 }
 \details{
-   The function can be used in conjunction with any of the usual effect size or outcome measures used in meta-analyses (e.g., log odds ratios, log relative risks, risk differences, mean differences, standardized mean differences, raw correlation coefficients, correlation coefficients transformed with Fisher's r-to-z transformation, and so on). Simply specify the observed outcomes via the \code{yi} argument and the corresponding sampling variances via the \code{vi} argument (instead of specifying \code{vi}, one can specify the standard errors (the square root of the sampling variances) via the \code{sei} argument or the inverse of the sampling variances via the \code{weights} argument). The \code{\link{escalc}} function can be used to compute a wide variety of effect size and outcome measures (and the corresponding sampling variances) based on summary statistics.
+   The function can be used in conjunction with any of the usual effect size or outcome measures used in meta-analyses (e.g., log odds ratios, log relative risks, risk differences, mean differences, standardized mean differences, raw correlation coefficients, correlation coefficients transformed with Fisher's r-to-z transformation, and so on). Simply specify the observed outcomes via the \code{yi} argument and the corresponding sampling variances via the \code{vi} argument (instead of specifying \code{vi}, one can specify the standard errors (the square root of the sampling variances) via the \code{sei} argument). The \code{\link{escalc}} function can be used to compute a wide variety of effect size and outcome measures (and the corresponding sampling variances) based on summary statistics.
 
    The Rosenthal method (sometimes called a \sQuote{file drawer analysis}) calculates the number of studies averaging null results that would have to be added to the given set of observed outcomes to reduce the combined significance level (p-value) to a target alpha level (e.g., .05). The calculation is based on Stouffer's method to combine p-values and is described in Rosenthal (1979).
 
@@ -42,7 +41,7 @@ fsn(yi, vi, sei, weights, data, type="Rosenthal", alpha=.05, target, subset, dig
 }
 \author{
    Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr
-   package homepage: \url{http://www.metafor-project.org/} \cr
+   package website: \url{http://www.metafor-project.org/} \cr
    author homepage: \url{http://www.wvbauer.com/}
 }
 \references{

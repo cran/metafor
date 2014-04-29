@@ -5,12 +5,12 @@
    Print method for objects of class \code{"regtest.rma"}.
 }
 \usage{
-\method{print}{regtest.rma}(x, digits=x$digits, ret.fit=x$ret.fit, \dots)
+\method{print}{regtest.rma}(x, digits, ret.fit, \dots)
 }
 \arguments{
    \item{x}{an object of class \code{"regtest.rma"}.}
-   \item{digits}{integer specifying the number of decimal places to which the printed results should be rounded (the default is to take the value from the object).}
-   \item{ret.fit}{logical indicating whether the full results from the fitted model should also be returned.}
+   \item{digits}{integer specifying the number of decimal places to which the printed results should be rounded (if unspecified, the default is to take the value from the object).}
+   \item{ret.fit}{logical indicating whether the full results from the fitted model should also be returned (if unspecified, the default is to take the value from the object).}
    \item{\dots}{other arguments.}
 }
 \details{
@@ -29,7 +29,7 @@
 }
 \author{
    Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr
-   package homepage: \url{http://www.metafor-project.org/} \cr
+   package website: \url{http://www.metafor-project.org/} \cr
    author homepage: \url{http://www.wvbauer.com/}
 }
 \references{

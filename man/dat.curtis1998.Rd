@@ -30,7 +30,7 @@
 }
 }
 \details{
-   The studies included in this dataset compared the total above- plus below-ground biomass (in grams) for plants that were either exposed to ambient (around 35 Pa) and elevated CO2 levels (around twice the ambient level). The \code{co2.ambi} and \code{co2.elev} variables indicate the CO2 levels in the control and treatment groups, respectively (with the \code{units} variable specifying the units for the CO2 exposure levels). Many of the studies also varried one or more additional environmental variables (defined by the \code{xtrt} and \code{level} variables):
+   The studies included in this dataset compared the total above- plus below-ground biomass (in grams) for plants that were either exposed to ambient (around 35 Pa) and elevated CO2 levels (around twice the ambient level). The \code{co2.ambi} and \code{co2.elev} variables indicate the CO2 levels in the control and treatment groups, respectively (with the \code{units} variable specifying the units for the CO2 exposure levels). Many of the studies also varied one or more additional environmental variables (defined by the \code{xtrt} and \code{level} variables):
    \itemize{
    \item NONE = no additional treatment factor
    \item FERT = soil fertility (either a \code{CONTROL}, \code{HIGH}, or \code{LOW} level)
@@ -50,11 +50,10 @@
 }
 \examples{
 ### load data
-data(dat.curtis1998)
+dat <- get(data(dat.curtis1998))
 
 ### calculate log ratio of means and corresponding sampling variances
-dat <- escalc(measure="ROM", m1i=m1i, sd1i=sd1i, n1i=n1i, 
-              m2i=m2i, sd2i=sd2i, n2i=n2i, data=dat.curtis1998)
+dat <- escalc(measure="ROM", m1i=m1i, sd1i=sd1i, n1i=n1i, m2i=m2i, sd2i=sd2i, n2i=n2i, data=dat)
 dat
 
 ### meta-analysis of log ratio of means using a random-effects model

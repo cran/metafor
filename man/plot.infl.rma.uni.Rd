@@ -25,7 +25,7 @@
    \item{\dots}{other arguments.}
 }
 \details{
-   When \code{plotinf=TRUE}, the function plots the (1) externally standardized residuals, (2) DFFITS values, (3) Cook's distances, (4) covariance ratios, (5) leave-one-out \eqn{\tau^2} estimates, (6) leave-one-out (residual) heterogeneity test statistics, (7) hat values, and (8) weights. If \code{plotdfb=TRUE}, the DFBETAS values are also plotted either after confirming the page change (if \code{newdfb=FALSE}) or on a separate device (if \code{newdfb=TRUE}).
+   When \code{plotinf=TRUE}, the function plots the (1) externally standardized residuals, (2) DFFITS values, (3) Cook's distances, (4) covariance ratios, (5) leave-one-out \if{latex}{\eqn{\tau^2}}\if{html}{\eqn{\tau²}}\if{text}{\eqn{\tau^2}} estimates, (6) leave-one-out (residual) heterogeneity test statistics, (7) hat values, and (8) weights. If \code{plotdfb=TRUE}, the DFBETAS values are also plotted either after confirming the page change (if \code{newdfb=FALSE}) or on a separate device (if \code{newdfb=TRUE}).
 
    A study may be considered to be \sQuote{influential} if at least one of the following is true:
    \itemize{
@@ -41,7 +41,7 @@
 }
 \author{
    Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr
-   package homepage: \url{http://www.metafor-project.org/} \cr
+   package website: \url{http://www.metafor-project.org/} \cr
    author homepage: \url{http://www.wvbauer.com/}
 }
 \references{
@@ -58,8 +58,8 @@ data(dat.bcg)
 
 ### meta-analysis of the log relative risks using a mixed-effects model
 ### with two moderators (absolute latitude and publication year)
-res <- rma(ai=tpos, bi=tneg, ci=cpos, di=cneg, mods = ~ ablat + year,
-           data=dat.bcg, measure="RR", method="REML")
+res <- rma(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg,
+           mods = ~ ablat + year, data=dat.bcg)
 plot(influence(res))
 plot(influence(res), plotinf=1:4)
 plot(influence(res), plotinf=1:4, layout=c(4,1))

@@ -1,3 +1,193 @@
+Changes in Version 1.9-3 (2014-04-29)
+=====================================
+
+   o some minor tweaks to rma.uni() that should be user transparent
+
+   o rma.uni() now has a 'weights' argument, allowing the user to specify
+     arbitrary user-defined weights; all functions affected by this have
+     been updated accordingly
+
+   o better handling of mismatched length of yi and ni vectors in rma.uni()
+     and rma.mv() functions
+
+   o subsetting is now handled as early as possible within functions with
+     subsetting capabilities; this avoids some (rare) cases where studies
+     ultimately excluded by the subsetting could still affect the results
+
+   o some general tweaks to rma.mv() that should make it a bit faster
+
+   o argument 'V' of rma.mv() now also accepts a list of var-cov matrices
+     for the observed effects or outcomes; from the list elements, the full
+     (block diagonal) var-cov matrix V is then automatically constructed
+
+   o rma.mv() now has a new argument 'W' allowing the user to specify
+     arbitrary user-defined weights or an arbitrary weight matrix
+
+   o rma.mv() now has a new argument 'sparse'; by setting this to true, the
+     function uses sparse matrix objects to the extent possible; this can
+     speed up model fitting substantially for certain models (hence, the
+     'metafor' package now depends on the 'Matrix' package)
+
+   o rma.mv() now allows for struct="AR" and struct="HAR", to fit models
+     with (heteroscedastic) autoregressive (AR1) structures among the true
+     effects (useful for meta-analyses of studies reporting outcomes at
+     multiple time points)
+
+   o rma.mv() now has a new argument 'Rscale' which can be used to control
+     how matrices specified via the 'R' argument are scaled (see docs for
+     more details)
+
+   o rma.mv() now only checks for missing values in the rows of the lower
+     triangular part of the V matrix (including the diagonal); this way, if
+     Vi = matrix(c(.5,NA,NA,NA), nrow=2, ncol=2) is the var-cov matrix of
+     the sampling errors for a particular study with two outcomes, then only
+     the second row/column needs to be removed before the model fitting (and
+     not the entire study)
+
+   o added five new datasets (dat.begg1989, dat.ishak2007, dat.fine1993,
+     dat.konstantopoulos2011, and dat.hasselblad1998) to provide further
+     illustrations of the use of the rma.mv() function (for meta-analyses
+     combining controlled and uncontrolled studies, for meta-analyses of
+     longitudinal studies, for multilevel meta-analyses, and for network
+     meta-analyses / mixed treatment comparison meta-analyses)
+
+   o added rstandard.rma.mv() function to compute standardized residuals for
+     models fitted with the rma.mv() function (rstudent.mv() to be added at
+     a later point); also added hatvalues.rma.mv() for computing the hat
+     values and weights.rma.uni() for computing the weights (i.e., the
+     diagonal elements of the weight matrix)
+
+   o the various weights() functions now have a new argument 'type' to
+     indicate whether only the diagonal elements of the weight matrix
+     (default) or the entire weight matrix should be returned
+
+   o the various hatvalues() functions now have a new argument 'type' to
+     indicate whether only the diagonal elements of the hat matrix (default)
+     or the entire hat matrix should be returned
+
+   o predict.rma() function now works properly for 'rma.mv' objects (also
+     has a new argument 'tau2.levels' to specify, where applicable, the
+     levels of the inner factor when computing credibility/prediction
+     intervals)
+
+   o forest.rma() function now provides a bit more control over the color of
+     the summary polygon and is now compatible with 'rma.mv' objects; also,
+     has a new argument 'lty', which provides more control over the line
+     type for the individual CIs and the credibility interval
+
+   o addpoly.default() and addpoly.rma() now have a 'border' argument (for
+     consistency with the forest.rma() function); addpoly.rma() now yields
+     the correct CI bounds when the model was fitted with knha=TRUE
+
+   o forest.cumul.rma() now provides the correct CI bounds when the models
+     were fitted with the Knapp & Hartung method (i.e., when knha=TRUE in
+     the original rma() function call)
+
+   o the various forest() functions now return information about the chosen
+     values for arguments xlim, alim, at, ylim, rows, cex, cex.lab, and
+     cex.axis invisibly (useful for tweaking the default values); thanks to
+     Michael Dewey for the suggestion
+
+   o the various forest() functions now have a new argument, clim, to set
+     limits for the confidence/credibility/prediction interval bounds
+
+   o cumul.mh() and cumul.peto() now get the order of the studies right when
+     there are missing values in the data
+
+   o the 'transf' argument of leave1out.rma.mh(), leave1out.rma.peto(),
+     cumul.rma.mh(), and cumul.rma.peto() should now be used to specify the
+     actual function for the transformation (the former behavior of setting
+     this argument to TRUE to exponentiate log RRs, log ORs, or log IRRs
+     still works for back-compatibility); this is more consistent with how
+     the cumul.rma.uni() and leave1out.rma.uni() functions work and is also
+     more flexible
+
+   o added bldiag() function to construct a block diagonal matrix from (a
+     list of) matrices (may be needed to construct the V matrix when using
+     the rma.mv() function); bdiag() function from the 'Matrix' package does
+     the same thing, but creates sparse matrix objects
+
+   o profile.rma.mv() now has a 'startmethod' argument; by setting this to
+     "prev", successive model fits are started at the parameter estimates
+     from the previous model fit; this may speed things up a bit; also, the
+     method for automatically choosing the xlim values has been changed
+
+   o slight improvement to profile.rma.mv() function, which would throw an
+     error if the last model fit did not converge
+
+   o added a new dataset (dat.linde2005) for replication of the analyses in
+     Viechtbauer (2007)
+
+   o added a new dataset (dat.molloy2014) for illustrating the meta-analysis
+     of (r-to-z transformed) correlation coefficients
+
+   o added a new dataset (dat.gibson2002) to illustrate the combined
+     analysis of standardized mean differences and probit transformed risk
+     differences
+
+   o computations in weights.mh() slightly changed to prevent integer
+     overflows for large counts
+
+   o unnecessary warnings in transf.ipft.hm() are now suppressed (cases that
+     raised those warnings were already handled correctly)
+
+   o in predict(), blup(), cumul(), and leave1out(), when using the 'transf'
+     argument, the standard errors (which are NA) are no longer shown in the
+     output
+
+   o argument 'slab' in various functions will now also accept non-unique
+     study labels; make.unique() is used as needed to make them unique
+
+   o vignettes("metafor") and vignettes("metafor_diagram") work again (yes,
+     I know they are not true vignettes in the strict sense, but I think
+     they should show up on the CRAN website for the package and using a
+     minimal valid Sweave document that is recognized by the R build system
+     makes that happen)
+
+   o escalc() and its summary() method now keep better track when the data
+     frame contains multiple columns with outcome or effect size values (and
+     corresponding sampling variances) for print formating; also simplified
+     the class structure a bit (and hence, print.summary.escalc() removed)
+
+   o summary.escalc() has a new argument 'H0' to specify the value of the
+     outcome under the null hypothesis for computing the test statistics
+
+   o added measures "OR2DN" and "D2ORN" to escalc() for transforming log
+     odds ratios to standardized mean differences and vice-versa, based on
+     the method of Cox & Snell (1989), which assumes normally distributed
+     response variables within the two groups before the dichotomization
+
+   o permutest.rma.uni() function now catches an error when the number of
+     permutations requested is too large (for R to even create the objects
+     to store the results in) and produces a proper error message
+
+   o funnel.rma() function now allows the 'yaxis' argument to be set to "wi"
+     so that the actual weights (in %) are placed on the y-axis (useful when
+     arbitrary user-defined have been specified)
+
+   o for rma.glmm(), the control argument 'optCtrl' is now used for passing
+     control arguments to all of the optimizers (hence, control arguments
+     nlminbCtrl and minqaCtrl are now defunct)
+
+   o rma.glmm() should not throw an error anymore when including only a
+     single moderator/predictor in the model
+
+   o predict.rma() now returns an object of class 'list.rma' (therefore,
+     function print.predict.rma() has been removed)
+
+   o for 'rma.list' objects, added `[`, head(), and tail() methods
+
+   o automated testing using the 'testthat' package (still many more tests
+     to add, but finally made a start on this)
+
+   o encoding changed to UTF-8 (to use 'foreign characters' in the docs and
+     to make the HTML help files look a bit nicer)
+
+   o guess what? some improvements to the documentation! (also combined some
+     of the help files to reduce the size of the manual a bit; and yes, it's
+     still way too big)
+
+
 Changes in Version 1.9-2 (2013-10-07)
 =====================================
 
@@ -11,8 +201,8 @@ Changes in Version 1.9-2 (2013-10-07)
    o added the AICc to the information criteria computed by the various
      model fitting functions
 
-   o if the value of tau2 is fixed by the user via the corresponding
-     argument in rma.uni(), then tau2 is no longer counted as an additional
+   o if the value of tau^2 is fixed by the user via the corresponding
+     argument in rma.uni(), then tau^2 is no longer counted as an additional
      parameter for the computation of the information criteria (i.e., AIC,
      BIC, and AICc)
 
@@ -42,8 +232,12 @@ Changes in Version 1.9-2 (2013-10-07)
      for the model fitting (admittedly the use of lists within this argument
      is a bit unwieldy, but much more flexible)
 
-   o rma.mh() and rma.peto() arguments also now have a 'verbose' argument
-     (not really needed, but added for sake of consistency across functions)
+   o rma.mh() and rma.peto() also now have a 'verbose' argument (not really
+     needed, but added for sake of consistency across functions)
+
+   o fixed (silly) error that would prevent rma.glmm() from running for
+     measures "IRR", "PLO", and "IRLN" when there are missing values in the
+     data (lesson: add some missing values to datasets for the unit tests!)
 
    o a bit of code reorganization (should be user transparent)
 

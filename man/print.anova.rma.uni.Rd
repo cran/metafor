@@ -5,11 +5,11 @@
    Print method for objects of class \code{"anova.rma.uni"}.
 }
 \usage{
-\method{print}{anova.rma.uni}(x, digits=x$digits, \dots)
+\method{print}{anova.rma.uni}(x, digits, \dots)
 }
 \arguments{
    \item{x}{an object of class \code{"anova.rma.uni"}.}
-   \item{digits}{integer specifying the number of decimal places to which the printed results should be rounded (the default is to take the value from the object).}
+   \item{digits}{integer specifying the number of decimal places to which the printed results should be rounded (if unspecified, the default is to take the value from the object).}
    \item{\dots}{other arguments.}
 }
 \details{
@@ -20,8 +20,8 @@
    \item the value of the likelihood ratio test statistic.
    \item the p-value for the likelihood ratio test.
    \item the test statistic for the test of (residual) heterogeneity for the full and the reduced model.
-   \item the estimate of \eqn{\tau^2} from the full and the reduced model. Suppressed for fixed-effects models.
-   \item the amount of (residual) heterogeneity in the reduced model that is accounted for in the full model (in percent). \code{NA} for fixed-effects models or if the amount of heterogeneity in the reduced model is equal to zero. This can be regarded as a pseudo \eqn{R^2} statistic (Raudenbush, 2009).
+   \item the estimate of \if{latex}{\eqn{\tau^2}}\if{html}{\eqn{\tau²}}\if{text}{\eqn{\tau^2}} from the full and the reduced model. Suppressed for fixed-effects models.
+   \item the amount of (residual) heterogeneity in the reduced model that is accounted for in the full model (in percent). \code{NA} for fixed-effects models or if the amount of heterogeneity in the reduced model is equal to zero. This can be regarded as a pseudo \if{latex}{\eqn{R^2}}\if{html}{\eqn{R²}}\if{text}{\eqn{R^2}} statistic (Raudenbush, 2009).
    }
 }
 \value{
@@ -29,7 +29,7 @@
 }
 \author{
    Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr
-   package homepage: \url{http://www.metafor-project.org/} \cr
+   package website: \url{http://www.metafor-project.org/} \cr
    author homepage: \url{http://www.wvbauer.com/}
 }
 \references{

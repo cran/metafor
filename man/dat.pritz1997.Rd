@@ -23,10 +23,10 @@
 }
 \examples{
 ### load data
-data(dat.pritz1997)
+dat <- get(data(dat.pritz1997))
 
 ### computation of "weighted average" in Zhou et al. (1999), Table IV
-dat <- escalc(measure="PR", xi=xi, ni=ni, data=dat.pritz1997, add=0)
+dat <- escalc(measure="PR", xi=xi, ni=ni, data=dat, add=0)
 theta.hat    <- sum(dat$ni * dat$yi) / sum(dat$ni)
 se.theta.hat <- sqrt(sum(dat$ni^2 * dat$vi) / sum(dat$ni)^2)
 ci.lb        <- theta.hat - 1.96*se.theta.hat
@@ -34,13 +34,13 @@ ci.ub        <- theta.hat + 1.96*se.theta.hat
 round(c(estimate = theta.hat, se = se.theta.hat, ci.lb = ci.lb, ci.ub = ci.ub), 4)
 
 ### random-effects model with raw proportions
-dat <- escalc(measure="PR", xi=xi, ni=ni, data=dat.pritz1997)
-res <- rma(yi, vi, method="REML", data=dat)
+dat <- escalc(measure="PR", xi=xi, ni=ni, data=dat)
+res <- rma(yi, vi, data=dat)
 predict(res)
 
 ### random-effects model with logit transformed proportions
-dat <- escalc(measure="PLO", xi=xi, ni=ni, data=dat.pritz1997)
-res <- rma(yi, vi, method="REML", data=dat)
+dat <- escalc(measure="PLO", xi=xi, ni=ni, data=dat)
+res <- rma(yi, vi, data=dat)
 predict(res, transf=transf.ilogit)
 }
 \keyword{datasets}

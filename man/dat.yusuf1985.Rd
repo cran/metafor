@@ -16,7 +16,7 @@
 }
 }
 \details{
-   The dataset contains table 6 (total mortality from short-term trials of oral beta blockers), 9 (total mortality at one week from trials with an initial IV dose of a beta blocker), 10 (total mortality from long-term trials with treatment start late and mortality from day 8 onwards in long-term trials that began early and continued after discharge), 11 (nonfatal reinfarction from long-term trials of beta blockers), 12a (sudden death in long-term beta blocker trials), and 12b (nonsudden death in long-term beta blocker trials) from the meta-analysis by Yusuf et al. (1985) on the effectiveness of of beta blockers for reducing mortality and reinfarction.
+   The dataset contains table 6 (total mortality from short-term trials of oral beta blockers), 9 (total mortality at one week from trials with an initial IV dose of a beta blocker), 10 (total mortality from long-term trials with treatment starting late and mortality from day 8 onwards in long-term trials that began early and continued after discharge), 11 (nonfatal reinfarction from long-term trials of beta blockers), 12a (sudden death in long-term beta blocker trials), and 12b (nonsudden death in long-term beta blocker trials) from the meta-analysis by Yusuf et al. (1985) on the effectiveness of of beta blockers for reducing mortality and reinfarction.
 
    The article also describes what is sometimes called Peto's one-step method for meta-analyzing \eqn{2 \times 2}{2x2} table data. This method is implemented in the \code{\link{rma.peto}} function.
 }

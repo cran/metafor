@@ -38,7 +38,7 @@ llplot(measure="OR", ai, bi, ci, di, n1i, n2i, data, subset, drop00=TRUE,
 }
 \author{
    Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr
-   package homepage: \url{http://www.metafor-project.org/} \cr
+   package website: \url{http://www.metafor-project.org/} \cr
    author homepage: \url{http://www.wvbauer.com/}
 }
 \references{

@@ -7,12 +7,13 @@
 }
 \usage{
 hc(object, \dots)
-\method{hc}{rma.uni}(object, digits=object$digits, transf=FALSE, targs, control, \ldots)
+
+\method{hc}{rma.uni}(object, digits, transf, targs, control, \ldots)
 }
 \arguments{
    \item{object}{an object of class \code{"rma.uni"}.}
-   \item{digits}{integer specifying the number of decimal places to which the printed results should be rounded (the default is to take the value from the object).}
-   \item{transf}{optional argument specifying the name of a function that should be used to transform the estimated true effect and the corresponding interval bounds (e.g., \code{transf=exp}). Defaults to \code{FALSE}, which means that no transformation is used.}
+   \item{digits}{integer specifying the number of decimal places to which the printed results should be rounded (if unspecified, the default is to take the value from the object).}
+   \item{transf}{optional argument specifying the name of a function that should be used to transform the estimated true effect and the corresponding interval bounds (e.g., \code{transf=exp}). If unspecified, no transformation is used.}
    \item{targs}{optional arguments needed by the function specified under \code{transf}.}
    \item{control}{list of control values for the iterative algorithm. If unspecified, default values are defined inside the function. See \sQuote{Note}.}
    \item{\dots}{other arguments.}

@@ -3,7 +3,8 @@
 \alias{qqnorm.rma.mh}
 \alias{qqnorm.rma.peto}
 \alias{qqnorm.rma.glmm}
-\title{Normal QQ Plot for 'rma' Objects}
+\alias{qqnorm.rma.mv}
+\title{Normal QQ Plots for 'rma' Objects}
 \description{Function to create normal QQ plots for objects of class \code{"rma.uni"}, \code{"rma.mh"}, and \code{"rma.peto"}.}
 \usage{
 \method{qqnorm}{rma.uni}(y, type="rstandard", pch=19, envelope=TRUE, level=y$level,
@@ -11,9 +12,10 @@
 \method{qqnorm}{rma.mh}(y, type="rstandard", pch=19, label=FALSE, offset=0.3, \dots)
 \method{qqnorm}{rma.peto}(y, type="rstandard", pch=19, label=FALSE, offset=0.3, \dots)
 \method{qqnorm}{rma.glmm}(y, \dots)
+\method{qqnorm}{rma.mv}(y, \dots)
 }
 \arguments{
-   \item{y}{an object of class \code{"rma.uni"}, \code{"rma.mh"}, or \code{"rma.peto"}. The method is not yet implemented for objects of class \code{"rma.glmm"}.}
+   \item{y}{an object of class \code{"rma.uni"}, \code{"rma.mh"}, or \code{"rma.peto"}. The method is not yet implemented for objects of class \code{"rma.glmm"} or \code{"rma.mv"}.}
    \item{type}{either \code{"rstandard"} (default) or \code{"rstudent"} indicating whether standardized residuals or studentized deleted residuals should be used in creating the plot. See \sQuote{Details}.}
    \item{pch}{plotting symbol to use for the observed effect sizes or outcomes. By default, a solid circle is used. See \code{\link{points}} for other options.}
    \item{envelope}{logical indicating whether a pseudo confidence envelope should be simulated and added to the plot (default is \code{TRUE})). Only for objects of class \code{"rma.uni"}. See \sQuote{Details}.}
@@ -43,7 +45,7 @@
 }
 \author{
    Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr
-   package homepage: \url{http://www.metafor-project.org/} \cr
+   package website: \url{http://www.metafor-project.org/} \cr
    author homepage: \url{http://www.wvbauer.com/}
 }
 \references{
@@ -54,20 +56,19 @@
    Wang, M. C., & Bushman, B. J. (1998). Using the normal quantile plot to explore meta-analytic data sets. \emph{Psychological Methods}, \bold{3}, 46--54.
 }
 \seealso{
-   \code{\link{rma.uni}}, \code{\link{rma.mh}}, \code{\link{rma.peto}}, \code{\link{rma.glmm}}
+   \code{\link{rma.uni}}, \code{\link{rma.mh}}, \code{\link{rma.peto}}, \code{\link{rma.glmm}}, \code{\link{rma.mv}}
 }
 \examples{
 ### load BCG vaccine data
 data(dat.bcg)
 
 ### meta-analysis of the log relative risks using a random-effects model
-res <- rma(ai=tpos, bi=tneg, ci=cpos, di=cneg,
-           data=dat.bcg, measure="RR", method="REML")
+res <- rma(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
 qqnorm(res)
 
 ### mixed-effects model with absolute latitude as a moderator
-res <- rma(ai=tpos, bi=tneg, ci=cpos, di=cneg, mods = ~ ablat,
-           measure="RR", data=dat.bcg, method="REML")
+res <- rma(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, mods = ~ ablat,
+           data=dat.bcg)
 qqnorm(res)
 }
 \keyword{hplot}

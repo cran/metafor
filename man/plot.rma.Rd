@@ -5,12 +5,15 @@
 \alias{plot.rma.glmm}
 \title{Plot Method for 'rma' Objects}
 \description{
-   Plot method for objects of class \code{"rma.uni"}, \code{"rma.mh"}, and \code{"rma.peto"}.
+   Plot method for objects of class \code{"rma.uni"}, \code{"rma.mh"}, \code{"rma.peto"}, and \code{"rma.glmm"}.
 }
 \usage{
 \method{plot}{rma.uni}(x, qqplot=FALSE, \dots)
+
 \method{plot}{rma.mh}(x, qqplot=FALSE, \dots)
+
 \method{plot}{rma.peto}(x, qqplot=FALSE, \dots)
+
 \method{plot}{rma.glmm}(x, qqplot=FALSE, \dots)
 }
 \arguments{
@@ -28,7 +31,7 @@
 }
 \author{
    Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr
-   package homepage: \url{http://www.metafor-project.org/} \cr
+   package website: \url{http://www.metafor-project.org/} \cr
    author homepage: \url{http://www.wvbauer.com/}
 }
 \references{
@@ -42,13 +45,12 @@
 data(dat.bcg)
 
 ### meta-analysis of the log relative risks using a random-effects model
-res <- rma(ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg,
-           measure="RR", method="REML")
+res <- rma(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
 plot(res, qqplot=TRUE)
 
 ### mixed-effects model with two moderators (absolute latitude and publication year)
-res <- rma(ai=tpos, bi=tneg, ci=cpos, di=cneg, mods = ~ ablat + year,
-           data=dat.bcg, measure="RR", method="REML")
+res <- rma(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg,
+           mods = ~ ablat + year, data=dat.bcg)
 plot(res, qqplot=TRUE)
 }
 \keyword{hplot}

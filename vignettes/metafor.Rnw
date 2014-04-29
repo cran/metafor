@@ -1,0 +1,11 @@
+%\VignetteIndexEntry{Conducting Meta-Analyses in R with the metafor Package}
+%\VignetteKeyword{meta-analysis}
+%\VignettePackage{metafor}
+
+\documentclass{article}
+\usepackage{hyperref}
+\usepackage{Sweave}
+\usepackage{pdfpages}
+\begin{document}
+\includepdf[fitpaper=true,pages=-]{./incl/metafor.pdf}
+\end{document}

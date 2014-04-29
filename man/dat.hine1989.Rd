@@ -27,10 +27,10 @@
 }
 \examples{
 ### load data
-data(dat.hine1989)
+dat <- get(data(dat.hine1989))
 
 ### calculate risk differences and corresponding sampling variances
-dat <- escalc(measure="RD", n1i=n1i, n2i=n2i, ai=ai, ci=ci, data=dat.hine1989)
+dat <- escalc(measure="RD", n1i=n1i, n2i=n2i, ai=ai, ci=ci, data=dat)
 dat
 
 ### meta-analysis of risk differences using a random-effects model

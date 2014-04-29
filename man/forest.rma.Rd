@@ -1,24 +1,25 @@
 \name{forest.rma}
 \alias{forest.rma}
-\title{Forest Plots for 'rma' Objects}
+\title{Forest Plots (Method for 'rma' Objects)}
 \description{Function to create forest plots for objects of class \code{"rma"}.}
 \usage{
 \method{forest}{rma}(x, annotate=TRUE, addfit=TRUE, addcred=FALSE, showweight=FALSE,
-       xlim, alim, ylim, at, steps=5,
+       xlim, alim, clim, ylim, at, steps=5,
        level=x$level, digits=2, refline=0, xlab,
        slab, mlab, ilab, ilab.xpos, ilab.pos,
        order, transf=FALSE, atransf=FALSE, targs, rows,
-       efac=1, pch=15, psize, col="darkgray", border="darkgray",
+       efac=1, pch=15, psize, col, border, lty,
        cex, cex.lab, cex.axis, \dots)
 }
 \arguments{
    \item{x}{an object of class \code{"rma"}.}
    \item{annotate}{logical specifying whether annotations should be added to the plot (default is \code{TRUE}).}
    \item{addfit}{logical specifying whether the summary estimate (for models without moderators) or fitted values (for models with moderators) should be added to the plot. See \sQuote{Details}.}
-   \item{addcred}{logical specifying whether the bounds of the credibility interval should be added to the plot. See \sQuote{Details}.}
+   \item{addcred}{logical specifying whether the bounds of the credibility/prediction interval should be added to the plot. See \sQuote{Details}.}
    \item{showweight}{logical specifying whether the annotations should also include the weights given to the observed effects or outcomes during the model fitting (default is \code{FALSE}).}
    \item{xlim}{horizontal limits of the plot region. If unspecified, the function tries to set the horizontal plot limits to some sensible values.}
    \item{alim}{the actual x-axis limits. If unspecified, the function tries to set the x-axis limits to some sensible values.}
+   \item{clim}{limits for the confidence/credibility/prediction intervals. If unspecified, no limits are used.}
    \item{ylim}{the y limits of the plot. If unspecified, the function tries to set the y-axis limits to some sensible values.}
    \item{at}{position of the x-axis tick marks and corresponding labels. If unspecified, the function tries to set the tick mark positions/labels to some sensible values.}
    \item{steps}{the number of tick marks for the x-axis (default is 5). Ignored when the user specifies the positions via the \code{at} argument.}
@@ -26,7 +27,7 @@
    \item{digits}{integer specifying the number of decimal places to which the tick mark labels of the x-axis and the annotations should be rounded (default is 2). Can also be a vector of two integers, the first specifying the number of decimal places for the annotations, the second for the x-axis labels.}
    \item{refline}{value at which a vertical \sQuote{reference} line should be drawn (default is 0). The line can be suppressed by setting this argument to \code{NA}.}
    \item{xlab}{title for the x-axis. If unspecified, the function tries to set an appropriate axis title.}
-   \item{slab}{optional vector with unique labels for the \eqn{k} studies. If unspecified, the labels are either taken from the object (if study labels were specified) or simple labels are created within the function. To suppress labels, set this argument to \code{NA}.}
+   \item{slab}{optional vector with labels for the \eqn{k} studies. If unspecified, the labels are either taken from the object (if study labels were specified) or simple labels are created within the function. To suppress labels, set this argument to \code{NA}.}
    \item{mlab}{optional character string giving a label to the summary estimate from a fixed- or random-effects model. If unspecified, the label is created within the function.}
    \item{ilab}{optional vector or matrix of character strings providing additional information about the studies.}
    \item{ilab.xpos}{vector of numerical value(s) specifying the x-axis position(s) of the character vector(s) given via \code{ilab} (must be specified if \code{ilab} is specified).}
@@ -42,18 +43,21 @@
    \item{cex}{optional character and symbol expansion factor. If unspecified, the function tries to set this to a sensible value.}
    \item{cex.lab}{optional expansion factor for the x-axis titel. If unspecified, the function tries to set this to a sensible value.}
    \item{cex.axis}{optional expansion factor for the x-axis labels. If unspecified, the function tries to set this to a sensible value.}
-   \item{col}{character string specifying the name of a color to use for the fitted values (\code{"darkgray"} by default).}
-   \item{border}{character string specifying the name of a color to use for the border of the fitted values (\code{"darkgray"} by default).}
+   \item{col}{optional character string specifying the name of a color to use for the summary polygon or fitted values. If unspecified, the function sets a default color.}
+   \item{border}{optional character string specifying the name of a color to use for the border of the summary polygon or fitted values. If unspecified, the function sets a default color.}
+   \item{lty}{optional character string specifying the line type for the confidence intervals (if unspecified, the function sets this to \code{"solid"} by default).}
    \item{\dots}{other arguments.}
 }
 \details{
    The plot shows the individual observed effect sizes or outcomes with corresponding confidence intervals.
 
-   For fixed- and random-effects models (i.e., for models without moderators), a polygon is added to the bottom of the forest plot, showing the summary estimate based on the model (with the outer edges of the polygon indicating the confidence interval limits). For random-effects models and if \code{addcred=TRUE}, a dotted line indicates the (approximate) bounds of the credibility interval (the interval indicates where \code{level} \% of the true effects are expected to fall).
+   For fixed- and random-effects models (i.e., for models without moderators), a polygon is added to the bottom of the forest plot, showing the summary estimate based on the model (with the outer edges of the polygon indicating the confidence interval limits). The \code{col} and \code{border} arguments can be used to adjust the (border) color of the polygon.
 
-   For models involving moderators, the fitted value for each study is added as a polygon to the plot. With the \code{col} and \code{border} arguments, one can change the (border) color of these polygons. These polygons are suppressed by setting \code{addfit=FALSE}.
+   For random-effects models and if \code{addcred=TRUE}, a dotted line indicates the (approximate) bounds of the credibility/prediction interval (the interval indicates where \code{level} \% of the true effects are expected to fall) (Riley et al., 2011). For random-effects models of class \code{"rma.mv"} (see \code{\link{rma.mv}}) with multiple \if{latex}{\eqn{\tau^2}}\if{html}{\eqn{\tau²}}\if{text}{\eqn{\tau^2}} values, the \code{addcred} argument can be used to specify for which level of the inner factor the credibility/prediction intervals should be provided (since the credibility/prediction intervals differ depending on the \if{latex}{\eqn{\tau^2}}\if{html}{\eqn{\tau²}}\if{text}{\eqn{\tau^2}} value).
 
-   With the \code{transf} argument, the observed effect sizes or outcomes, summary estimate, fitted values, and confidence/credibility interval bounds can be transformed with an arbitrary function. For example, when plotting log odds ratios, one could use \code{transf=exp} to obtain a forest plot showing the odds ratios. Alternatively, one can use the \code{atransf} argument to transform the x-axis labels and annotations (e.g., \code{atransf=exp}). The examples below illustrate the use of these arguments.
+   For models involving moderators, the fitted value for each study is added as a polygon to the plot. By default, the width of the polygons corresponds to the confidence interval limits for the fitted values. By setting \code{addcred=TRUE}, the width reflects the credibility/prediction interval limits. Again, the \code{col} and \code{border} arguments can be used to adjust the (border) color of the polygons. These polygons can be suppressed by setting \code{addfit=FALSE}.
+
+   With the \code{transf} argument, the observed effect sizes or outcomes, summary estimate, fitted values, confidence interval bounds, and credibility/prediction interval bounds can be transformed with an arbitrary function. For example, when plotting log odds ratios, one could use \code{transf=exp} to obtain a forest plot showing the odds ratios. Alternatively, one can use the \code{atransf} argument to transform the x-axis labels and annotations (e.g., \code{atransf=exp}). The examples below illustrate the use of these arguments.
 
    By default, the studies are ordered from top to bottom (i.e., the first study in the dataset will be placed in row \eqn{k}, the second study in row \eqn{k-1}, and so on, until the last study, which is placed in the first row). The studies can be reordered with the \code{order} argument:
    \itemize{
@@ -69,17 +73,29 @@
    Additional summary estimates can also be added to the plot with the \code{\link{addpoly}} function. See the documentation for that function for examples.
 }
 \note{
-   The function tries to set some sensible values for the optional arguments, but it may be necessary to tweak these in certain circumstances. In particular, if the number of studies is quite large, the labels, annotations, and symbols may become quite small and impossible to read. Stretching the plot window vertically may then provide a more readable figure (one should call the function again after adjusting the window size, so that the label/symbol sizes can be properly adjusted).
+   The function tries to set some sensible values for the optional arguments, but it may be necessary to tweak these in certain circumstances.
+
+   The function actually returns some information about the chosen defaults invisibly. Printing this information is useful as a starting point to make adjustments to the plot (see examples below).
+
+   If the number of studies is quite large, the labels, annotations, and symbols may become quite small and impossible to read. Stretching the plot window vertically may then provide a more readable figure (one should call the function again after adjusting the window size, so that the label/symbol sizes can be properly adjusted). Also, the \code{cex}, \code{cex.lab}, and \code{cex.axis} arguments are then useful to adjust the symbol and text sizes.
 
    If the horizontal plot and/or x-axis limits are set by the user, then the horizontal plot limits (\code{xlim}) must be at least as wide as the x-axis limits (\code{alim}). Moreover, the x-axis limits must encompass the observed effect sizes or outcomes. These restrictions are enforced inside the function.
+
+   If the outcome measure used for creating the plot has absolute limits (e.g., correlations are bounded between \code{-1} and \code{1}, proportions are bounded between \code{0} and \code{1}), one can use the \code{clim} argument to enforce those limits (confidence/credibility/prediction intervals cannot exceed those bounds then).
+
+   The models without moderators, the \code{col} argument can also be a vector of two elements, the first for specifying the color of the summary polygon, the second for specifying the color of the line for the credibility/prediction interval.
+
+   The \code{lty} can also be a vector of two elements, the first for specifying the line type for the individual CIs (\code{"solid"} by default), the second for the line type of the credibility/prediction interval (\code{"dotted"} by default).
 }
 \author{
    Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr
-   package homepage: \url{http://www.metafor-project.org/} \cr
+   package website: \url{http://www.metafor-project.org/} \cr
    author homepage: \url{http://www.wvbauer.com/}
 }
 \references{
    Lewis, S., & Clarke, M. (2001). Forest plots: Trying to see the wood and the trees. \emph{British Medical Journal}, \bold{322}, 1479--1480.
+
+   Riley, R. D., Higgins, J. P., & Deeks, J. J. (2011). Interpretation of random effects meta-analyses. \emph{British Medical Journal}, \bold{342}, d549.
 
    Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \url{http://www.jstatsoft.org/v36/i03/}.
 }
@@ -91,15 +107,22 @@
 data(dat.bcg)
 
 ### meta-analysis of the log relative risks using a random-effects model
-res <- rma(ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg, measure="RR",
-           slab=paste(author, year, sep=", "), method="REML")
+res <- rma(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg,
+           slab=paste(author, year, sep=", "))
 
 ### default forest plot of the log relative risks and summary estimate
 forest(res)
 
-### summary estimate in row -1; studies in rows 13 through 1; horizontal
-### lines in rows 0 and k+1; and two extra lines of space at the top
-text(x=-8.2, y=-1:16, -1:16, pos=4, cex=.5)
+### summary estimate in row -1; studies in rows k=13 through 1; horizontal
+### lines in rows 0 and k+1; and two extra lines of space at the top for
+### headings or other annotations
+op <- par(xpd=TRUE)
+text(x=-8.5, y=-1:16, -1:16, pos=4, cex=.5)
+par(op)
+
+### can also inspect defaults chosen
+defaults <- forest(res)
+defaults
 
 ### several forest plots illustrating the use of various arguments
 forest(res, cex=.8)
@@ -115,8 +138,13 @@ forest(res, xlim=c(-16,14))
 forest(res, xlim=c(-18,10))
 forest(res, xlim=c(-10,10))
 
-### illustrate transf and atransf arguments
-forest(res, transf=exp, alim=c(0,6), xlim=c(-8,12), refline=1, cex=.8)
+### illustrate transf argument
+forest(res, transf=exp, at=c(0,1,2,4,6), xlim=c(-8,12), cex=.8, refline=1)
+
+### illustrate atransf argument
+forest(res, atransf=exp, at=log(c(.05,.25,1,4,20)), xlim=c(-8,7), cex=.8)
+
+### showweight argument
 forest(res, atransf=exp, at=log(c(.05,.25,1,4,20)), xlim=c(-8,8),
        order="prec", showweight=TRUE, cex=.8)
 
@@ -132,8 +160,8 @@ text(6,                  15, "Relative Risk [95\% CI]", pos=2)
 par(op)
 
 ### mixed-effects model with absolute latitude in the model
-res <- rma(ai=tpos, bi=tneg, ci=cpos, di=cneg, mods=ablat, data=dat.bcg,
-           measure="RR", method="REML", slab=paste(author, year, sep=", "))
+res <- rma(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, mods = ~ ablat,
+           data=dat.bcg, slab=paste(author, year, sep=", "))
 
 ### forest plot with observed and fitted values
 forest(res, xlim=c(-9,5), order="fit", cex=.8, ilab=dat.bcg$ablat,
@@ -145,8 +173,8 @@ text(-4, 15, "Latitude",                     cex=.8)
 par(op)
 
 ### meta-analysis of the log relative risks using a random-effects model
-res <- rma(ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg, measure="RR",
-           slab=paste(author, year, sep=", "), method="REML")
+res <- rma(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg,
+           slab=paste(author, year, sep=", "))
 
 ### for more complicated plots, the ylim and rows arguments may be useful
 forest(res)
@@ -169,7 +197,7 @@ text(-16,                20, "Author(s) and Year",     pos=4)
 text(6,                  20, "Relative Risk [95\% CI]", pos=2)
 par(op)
 
-### see also addpoly.rma function for an example where summaries
+### see also the addpoly.rma function for an example where summaries
 ### for the three subgroups are added to such a forest plot
 }
 \keyword{hplot}

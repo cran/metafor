@@ -23,10 +23,10 @@
 }
 \examples{
 ### load data
-data(dat.lee2004)
+dat <- get(data(dat.lee2004))
 
 ### meta-analysis based on relative risks
-res <- rma(measure="RR", ai=ai, n1i=n1i, ci=ci, n2i=n2i, data=dat.lee2004)
+res <- rma(measure="RR", ai=ai, n1i=n1i, ci=ci, n2i=n2i, data=dat)
 res
 predict(res, transf=exp, digits=2)
 }

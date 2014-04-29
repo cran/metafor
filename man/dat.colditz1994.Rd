@@ -2,8 +2,8 @@
 \docType{data}
 \alias{dat.colditz1994}
 \alias{dat.bcg}
-\title{Studies on the Effectiveness of the BCG Vaccine for Preventing Tuberculosis}
-\description{Results from 13 studies examining the effectiveness of the Bacillus Calmette-Guerin (BCG) vaccine for preventing tuberculosis.}
+\title{Studies on the Effectiveness of the BCG Vaccine Against Tuberculosis}
+\description{Results from 13 studies examining the effectiveness of the Bacillus Calmette-Guerin (BCG) vaccine against tuberculosis.}
 \usage{
 dat.colditz1994
 dat.bcg
@@ -57,7 +57,7 @@ res
 predict(res, transf=exp)
 
 ### mixed-effects model with absolute latitude and publication year as moderators
-res <- rma(yi, vi, mods = ~ ablat + year, data=dat, method="REML")
+res <- rma(yi, vi, mods = ~ ablat + year, data=dat)
 res
 
 ### predicted average relative risks for 10-60 degrees absolute latitude

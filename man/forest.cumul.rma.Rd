@@ -1,9 +1,10 @@
 \name{forest.cumul.rma}
 \alias{forest.cumul.rma}
-\title{Forest Plots for 'cumul.rma' Objects}
+\title{Forest Plots (Method for 'cumul.rma' Objects)}
 \description{Function to create forest plots for objects of class \code{"cumul.rma"}.}
 \usage{
-\method{forest}{cumul.rma}(x, annotate=TRUE, xlim, alim, ylim, at, steps=5,
+\method{forest}{cumul.rma}(x, annotate=TRUE,
+       xlim, alim, clim, ylim, at, steps=5,
        level=x$level, digits=2, refline=0, xlab,
        ilab, ilab.xpos, ilab.pos,
        transf=FALSE, atransf=FALSE, targs, rows,
@@ -15,6 +16,7 @@
    \item{annotate}{logical specifying whether annotations should be added to the plot (default is \code{TRUE}).}
    \item{xlim}{horizontal limits of the plot region. If unspecified, the function tries to set the horizontal plot limits to some sensible values.}
    \item{alim}{the actual x-axis limits. If unspecified, the function tries to set the x-axis limits to some sensible values.}
+   \item{clim}{limits for the confidence intervals. If unspecified, no limits are used.}
    \item{ylim}{the y limits of the plot. If unspecified, the function tries to set the y-axis limits to some sensible values.}
    \item{at}{position of the x-axis tick marks and corresponding labels. If unspecified, the function tries to set the tick mark positions/labels to some sensible values.}
    \item{steps}{the number of tick marks for the x-axis (default is 5). Ignored when the user specifies the positions via the \code{at} argument.}
@@ -41,13 +43,19 @@
    The plot shows the estimated (average) outcome with corresponding confidence interval as one study at a time is added to the analysis.
 }
 \note{
-   The function tries to set some sensible values for the optional arguments, but it may be necessary to tweak these in certain circumstances. In particular, if the number of studies is quite large, the labels, annotations, and symbols may become quite small and impossible to read. Stretching the plot window vertically may then provide a more readable figure (one should call the function again after adjusting the window size, so that the label/symbol sizes can be properly adjusted).
+   The function tries to set some sensible values for the optional arguments, but it may be necessary to tweak these in certain circumstances.
+
+   The function actually returns some information about the chosen defaults invisibly. Printing this information is useful as a starting point to make adjustments to the plot.
+
+   If the number of studies is quite large, the labels, annotations, and symbols may become quite small and impossible to read. Stretching the plot window vertically may then provide a more readable figure (one should call the function again after adjusting the window size, so that the label/symbol sizes can be properly adjusted). Also, the \code{cex}, \code{cex.lab}, and \code{cex.axis} arguments are then useful to adjust the symbol and text sizes.
 
    If the horizontal plot and/or x-axis limits are set by the user, then the horizontal plot limits (\code{xlim}) must be at least as wide as the x-axis limits (\code{alim}). Moreover, the x-axis limits must encompass the observed effect sizes or outcomes. These restrictions are enforced inside the function.
+
+   If the outcome measure used for creating the plot has absolute limits (e.g., correlations are bounded between \code{-1} and \code{1}, proportions are bounded between \code{0} and \code{1}), one can use the \code{clim} argument to enforce those limits (confidence intervals cannot exceed those bounds then).
 }
 \author{
    Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr
-   package homepage: \url{http://www.metafor-project.org/} \cr
+   package website: \url{http://www.metafor-project.org/} \cr
    author homepage: \url{http://www.wvbauer.com/}
 }
 \references{
@@ -70,15 +78,15 @@ data(dat.bcg)
 dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
 
 ### random-effects model
-res <- rma(yi, vi, data=dat, method="REML", slab=paste(author, year, sep=", "))
+res <- rma(yi, vi, data=dat, slab=paste(author, year, sep=", "))
 
 x <- cumul(res, order=order(dat$year))
 forest(x)
 forest(x, alim=c(-2,1))
 
 ### meta-analysis of the (log) relative risks using the Mantel-Haenszel method
-res <- rma.mh(ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg,
-              measure="RR", slab=paste(author, year, sep=", "))
+res <- rma.mh(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg,
+              slab=paste(author, year, sep=", "))
 x <- cumul(res, order=order(dat$year))
 forest(x, alim=c(-2,1))
 }

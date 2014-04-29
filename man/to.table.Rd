@@ -32,7 +32,7 @@ to.table(measure, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
    \item{sdi}{vector to specify the standard deviations.}
    \item{ni}{vector to specify the sample/group sizes.}
    \item{data}{optional data frame containing the variables given to the arguments above.}
-   \item{slab}{optional vector with unique labels for the studies.}
+   \item{slab}{optional vector with labels for the studies.}
    \item{subset}{optional vector indicating the subset of studies that should be used. This can be a logical vector or a numeric vector indicating the indices of the studies to include.}
    \item{add}{see the documentation of the \code{\link{escalc}} function.}
    \item{to}{see the documentation of the \code{\link{escalc}} function.}
@@ -59,7 +59,7 @@ to.table(measure, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
 }
 \author{
    Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr
-   package homepage: \url{http://www.metafor-project.org/} \cr
+   package website: \url{http://www.metafor-project.org/} \cr
    author homepage: \url{http://www.wvbauer.com/}
 }
 \references{
