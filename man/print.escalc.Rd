@@ -9,7 +9,7 @@
 \method{print}{escalc}(x, digits, \dots)
 
 \method{summary}{escalc}(object, out.names=c("sei","zi","ci.lb","ci.ub"), var.names,
-        H0=0, append=TRUE, replace=TRUE, level=95, digits, transf=FALSE, \dots)
+        H0=0, append=TRUE, replace=TRUE, level=95, digits, transf, \dots)
 }
 \arguments{
    \item{x}{an object of class \code{"escalc"}.}
@@ -21,7 +21,7 @@
    \item{append}{logical indicating whether the data frame specified via the \code{object} argument should be returned together with the additional variables that are calculated by the \code{summary} function (default is \code{TRUE}).}
    \item{replace}{logical indicating whether existing values for \code{sei}, \code{zi}, \code{ci.lb}, and \code{ci.ub} in the data frame should be replaced or not. Only relevant when the data frame already contains these variables. If \code{replace=TRUE} (the default), all of the existing values will be overwritten. If \code{replace=FALSE}, only \code{NA} values will be replaced.}
    \item{level}{numerical value between 0 and 100 specifying the confidence interval level (the default is 95).}
-   \item{transf}{optional argument specifying the name of a function that should be used to transform the observed outcomes and interval bounds (e.g., \code{transf=exp}). Defaults to \code{FALSE}, which means that no transformation is used (any additional arguments needed for the function specified here can be passed via \code{\ldots}).}
+   \item{transf}{optional argument specifying the name of a function that should be used to transform the observed outcomes and interval bounds (e.g., \code{transf=exp}). If unspecified, no transformation is used. Any additional arguments needed for the function specified here can be passed via \code{\ldots}.}
    \item{\dots}{other arguments.}
 }
 \value{

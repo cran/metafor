@@ -36,7 +36,7 @@ data(dat.hasselblad1998)
 dat <- escalc(measure="PLO", xi=xi, ni=ni, add=1/2, to="all", data=dat.hasselblad1998)
 
 ### create network graph (using 'plyr' and 'igraph' packages if installed)
-if (require(plyr) & require(igraph)) {
+if (require(plyr) && require(igraph)) {
    pairs <- do.call(rbind, sapply(split(dat$trt, dat$study), function(x) t(combn(x,2))))
    pairs <- ddply(data.frame(pairs), .(X1, X2), count)
    g <- graph.edgelist(as.matrix(pairs[,1:2]), directed=FALSE)

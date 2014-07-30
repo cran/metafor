@@ -10,7 +10,7 @@ galbraith(x, \dots)
 
 \method{radial}{rma}(x, center=FALSE, xlim, zlim, xlab, zlab,
        atz, aty, steps=7, level=x$level, digits=2, back="lightgray",
-       transf=FALSE, targs, pch=19, arc.res=100, cex, \dots)
+       transf, targs, pch=19, arc.res=100, cex, \dots)
 }
 \arguments{
    \item{x}{an object of class \code{"rma"}.}
@@ -25,7 +25,7 @@ galbraith(x, \dots)
    \item{level}{numerical value between 0 and 100 specifying the level of the z-axis error region (the default is to take the value from the object).}
    \item{digits}{integer specifying the number of decimal places to which the tick mark labels of the y-axis should be rounded (default is 2).}
    \item{back}{color of the z-axis error region. Set to \code{NA} to suppress shading of the region.}
-   \item{transf}{optional argument specifying the name of a function that should be used to transform the y-axis labels (e.g., \code{transf=exp}). Defaults to \code{FALSE}, which means that no transformation is used.}
+   \item{transf}{optional argument specifying the name of a function that should be used to transform the y-axis labels (e.g., \code{transf=exp}). If unspecified, no transformation is used.}
    \item{targs}{optional arguments needed by the function specified via \code{transf}.}
    \item{pch}{plotting symbol. By default, a solid circle is used. See \code{\link{points}} for other options.}
    \item{arc.res}{integer specifying the number of line segments to use when drawing the y-axis and confidence interval arcs (default is 100).}

@@ -4,7 +4,7 @@
 \description{Function to add a polygon to a forest plot showing the summary estimate with correspondong confidence interval based on an object of class \code{"rma"}.}
 \usage{
 \method{addpoly}{rma}(x, row=-2, level=x$level, digits=2,
-        annotate=TRUE, mlab, transf=FALSE, atransf=FALSE, targs,
+        annotate=TRUE, mlab, transf, atransf, targs,
         efac=1, col, border, cex, \dots)
 }
 \arguments{
@@ -14,8 +14,8 @@
    \item{digits}{integer specifying the number of decimal places to which the annotations should be rounded (default is 2).}
    \item{annotate}{logical specifying whether annotations for the summary estimate should be added to the plot (default is \code{TRUE}).}
    \item{mlab}{optional character string giving a label for the summary estimate polygon. If unspecified, the function sets a default label.}
-   \item{transf}{optional argument specifying the name of a function that should be used to transform the summary estimate and confidence interval bound. Defaults to \code{FALSE}, which means that no transformation is used.}
-   \item{atransf}{optional argument specifying the name of a function that should be used to transform the annotations. Defaults to \code{FALSE}, which means that no transformation is used.}
+   \item{transf}{optional argument specifying the name of a function that should be used to transform the summary estimate and confidence interval bound. If unspecified, no transformation is used.}
+   \item{atransf}{optional argument specifying the name of a function that should be used to transform the annotations. If unspecified, no transformation is used.}
    \item{targs}{optional arguments needed by the function specified via \code{transf} or \code{atransf}.}
    \item{efac}{vertical expansion factor for the polygon. The default value of 1 should usually work okay.}
    \item{col}{optional character string specifying the name of a color to use for the polygon. If unspecified, the function sets a default color.}

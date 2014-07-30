@@ -69,7 +69,7 @@ dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
 ### random-effects model
 res <- rma(yi, vi, data=dat)
 
-### cumulative meta-analysis
+### cumulative meta-analysis (in the order of publication year)
 cumul(res, transf=exp, order=order(dat$year))
 
 ### meta-analysis of the (log) relative risks using the Mantel-Haenszel method

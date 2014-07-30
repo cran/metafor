@@ -29,11 +29,11 @@
 
    For models including \eqn{q} moderator variables, new moderator values for \eqn{k_{new}}{k_new} new studies can be specified by setting \code{newmods} equal to an \eqn{k_{new} \times q}{k_new x q} matrix with the corresponding new moderator values. If the original model includes an intercept, then it should not be explicitly specified under \code{newmods}, as it will be added by default (unless one sets \code{intercept=FALSE}). Also, any factors in the original model get turned into the appropriate contrast variables within the \code{rma} function, so that \code{newmods} should actually include the values for the contrast variables. Examples are shown below.
 
-   For random/mixed-effects models, an approximate credibility/prediction interval is also calculated (Raudenbush, 2009; Riley et al., 2011). The interval estimates where \code{level} \% of the true outcomes fall in the hypothetical population of studies. Note that this interval is calculated under the assumption that the value of \if{latex}{\eqn{\tau^2}}\if{html}{\eqn{\tau²}}\if{text}{\eqn{\tau^2}} is known (and not estimated). A method for calculating a credibility/prediction interval that accounts for the uncertainty in the estimate of \if{latex}{\eqn{\tau^2}}\if{html}{\eqn{\tau²}}\if{text}{\eqn{\tau^2}} will be implemented in the future.
+   For random/mixed-effects models, an approximate credibility/prediction interval is also calculated (Raudenbush, 2009; Riley et al., 2011). The interval estimates where \code{level} \% of the true outcomes fall in the hypothetical population of studies. Note that this interval is calculated under the assumption that the value of \if{latex}{\eqn{\tau^2}}\if{html}{\eqn{\tau²}}\if{text}{\eqn{\tau^2}} is known (and not estimated). A method for calculating a credibility/prediction interval that accounts for the uncertainty in the estimate of \if{latex}{\eqn{\tau^2}}\if{html}{\eqn{\tau²}}\if{text}{\eqn{\tau^2}} may be implemented in the future.
 
    For random-effects models of class \code{"rma.mv"} (see \code{\link{rma.mv}}) with multiple \if{latex}{\eqn{\tau^2}}\if{html}{\eqn{\tau²}}\if{text}{\eqn{\tau^2}} values (i.e., when the \code{random} argument includes a \code{~ inner | outer} term and \code{struct="HCS"}, \code{struct="HAR"}, or \code{struct="UN"}), the function will provide credibility/prediction intervals for each level of the inner factor (since the credibility/prediction intervals differ depending on the \if{latex}{\eqn{\tau^2}}\if{html}{\eqn{\tau²}}\if{text}{\eqn{\tau^2}} value). Optionally, one can use the \code{tau2.levels} argument to specify for which level(s) the credibility/prediction interval should be provided.
 
-   When using the \code{newmods} argument for mixed-effects models of class \code{"rma.mv"} with multiple \if{latex}{\eqn{\tau^2}}\if{html}{\eqn{\tau²}}\if{text}{\eqn{\tau^2}} values, one must use the \code{tau2.levels} argument to specify the levels of the inner factor (i.e., a vector of length \eqn{k_{new}}{k_new}).
+   When using the \code{newmods} argument for mixed-effects models of class \code{"rma.mv"} with multiple \if{latex}{\eqn{\tau^2}}\if{html}{\eqn{\tau²}}\if{text}{\eqn{\tau^2}} values, one must use the \code{tau2.levels} argument to specify the levels of the inner factor (i.e., a vector of length \eqn{k_{new}}{k_new}) to obtain the appropriate credibility/prediction interval(s).
 }
 \value{
    An object of class \code{"list.rma"}. The object is a list containing the following components:
@@ -43,7 +43,7 @@
    \item{ci.ub}{upper bound of the confidence interval(s).}
    \item{cr.lb}{lower bound of the credibility/prediction interval(s) (only random/mixed-effects models).}
    \item{cr.ub}{upper bound of the credibility/prediction interval(s) (only random/mixed-effects models).}
-   \item{level}{the level(s) of the inner factor (only for models of class \code{"rma.mv"} with multiple \if{latex}{\eqn{\tau^2}}\if{html}{\eqn{\tau²}}\if{text}{\eqn{\tau^2}} values).}
+   \item{tau2.level}{the level(s) of the inner factor (only for models of class \code{"rma.mv"} with multiple \if{latex}{\eqn{\tau^2}}\if{html}{\eqn{\tau²}}\if{text}{\eqn{\tau^2}} values).}
    \item{X}{the moderator value(s) used to calculate the predicted values (only when \code{addx=TRUE}).}
    \item{\dots}{some additional elements/values.}
 

@@ -7,7 +7,7 @@
 labbe(x, \dots)
 
 \method{labbe}{rma}(x, xlim, ylim, xlab, ylab,
-      add=x$add, to=x$to, transf=FALSE, targs,
+      add=x$add, to=x$to, transf, targs,
       pch=21, psize, bg="gray", \dots)
 }
 \arguments{
@@ -18,7 +18,7 @@ labbe(x, \dots)
    \item{ylab}{title for the y-axis. If unspecified, the function tries to set an appropriate axis title.}
    \item{add}{See below and the documentation of the \code{\link{escalc}} function for more details.}
    \item{to}{See below and the documentation of the \code{\link{escalc}} function for more details.}
-   \item{transf}{optional argument specifying the name of a function that should be used to transform the outcomes (e.g., \code{transf=exp}). Defaults to \code{FALSE}, which means that no transformation is used.}
+   \item{transf}{optional argument specifying the name of a function that should be used to transform the outcomes (e.g., \code{transf=exp}). If unspecified, no transformation is used.}
    \item{targs}{optional arguments needed by the function specified under \code{transf}.}
    \item{pch}{plotting symbol to use for the outcomes. By default, a filled circle is used. Can also be a vector of values. See \code{\link{points}} for other options.}
    \item{psize}{optional vector with point sizes for the outcomes. If unspecified, the point sizes are drawn proportional to the precision of the estimates.}

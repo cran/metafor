@@ -1,3 +1,73 @@
+Changes in Version 1.9-4 (2014-07-30)
+=====================================
+
+   o added method="GENQ" to rma.uni() for the generalized Q-statistic
+     estimator of tau^2, which allows for used-defined weights (note: the DL
+     and HE estimators are just special cases of this method)
+
+   o when the model was fitted with method="GENQ", then confint() will now
+     use the generalized Q-statistic method to construct the corresponding
+     confidence interval for tau^2 (thanks to Dan Jackson for the code);
+     the iterative method used to obtain the CI makes use of Farebrother's
+     algorithm as implemented in the 'CompQuadForm' package
+
+   o slight improvements in how the rma.uni() function handles non-positive
+     sampling variances
+
+   o rma.uni(), rma.mv(), and rma.glmm() now try to detect and remove any
+     redundant predictors before the model fitting; therefore, if there are
+     exact linear relationships among the predictor variables (i.e., perfect
+     multicollinearity), terms are removed to obtain a set of predictors
+     that is no longer perfectly multicollinear (a warning is issued when
+     this happens); note that the order of how the variables are specified
+     in the model formula can influence which terms are removed
+
+   o the last update introduced an error in how hat values were computed
+     when the model was fitted with the rma() function using the Knapp &
+     Hartung method (i.e., when knha=TRUE); this has been fixed
+
+   o regtest() no longer works (for now) with 'rma.mv' objects (it wasn't
+     meant to in the first place); if you want to run something along the
+     same lines, just consider adding some measure of the precision of the
+     observed outcomes (e.g., their standard errors) as a predictor to the
+     model
+
+   o more optimizers are now available for the rma.mv() function via the
+     'nloptr' package by setting 'control = list(optimizer="nloptr")'; when
+     using this optimizer, the default is to use the BOBYQA implementation
+     from that package with a relative convergence criterion of 1e-8 on the
+     function value (see documentation on how to change these defaults)
+
+   o predict.rma() function now works for 'rma.mv' objects with multiple
+     tau^2 values even if the user specifies the 'newmods' argument but not
+     the 'tau2.levels' argument (but a warning is issued and the
+     credibility/prediction intervals are not computed)
+
+   o argument 'var.names' now works properly in escalc() when the user has
+     not made use of the 'data' argument (thanks to Jarrett Byrnes for
+     bringing this to my attention)
+
+   o added plot() function for cumulative random-effects models results as
+     obtained with the cumul.rma.uni() function; the plot shows the model
+     estimate on the x-axis and the corresponding tau^2 estimate on the
+     y-axis in the cumulative order of the results
+
+   o fixed the omitted offset term in the underlying model fitted by the
+     rma.glmm() function when method="ML", measure="IRR", and model="UM.FS",
+     that is, when fitting a mixed-effects Poisson regression model with
+     fixed study effects to two-group event count data (thanks to Peter
+     Konings for pointing out this error)
+
+   o added two new datasets (dat.bourassa1996, dat.riley2003)
+
+   o added function replmiss() (just a useful helper function)
+
+   o package now uses LazyData: TRUE
+
+   o some improvements to the documentation (do I still need to mention this
+     every time?)
+
+
 Changes in Version 1.9-3 (2014-04-29)
 =====================================
 
@@ -52,8 +122,8 @@ Changes in Version 1.9-3 (2014-04-29)
      meta-analyses / mixed treatment comparison meta-analyses)
 
    o added rstandard.rma.mv() function to compute standardized residuals for
-     models fitted with the rma.mv() function (rstudent.mv() to be added at
-     a later point); also added hatvalues.rma.mv() for computing the hat
+     models fitted with the rma.mv() function (rstudent.rma.mv() to be added
+     at a later point); also added hatvalues.rma.mv() for computing the hat
      values and weights.rma.uni() for computing the weights (i.e., the
      diagonal elements of the weight matrix)
 
@@ -386,7 +456,7 @@ Changes in Version 1.8-0 (2013-04-11)
      (which is quite a bit slower, but should provide more than sufficient
      accuracy in most cases)
 
-   o the standard error of the HS and DL estimators of tau^2 are now
+   o the standard errors of the HS and DL estimators of tau^2 are now
      correctly computed when tau^2 is prespecified by the user in the rma()
      function; in addition, the standard error of the SJ estimator is also
      now provided when tau^2 is prespecified

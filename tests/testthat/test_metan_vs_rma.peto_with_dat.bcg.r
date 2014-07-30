@@ -1,4 +1,4 @@
-context("Comparing rma.peto() against metan for 'dat.bcg'")
+context("Comparing rma.peto() against metan with 'dat.bcg'")
 
 ### library(metafor); library(testthat)
 

@@ -2,6 +2,7 @@
 \alias{weights.rma.uni}
 \alias{weights.rma.mh}
 \alias{weights.rma.peto}
+\alias{weights.rma.glmm}
 \alias{weights.rma.mv}
 \title{Compute Weights for 'rma' Objects}
 \description{
@@ -11,10 +12,11 @@
 \method{weights}{rma.uni}(object, type="diagonal", \dots)
 \method{weights}{rma.mh}(object, type="diagonal", \dots)
 \method{weights}{rma.peto}(object, type="diagonal", \dots)
+\method{weights}{rma.glmm}(object, \dots)
 \method{weights}{rma.mv}(object, type="diagonal", \dots)
 }
 \arguments{
-   \item{object}{an object of class \code{"rma.uni"}, \code{"rma.mh"}, \code{"rma.peto"}, or \code{"rma.mv"}.}
+   \item{object}{an object of class \code{"rma.uni"}, \code{"rma.mh"}, \code{"rma.peto"}, or \code{"rma.mv"}. The method is not yet implemented for objects of class \code{"rma.glmm"}.}
    \item{type}{character string indicating whether to only return the diagonal of the weight matrix (\code{"diagonal"}) or the entire matrix (\code{"matrix"}).}
    \item{\dots}{other arguments.}
 }

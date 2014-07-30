@@ -33,7 +33,7 @@ rma.glmm(ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi, ti, ni,
    \item{add}{non-negative number indicating the amount to add to zero cells, counts, or frequencies when calculating the individual outcomes. See below and the documentation of the \code{\link{escalc}} function for more details.}
    \item{to}{character string indicating when the values under \code{add} should be added (either \code{"only0"}, \code{"all"}, \code{"if0all"}, or \code{"none"}). See below and the documentation of the \code{\link{escalc}} function for more details.}
    \item{drop00}{logical indicating whether studies with no cases/events (or only cases) in both groups should be dropped. See the documentation of the \code{\link{escalc}} function for more details.}
-   \item{vtype}{character string indicating the type of sampling variances to calculate when calculating the individual outcomes. See below and the documentation of the \code{\link{escalc}} function for more details.}
+   \item{vtype}{character string indicating the type of sampling variances to calculate when calculating the individual outcomes. See the documentation of the \code{\link{escalc}} function for more details.}
    \item{model}{character string specifying the general model type to use for the analysis (either \code{"UM.FS"} (the default), \code{"UM.RS"}, \code{"CM.EL"}, or \code{"CM.AL"}). See \sQuote{Details}.}
    \item{method}{character string specifying whether a fixed- or a random/mixed-effects model should be fitted. A fixed-effects model (with or without moderators) is fitted when using \code{method="FE"}. Random/mixed-effects models are fitted by setting \code{method="ML"} (the default). See \sQuote{Details}.}
    \item{tdist}{logical specifying whether test statistics and confidence intervals should be based on the normal (when \code{FALSE}, the default) or the t-distribution (when \code{TRUE}). See \sQuote{Details}.}
@@ -134,7 +134,7 @@ rma.glmm(ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi, ti, ni,
    \item{fit.stats}{a list with the log-likelihood, deviance, AIC, BIC, and AICc values.}
    \item{\dots}{some additional elements/values.}
 
-   The results of the fitted model are neatly formated and printed with the \code{\link{print.rma.glmm}} function. If fit statistics should also be given, use \code{\link{summary.rma}} (or use the \code{\link{fitstats.rma}} function to extract them).
+   The results of the fitted model are formated and printed with the \code{\link{print.rma.glmm}} function. If fit statistics should also be given, use \code{\link{summary.rma}} (or use the \code{\link{fitstats.rma}} function to extract them).
 }
 \note{
    Fitting the various types of models requires several different iterative algorithms:
@@ -146,7 +146,7 @@ rma.glmm(ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi, ti, ni,
 
    Various control parameters can be adjusted via the \code{control} argument:
    \itemize{
-      \item \code{optimizer} is set by default to \code{\link[stats:optim]{"optim"}}, but can be set to \code{\link[stats:nlminb]{"nlminb"}} or one of the optimizers in the \pkg{minqa} package (i.e., \code{\link[minqa:bobyqa]{"bobyqa"}}, \code{\link[minqa:newuoa]{"newuoa"}}, or \code{\link[minqa:uobyqa]{"uobyqa"}}),
+      \item \code{optimizer} is set by default to \code{\link[stats:optim]{"optim"}}, but can be set to \code{\link[stats:nlminb]{"nlminb"}} or one of the optimizers from the \pkg{minqa} package (i.e., \code{\link[minqa:bobyqa]{"bobyqa"}}, \code{\link[minqa:newuoa]{"newuoa"}}, or \code{\link[minqa:uobyqa]{"uobyqa"}}),
       \item \code{optmethod} is used to set the \code{method} argument for \code{\link{optim}} (default is \code{"BFGS"}),
       \item \code{optCtrl} is a list of named arguments to be passed on to the \code{control} argument of the chosen optimizer,
       \item \code{glmCtrl} is a list of named arguments to be passed on to the \code{control} argument of the \code{\link{glm}} function,
@@ -207,7 +207,7 @@ rma.glmm(measure="OR", ai=tpos, bi=tneg, ci=cpos, di=cneg,
          data=dat.bcg, model="CM.AL", verbose=TRUE)
 }
 
-### conditional model with exact likelihood
+### conditional model with exact likelihood (be patient!)
 ### note: fitting this model is very slow, so be patient
 \dontrun{
 rma.glmm(measure="OR", ai=tpos, bi=tneg, ci=cpos, di=cneg,

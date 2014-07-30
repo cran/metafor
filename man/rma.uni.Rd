@@ -21,7 +21,7 @@ rma(yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i, x2i,
    \item{yi}{vector of length \eqn{k} with the observed effect sizes or outcomes. See \sQuote{Details}.}
    \item{vi}{vector of length \eqn{k} with the corresponding sampling variances. See \sQuote{Details}.}
    \item{sei}{vector of length \eqn{k} with the corresponding standard errors (only relevant when not using \code{vi}). See \sQuote{Details}.}
-   \item{weights}{optional argument to specify a vector of length \eqn{k} with arbitrary user-defined weights. See \sQuote{Details}.}
+   \item{weights}{optional argument to specify a vector of length \eqn{k} with user-defined weights. See \sQuote{Details}.}
    \item{ai}{see below and the documentation of the \code{\link{escalc}} function for more details.}
    \item{bi}{see below and the documentation of the \code{\link{escalc}} function for more details.}
    \item{ci}{see below and the documentation of the \code{\link{escalc}} function for more details.}
@@ -52,7 +52,7 @@ rma(yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i, x2i,
    \item{to}{see the documentation of the \code{\link{escalc}} function.}
    \item{drop00}{see the documentation of the \code{\link{escalc}} function.}
    \item{vtype}{see the documentation of the \code{\link{escalc}} function.}
-   \item{method}{character string specifying whether a fixed- or a random/mixed-effects model should be fitted. A fixed-effects model (with or without moderators) is fitted when using \code{method="FE"}. Random/mixed-effects models are fitted by setting \code{method} equal to one of the following: \code{"DL"}, \code{"HE"}, \code{"SJ"}, \code{"ML"}, \code{"REML"}, \code{"EB"}, or \code{"HS"}. Default is \code{"REML"}. See \sQuote{Details}.}
+   \item{method}{character string specifying whether a fixed- or a random/mixed-effects model should be fitted. A fixed-effects model (with or without moderators) is fitted when using \code{method="FE"}. Random/mixed-effects models are fitted by setting \code{method} equal to one of the following: \code{"DL"}, \code{"HE"}, \code{"SJ"}, \code{"ML"}, \code{"REML"}, \code{"EB"}, \code{"HS"}, or \code{"GENQ"}. Default is \code{"REML"}. See \sQuote{Details}.}
    \item{weighted}{logical indicating whether weighted (default) or unweighted estimation should be used to fit the model.}
    \item{knha}{logical specifying whether the method by Knapp and Hartung (2003) should be used for adjusting test statistics and confidence intervals (default is \code{FALSE}). See \sQuote{Details}.}
    \item{level}{numerical value between 0 and 100 specifying the confidence interval level (default is 95).}
@@ -74,9 +74,9 @@ rma(yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i, x2i,
 
    The function can be used to fit fixed- and random/mixed-effects models, as well as meta-regression models including moderators (the difference between the various models is described in detail in the introductory \pkg{\link{metafor-package}} help file).
 
-   Assuming the observed outcomes and corresponding sampling variances are supplied via \code{yi} and \code{vi}, the \emph{fixed-effects model} is fitted with \code{rma(yi, vi, method="FE")}. Weighted estimation (with inverse-variance weights) is used by default. Arbitrary user-defined weights can be supplied via the \code{weights} argument. Unweighted estimation can be used by setting \code{weighted=FALSE} .
+   Assuming the observed outcomes and corresponding sampling variances are supplied via \code{yi} and \code{vi}, a \emph{fixed-effects model} can be fitted with \code{rma(yi, vi, method="FE")}. Weighted estimation (with inverse-variance weights) is used by default. User-defined weights can be supplied via the \code{weights} argument. Unweighted estimation can be used by setting \code{weighted=FALSE} (same as setting the weights equal to a constant).
 
-   The \emph{random-effects model} is fitted with the same code but setting \code{method} to one of the various estimators for the amount of heterogeneity:
+   A \emph{random-effects model} can be fitted with the same code but setting \code{method} to one of the various estimators for the amount of heterogeneity:
    \itemize{
    \item \code{method="DL"} = DerSimonian-Laird estimator
    \item \code{method="HE"} = Hedges estimator
@@ -84,8 +84,9 @@ rma(yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i, x2i,
    \item \code{method="SJ"} = Sidik-Jonkman estimator
    \item \code{method="ML"} = maximum-likelihood estimator
    \item \code{method="REML"} = restricted maximum-likelihood estimator
-   \item \code{method="EB"} = empirical Bayes estimator,
-   } Note that the Hedges estimator is also sometimes called the \sQuote{variance component estimator} and the Sidik-Jonkman estimator is sometimes called the \sQuote{model error variance estimator}. Finally, the empirical Bayes estimator is actually the same as the Paule-Mandel estimator (Paule & Mandel, 1982).
+   \item \code{method="EB"} = empirical Bayes (= Paule-Mandel) estimator
+   \item \code{method="GENQ"} = generalized Q-statistic estimator
+   } For a description of the various estimators, see DerSimonian and Kacker (2007), Raudenbush (2009), Viechtbauer (2005), and Viechtbauer et al. (in press). Note that the Hedges estimator is also called the \sQuote{variance component estimator} or \sQuote{Cochran estimator}, the Sidik-Jonkman estimator is also called the \sQuote{model error variance estimator}, and the empirical Bayes estimator is actually identical to the Paule-Mandel estimator (Paule & Mandel, 1982). Finally, the generalized Q-statistic estimator is a general method-of-moments estimator requiring the specification of weights (the HE and DL estimators are just special cases with equal and inverse variance weights, respectively).
 
    One or more moderators can be included in these models via the \code{mods} argument. A single moderator can be given as a (row or column) vector of length \eqn{k} specifying the values of the moderator. Multiple moderators are specified by giving an appropriate model matrix (i.e., \eqn{\mathbf{X}}{X}) with \eqn{k} rows and as many columns as there are moderator variables (e.g., \code{mods = cbind(mod1, mod2, mod3)}, where \code{mod1}, \code{mod2}, and \code{mod3} correspond to the names of the variables for three moderator variables). The intercept is added to the model matrix by default unless \code{intercept=FALSE}.
 
@@ -109,7 +110,7 @@ rma(yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i, x2i,
 
    \bold{Test for (Residual) Heterogeneity}
 
-   A test for (residual) heterogeneity is automatically carried out by the function. Without moderators in the model, this is simply Cochran's \eqn{Q}-test (Cochran, 1954), which tests whether the variability in the observed effect sizes or outcomes is larger than one would expect based on sampling variability alone. A significant test suggests that the true effects or outcomes are heterogeneous. When moderators are included in the model, this is the \eqn{Q_E}-test for residual heterogeneity, which tests whether the variability in the observed effect sizes or outcomes that is not accounted for by the moderators included in the model is larger than one would expect based on sampling variability alone.
+   A test for (residual) heterogeneity is automatically carried out by the function. Without moderators in the model, this is simply Cochran's \eqn{Q}-test (Cochran, 1954), which tests whether the variability in the observed effect sizes or outcomes is larger than would be expected based on sampling variability alone. A significant test suggests that the true effects or outcomes are heterogeneous. When moderators are included in the model, this is the \eqn{Q_E}-test for residual heterogeneity, which tests whether the variability in the observed effect sizes or outcomes not accounted for by the moderators included in the model is larger than would be expected based on sampling variability alone.
 }
 \value{
    An object of class \code{c("rma.uni","rma")}. The object is a list containing the following components:
@@ -137,7 +138,7 @@ rma(yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i, x2i,
    \item{fit.stats}{a list with the log-likelihood, deviance, AIC, BIC, and AICc values under the unrestricted and restricted likelihood.}
    \item{\dots}{some additional elements/values.}
 
-   The results of the fitted model are neatly formated and printed with the \code{\link{print.rma.uni}} function. If fit statistics should also be given, use \code{\link{summary.rma}} (or use the \code{\link{fitstats.rma}} function to extract them). Full versus reduced model comparisons in terms of fit statistics and likelihoods can be obtained with \code{\link{anova.rma.uni}}. Wald-type tests for sets of model coefficients can be obtained with the same function. Permutation tests for the model coefficient(s) can be obtained with \code{\link{permutest.rma.uni}}.
+   The results of the fitted model are formated and printed with the \code{\link{print.rma.uni}} function. If fit statistics should also be given, use \code{\link{summary.rma}} (or use the \code{\link{fitstats.rma}} function to extract them). Full versus reduced model comparisons in terms of fit statistics and likelihoods can be obtained with \code{\link{anova.rma.uni}}. Wald-type tests for sets of model coefficients can be obtained with the same function. Permutation tests for the model coefficient(s) can be obtained with \code{\link{permutest.rma.uni}}.
 
    Predicted/fitted values can be obtained with \code{\link{predict.rma}} and \code{\link{fitted.rma}}. For best linear unbiased predictions, see \code{\link{blup.rma.uni}}.
 
@@ -151,14 +152,14 @@ rma(yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i, x2i,
 
    For models without moderators, a cumulative meta-analysis (i.e., adding one obervation at a time) can be obtained with \code{\link{cumul.rma.uni}}.
 
-   Other assessor functions include \code{\link{coef.rma}}, \code{\link{vcov.rma}}, \code{\link{logLik.rma}}, \code{\link{deviance.rma}}, \code{\link{AIC.rma}}, \code{\link{BIC.rma}}, \code{\link{hatvalues.rma.uni}}, and \code{\link{weights.rma.uni}}.
+   Other extractor functions include \code{\link{coef.rma}}, \code{\link{vcov.rma}}, \code{\link{logLik.rma}}, \code{\link{deviance.rma}}, \code{\link{AIC.rma}}, \code{\link{BIC.rma}}, \code{\link{hatvalues.rma.uni}}, and \code{\link{weights.rma.uni}}.
 }
 \note{
    While the HS, HE, DL, and SJ estimators of \if{latex}{\eqn{\tau^2}}\if{html}{\eqn{\tau²}}\if{text}{\eqn{\tau^2}} are based on closed-form solutions, the ML, REML, and EB estimators must be obtained numerically. For this, the \code{rma()} function makes use of the Fisher scoring algorithm, which is robust to poor starting values and usually converges quickly (Harville, 1977; Jennrich & Sampson, 1976). By default, the starting value is set equal to the value of the Hedges estimator and the algorithm terminates when the change in the estimated value of \if{latex}{\eqn{\tau^2}}\if{html}{\eqn{\tau²}}\if{text}{\eqn{\tau^2}} is smaller than \if{latex}{\eqn{10^{-5}}}\if{html}{\eqn{10⁻⁵}}\if{text}{\eqn{10^(-5)}} from one iteration to the next. The maximum number of iterations is 100 by default (which should be sufficient in most cases). A different starting value, threshold, and maximum number of iterations can be specified via the \code{control} argument by setting \code{control=list(tau2.init=value, threshold=value, maxiter=value)} when calling the \code{rma()} function. The step length of the Fisher scoring algorithm can also be manually adjusted by a desired factor with \code{control=list(stepadj=value)} (values below 1 will reduce the step length). Information on the progress of the algorithm can be obtained by setting \code{verbose=TRUE} or with \code{control=list(verbose=TRUE)}.
 
    All of the heterogeneity estimators except SJ can in principle yield negative estimates for the amount of (residual) heterogeneity. However, negative estimates of \if{latex}{\eqn{\tau^2}}\if{html}{\eqn{\tau²}}\if{text}{\eqn{\tau^2}} are outside of the parameter space. For the HS, HE, and DL estimators, negative estimates are therefore truncated to zero. For ML, REML, and EB estimation, the Fisher scoring algorithm makes use of step halving to guarantee a non-negative estimate. For those brave enough to step into risky territory, there is the option to set the lower bound of \if{latex}{\eqn{\tau^2}}\if{html}{\eqn{\tau²}}\if{text}{\eqn{\tau^2}} equal to some other value besides zero with \code{control=list(tau2.min=value)}.
 
-   The Hunter-Schmidt estimator for the amount of heterogeneity is defined in Hunter and Schmidt (1990) only in the context of the random-effects model when analyzing correlation coefficients. A general version of this estimator for the random-effects model not specific to any particular outcome measure is described in Viechtbauer (2005). The same idea can be easily extended to the mixed-effects model and is implemented here.
+   The Hunter-Schmidt estimator for the amount of heterogeneity is defined in Hunter and Schmidt (1990) only in the context of the random-effects model when analyzing correlation coefficients. A general version of this estimator for the random-effects model not specific to any particular outcome measure is described in Viechtbauer (2005). The same idea can be easily extended to the mixed-effects model (see Viechtbauer et al., in press) and is implemented here.
 
    The Sidik-Jonkman estimator starts with a crude estimate of \if{latex}{\eqn{\tau^2}}\if{html}{\eqn{\tau²}}\if{text}{\eqn{\tau^2}}, which is then updated as described in Sidik and Jonkman (2005b, 2007). If, instead of the crude estimate, one wants to use a better a priori estimate, one can do so by passing this value via \code{control=list(tau2.init=value)}.
 
@@ -182,6 +183,8 @@ rma(yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i, x2i,
    Cochran, W. G. (1954). The combination of estimates from different experiments. \emph{Biometrics}, \bold{10}, 101--129.
 
    DerSimonian, R., & Laird, N. (1986). Meta-analysis in clinical trials. \emph{Controlled Clinical Trials}, \bold{7}, 177--188.
+
+   DerSimonian, R., & Kacker, R. (2007). Random-effects model for meta-analysis of clinical trials: An update. \emph{Contemporary Clinical Trials}, \bold{28}, 105--114.
 
    Harville, D. A. (1977). Maximum likelihood approaches to variance component estimation and to related problems. \emph{Journal of the American Statistical Association}, \bold{72}, 320--338.
 
@@ -212,6 +215,8 @@ rma(yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i, x2i,
    Viechtbauer, W. (2005). Bias and efficiency of meta-analytic variance estimators in the random-effects model. \emph{Journal of Educational and Behavioral Statistics}, \bold{30}, 261--293.
 
    Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \url{http://www.jstatsoft.org/v36/i03/}.
+
+   Viechtbauer, W., López-López, J. A., Sánchez-Meca, J., & Marín-Martínez, F. (in press). A comparison of procedures to test for moderators in mixed-effects meta-regression models. \emph{Psychological Methods}.
 }
 \seealso{
    \code{\link{rma.mh}}, \code{\link{rma.peto}}, \code{\link{rma.glmm}}, and \code{\link{rma.mv}} for other model fitting functions.

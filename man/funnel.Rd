@@ -7,7 +7,7 @@
 funnel(x, \dots)
 
 \method{funnel}{rma}(x, yaxis="sei", xlim, ylim, xlab, ylab,
-       steps=5, at, atransf=FALSE, targs, digits,
+       steps=5, at, atransf, targs, digits,
        level=x$level, addtau2=FALSE, type="rstandard",
        back="lightgray", shade="white", hlines="white",
        refline, pch=19, pch.fill=21, ci.res=1000, \dots)
@@ -21,7 +21,7 @@ funnel(x, \dots)
    \item{ylab}{title for the y-axis. If unspecified, the function tries to set an appropriate axis title.}
    \item{steps}{the number of tick marks for the y-axis (default is 5).}
    \item{at}{position of the x-axis tick marks and corresponding labels. If unspecified, the function tries to set the tick mark positions/labels to some sensible values.}
-   \item{atransf}{optional argument specifying the name of a function that should be used to transform the x-axis labels (e.g., \code{transf=exp}). Defaults to \code{FALSE}, which means that no transformation is used.}
+   \item{atransf}{optional argument specifying the name of a function that should be used to transform the x-axis labels (e.g., \code{transf=exp}). If unspecified, no transformation is used.}
    \item{targs}{optional arguments needed by the function specified via \code{atransf}.}
    \item{digits}{integer specifying the number of decimal places to which the tick mark labels of the x- and y-axis should be rounded. Can also be a vector of two integers, the first specifying the number of decimal places for the x-axis, the second for the y-axis labels (e.g., c(2,3)). If unspecified, the function tries to set the argument to some sensible values.}
    \item{level}{numerical value between 0 and 100 specifying the level of the pseudo confidence interval region (the default is to take the value from the object). May also be a vector of values to obtain multiple regions. See \sQuote{Examples}.}

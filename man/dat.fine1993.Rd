@@ -1,7 +1,7 @@
 \name{dat.fine1993}
 \docType{data}
 \alias{dat.fine1993}
-\title{Studies on Deep-Brain Stimulation}
+\title{Studies on Radiation Therapy with or without Adjuvant Chemotherapy in Patients with Malignant Gliomas}
 \description{Results from 17 trials comparing post-operative radiation therapy with and without adjuvant chemotherapy in patients with malignant gliomas.}
 \usage{dat.fine1993}
 \format{The data frame contains the following columns:

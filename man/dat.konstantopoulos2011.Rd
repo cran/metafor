@@ -39,12 +39,22 @@ res <- rma.mv(yi, vi, random = ~ 1 | study, data=dat)
 res
 
 ### multilevel random-effects model
-res <- rma.mv(yi, vi, random = list(~ 1 | district, ~ 1 | study), data=dat)
-res
+res.ml <- rma.mv(yi, vi, random = list(~ 1 | district, ~ 1 | study), data=dat)
+res.ml
 
 ### profile variance components
 par(mfrow=c(2,1))
-profile(res, sigma2=1, xlim=c(.01,.4))
-profile(res, sigma2=2, xlim=c(.01,.1))
+profile(res.ml, sigma2=1, xlim=c(.01,.4))
+profile(res.ml, sigma2=2, xlim=c(.01,.1))
+
+### multivariate parameterization of the model
+res.mv <- rma.mv(yi, vi, random = ~ study | district, data=dat)
+res.mv
+
+### tau^2 from multivariate model = sum of the two variance components from the multilevel model
+sum(res.ml$sigma2)
+
+### rho from multivariate model = intraclass correlation coefficient based on the multilevel model
+res.ml$sigma2[1] / sum(res.ml$sigma2)
 }
 \keyword{datasets}

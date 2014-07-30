@@ -4,7 +4,7 @@
 \description{Function to add one or more polygons to a forest plot.}
 \usage{
 \method{addpoly}{default}(x, vi, sei, ci.lb, ci.ub, rows=-1, level=95, digits=2,
-        annotate=TRUE, mlab, transf=FALSE, atransf=FALSE, targs,
+        annotate=TRUE, mlab, transf, atransf, targs,
         efac=1, col, border, cex, \dots)
 }
 \arguments{
@@ -18,8 +18,8 @@
    \item{digits}{integer specifying the number of decimal places to which the annotations should be rounded (default is 2).}
    \item{annotate}{logical specifying whether annotations should be added to the plot for the polygons that are drawn (default is \code{TRUE}).}
    \item{mlab}{optional character vector with the same length as \code{x} giving labels for the polygons that are drawn.}
-   \item{transf}{optional argument specifying the name of a function that should be used to transform the \code{x} values and confidence interval bounds. Defaults to \code{FALSE}, which means that no transformation is used.}
-   \item{atransf}{optional argument specifying the name of a function that should be used to transform the annotations. Defaults to \code{FALSE}, which means that no transformation is used.}
+   \item{transf}{optional argument specifying the name of a function that should be used to transform the \code{x} values and confidence interval bounds. If unspecified, no transformation is used.}
+   \item{atransf}{optional argument specifying the name of a function that should be used to transform the annotations. If unspecified, no transformation is used.}
    \item{targs}{optional arguments needed by the function specified via \code{transf} or \code{atransf}.}
    \item{efac}{vertical expansion factor for the polygons. The default value of 1 should usually work okay.}
    \item{col}{optional character string specifying the name of a color to use for the polygons. If unspecified, the function sets a default color.}
