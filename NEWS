@@ -1,3 +1,76 @@
+Changes in Version 1.9-5 (2014-10-24)
+=====================================
+
+   o moved the 'stats' and 'Matrix' packages from 'Depends' to 'Imports'; as
+     a result, had to add 'utils' to 'Imports'; moved the 'Formula' package
+     from 'Depends' to 'Suggests'
+
+   o added update.rma() function (for updating/refitting a model); model
+     objects also now store and keep the call
+
+   o the vcov() function now also extracts the marginal variance-covariance
+     matrix of the observed effect sizes or outcomes from a fitted model
+     (of class 'rma'uni' or 'rma.mv')
+
+   o rma.mv() now makes use of the Cholesky decomposition when there is a
+     'random = ~ inner | outer' formula and struct="UN"; this is numerically
+     more stable than the old approach that avoided non-positive definite
+     solutions by forcing the log-likelihood to be -Inf in those cases; the
+     old behavior can be restored with 'control = list(cholesky=FALSE)'
+
+   o rma.mv() now requires the 'inner' variable in an '~ inner | outer'
+     formula to be a factor or character variable (except when struct is
+     "AR" or "HAR"); use '~ factor(inner) | outer' in case it isn't
+
+   o anova.rma.uni() function changed to anova.rma() that works now for both
+     'rma.uni' and 'rma.mv' objects
+
+   o the profile.rma.mv() function now omits the number of the variance or
+     correlation component from the plot title and x-axis label when the
+     model only includes one of the respective parameters
+
+   o profile() functions now pass on the ... argument also to the title()
+     function used to create the figure titles (esp. relevant when using
+     the 'cex.main' argument)
+
+   o the 'drop00' argument of the rma.mh() and rma.peto() functions now also
+     accepts a vector with two logicals, the first applies when calculating
+     the observed outcomes, the second when applying the Mantel-Haenszel or
+     Peto's method
+
+   o weights.rma.uni() now shows the correct weights when weighted=FALSE
+
+   o argument 'showweight' renamed to 'showweights' in the forest.default()
+     and forest.rma() functions (more consistent with the naming of the
+     various weights() functions)
+
+   o added model.matrix.rma() function (to extract the model matrix from
+     objects of class 'rma')
+
+   o funnel() and radial() now (invisibly) return data frames with the
+     coordinates of the points that were drawn (may be useful for manual
+     labeling of points in the plots)
+
+   o permutest.rma.uni() function now uses a numerical tolerance when making
+     comparisons (>= or <=) between an observed test statistic and the test
+     statistic under the permuted data; when using random permutations, the
+     function now ensures that the very first permutation correspond to the
+     original data
+
+   o corrected some missing/redundant row/column labels in some output
+
+   o most require() calls replaced with requireNamespace() to avoid altering
+     the search path (hopefully this won't break stuff ...)
+
+   o some non-visible changes including more use of some (non-exported)
+     helper functions for common tasks
+
+   o dataset dat.collins91985a updated (including all reported outcomes and
+     some more information about the various trials)
+
+   o oh, and guess what? I updated the documentation ...
+
+
 Changes in Version 1.9-4 (2014-07-30)
 =====================================
 

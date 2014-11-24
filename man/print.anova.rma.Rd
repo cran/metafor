@@ -1,14 +1,14 @@
-\name{print.anova.rma.uni}
-\alias{print.anova.rma.uni}
-\title{Print Method for 'anova.rma.uni' Objects}
+\name{print.anova.rma}
+\alias{print.anova.rma}
+\title{Print Method for 'anova.rma' Objects}
 \description{
-   Print method for objects of class \code{"anova.rma.uni"}.
+   Print method for objects of class \code{"anova.rma"}.
 }
 \usage{
-\method{print}{anova.rma.uni}(x, digits, \dots)
+\method{print}{anova.rma}(x, digits, \dots)
 }
 \arguments{
-   \item{x}{an object of class \code{"anova.rma.uni"}.}
+   \item{x}{an object of class \code{"anova.rma"}.}
    \item{digits}{integer specifying the number of decimal places to which the printed results should be rounded (if unspecified, the default is to take the value from the object).}
    \item{\dots}{other arguments.}
 }
@@ -23,6 +23,7 @@
    \item the estimate of \if{latex}{\eqn{\tau^2}}\if{html}{\eqn{\tau²}}\if{text}{\eqn{\tau^2}} from the full and the reduced model. Suppressed for fixed-effects models.
    \item the amount of (residual) heterogeneity in the reduced model that is accounted for in the full model (in percent). \code{NA} for fixed-effects models or if the amount of heterogeneity in the reduced model is equal to zero. This can be regarded as a pseudo \if{latex}{\eqn{R^2}}\if{html}{\eqn{R²}}\if{text}{\eqn{R^2}} statistic (Raudenbush, 2009).
    }
+   The last two items are not provided when comparing \code{"rma.mv"} models.
 }
 \value{
    The function does not return an object.
@@ -38,6 +39,6 @@
    Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \url{http://www.jstatsoft.org/v36/i03/}.
 }
 \seealso{
-   \code{\link{anova.rma.uni}}
+   \code{\link{anova.rma}}
 }
 \keyword{print}

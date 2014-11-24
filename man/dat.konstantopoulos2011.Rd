@@ -16,7 +16,7 @@
 \details{
    Instead of following the more traditional school calendar with a long summer break (in addition to a short winter and spring break), some schools have switched to a modified school calendar comprising more frequent but shorter intermittent breaks (e.g., 9 weeks of school followed by 3 weeks off), while keeping the total number of days at school approximately the same. The effects of using such a modified calendar on student achievement have been examined in a number of studies and were meta-analyzed by Cooper et al. (2003).
 
-   The dataset (taken from Konstantopoulos, 2011) contains the results from 56 such studies, each comparing the level of academic achievement in a group of students following a modified school calendar with that of a group of students following a more traditional school calendar. The difference between the two groups was quantified in terms of standardized mean difference (with positive values indicating a higher mean level of achievement in the group following the modified school calendar).
+   The dataset (taken from Konstantopoulos, 2011) contains the results from 56 studies, each comparing the level of academic achievement in a group of students following a modified school calendar with that of a group of students following a more traditional school calendar. The difference between the two groups was quantified in terms of a standardized mean difference (with positive values indicating a higher mean level of achievement in the group following the modified school calendar).
    
    The studies were conducted at various schools that were clustered within districts. The data therefore have a multilevel structure, with studies nested within districts. A multilevel meta-analysis of these data can be used to estimate and account for the amount of heterogeneity between districts and between schools within districts.
 }
@@ -32,29 +32,29 @@ dat <- get(data(dat.konstantopoulos2011))
 
 ### regular random-effects model
 res <- rma(yi, vi, data=dat)
-res
+print(res, digits=3)
 
 ### regular random-effects model using rma.mv()
 res <- rma.mv(yi, vi, random = ~ 1 | study, data=dat)
-res
+print(res, digits=3)
 
 ### multilevel random-effects model
 res.ml <- rma.mv(yi, vi, random = list(~ 1 | district, ~ 1 | study), data=dat)
-res.ml
+print(res.ml, digits=3)
 
 ### profile variance components
 par(mfrow=c(2,1))
-profile(res.ml, sigma2=1, xlim=c(.01,.4))
-profile(res.ml, sigma2=2, xlim=c(.01,.1))
+profile(res.ml, sigma2=1)
+profile(res.ml, sigma2=2)
 
 ### multivariate parameterization of the model
-res.mv <- rma.mv(yi, vi, random = ~ study | district, data=dat)
-res.mv
+res.mv <- rma.mv(yi, vi, random = ~ factor(study) | district, data=dat)
+print(res.mv, digits=3)
 
 ### tau^2 from multivariate model = sum of the two variance components from the multilevel model
-sum(res.ml$sigma2)
+round(sum(res.ml$sigma2), 3)
 
 ### rho from multivariate model = intraclass correlation coefficient based on the multilevel model
-res.ml$sigma2[1] / sum(res.ml$sigma2)
+round(res.ml$sigma2[1] / sum(res.ml$sigma2), 3)
 }
 \keyword{datasets}

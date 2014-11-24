@@ -71,7 +71,7 @@ forest(c(0,res$b[25:27]), sei=c(0,res$se[25:27]), psize=1, xlim=c(-3,4), digits=
        slab=c("No Contact", "Self-Help", "Individual Counseling", "Group Counseling"),
        atransf=exp, at=log(c(.5, 1, 2, 4, 8)), xlab="Odds Ratio for Intervention vs. No Contact")
 text(-3, 6, "Intervention", pos=4)
-text( 4, 6, "OR [95\% CI]",  pos=2)
+text( 4, 6, "Odds Ratio [95\% CI]",  pos=2)
 
 ### restructure dataset to a contrast-based format
 dat.c <- lapply(split(dat.hasselblad1998, dat.hasselblad1998$study),
@@ -94,7 +94,7 @@ calc.v <- function(x) {
    diag(v) <- x$vi
    v
 }
-V <- bdiag(lapply(split(dat.c, dat.c$study), calc.v))
+V <- bldiag(lapply(split(dat.c, dat.c$study), calc.v))
 
 ### convert trt1 and trt2 variables to factors with desired ordering of levels
 lvls <- c("no_contact", "self_help", "ind_counseling", "grp_counseling")
@@ -108,7 +108,7 @@ names(dat.c)[(ncol(dat.c)-3):ncol(dat.c)] <- lvls
 ### network meta-analysis using a contrast-based model
 ### by setting rho=1/2, tau^2 reflects the amount of heterogeneity for all treatment comparisons
 res <- rma.mv(yi, V, mods = ~ self_help + ind_counseling + grp_counseling - 1,
-              random = ~ id | study, rho=1/2, data=dat.c)
+              random = ~ factor(id) | study, rho=1/2, data=dat.c)
 res
 }
 \keyword{datasets}

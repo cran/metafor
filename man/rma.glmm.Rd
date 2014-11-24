@@ -30,10 +30,10 @@ rma.glmm(ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi, ti, ni,
    \item{data}{optional data frame containing the data supplied to the function.}
    \item{slab}{optional vector with labels for the \eqn{k} studies.}
    \item{subset}{optional vector indicating the subset of studies that should be used for the analysis. This can be a logical vector of length \eqn{k} or a numeric vector indicating the indices of the observations to include.}
-   \item{add}{non-negative number indicating the amount to add to zero cells, counts, or frequencies when calculating the individual outcomes. See below and the documentation of the \code{\link{escalc}} function for more details.}
+   \item{add}{non-negative number indicating the amount to add to zero cells, counts, or frequencies when calculating the observed outcomes of the individual studies. See below and the documentation of the \code{\link{escalc}} function for more details.}
    \item{to}{character string indicating when the values under \code{add} should be added (either \code{"only0"}, \code{"all"}, \code{"if0all"}, or \code{"none"}). See below and the documentation of the \code{\link{escalc}} function for more details.}
    \item{drop00}{logical indicating whether studies with no cases/events (or only cases) in both groups should be dropped. See the documentation of the \code{\link{escalc}} function for more details.}
-   \item{vtype}{character string indicating the type of sampling variances to calculate when calculating the individual outcomes. See the documentation of the \code{\link{escalc}} function for more details.}
+   \item{vtype}{character string indicating the type of sampling variances to calculate when calculating the observed outcomes. See the documentation of the \code{\link{escalc}} function for more details.}
    \item{model}{character string specifying the general model type to use for the analysis (either \code{"UM.FS"} (the default), \code{"UM.RS"}, \code{"CM.EL"}, or \code{"CM.AL"}). See \sQuote{Details}.}
    \item{method}{character string specifying whether a fixed- or a random/mixed-effects model should be fitted. A fixed-effects model (with or without moderators) is fitted when using \code{method="FE"}. Random/mixed-effects models are fitted by setting \code{method="ML"} (the default). See \sQuote{Details}.}
    \item{tdist}{logical specifying whether test statistics and confidence intervals should be based on the normal (when \code{FALSE}, the default) or the t-distribution (when \code{TRUE}). See \sQuote{Details}.}
@@ -103,9 +103,11 @@ rma.glmm(ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi, ti, ni,
 
    Two different tests for (residual) heterogeneity are automatically carried out by the function. The first is a Wald-type test, which tests the coefficients corresponding to the dummy variables added in the saturated model for significance. The second is a likelihood ratio test, which tests the same set of coefficients, but does so by computing \eqn{-2} times the difference in the log-likelihood of the fixed-effects and the saturated model. These two tests are not identical for the types of models fitted by the \code{rma.glmm} function and may even lead to conflicting conclusions.
 
-   \bold{Individual Outcomes}
+   \bold{Observed Outcomes of the Individual Studies}
 
-   The various models do not require the calculation of the individual outcome values and directly make use of the table/event counts. Zero cells/events are not a problem (except in extreme cases, such as when one of the two outcomes never occurs or when there are no events in any of the studies). Therefore, it is unnecessary to add some constant to the cell counts (or the number of events) when there are zero cells/events. However, for plotting and various other functions, it is necessary to calculate the individual outcome values for the \eqn{k} studies. Here, zero cells/events can be problematic, so adding a constant value to the cell counts (or the number of events) ensures that all \eqn{k} values can be calculated. The \code{add} and \code{to} arguments are used to specify what value should be added to the cell frequencies (or the number of events) and under what circumstances when calculating the individual outcome values. The documentation of the \code{\link{escalc}} function explains how the \code{add} and \code{to} arguments work. Note that \code{drop00} is set to \code{TRUE} by default, since studies where \code{ai=ci=0} or \code{bi=di=0} or studies where \code{x1i=x2i=0} are uninformative about the size of the effect.
+   The various models do not require the calculation of the observed outcomes of the individual studies (e.g., the observed odds ratios of the \eqn{k} studies) and directly make use of the table/event counts. Zero cells/events are not a problem (except in extreme cases, such as when one of the two outcomes never occurs or when there are no events in any of the studies). Therefore, it is unnecessary to add some constant to the cell/event counts when there are zero cells/events.
+
+   However, for plotting and various other functions, it is necessary to calculate the observed outcomes for the \eqn{k} studies. Here, zero cells/events can be problematic, so adding a constant value to the cell/event counts ensures that all \eqn{k} values can be calculated. The \code{add} and \code{to} arguments are used to specify what value should be added to the cell/event counts and under what circumstances when calculating the observed outcomes. The documentation of the \code{\link{escalc}} function explains how the \code{add} and \code{to} arguments work. Note that \code{drop00} is set to \code{TRUE} by default, since studies where \code{ai=ci=0} or \code{bi=di=0} or studies where \code{x1i=x2i=0} are uninformative about the size of the effect.
 }
 \value{
    An object of class \code{c("rma.glmm","rma")}. The object is a list containing the following components:
@@ -187,7 +189,7 @@ data(dat.bcg)
 rma(measure="OR", ai=tpos, bi=tneg, ci=cpos, di=cneg,
     data=dat.bcg, method="ML", verbose=TRUE)
 
-### random-effects models using rma.glmm() (requires 'lme4' package)
+### random-effects models using rma.glmm() (require 'lme4' package)
 
 ### unconditional model with fixed study effects
 \dontrun{

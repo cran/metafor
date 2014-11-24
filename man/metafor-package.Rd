@@ -59,7 +59,7 @@
 
    A (pdf) diagram showing the various functions in the metafor package (and how they are related to each other) can be opened with the command \code{vignette("metafor_diagram")}.
 
-   Finally, additional information about the package, several detailed analysis examples, examples of plots and figures provided by the package (with the corresponding code), some additional tips/tricks/notes, and a FAQ can be found on the package website at \url{http://www.metafor-project.org/}.
+   Finally, additional information about the package, several detailed analysis examples, examples of plots and figures provided by the package (with the corresponding code), some additional tips and notes, and a FAQ can be found on the package website at \url{http://www.metafor-project.org/}.
 }
 \author{
    Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr

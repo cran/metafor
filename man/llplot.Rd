@@ -60,7 +60,7 @@ llplot(measure="OR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
 data(dat.collins1985a)
 
 ### create plot (Figure 2 in van Houwelingen, Zwinderman, & Stijnen, 1993)
-llplot(measure="OR", ai=xci, n1i=nci, ci=xti, n2i=nti, data=dat.collins1985a,
+llplot(measure="OR", ai=b.xci, n1i=nci, ci=b.xti, n2i=nti, data=dat.collins1985a,
        lwd=1, refline=NA, xlim=c(-4,4), drop00=FALSE)
 }
 \keyword{hplot}

@@ -39,6 +39,13 @@ galbraith(x, \dots)
 
    If the model contains moderators, the function returns an error.
 }
+\value{
+   A data frame with components:
+   \item{x}{the x coordinates of the points that were plotted.}
+   \item{y}{the y coordinates of the points that were plotted.}
+   \item{slab}{study labels of the points that were plotted.}
+   Note that the data frame is returned invisibly.
+}
 \author{
    Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr
    package website: \url{http://www.metafor-project.org/} \cr

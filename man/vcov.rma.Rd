@@ -2,17 +2,21 @@
 \alias{vcov.rma}
 \title{Extract the Variance-Covariance Matrix of the Parameter Estimates from 'rma' Objects}
 \description{
-   The function extracts the (estimated) variance-covariance matrix of the (fixed effects) parameter estimates from objects of class \code{"rma"}.
+   The function extracts the (estimated) variance-covariance matrix of the (fixed effects) parameter estimates from objects of class \code{"rma"} or the marginal variance-covariance matrix of the observed effect sizes or outcomes.
 }
 \usage{
-\method{vcov}{rma}(object, \dots)
+\method{vcov}{rma}(object, type="fixed", \dots)
 }
 \arguments{
    \item{object}{an object of class \code{"rma"}.}
+   \item{type}{character string indicating whether to return the variance-covariance matrix of the fixed effects (\code{type="fixed"}) or the marginal variance-covariance matrix of the observed effect sizes or outcomes (\code{type="obs"}).}
    \item{\dots}{other arguments.}
 }
+\details{
+   Note that \code{type="obs"} currently only works for object of class \code{"rma.uni"} and \code{"rma.mv"}.
+}
 \value{
-   A matrix corresponding to the variance-covariance matrix.
+   A matrix corresponding to the requested variance-covariance matrix.
 }
 \author{
    Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr
@@ -34,5 +38,8 @@ data(dat.bcg)
 res <- rma(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, 
            mods = ~ ablat + year, data=dat.bcg)
 vcov(res)
+
+### marginal var-cov matrix of the observed log relative risks
+vcov(res, type="obs")
 }
 \keyword{models}

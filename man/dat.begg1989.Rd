@@ -41,7 +41,6 @@ dat2 <- data.frame(yi = dat$yi[c(1,3,5,7)] - dat$yi[c(2,4,6,8)],
 res <- rma(yi, vi, data=dat2, method="DL", digits=2)
 res
 
-\dontrun{
 ### Begg & Pilote (1991) model incorporating the uncontrolled studies
 res <- rma.mv(yi, vi, mods = ~ trt, random = ~ 1 | study, 
               data=dat, method="ML", digits=2)
@@ -61,6 +60,5 @@ res
 res <- rma.mv(yi, vi, mods = ~ trt, random = list(~ 1 | study, ~ trt | study),
               struct="CS", rho=0, data=dat, method="ML", digits=2)
 res
-}
 }
 \keyword{datasets}

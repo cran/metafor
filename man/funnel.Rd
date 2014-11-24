@@ -63,6 +63,13 @@ funnel(x, \dots)
 
    When using unweighted estimation, using \code{yaxis="wi"} will place all points on a horizontal line.
 }
+\value{
+   A data frame with components:
+   \item{x}{the x coordinates of the points that were plotted.}
+   \item{y}{the y coordinates of the points that were plotted.}
+   \item{slab}{study labels of the points that were plotted.}
+   Note that the data frame is returned invisibly.
+}
 \author{
    Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr
    package website: \url{http://www.metafor-project.org/} \cr
@@ -105,7 +112,7 @@ res <- rma(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, mods = ~ ablat,
 funnel(res)
 
 ### simulate a large meta-analytic dataset (correlations with rho = 0.2)
-### with no heterogeneity or publication bias; then try out some various
+### with no heterogeneity or publication bias; then try out different
 ### versions of the funnel plot
 
 gencor <- function(rhoi, ni) {
@@ -119,7 +126,7 @@ k  <- 200                               ### number of studies to simulate
 ni <- round(rchisq(k, df=2) * 20 + 20)  ### simulate sample sizes (skewed distribution)
 ri <- mapply(gencor, rep(0.2,k), ni)    ### simulate correlations
 
-res <- rma(measure="ZCOR", ri=ri, ni=ni, method="FE")
+res <- rma(measure="ZCOR", ri=ri, ni=ni, method="FE") ### use r-to-z transformed correlations
 
 funnel(res, yaxis="sei")
 funnel(res, yaxis="vi")

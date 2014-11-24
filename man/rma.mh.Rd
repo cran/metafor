@@ -23,15 +23,18 @@ rma.mh(ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
    \item{data}{optional data frame containing the data supplied to the function.}
    \item{slab}{optional vector with labels for the \eqn{k} studies.}
    \item{subset}{optional vector indicating the subset of tables that should be used for the analysis. This can be a logical vector of length \eqn{k} or a numeric vector indicating the indices of the tables to include.}
-   \item{add}{non-negative number indicating the amount to add to zero cells, counts, or frequencies when calculating the individual outcomes. Can also be a vector of two numbers, where the first number is used in the calculation of the individual outcomes and the second number is used when applying the Mantel-Haenszel method. See below and the documentation of the \code{\link{escalc}} function for more details.}
-   \item{to}{character string indicating when the values under \code{add} should be added (either \code{"only0"}, \code{"all"}, \code{"if0all"}, or \code{"none"}). Can also be a character vector, where the first string again applies when calculating the individual outcomes and the second string when applying the Mantel-Haenszel method. See below and the documentation of the \code{\link{escalc}} function for more details.}
-   \item{drop00}{logical indicating whether studies with no cases/events (or only cases) in both groups should be dropped when calculating the observed outcomes of the individual studies (the outcomes for such studies are set to \code{NA}). See below and the documentation of the \code{\link{escalc}} function for more details.}
+   \item{add}{non-negative number indicating the amount to add to zero cells, counts, or frequencies when calculating the observed outcomes of the individual studies. Can also be a vector of two numbers, where the first number is used in the calculation of the observed outcomes and the second number is used when applying the Mantel-Haenszel method. See below and the documentation of the \code{\link{escalc}} function for more details.}
+   \item{to}{character string indicating when the values under \code{add} should be added (either \code{"only0"}, \code{"all"}, \code{"if0all"}, or \code{"none"}). Can also be a character vector, where the first string again applies when calculating the observed outcomes and the second string when applying the Mantel-Haenszel method. See below and the documentation of the \code{\link{escalc}} function for more details.}
+   \item{drop00}{logical indicating whether studies with no cases/events (or only cases) in both groups should be dropped when calculating the observed outcomes (the outcomes for such studies are set to \code{NA}). Can also be a vector of two logicals, where the first applies to the calculation of the observed outcomes and the second when applying the Mantel-Haenszel method. See below and the documentation of the \code{\link{escalc}} function for more details.}
    \item{correct}{logical indicating whether to apply a continuity correction when computing the Cochran-Mantel-Haenszel test statistic.}
    \item{level}{numerical value between 0 and 100 specifying the confidence interval level (default is 95).}
    \item{digits}{integer specifying the number of decimal places to which the printed results should be rounded (default is 4).}
    \item{verbose}{logical indicating whether output should be generated on the progress of the model fitting (default is \code{FALSE}).}
 }
 \details{
+
+   \bold{Specifying the Data}
+
    When the outcome measure is either the odds ratio (measure=\code{"OR"}), relative risk (\code{measure="RR"}), or risk difference (\code{measure="RD"}), the studies are assumed to provide data in terms of \eqn{2 \times 2}{2x2} tables of the form:
    \tabular{lccc}{
            \tab outcome 1 \tab outcome 2 \tab total      \cr
@@ -46,11 +49,19 @@ rma.mh(ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
    group 2 \tab \code{x2i} \tab \code{t2i}
    } where \code{x1i} and \code{x2i} denote the number of events in the first and the second group, respectively, and \code{t1i} and \code{t2i} the corresponding total person-times at risk.
 
+   \bold{Mantel-Haenszel Method}
+
    An approach for aggregating table data of these types was suggested by Mantel and Haenszel (1959) and later extended by various authors (see references). The Mantel-Haenszel method provides a weighted estimate under a fixed-effects model. The method is particularly advantageous when aggregating a large number of studies with small sample sizes (the so-called sparse data or increasing strata case).
 
    When analyzing odds ratios, the Cochran-Mantel-Haenszel (CMH) test (Cochran, 1954; Mantel & Haenszel, 1959) and Tarone's test for heterogeneity (Tarone, 1985) are also provided (by default, the CMH test statistic is computed with the continuity correction; this can be switched off with \code{correct=FALSE}). When analyzing incidence rate ratios, the Mantel-Haenszel (MH) test (Rothman et al., 2008) for person-time data is also provided (again, the \code{correct} argument controls whether the continuity correction is applied). When analyzing odds ratios, relative risks, or incidence rate ratios, the printed results are given both in terms of the log and the raw units (for easier interpretation).
 
-   The Mantel-Haenszel method itself does not require the calculation of the individual outcome values and directly makes use of the table/event counts. Zero cells/events are not a problem (except in extreme cases, such as when one of the two outcomes never occurs in any of the \eqn{2 \times 2}{2x2} tables or when there are no events for one of the two groups in any of the tables). Therefore, it is unnecessary to add some constant to the cell counts (or the number of events) when there are zero cells/events. However, for plotting and various other functions, it is necessary to calculate the individual outcome values for the \eqn{k} studies. Here, zero cells/events can be problematic, so adding a constant value to the cell counts (or the number of events) ensures that all \eqn{k} values can be calculated. The \code{add} and \code{to} arguments are used to specify what value should be added to the cell frequencies (or the number of events) and under what circumstances when calculating the individual outcome values and when applying the Mantel-Haenszel method. The documentation of the \code{\link{escalc}} function explains how the \code{add} and \code{to} arguments work. If only one value for these arguments is specified, then these values are used when calculating the individual outcomes and no adjustment to the cell counts (or the number of events) is made when applying the Mantel-Haenszel method. Alternatively, when specifying two values for these arguments, the first value applies when calculating the individual outcomes and the second value when applying the Mantel-Haenszel method. Note that \code{drop00} is set to \code{TRUE} by default, since studies where \code{ai=ci=0} or \code{bi=di=0} or studies where \code{x1i=x2i=0} are also automatically \sQuote{dropped} when applying the Mantel-Haenszel method.
+   \bold{Observed Outcomes of the Individual Studies}
+
+   The Mantel-Haenszel method itself does not require the calculation of the observed outcomes of the individual studies (e.g., the observed odds or incidence rate ratios of the \eqn{k} studies) and directly makes use of the table/event counts. Zero cells/events are not a problem (except in extreme cases, such as when one of the two outcomes never occurs in any of the \eqn{2 \times 2}{2x2} tables or when there are no events for one of the two groups in any of the tables). Therefore, it is unnecessary to add some constant to the cell/event counts when there are zero cells/events.
+
+   However, for plotting and various other functions, it is necessary to calculate the observed outcomes for the \eqn{k} studies. Here, zero cells/events can be problematic, so adding a constant value to the cell/event counts ensures that all \eqn{k} values can be calculated. The \code{add} and \code{to} arguments are used to specify what value should be added to the cell/event counts and under what circumstances when calculating the observed outcomes and when applying the Mantel-Haenszel method. Similarly, the \code{drop00} argument is used to specify how studies with no cases/events (or only cases) in both groups should be handled. The documentation of the \code{\link{escalc}} function explains how the \code{add}, \code{to}, and \code{drop00} arguments work. If only a single value for these arguments is specified (as per default), then these values are used when calculating the observed outcomes and no adjustment to the cell/event counts is made when applying the Mantel-Haenszel method. Alternatively, when specifying two values for these arguments, the first value applies when calculating the observed outcomes and the second value when applying the Mantel-Haenszel method.
+
+   Note that \code{drop00} is set to \code{TRUE} by default. Therefore, the observed outcomes for studies where \code{ai=ci=0} or \code{bi=di=0} or studies where \code{x1i=x2i=0} are set to \code{NA}. When applying the Mantel-Haenszel method, such studies are not explicitly dropped (unless the second value of \code{drop00} argument is also set to \code{TRUE}), but this is practically not necessary, as they do not actually influence the results (assuming no adjustment to the cell/event counts are made when applying the Mantel-Haenszel method).
 }
 \value{
    An object of class \code{c("rma.mh","rma")}. The object is a list containing the following components:
@@ -67,7 +78,7 @@ rma.mh(ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
    \item{TA}{Tarone's heterogeneity test statistic (only when \code{measure="OR"}).}
    \item{TAp}{corresponding p-value (only when \code{measure="OR"}).}
    \item{k}{number of tables included in the analysis.}
-   \item{yi, vi}{the vector of individual outcomes and corresponding sampling variances.}
+   \item{yi, vi}{the vector of outcomes and corresponding sampling variances.}
    \item{fit.stats}{a list with the log-likelihood, deviance, AIC, BIC, and AICc values under the unrestricted and restricted likelihood.}
    \item{\dots}{some additional elements/values.}
 

@@ -3,7 +3,7 @@
 \title{Forest Plots (Method for 'rma' Objects)}
 \description{Function to create forest plots for objects of class \code{"rma"}.}
 \usage{
-\method{forest}{rma}(x, annotate=TRUE, addfit=TRUE, addcred=FALSE, showweight=FALSE,
+\method{forest}{rma}(x, annotate=TRUE, addfit=TRUE, addcred=FALSE, showweights=FALSE,
        xlim, alim, clim, ylim, at, steps=5,
        level=x$level, digits=2, refline=0, xlab,
        slab, mlab, ilab, ilab.xpos, ilab.pos,
@@ -16,7 +16,7 @@
    \item{annotate}{logical specifying whether annotations should be added to the plot (default is \code{TRUE}).}
    \item{addfit}{logical specifying whether the summary estimate (for models without moderators) or fitted values (for models with moderators) should be added to the plot. See \sQuote{Details}.}
    \item{addcred}{logical specifying whether the bounds of the credibility/prediction interval should be added to the plot. See \sQuote{Details}.}
-   \item{showweight}{logical specifying whether the annotations should also include the weights given to the observed effects or outcomes during the model fitting (default is \code{FALSE}).}
+   \item{showweights}{logical specifying whether the annotations should also include the weights given to the observed effects or outcomes during the model fitting (default is \code{FALSE}).}
    \item{xlim}{horizontal limits of the plot region. If unspecified, the function tries to set the horizontal plot limits to some sensible values.}
    \item{alim}{the actual x-axis limits. If unspecified, the function tries to set the x-axis limits to some sensible values.}
    \item{clim}{limits for the confidence/credibility/prediction intervals. If unspecified, no limits are used.}
@@ -144,9 +144,9 @@ forest(res, transf=exp, at=c(0,1,2,4,6), xlim=c(-8,12), cex=.8, refline=1)
 ### illustrate atransf argument
 forest(res, atransf=exp, at=log(c(.05,.25,1,4,20)), xlim=c(-8,7), cex=.8)
 
-### showweight argument
+### showweights argument
 forest(res, atransf=exp, at=log(c(.05,.25,1,4,20)), xlim=c(-8,8),
-       order="prec", showweight=TRUE, cex=.8)
+       order="prec", showweights=TRUE, cex=.8)
 
 ### forest plot with extra annotations
 forest(res, atransf=exp, at=log(c(.05, .25, 1, 4)), xlim=c(-16,6),
@@ -199,5 +199,14 @@ par(op)
 
 ### see also the addpoly.rma function for an example where summaries
 ### for the three subgroups are added to such a forest plot
+
+### illustrate use of clim argument with a meta-analysis of raw correlation 
+### coefficients (data from Pritz, 1997); without clim=c(0,1), some of the 
+### CIs have upper bounds larger than 1
+dat <- escalc(measure="PR", xi=xi, ni=ni, data=dat.pritz1997)
+res <- rma(yi, vi, data=dat, slab=paste0(study, ") ", authors))
+forest(res, xlim=c(-1,2), alim=c(0,1), psize=1, refline=coef(res), clim=c(0,1))
+text(-1, 16, "Author(s)", pos=4)
+text( 2, 16, "Proportion [95\% CI]", pos=2)
 }
 \keyword{hplot}
