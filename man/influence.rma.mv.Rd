@@ -9,7 +9,7 @@
 }
 \arguments{
    \item{model}{an object of class \code{"rma.mv"}.}
-   \item{type}{character string indicating whether to only return the diagonal of the hat matrix (\code{"diagonal"}) or the entire matrix (\code{"matrix"}).}
+   \item{type}{character string indicating whether to return only the diagonal of the hat matrix (\code{"diagonal"}) or the entire matrix (\code{"matrix"}).}
    \item{\dots}{other arguments.}
 }
 \value{

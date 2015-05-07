@@ -1,11 +1,13 @@
+### library(metafor); library(testthat); Sys.setenv(NOT_CRAN="true")
+
 context("Checking that results for rma() match up with those from lm() and lme()")
 
 ### this is essentially checking the equivalence of the results as explained here:
 ### http://www.metafor-project.org/doku.php/tips:rma_vs_lm_and_lme
 
-### library(metafor); library(testthat)
-
 test_that("results for rma() and lm() match for method='FE'.", {
+
+   data(dat.molloy2014, package="metafor")
 
    dat <- escalc(measure="ZCOR", ri=ri, ni=ni, data=dat.molloy2014)
 
@@ -31,7 +33,9 @@ test_that("results for rma() and lm() match for method='FE'.", {
 
 test_that("results for rma() and lme() match for method='ML'.", {
 
-   library(nlme)
+   library("nlme")
+
+   data(dat.molloy2014, package="metafor")
 
    dat <- escalc(measure="ZCOR", ri=ri, ni=ni, data=dat.molloy2014)
    dat$study <- 1:nrow(dat)
@@ -52,7 +56,9 @@ test_that("results for rma() and lme() match for method='ML'.", {
 
 test_that("results for rma() and lme() match for method='REML'.", {
 
-   library(nlme)
+   library("nlme")
+
+   data(dat.molloy2014, package="metafor")
 
    dat <- escalc(measure="ZCOR", ri=ri, ni=ni, data=dat.molloy2014)
    dat$study <- 1:nrow(dat)

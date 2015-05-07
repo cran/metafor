@@ -22,7 +22,7 @@
    \item{model}{an object of class \code{"rma.uni"}.}
    \item{x}{an object of class \code{"infl.rma.uni"} (for \code{print}).}
    \item{digits}{integer specifying the number of decimal places to which the printed results should be rounded (if unspecified, the default is to take the value from the object).}
-   \item{type}{character string indicating whether to only return the diagonal of the hat matrix (\code{"diagonal"}) or the entire matrix (\code{"matrix"}).}
+   \item{type}{character string indicating whether to return only the diagonal of the hat matrix (\code{"diagonal"}) or the entire matrix (\code{"matrix"}).}
    \item{\dots}{other arguments.}
 }
 \details{

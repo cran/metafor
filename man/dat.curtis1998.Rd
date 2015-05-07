@@ -8,7 +8,6 @@
 \tabular{lll}{
 \bold{id}       \tab \code{numeric}   \tab observation number \cr
 \bold{paper}    \tab \code{numeric}   \tab paper number \cr
-\bold{units}    \tab \code{numeric}   \tab paper number \cr
 \bold{genus}    \tab \code{character} \tab genus name \cr
 \bold{species}  \tab \code{character} \tab species name \cr
 \bold{function} \tab \code{character} \tab plant functional group \cr

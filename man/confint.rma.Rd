@@ -10,15 +10,15 @@
 }
 \usage{
 \method{confint}{rma.uni}(object, parm, level, fixed=FALSE, random=TRUE,
-        digits, verbose=FALSE, control, \dots)
+        digits, transf, targs, verbose=FALSE, control, \dots)
 
-\method{confint}{rma.mh}(object, parm, level, digits, \dots)
+\method{confint}{rma.mh}(object, parm, level, digits, transf, targs, \dots)
 
-\method{confint}{rma.peto}(object, parm, level, digits, \dots)
+\method{confint}{rma.peto}(object, parm, level, digits, transf, targs, \dots)
 
-\method{confint}{rma.glmm}(object, parm, level, digits, \dots)
+\method{confint}{rma.glmm}(object, parm, level, digits, transf, targs, \dots)
 
-\method{confint}{rma.mv}(object, parm, level, digits, \dots)
+\method{confint}{rma.mv}(object, parm, level, digits, transf, targs, \dots)
 }
 \arguments{
    \item{object}{an object of class \code{"rma.uni"}, \code{"rma.mh"}, or \code{"rma.peto"}. The method is not yet implemented for objects of class \code{"rma.glmm"} or \code{"rma.mv"}.}
@@ -27,6 +27,8 @@
    \item{random}{logical indicating whether a confidence interval for the amount of (residual) heterogeneity should be returned (default is \code{TRUE}).}
    \item{level}{numerical value between 0 and 100 specifying the confidence interval level (if unspecified, the default is to take the value from the object).}
    \item{digits}{integer specifying the number of decimal places to which the results should be rounded (if unspecified, the default is to take the value from the object).}
+   \item{transf}{optional argument specifying the name of a function that should be used to transform the model coefficients and interval bounds (e.g., \code{transf=exp}). If unspecified, no transformation is used.}
+   \item{targs}{optional arguments needed by the function specified under \code{transf}.}
    \item{verbose}{logical indicating whether output should be generated on the progress of the iterative algorithms used as part of the Q-profile and generalized Q-statistic methods (default is \code{FALSE}). See \sQuote{Note}.}
    \item{control}{list of control values for the iterative algorithm. If unspecified, default values are defined inside the function. See \sQuote{Note}.}
    \item{\dots}{other arguments.}
@@ -34,7 +36,7 @@
 \details{
    The confidence intervals for the model coefficients are simply the usual Wald-type intervals which are also shown when printing the fitted object.
 
-   The confidence interval for the amount of (residual) heterogeneity is obtained iteratively either via the Q-profile method as described by Hartung and Knapp (2005) and Viechtbauer (2007) or via the generalized Q-statistic method described by Jackson (2013). The latter is automatically used when the model was fitted with \code{method="GENQ"}, the former is used in all other cases. Either method provides an exact confidence interval for \if{latex}{\eqn{\tau^2}}\if{html}{\eqn{\tau²}}\if{text}{\eqn{\tau^2}} in random- and mixed-effects models. The square root of the interval bounds is also returned for easier interpretation. Confidence intervals for \if{latex}{\eqn{I^2}}\if{html}{\eqn{I²}}\if{text}{\eqn{I^2}} and \if{latex}{\eqn{H^2}}\if{html}{\eqn{H²}}\if{text}{\eqn{H^2}} are also provided (Higgins & Thompson, 2002). Since \if{latex}{\eqn{I^2}}\if{html}{\eqn{I²}}\if{text}{\eqn{I^2}} and \if{latex}{\eqn{H^2}}\if{html}{\eqn{H²}}\if{text}{\eqn{H^2}} are just monotonic transformation of \if{latex}{\eqn{\tau^2}}\if{html}{\eqn{\tau²}}\if{text}{\eqn{\tau^2}}, the confidence intervals for \if{latex}{\eqn{I^2}}\if{html}{\eqn{I²}}\if{text}{\eqn{I^2}} and \if{latex}{\eqn{H^2}}\if{html}{\eqn{H²}}\if{text}{\eqn{H^2}} are also exact.
+   The confidence interval for the amount of (residual) heterogeneity is obtained iteratively either via the Q-profile method or via the generalized Q-statistic method (Hartung and Knapp, 2005; Viechtbauer, 2007; Jackson, 2013; Jackson et al., 2014). The latter is automatically used when the model was fitted with \code{method="GENQ"}, the former is used in all other cases. Either method provides an exact confidence interval for \if{latex}{\eqn{\tau^2}}\if{html}{\eqn{\tau²}}\if{text}{\eqn{\tau^2}} in random- and mixed-effects models. The square root of the interval bounds is also returned for easier interpretation. Confidence intervals for \if{latex}{\eqn{I^2}}\if{html}{\eqn{I²}}\if{text}{\eqn{I^2}} and \if{latex}{\eqn{H^2}}\if{html}{\eqn{H²}}\if{text}{\eqn{H^2}} are also provided (Higgins & Thompson, 2002). Since \if{latex}{\eqn{I^2}}\if{html}{\eqn{I²}}\if{text}{\eqn{I^2}} and \if{latex}{\eqn{H^2}}\if{html}{\eqn{H²}}\if{text}{\eqn{H^2}} are just monotonic transformation of \if{latex}{\eqn{\tau^2}}\if{html}{\eqn{\tau²}}\if{text}{\eqn{\tau^2}}, the confidence intervals for \if{latex}{\eqn{I^2}}\if{html}{\eqn{I²}}\if{text}{\eqn{I^2}} and \if{latex}{\eqn{H^2}}\if{html}{\eqn{H²}}\if{text}{\eqn{H^2}} are also exact.
 }
 \value{
    An object of class \code{"confint.rma"}. The object is a list with either one or two elements (named \code{fixed} and \code{random}) with the following elements:
@@ -66,6 +68,8 @@
    Higgins, J. P. T., & Thompson, S. G. (2002). Quantifying heterogeneity in a meta-analysis. \emph{Statistics in Medicine}, \bold{21}, 1539--1558.
 
    Jackson, D. (2013). Confidence intervals for the between-study variance in random effects meta-analysis using generalised Cochran heterogeneity statistics. \emph{Research Synthesis Methods}, \bold{4}, 220--229.
+
+   Jackson, D., Turner, R., Rhodes, K., & Viechtbauer, W. (2014). Methods for calculating confidence and credible intervals for the residual between-study variance in random effects meta-regression models. \emph{BMC Medical Research Methodology}, \bold{14}, 103.
 
    Mantel, N., & Haenszel, W. (1959). Statistical aspects of the analysis of data from retrospective studies of disease. \emph{Journal of the National Cancer Institute}, \bold{22}, 719--748.
 

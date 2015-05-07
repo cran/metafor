@@ -16,7 +16,7 @@
    \item{\dots}{other arguments.}
 }
 \value{
-   See the documentation of the function that creates the \code{"list.rma"} object for details on what is printed.
+   See the documentation of the function that creates the \code{"list.rma"} object for details on what is printed. Regardless of what is printed, a data frame with the results is also returned invisibly.
 }
 \author{
    Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr

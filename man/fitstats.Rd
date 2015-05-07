@@ -41,7 +41,7 @@ fitstats(object, \dots)
    For \code{BIC.rma}, a numeric value with the corresponding BIC.
 }
 \note{
-   Note that variance components in the model (e.g., \if{latex}{\eqn{\tau^2}}\if{html}{\eqn{\tau²}}\if{text}{\eqn{\tau^2}} in random/mixed-effects models) are counted as additional parameters in the calculation of the AIC, BIC, and AICc. Also, the fixed effects are counted as parameters in the calculation of the AIC, BIC, and AICc even when using REML estimation.
+   Variance components in the model (e.g., \if{latex}{\eqn{\tau^2}}\if{html}{\eqn{\tau²}}\if{text}{\eqn{\tau^2}} in random/mixed-effects models) are counted as additional parameters in the calculation of the AIC, BIC, and AICc. Also, the fixed effects are counted as parameters in the calculation of the AIC, BIC, and AICc even when using REML estimation.
 }
 \author{
    Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr

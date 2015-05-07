@@ -61,12 +61,12 @@ predict(res, newmods=cbind(matrix(0, nrow=3, ncol=24), diag(3)),
         intercept=FALSE, transf=exp, digits=2)
 
 ### all pairwise odds ratios comparing interventions (ic vs sh, gc vs sh, and gc vs ic)
-predict(res, newmods=cbind(matrix(0,nrow=3,ncol=24), rbind(c(-1,1,0), c(-1,0,1), c(0,-1,1))),
+predict(res, newmods=cbind(matrix(0, nrow=3, ncol=24), rbind(c(-1,1,0), c(-1,0,1), c(0,-1,1))),
         intercept=FALSE, transf=exp, digits=2)
 
 ### forest plot of ORs of interventions versus no contact
 dev.new(width=7, height=4)
-par(mar=c(5,4,1,1))
+par(mar=c(5,4,1,2))
 forest(c(0,res$b[25:27]), sei=c(0,res$se[25:27]), psize=1, xlim=c(-3,4), digits=c(2,1), efac=2,
        slab=c("No Contact", "Self-Help", "Individual Counseling", "Group Counseling"),
        atransf=exp, at=log(c(.5, 1, 2, 4, 8)), xlab="Odds Ratio for Intervention vs. No Contact")
@@ -76,7 +76,7 @@ text( 4, 6, "Odds Ratio [95\% CI]",  pos=2)
 ### restructure dataset to a contrast-based format
 dat.c <- lapply(split(dat.hasselblad1998, dat.hasselblad1998$study),
                 function(x) cbind(x[rep(1,nrow(x)-1),], x[-1,5:7]))
-dat.c <- do.call("rbind", dat.c)
+dat.c <- do.call(rbind, dat.c)
 dat.c <- dat.c[,c(1:5,8,6:7,9:10)]
 names(dat.c)[5:10] <- c("trt1", "trt2", "ai", "n1i", "ci", "n2i")
 rownames(dat.c) <- 1:nrow(dat.c)
@@ -105,7 +105,7 @@ dat.c$trt2 <- factor(dat.c$trt2, levels=lvls)
 dat.c <- cbind(dat.c, model.matrix(~ dat.c$trt1 - 1) - model.matrix(~ dat.c$trt2 - 1))
 names(dat.c)[(ncol(dat.c)-3):ncol(dat.c)] <- lvls
 
-### network meta-analysis using a contrast-based model
+### network meta-analysis using a contrast-based random-effects model
 ### by setting rho=1/2, tau^2 reflects the amount of heterogeneity for all treatment comparisons
 res <- rma.mv(yi, V, mods = ~ self_help + ind_counseling + grp_counseling - 1,
               random = ~ factor(id) | study, rho=1/2, data=dat.c)

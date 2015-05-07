@@ -8,7 +8,8 @@
        level=95, digits=2, refline=0, xlab,
        slab, ilab, ilab.xpos, ilab.pos,
        subset, transf, atransf, targs, rows,
-       efac=1, pch=15, psize, cex, cex.lab, cex.axis, \dots)
+       efac=1, pch=15, psize, col, lty,
+       cex, cex.lab, cex.axis, \dots)
 }
 \arguments{
    \item{x}{vector of length \eqn{k} with the observed effect sizes or outcomes.}
@@ -37,9 +38,11 @@
    \item{atransf}{optional argument specifying the name of a function that should be used to transform the x-axis labels and annotations (e.g., \code{transf=exp}). If unspecified, no transformation is used.}
    \item{targs}{optional arguments needed by the function specified via \code{transf} or \code{atransf}.}
    \item{rows}{optional vector specifying the rows (or more generally, the horizontal positions) for plotting the outcomes. If unspecified, the function sets this value automatically. Can also be a single value specifying the row (horizontal position) of the first outcome (the remaining outcomes are then plotted below this starting row).}
-   \item{efac}{vertical expansion factor for arrows, confidence interval limits, and the symbol used to denote summary estimates. The default value of 1 should usually work okay.}
+   \item{efac}{vertical expansion factor for arrows and confidence interval limits. The default value of 1 should usually work okay.}
    \item{pch}{plotting symbol to use for the observed effect sizes or outcomes. By default, a filled square is used. See \code{\link{points}} for other options. Can also be a vector of values.}
    \item{psize}{optional vector with point sizes for the observed effect sizes or outcomes. If unspecified, the point sizes are drawn proportional to the precision of the estimates.}
+   \item{col}{optional character string specifying the name of a color to use for plotting ("black" is used by default if not specified). Can also be a vector of color names.}
+   \item{lty}{optional character string specifying the line type for the confidence intervals (if unspecified, the function sets this to \code{"solid"} by default).}
    \item{cex}{optional character and symbol expansion factor. If unspecified, the function tries to set this to a sensible value.}
    \item{cex.lab}{optional expansion factor for the x-axis titel. If unspecified, the function tries to set this to a sensible value.}
    \item{cex.axis}{optional expansion factor for the x-axis labels. If unspecified, the function tries to set this to a sensible value.}
@@ -61,9 +64,11 @@
 
    If the number of studies is quite large, the labels, annotations, and symbols may become quite small and impossible to read. Stretching the plot window vertically may then provide a more readable figure (one should call the function again after adjusting the window size, so that the label/symbol sizes can be properly adjusted). Also, the \code{cex}, \code{cex.lab}, and \code{cex.axis} arguments are then useful to adjust the symbol and text sizes.
 
-   If the horizontal plot and/or x-axis limits are set by the user, then the horizontal plot limits (\code{xlim}) must be at least as wide as the x-axis limits (\code{alim}). Moreover, the x-axis limits must encompass the observed effect sizes or outcomes. These restrictions are enforced inside the function.
+   If the horizontal plot and/or x-axis limits are set by the user, then the horizontal plot limits (\code{xlim}) must be at least as wide as the x-axis limits (\code{alim}). This restriction is enforced inside the function.
 
    If the outcome measure used for creating the plot has absolute limits (e.g., correlations are bounded between \code{-1} and \code{1}, proportions are bounded between \code{0} and \code{1}), one can use the \code{clim} argument to enforce those limits (confidence intervals cannot exceed those bounds then).
+
+   The \code{lty} argument can also be a vector of two elements, the first for specifying the line type of the individual CIs (\code{"solid"} by default), the second for the line type of the horizontal line that is automatically added to the plot (\code{"solid"} by default; set to \code{"blank"} to remove it).
 }
 \author{
    Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr
@@ -90,11 +95,11 @@ forest(dat$yi, dat$vi)
 
 ### forest plot of the observed relative risks
 forest(dat$yi, dat$vi, slab=paste(dat$author, dat$year, sep=", "), transf=exp,
-       alim=c(0,2), steps=5, xlim=c(-2,3.5), refline=1)
+       alim=c(0,2), steps=5, xlim=c(-2,3.5), refline=1, cex=.9)
 
 ### forest plot of the observed relative risks
 forest(dat$yi, dat$vi, slab=paste(dat$author, dat$year, sep=", "), atransf=exp,
-       at=log(c(.05,.25,1,4,20)), xlim=c(-10,8))
+       at=log(c(.05,.25,1,4,20)), xlim=c(-10,8), cex=.9)
 
 ### see also examples for the forest.rma function
 }

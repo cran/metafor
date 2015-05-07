@@ -1,9 +1,10 @@
-context("Comparing rma.uni() against direct computations")
+### library(metafor); library(testthat); Sys.setenv(NOT_CRAN="true")
 
-### library(metafor); library(testthat)
+context("Comparing rma.uni() against direct computations")
 
 test_that("results match (FE model).", {
 
+   data(dat.bcg, package="metafor")
    dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
 
    res <- rma(yi, vi, mods = ~ ablat + year, data=dat, method="FE")

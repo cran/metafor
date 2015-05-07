@@ -3,13 +3,6 @@ exportPattern("^[^\\.]")
 import(stats)
 import(utils)
 import(Matrix)
-#import(Formula)
-
-#importFrom(nlme, BIC)
-#if (!exists("BIC", where=asNamespace("stats"))) {
-#if (!exists("BIC", where=asNamespace("stats"), inherits=FALSE)) {
-#   importFrom(nlme, BIC)
-#}
 
 S3method("[", list.rma)
 S3method("[", escalc)
@@ -73,6 +66,7 @@ S3method(print, infl.rma.uni)
 S3method(print, list.rma)
 S3method(head, list.rma)
 S3method(tail, list.rma)
+S3method(print, hc.rma.uni)
 S3method(print, permutest.rma.uni)
 S3method(print, ranktest.rma)
 S3method(print, regtest.rma)

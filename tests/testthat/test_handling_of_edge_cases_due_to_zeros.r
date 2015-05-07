@@ -1,6 +1,6 @@
-context("Checking that edge cases due to zeros are handled properly")
+### library(metafor); library(testthat); Sys.setenv(NOT_CRAN="true")
 
-### library(metafor); library(testthat)
+context("Checking that edge cases due to zeros are handled properly")
 
 test_that("rma.peto(), rma.mh(), and rma.glmm() handle outcome1 never occurring properly.", {
 

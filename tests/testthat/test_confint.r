@@ -1,6 +1,6 @@
-context("Testing confint()")
+### library(metafor); library(testthat); Sys.setenv(NOT_CRAN="true")
 
-### library(metafor); library(testthat)
+context("Testing confint()")
 
 test_that("confint() gives correct results for example 1 in Jackson et al. (2014).", {
 

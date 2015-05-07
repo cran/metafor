@@ -1,9 +1,9 @@
+### library(metafor); library(testthat); Sys.setenv(NOT_CRAN="true")
+
 context("Checking that results for rma() match up with those from lm()")
 
 ### this is essentially checking the equivalence of the results as explained here:
 ### http://www.metafor-project.org/doku.php/tips:regression_with_rma
-
-### library(metafor); library(testthat)
 
 test_that("results for rma() and lm() match for method='FE'.", {
 

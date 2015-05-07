@@ -164,6 +164,8 @@ rma.glmm(ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi, ti, ni,
    Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr
    package website: \url{http://www.metafor-project.org/} \cr
    author homepage: \url{http://www.wvbauer.com/}
+
+   Code for computing the density of the non-central hypergeometric distribution from package \pkg{MCMCpack}, which in turn is based on Liao and Rosen (2001).
 }
 \references{
    Agresti, A. (2002). \emph{Categorical data analysis} (2nd. ed). Hoboken, NJ: Wiley.
@@ -171,6 +173,8 @@ rma.glmm(ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi, ti, ni,
    Bagos, P. G., & Nikolopoulos, G. K. (2009). Mixed-effects Poisson regression models for meta-analysis of follow-up studies with constant or varying durations. \emph{The International Journal of Biostatistics}, \bold{5}(1), article 21.
 
    van Houwelingen, H. C., Zwinderman, K. H., & Stijnen, T. (1993). A bivariate approach to meta-analysis. \emph{Statistics in Medicine}, \bold{12}, 2273--2284.
+
+   Liao, J. G., & Rosen, O. (2001). Fast and stable algorithms for computing and sampling from the noncentral hypergeometric distribution. \emph{American Statistician}, \bold{55}, 366--369.
 
    Stijnen, T., Hamza, T. H., & Ozdemir, P. (2010). Random effects meta-analysis of event outcome in the framework of the generalized linear mixed model with applications in sparse data. \emph{Statistics in Medicine}, \bold{29}, 3046--3067.
 

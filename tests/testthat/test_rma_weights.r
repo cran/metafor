@@ -1,6 +1,6 @@
-context("Checking that weights() functions provide the correct results")
+### library(metafor); library(testthat); Sys.setenv(NOT_CRAN="true")
 
-### library(metafor); library(testthat)
+context("Checking that weights() functions provide the correct results")
 
 test_that("weights are correct for rma() with method='FE'.", {
 

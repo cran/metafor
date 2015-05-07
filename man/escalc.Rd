@@ -150,15 +150,15 @@ escalc(measure, formula, \dots)
                  \tab mean       \tab standard deviation \tab group size \cr
          group 1 \tab \code{m1i} \tab \code{sd1i}        \tab \code{n1i} \cr
          group 2 \tab \code{m2i} \tab \code{sd2i}        \tab \code{n2i}
-         } where \code{m1i} and \code{m2i} are the observed means of the two groups, \code{sd1i} and \code{sd2i} the observed standard deviations, and \code{n1i} and \code{n2i} the number of individuals in each group. Again, the two groups may be experimentally created (e.g., a treatment and control group based on random assignment) or naturally occurring (e.g., men and women). In either case, the raw mean difference, the standardized mean difference, and the ratio of means (also called response ratio) are useful outcome measures when meta-analyzing studies of this type (e.g., Borenstein, 2009).
+         } where \code{m1i} and \code{m2i} are the observed means of the two groups, \code{sd1i} and \code{sd2i} the observed standard deviations, and \code{n1i} and \code{n2i} the number of individuals in each group. Again, the two groups may be experimentally created (e.g., a treatment and control group based on random assignment) or naturally occurring (e.g., men and women). In either case, the raw mean difference, the standardized mean difference, and the (log transformed) ratio of means (also called log response ratio) are useful outcome measures when meta-analyzing studies of this type (e.g., Borenstein, 2009).
 
          The options for the \code{measure} argument are then:
          \itemize{
          \item \code{"MD"} for the \emph{raw mean difference}.
          \item \code{"SMD"} for the \emph{standardized mean difference}.
          \item \code{"SMDH"} for the \emph{standardized mean difference} with heteroscedastic population variances in the two groups (Bonett, 2008, 2009).
-         \item \code{"ROM"} for the \emph{log transformed ratio of means} (Hedges et al., 1999).
-         } Note that the log is taken of the ratio of means, which makes this outcome measures symmetric around 0 and yields a corresponding sampling distribution that is closer to normality (however, note that if \code{m1i} and \code{m2i} have opposite signs, this outcome measure cannot be computed).
+         \item \code{"ROM"} for the \emph{log transformed ratio of means} (Hedges et al., 1999; Lajeunesse, 2011).
+         } Note that the log is taken of the ratio of means, which makes this outcome measures symmetric around 0 and yields a corresponding sampling distribution that is closer to normality. However, note that if \code{m1i} and \code{m2i} have opposite signs, this outcome measure cannot be computed.
 
          The negative bias in the standardized mean difference is automatically corrected for within the function, yielding Hedges' g for \code{measure="SMD"} (Hedges, 1981). Similarly, the same bias correction is applied for \code{measure="SMDH"} (Bonett, 2009). Finally, for \code{measure="SMD"}, one can choose between \code{vtype="LS"} (the default) and \code{vtype="UB"}. The former uses a large sample approximation to compute the sampling variances. The latter provides unbiased estimates of the sampling variances.
 
@@ -264,14 +264,16 @@ escalc(measure, formula, \dots)
          \item \code{"MN"} for the \emph{raw mean}.
          } Note that \code{sdi} is used to specify the standard deviations of the observed values of the response, characteristic, or dependent variable and not the standard errors of the means.
 
-         A more complicated situation arises when the purpose of the meta-analysis is to assess the amount of change within individual groups. In that case, either the raw mean change or standardized versions thereof can be used as outcome measures (Becker, 1988; Gibbons et al., 1993; Morris, 2000). Here, one needs to specify \code{m1i} and \code{m2i}, the observed means at the two measurement occasions, \code{sd1i} and \code{sd2i} for the corresponding observed standard deviations, \code{ri} for the correlation between the scores observed at the two measurement occasions, and \code{ni} for the sample size. The options for the \code{measure} argument are then:
+         A more complicated situation arises when the purpose of the meta-analysis is to assess the amount of change within individual groups. In that case, either the raw mean change, standardized versions thereof, or the (log transformed) ratio of means (log response ratio) can be used as outcome measures (Becker, 1988; Gibbons et al., 1993; Lajeunesse, 2011; Morris, 2000). Here, one needs to specify \code{m1i} and \code{m2i}, the observed means at the two measurement occasions, \code{sd1i} and \code{sd2i} for the corresponding observed standard deviations, \code{ri} for the correlation between the scores observed at the two measurement occasions, and \code{ni} for the sample size. The options for the \code{measure} argument are then:
          \itemize{
          \item \code{"MC"} for the \emph{raw mean change}.
          \item \code{"SMCC"} for the \emph{standardized mean change} using change score standardization.
          \item \code{"SMCR"} for the \emph{standardized mean change} using raw score standardization.
+         \item \code{"SMCRH"} for the \emph{standardized mean change} using raw score standardization with heteroscedastic population variances at the two measurement occasions (Bonett, 2008).
+         \item \code{"ROMC"} for the \emph{log transformed ratio of means} (Lajeunesse, 2011).
          } See also Morris and DeShon (2002) for a thorough discussion of the difference between the change score measures.
 
-         A few notes about the change score measures. In practice, one often has a mix of information available from the individual studies to compute these measures. In particular, if \code{m1i} and \code{m2i} are unknown, but the raw mean change is directly reported in a particular study, then you can set \code{m1i} to that value and \code{m2i} to 0 (making sure that the raw mean change was computed as \code{m1i-m2i} within that study and not the other way around). Also, for the raw mean change (\code{"MC"}) or the standardized mean change using change score standardization (\code{"SMCC"}), if \code{sd1i}, \code{sd2i}, and \code{ri} are unknown, but the standard deviation of the change scores is directly reported, then you can set \code{sd1i} to that value and both \code{sd2i} and \code{ri} to 0. Finally, for the standardized mean change using raw score standardization (\code{"SMCR"}), argument \code{sd2i} is actually not needed, as the standardization is only based on \code{sd1i} (Becker, 1988; Morris, 2000), which is usually the pre-test standard deviation (if the post-test standard deviation should be used, then set \code{sd1i} to that).
+         A few notes about the change score measures. In practice, one often has a mix of information available from the individual studies to compute these measures. In particular, if \code{m1i} and \code{m2i} are unknown, but the raw mean change is directly reported in a particular study, then you can set \code{m1i} to that value and \code{m2i} to 0 (making sure that the raw mean change was computed as \code{m1i-m2i} within that study and not the other way around). Note that this does not work for ratios of means (\code{"ROMC"}). Also, for the raw mean change (\code{"MC"}) or the standardized mean change using change score standardization (\code{"SMCC"}), if \code{sd1i}, \code{sd2i}, and \code{ri} are unknown, but the standard deviation of the change scores is directly reported, then you can set \code{sd1i} to that value and both \code{sd2i} and \code{ri} to 0. Finally, for the standardized mean change using raw score standardization (\code{"SMCR"}), argument \code{sd2i} is actually not needed, as the standardization is only based on \code{sd1i} (Becker, 1988; Morris, 2000), which is usually the pre-test standard deviation (if the post-test standard deviation should be used, then set \code{sd1i} to that). Finally, all of these measures are also applicable for matched-pairs designs (subscripts 1 and 2 then simply denote the first and second group that are formed by the matching).
 
       }
 
@@ -444,6 +446,8 @@ escalc(measure, formula, \dots)
    Higgins, J. P. T., & Green, S. (Eds.) (2008). \emph{Cochrane handbook for systematic reviews of interventions}. Chichester, Englang: Wiley.
 
    Kirk, D. B. (1973). On the numerical approximation of the bivariate normal (tetrachoric) correlation coefficient. \emph{Psychometrika}, \bold{38}, 259--268.
+
+   Lajeunesse, M. J. (2011). On the meta-analysis of response ratios for studies with correlated and multi-group designs. \emph{Ecology}, \bold{92}, 2049--2055.
 
    Morris, S. B. (2000). Distribution of the standardized mean change effect size for meta-analysis on repeated measures. \emph{British Journal of Mathematical and Statistical Psychology}, \bold{53}, 17--29.
 

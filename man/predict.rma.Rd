@@ -5,14 +5,15 @@
    The function computes predicted values, corresponding standard errors, confidence intervals, and (approximate) credibility/prediction intervals for objects of class \code{"rma"}.
 }
 \usage{
-\method{predict}{rma}(object, newmods, intercept, tau2.levels, addx=FALSE,
-        level, digits, transf, targs, \dots)
+\method{predict}{rma}(object, newmods, intercept, tau2.levels, gamma2.levels,
+        addx=FALSE, level, digits, transf, targs, \dots)
 }
 \arguments{
    \item{object}{an object of class \code{"rma"}.}
    \item{newmods}{optional vector or matrix specifying the values of the moderator values for which the predicted values should be calculated. See \sQuote{Details}.}
    \item{intercept}{logical specifying whether the intercept term should be included when calculating the predicted values for \code{newmods}. If unspecified, the intercept is automatically added when the original model also included an intercept.}
    \item{tau2.levels}{vector specifying the levels of the inner factor when computing credibility/prediction intervals. Only relevant for models of class \code{"rma.mv"} (see \code{\link{rma.mv}}) and when the model includes more than a single \if{latex}{\eqn{\tau^2}}\if{html}{\eqn{\tau²}}\if{text}{\eqn{\tau^2}} value. See \sQuote{Details}.}
+   \item{gamma2.levels}{vector specifying the levels of the inner factor when computing credibility/prediction intervals. Only relevant for models of class \code{"rma.mv"} (see \code{\link{rma.mv}}) and when the model includes more than a single \if{latex}{\eqn{\gamma^2}}\if{html}{\eqn{\gamma²}}\if{text}{\eqn{\gamma^2}} value. See \sQuote{Details}.}
    \item{addx}{logical specifying whether the values of the moderator variables should be added to the returned object. See \sQuote{Examples}.}
    \item{level}{numerical value between 0 and 100 specifying the confidence and credibility/prediction interval level (if unspecified, the default is to take the value from the object).}
    \item{digits}{integer specifying the number of decimal places to which the printed results should be rounded (if unspecified, the default is to take the value from the object).}
@@ -29,11 +30,13 @@
 
    For models including \eqn{q} moderator variables, new moderator values for \eqn{k_{new}}{k_new} new studies can be specified by setting \code{newmods} equal to an \eqn{k_{new} \times q}{k_new x q} matrix with the corresponding new moderator values. If the original model includes an intercept, then it should not be explicitly specified under \code{newmods}, as it will be added by default (unless one sets \code{intercept=FALSE}). Also, any factors in the original model get turned into the appropriate contrast variables within the \code{rma} function, so that \code{newmods} should actually include the values for the contrast variables. Examples are shown below.
 
-   For random/mixed-effects models, an approximate credibility/prediction interval is also calculated (Raudenbush, 2009; Riley et al., 2011). The interval estimates where \code{level} \% of the true outcomes fall in the hypothetical population of studies. Note that this interval is calculated under the assumption that the value of \if{latex}{\eqn{\tau^2}}\if{html}{\eqn{\tau²}}\if{text}{\eqn{\tau^2}} is known (and not estimated). A method for calculating a credibility/prediction interval that accounts for the uncertainty in the estimate of \if{latex}{\eqn{\tau^2}}\if{html}{\eqn{\tau²}}\if{text}{\eqn{\tau^2}} may be implemented in the future.
+   For random/mixed-effects models, an approximate credibility/credible or prediction interval is also calculated (Raudenbush, 2009; Riley et al., 2011). The interval estimates where \code{level} \% of the true outcomes fall in the hypothetical population of studies. Note that this interval is calculated under the assumption that the value of \if{latex}{\eqn{\tau^2}}\if{html}{\eqn{\tau²}}\if{text}{\eqn{\tau^2}} is known (and not estimated). A method for calculating a credibility/prediction interval that accounts for the uncertainty in the estimate of \if{latex}{\eqn{\tau^2}}\if{html}{\eqn{\tau²}}\if{text}{\eqn{\tau^2}} may be implemented in the future.
 
-   For random-effects models of class \code{"rma.mv"} (see \code{\link{rma.mv}}) with multiple \if{latex}{\eqn{\tau^2}}\if{html}{\eqn{\tau²}}\if{text}{\eqn{\tau^2}} values (i.e., when the \code{random} argument includes a \code{~ inner | outer} term and \code{struct="HCS"}, \code{struct="HAR"}, or \code{struct="UN"}), the function will provide credibility/prediction intervals for each level of the inner factor (since the credibility/prediction intervals differ depending on the \if{latex}{\eqn{\tau^2}}\if{html}{\eqn{\tau²}}\if{text}{\eqn{\tau^2}} value). Optionally, one can use the \code{tau2.levels} argument to specify for which level(s) the credibility/prediction interval should be provided.
+   For random-effects models of class \code{"rma.mv"} (see \code{\link{rma.mv}}) with multiple \if{latex}{\eqn{\tau^2}}\if{html}{\eqn{\tau²}}\if{text}{\eqn{\tau^2}} values (i.e., when the \code{random} argument includes a \code{~ inner | outer} term and \code{struct="HCS"}, \code{struct="HAR"}, or \code{struct="UN"}), the function will provide credibility/prediction intervals for each level of the inner factor (since the credibility/prediction intervals differ depending on the \if{latex}{\eqn{\tau^2}}\if{html}{\eqn{\tau²}}\if{text}{\eqn{\tau^2}} value). Alternatively, one can use the \code{tau2.levels} argument to specify for which level(s) the credibility/prediction interval should be provided.
 
-   When using the \code{newmods} argument for mixed-effects models of class \code{"rma.mv"} with multiple \if{latex}{\eqn{\tau^2}}\if{html}{\eqn{\tau²}}\if{text}{\eqn{\tau^2}} values, one must use the \code{tau2.levels} argument to specify the levels of the inner factor (i.e., a vector of length \eqn{k_{new}}{k_new}) to obtain the appropriate credibility/prediction interval(s).
+   If the model includes a second \code{~ inner | outer} term with multiple \if{latex}{\eqn{\gamma^2}}\if{html}{\eqn{\gamma²}}\if{text}{\eqn{\gamma^2}} values, credibility/prediction intervals for each combination of levels of the inner factors will be provided. Alternatively, one can use the \code{tau2.levels} and \code{gamma2.levels} arguments to specify for which level combination(s) the credibility/prediction interval should be provided.
+
+   When using the \code{newmods} argument for mixed-effects models of class \code{"rma.mv"} with multiple \if{latex}{\eqn{\tau^2}}\if{html}{\eqn{\tau²}}\if{text}{\eqn{\tau^2}} (and multiple \if{latex}{\eqn{\gamma^2}}\if{html}{\eqn{\gamma²}}\if{text}{\eqn{\gamma^2}}) values, one must use the \code{tau2.levels} (and \code{gamma2.levels}) argument to specify the levels of the inner factor(s) (i.e., a vector of length \eqn{k_{new}}{k_new}) to obtain the appropriate credibility/prediction interval(s).
 }
 \value{
    An object of class \code{"list.rma"}. The object is a list containing the following components:
@@ -44,6 +47,7 @@
    \item{cr.lb}{lower bound of the credibility/prediction interval(s) (only random/mixed-effects models).}
    \item{cr.ub}{upper bound of the credibility/prediction interval(s) (only random/mixed-effects models).}
    \item{tau2.level}{the level(s) of the inner factor (only for models of class \code{"rma.mv"} with multiple \if{latex}{\eqn{\tau^2}}\if{html}{\eqn{\tau²}}\if{text}{\eqn{\tau^2}} values).}
+   \item{gamma2.level}{the level(s) of the inner factor (only for models of class \code{"rma.mv"} with multiple \if{latex}{\eqn{\gamma^2}}\if{html}{\eqn{\gamma²}}\if{text}{\eqn{\gamma^2}} values).}
    \item{X}{the moderator value(s) used to calculate the predicted values (only when \code{addx=TRUE}).}
    \item{\dots}{some additional elements/values.}
 

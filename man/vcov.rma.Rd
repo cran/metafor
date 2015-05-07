@@ -14,6 +14,10 @@
 }
 \details{
    Note that \code{type="obs"} currently only works for object of class \code{"rma.uni"} and \code{"rma.mv"}.
+
+   For objects of class \code{"rma.uni"}, the marginal variance-covariance matrix is just a diagonal matrix with \if{latex}{\eqn{\tau^2 + v_i}}\if{html}{\eqn{\tau² + vᵢ}}\if{text}{\eqn{\tau^2 + v_i}} along the diagonal, where \if{latex}{\eqn{\tau^2}}\if{html}{\eqn{\tau²}}\if{text}{\eqn{\tau^2}} is the estimated amount of (residual) heterogeneity (set to 0 in fixed-effects models) and \if{latex}{\eqn{v_i}}\if{html}{\eqn{vᵢ}}\if{text}{\eqn{v_i}} is the sampling variance of the \eqn{i}th study.
+
+   For objects of class \code{"rma.mv"}, the structure can be more complex and depends on the types of random effects included in the model.
 }
 \value{
    A matrix corresponding to the requested variance-covariance matrix.
@@ -35,7 +39,7 @@ data(dat.bcg)
 
 ### meta-analysis of the log relative risks using a mixed-effects model
 ### with two moderators (absolute latitude and publication year)
-res <- rma(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, 
+res <- rma(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg,
            mods = ~ ablat + year, data=dat.bcg)
 vcov(res)
 

@@ -4,14 +4,14 @@
 \title{Meta-Analysis via Linear (Mixed-Effects) Models}
 \description{Function to fit the meta-analytic fixed- and random/mixed-effects models with or without moderators via linear (mixed-effects) models. See the documentation of the \pkg{\link{metafor-package}} for more details on these models.}
 \usage{
-rma.uni(yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i, x2i,
-        t1i, t2i, m1i, m2i, sd1i, sd2i, xi, mi, ri, ti, sdi, ni, mods,
+rma.uni(yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
+        m1i, m2i, sd1i, sd2i, xi, mi, ri, ti, sdi, ni, mods,
         measure="GEN", intercept=TRUE, data, slab, subset,
         add=1/2, to="only0", drop00=FALSE, vtype="LS",
         method="REML", weighted=TRUE, knha=FALSE,
         level=95, digits=4, btt, tau2, verbose=FALSE, control)
-rma(yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i, x2i,
-        t1i, t2i, m1i, m2i, sd1i, sd2i, xi, mi, ri, ti, sdi, ni, mods,
+rma(yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
+        m1i, m2i, sd1i, sd2i, xi, mi, ri, ti, sdi, ni, mods,
         measure="GEN", intercept=TRUE, data, slab, subset,
         add=1/2, to="only0", drop00=FALSE, vtype="LS",
         method="REML", weighted=TRUE, knha=FALSE,
@@ -84,7 +84,8 @@ rma(yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i, x2i,
    \item \code{method="SJ"} = Sidik-Jonkman estimator
    \item \code{method="ML"} = maximum-likelihood estimator
    \item \code{method="REML"} = restricted maximum-likelihood estimator
-   \item \code{method="EB"} = empirical Bayes (= Paule-Mandel) estimator
+   \item \code{method="EB"} = empirical Bayes estimator
+   \item \code{method="PM"} = Paule-Mandel estimator
    \item \code{method="GENQ"} = generalized Q-statistic estimator
    } For a description of the various estimators, see DerSimonian and Kacker (2007), Raudenbush (2009), Viechtbauer (2005), and Viechtbauer et al. (in press). Note that the Hedges estimator is also called the \sQuote{variance component estimator} or \sQuote{Cochran estimator}, the Sidik-Jonkman estimator is also called the \sQuote{model error variance estimator}, and the empirical Bayes estimator is actually identical to the Paule-Mandel estimator (Paule & Mandel, 1982). Finally, the generalized Q-statistic estimator is a general method-of-moments estimator requiring the specification of weights (the HE and DL estimators are just special cases with equal and inverse variance weights, respectively).
 
@@ -155,11 +156,13 @@ rma(yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i, x2i,
    Other extractor functions include \code{\link{coef.rma}}, \code{\link{vcov.rma}}, \code{\link{logLik.rma}}, \code{\link{deviance.rma}}, \code{\link{AIC.rma}}, \code{\link{BIC.rma}}, \code{\link{hatvalues.rma.uni}}, and \code{\link{weights.rma.uni}}.
 }
 \note{
-   While the HS, HE, DL, SJ, and GENQ estimators of \if{latex}{\eqn{\tau^2}}\if{html}{\eqn{\tau²}}\if{text}{\eqn{\tau^2}} are based on closed-form solutions, the ML, REML, and EB estimators must be obtained numerically. For this, the \code{rma()} function makes use of the Fisher scoring algorithm, which is robust to poor starting values and usually converges quickly (Harville, 1977; Jennrich & Sampson, 1976). By default, the starting value is set equal to the value of the Hedges estimator and the algorithm terminates when the change in the estimated value of \if{latex}{\eqn{\tau^2}}\if{html}{\eqn{\tau²}}\if{text}{\eqn{\tau^2}} is smaller than \if{latex}{\eqn{10^{-5}}}\if{html}{\eqn{10⁻⁵}}\if{text}{\eqn{10^(-5)}} from one iteration to the next. The maximum number of iterations is 100 by default (which should be sufficient in most cases). Information on the progress of the algorithm can be obtained by setting \code{verbose=TRUE} or with \code{control=list(verbose=TRUE)}.
+   While the HS, HE, DL, SJ, and GENQ estimators of \if{latex}{\eqn{\tau^2}}\if{html}{\eqn{\tau²}}\if{text}{\eqn{\tau^2}} are based on closed-form solutions, the ML, REML, and EB estimators must be obtained numerically. For this, the function makes use of the Fisher scoring algorithm, which is robust to poor starting values and usually converges quickly (Harville, 1977; Jennrich & Sampson, 1976). By default, the starting value is set equal to the value of the Hedges (HE) estimator and the algorithm terminates when the change in the estimated value of \if{latex}{\eqn{\tau^2}}\if{html}{\eqn{\tau²}}\if{text}{\eqn{\tau^2}} is smaller than \if{latex}{\eqn{10^{-5}}}\if{html}{\eqn{10⁻⁵}}\if{text}{\eqn{10^(-5)}} from one iteration to the next. The maximum number of iterations is 100 by default (which should be sufficient in most cases). Information on the progress of the algorithm can be obtained by setting \code{verbose=TRUE} or with \code{control=list(verbose=TRUE)}.
 
    A different starting value, threshold, and maximum number of iterations can be specified via the \code{control} argument by setting \code{control=list(tau2.init=value, threshold=value, maxiter=value)}. The step length of the Fisher scoring algorithm can also be manually adjusted by a desired factor with \code{control=list(stepadj=value)} (values below 1 will reduce the step length). If using \code{verbose=TRUE} shows the estimate jumping around erratically (or cycling through a few values), decreasing the step length can often help with convergence (e.g., \code{control=list(stepadj=0.5)}). At the same time, the maximum number of iterations may need to be increased.
 
-   All of the heterogeneity estimators except SJ can in principle yield negative estimates for the amount of (residual) heterogeneity. However, negative estimates of \if{latex}{\eqn{\tau^2}}\if{html}{\eqn{\tau²}}\if{text}{\eqn{\tau^2}} are outside of the parameter space. For the HS, HE, and DL estimators, negative estimates are therefore truncated to zero. For ML, REML, and EB estimation, the Fisher scoring algorithm makes use of step halving to guarantee a non-negative estimate. For those brave enough to step into risky territory, there is the option to set the lower bound of \if{latex}{\eqn{\tau^2}}\if{html}{\eqn{\tau²}}\if{text}{\eqn{\tau^2}} equal to some other value besides zero with \code{control=list(tau2.min=value)}.
+   The PM estimator also involves an iterative algorithm, which makes use of the \code{\link{uniroot}} function. By default, the desired accuracy and maximum number of iterations are set as described above. The upper bound of the interval searched is set to 100 (which should be large enough for most cases). The desired accuracy (\code{threshold}), maximum number of iterations (\code{maxiter}), and upper bound (\code{tau2.max}) can be adjusted with \code{control=list(threshold=value, maxiter=value, tau2.max=value)}.
+
+   All of the heterogeneity estimators except SJ can in principle yield negative estimates for the amount of (residual) heterogeneity. However, negative estimates of \if{latex}{\eqn{\tau^2}}\if{html}{\eqn{\tau²}}\if{text}{\eqn{\tau^2}} are outside of the parameter space. For the HS, HE, DL, and GENQ estimators, negative estimates are therefore truncated to zero. For the ML, REML, and EB estimators, the Fisher scoring algorithm makes use of step halving (Jennrich & Sampson, 1976) to guarantee a non-negative estimate. Finally, for the PM estimator, the lower bound of the interval searched is set by default to zero. For those brave enough to step into risky territory, there is the option to set the lower bound for all these estimators equal to some other value besides zero with \code{control=list(tau2.min=value)}.
 
    The Hunter-Schmidt estimator for the amount of heterogeneity is defined in Hunter and Schmidt (1990) only in the context of the random-effects model when analyzing correlation coefficients. A general version of this estimator for the random-effects model not specific to any particular outcome measure is described in Viechtbauer (2005). The same idea can be easily extended to the mixed-effects model (see Viechtbauer et al., in press) and is implemented here.
 
@@ -182,6 +185,8 @@ rma(yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i, x2i,
    author homepage: \url{http://www.wvbauer.com/}
 }
 \references{
+   Berkey, C. S., Hoaglin, D. C., Mosteller, F., & Colditz, G. A. (1995). A random-effects regression model for meta-analysis. \emph{Statistics in Medicine}, \bold{14}, 395--411.
+
    Cochran, W. G. (1954). The combination of estimates from different experiments. \emph{Biometrics}, \bold{10}, 101--129.
 
    DerSimonian, R., & Laird, N. (1986). Meta-analysis in clinical trials. \emph{Controlled Clinical Trials}, \bold{7}, 177--188.

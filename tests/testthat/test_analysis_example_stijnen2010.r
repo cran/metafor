@@ -1,12 +1,17 @@
-context("Checking results for analysis example: stijnen2010")
+### library(metafor); library(testthat); Sys.setenv(NOT_CRAN="true")
 
-### library(metafor); library(testthat)
+### see also: http://www.metafor-project.org/doku.php/analyses:stijnen2010
 
-test_that("results of the normal-normal model are correct (measure=='PLO') (Table II)", {
+context("Checking analysis example: stijnen2010")
 
-   dat <- get(data(dat.nielweise2007))
+### load data
+dat <- get(data(dat.nielweise2007, package="metafor"))
+
+test_that("results for the normal-normal model are correct (measure=='PLO')", {
 
    res <- rma(measure="PLO", xi=ci, ni=n2i, data=dat)
+
+   ### compare with results on page 3050 (Table II)
    expect_that(round(coef(res), digits=2), is_equivalent_to(-3.30))
    expect_that(round(res$se, digits=2), is_equivalent_to(0.24))
    expect_that(round(res$tau2, digits=3), is_equivalent_to(0.663))
@@ -16,6 +21,8 @@ test_that("results of the normal-normal model are correct (measure=='PLO') (Tabl
    expect_that(round(tmp$ci.ub, digits=3), is_equivalent_to(0.055)) ### 0.056 in paper
 
    res <- rma(measure="PLO", xi=ai, ni=n1i, data=dat)
+
+   ### compare with results on page 3050 (Table II)
    expect_that(round(coef(res), digits=2), is_equivalent_to(-4.26))
    expect_that(round(res$se, digits=2), is_equivalent_to(0.26))
    expect_that(round(res$tau2, digits=3), is_equivalent_to(0.393))
@@ -26,11 +33,11 @@ test_that("results of the normal-normal model are correct (measure=='PLO') (Tabl
 
 })
 
-test_that("results of the binomial-normal normal are correct (measure=='PLO') (Table II)", {
-
-   dat <- get(data(dat.nielweise2007))
+test_that("results for the binomial-normal normal are correct (measure=='PLO')", {
 
    res <- rma.glmm(measure="PLO", xi=ci, ni=n2i, data=dat)
+
+   ### compare with results on page 3050 (Table II)
    expect_that(round(coef(res), digits=2), is_equivalent_to(-3.50))
    expect_that(round(res$se, digits=2), is_equivalent_to(0.26))
    expect_that(round(res$tau2, digits=2), is_equivalent_to(0.81))
@@ -40,6 +47,8 @@ test_that("results of the binomial-normal normal are correct (measure=='PLO') (T
    expect_that(round(tmp$ci.ub, digits=3), is_equivalent_to(0.048))
 
    res <- rma.glmm(measure="PLO", xi=ai, ni=n1i, data=dat)
+
+   ### compare with results on page 3050 (Table II)
    expect_that(round(coef(res), digits=2), is_equivalent_to(-4.81))
    expect_that(round(res$se, digits=2), is_equivalent_to(0.36))
    expect_that(round(res$tau2, digits=2), is_equivalent_to(0.83))
@@ -50,11 +59,11 @@ test_that("results of the binomial-normal normal are correct (measure=='PLO') (T
 
 })
 
-test_that("results of the normal-normal model are correct (measure=='OR') (Table III)", {
-
-   dat <- get(data(dat.nielweise2007))
+test_that("results for the normal-normal model are correct (measure=='OR')", {
 
    res <- rma(measure="OR", ai=ai, n1i=n1i, ci=ci, n2i=n2i, data=dat, drop00=TRUE)
+
+   ### compare with results on page 3052 (Table III)
    expect_that(round(coef(res), digits=3), is_equivalent_to(-0.980))
    expect_that(round(res$se, digits=3), is_equivalent_to(0.243)) ### 0.244 in paper
    expect_that(round(sqrt(res$tau2), digits=2), is_equivalent_to(0.19))
@@ -65,13 +74,13 @@ test_that("results of the normal-normal model are correct (measure=='OR') (Table
 
 })
 
-test_that("results of the conditional logistic model with exact likelihood are correct (measure=='OR') (Table III)", {
+test_that("results for the conditional logistic model with exact likelihood are correct (measure=='OR')", {
 
    skip_on_cran()
 
-   dat <- get(data(dat.nielweise2007))
-
    res <- rma.glmm(measure="OR", ai=ai, n1i=n1i, ci=ci, n2i=n2i, data=dat, model="CM.EL")
+
+   ### compare with results on page 3052 (Table III)
    expect_that(round(coef(res), digits=3), is_equivalent_to(-1.353))
    expect_that(round(res$se, digits=3), is_equivalent_to(0.351))
    expect_that(round(sqrt(res$tau2), digits=2), is_equivalent_to(0.83))
@@ -82,11 +91,11 @@ test_that("results of the conditional logistic model with exact likelihood are c
 
 })
 
-test_that("results of the conditional logistic model with approximate likelihood are correct (measure=='OR') (Table III)", {
-
-   dat <- get(data(dat.nielweise2007))
+test_that("results for the conditional logistic model with approximate likelihood are correct (measure=='OR')", {
 
    res <- rma.glmm(measure="OR", ai=ai, n1i=n1i, ci=ci, n2i=n2i, data=dat, model="CM.AL")
+
+   ### compare with results on page 3052 (Table III)
    expect_that(round(coef(res), digits=3), is_equivalent_to(-1.303))
    expect_that(round(res$se, digits=3), is_equivalent_to(0.339))
    expect_that(round(sqrt(res$tau2), digits=2), is_equivalent_to(0.78)) ### 0.77 in paper
@@ -97,14 +106,20 @@ test_that("results of the conditional logistic model with approximate likelihood
 
 })
 
-test_that("results of the normal-normal model are correct (measure=='IRLN') (Table VII)", {
+############################################################################
 
-   dat <- get(data(dat.nielweise2008))
+### load data
+dat <- get(data(dat.nielweise2008, package="metafor"))
 
-   dat$t1i <- dat$t1i/1000
-   dat$t2i <- dat$t2i/1000
+### incidence rates reflect the expected number of events per 1000 days
+dat$t1i <- dat$t1i/1000
+dat$t2i <- dat$t2i/1000
+
+test_that("results for the normal-normal model are correct (measure=='IRLN')", {
 
    res <- rma(measure="IRLN", xi=x2i, ti=t2i, data=dat)
+
+   ### compare with results on page 3054 (Table VII)
    expect_that(round(coef(res), digits=3), is_equivalent_to(1.468))
    expect_that(round(res$se, digits=3), is_equivalent_to(0.243))
    expect_that(round(res$tau2, digits=3), is_equivalent_to(0.370))
@@ -114,6 +129,8 @@ test_that("results of the normal-normal model are correct (measure=='IRLN') (Tab
    expect_that(round(tmp$ci.ub, digits=2), is_equivalent_to(6.98)) ### 6.99 in paper
 
    res <- rma(measure="IRLN", xi=x1i, ti=t1i, data=dat)
+
+   ### compare with results on page 3054 (Table VII)
    expect_that(round(coef(res), digits=3), is_equivalent_to(0.981))
    expect_that(round(res$se, digits=3), is_equivalent_to(0.326))
    expect_that(round(res$tau2, digits=3), is_equivalent_to(0.639))
@@ -124,14 +141,11 @@ test_that("results of the normal-normal model are correct (measure=='IRLN') (Tab
 
 })
 
-test_that("results of the Poisson-normal model are correct (measure=='IRLN') (Table VII)", {
-
-   dat <- get(data(dat.nielweise2008))
-
-   dat$t1i <- dat$t1i/1000
-   dat$t2i <- dat$t2i/1000
+test_that("results for the Poisson-normal model are correct (measure=='IRLN')", {
 
    res <- rma.glmm(measure="IRLN", xi=x2i, ti=t2i, data=dat)
+
+   ### compare with results on page 3054 (Table VII)
    expect_that(round(coef(res), digits=3), is_equivalent_to(1.401))
    expect_that(round(res$se, digits=3), is_equivalent_to(0.231))
    expect_that(round(res$tau2, digits=3), is_equivalent_to(0.317)) ### 0.316 in paper
@@ -141,6 +155,8 @@ test_that("results of the Poisson-normal model are correct (measure=='IRLN') (Ta
    expect_that(round(tmp$ci.ub, digits=2), is_equivalent_to(6.38))
 
    res <- rma.glmm(measure="IRLN", xi=x1i, ti=t1i, data=dat)
+
+   ### compare with results on page 3054 (Table VII)
    expect_that(round(coef(res), digits=3), is_equivalent_to(0.849)) ### 0.850 in paper
    expect_that(round(res$se, digits=3), is_equivalent_to(0.330))
    expect_that(round(res$tau2, digits=3), is_equivalent_to(0.654))
@@ -151,14 +167,11 @@ test_that("results of the Poisson-normal model are correct (measure=='IRLN') (Ta
 
 })
 
-test_that("results of the normal-normal model are correct (measure=='IRR') (Table VIII)", {
-
-   dat <- get(data(dat.nielweise2008))
-
-   dat$t1i <- dat$t1i/1000
-   dat$t2i <- dat$t2i/1000
+test_that("results for the normal-normal model are correct (measure=='IRR')", {
 
    res <- rma(measure="IRR", x1i=x1i, t1i=t1i, x2i=x2i, t2i=t2i, data=dat)
+
+   ### compare with results on page 3055 (Table VIII)
    expect_that(round(coef(res), digits=3), is_equivalent_to(-0.396))
    expect_that(round(res$se, digits=3), is_equivalent_to(0.227)) ### 0.223 in paper
    expect_that(round(sqrt(res$tau2), digits=2), is_equivalent_to(0.31))
@@ -169,14 +182,11 @@ test_that("results of the normal-normal model are correct (measure=='IRR') (Tabl
 
 })
 
-test_that("results of the Poisson-normal model are correct (measure=='IRR') (Table VIII)", {
-
-   dat <- get(data(dat.nielweise2008))
-
-   dat$t1i <- dat$t1i/1000
-   dat$t2i <- dat$t2i/1000
+test_that("results for the Poisson-normal model are correct (measure=='IRR')", {
 
    res <- rma.glmm(measure="IRR", x1i=x1i, t1i=t1i, x2i=x2i, t2i=t2i, data=dat, model="CM.EL")
+
+   ### compare with results on page 3055 (Table VIII)
    expect_that(round(coef(res), digits=3), is_equivalent_to(-0.476))
    expect_that(round(res$se, digits=3), is_equivalent_to(0.238))
    expect_that(round(sqrt(res$tau2), digits=2), is_equivalent_to(0.35))
