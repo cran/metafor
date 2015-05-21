@@ -16,19 +16,19 @@ test_that("results match (FE model).", {
    b  <- solve(t(X) %*% W %*% X) %*% t(X) %*% W %*% y
    vb <- solve(t(X) %*% W %*% X)
 
-   expect_that(c(res$b), equals(c(b)))
-   expect_that(unname(res$vb), equals(vb))
+   expect_equivalent(res$b, b)
+   expect_equivalent(res$vb, vb)
 
    yhat <- c(X %*% b)
 
-   expect_that(as.vector(fitted(res)), equals(yhat))
+   expect_equivalent(fitted(res), yhat)
 
    H <- X %*% solve(t(X) %*% W %*% X) %*% t(X) %*% W
 
-   expect_that(unname(hatvalues(res, type="matrix")), equals(H))
+   expect_equivalent(hatvalues(res, type="matrix"), H)
 
-   ei <- c((diag(res$k) - H) %*% y)
+   ei <- (diag(res$k) - H) %*% y
 
-   expect_that(as.vector(resid(res)), equals(ei))
+   expect_equivalent(resid(res), c(ei))
 
 })

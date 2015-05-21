@@ -20,9 +20,9 @@ test_that("results are correct for the random-effects model.", {
    res.RE <- rma(yi, vi, data=dat, method="EB")
 
    ### compare with results on page 408
-   expect_that(round(coef(res.RE),4), is_equivalent_to(-0.5429))
-   expect_that(round(res.RE$se,4), is_equivalent_to(0.1842))
-   expect_that(round(res.RE$tau2,3), is_equivalent_to(0.268))
+   expect_equivalent(round(coef(res.RE),4), -0.5429)
+   expect_equivalent(round(res.RE$se,4), 0.1842)
+   expect_equivalent(round(res.RE$tau2,3), 0.268)
 
 })
 
@@ -35,16 +35,16 @@ test_that("results are correct for the mixed-effects meta-regression model.", {
    res.ME <- rma(yi, vi, mods=~I(ablat-33.46), data=dat, method="EB")
 
    ### compare with results on page 408
-   expect_that(round(coef(res.ME),4), is_equivalent_to(c(-0.6303, -0.0268))) ### -0.6304 in article
-   expect_that(round(res.ME$se,4), is_equivalent_to(c(0.1591, 0.0110)))
-   expect_that(round(res.ME$tau2,3), is_equivalent_to(0.157))
-   expect_that(round(anova(res.RE, res.ME)$R2,0), is_equivalent_to(41))
+   expect_equivalent(round(coef(res.ME),4), c(-0.6303, -0.0268)) ### -0.6304 in article
+   expect_equivalent(round(res.ME$se,4), c(0.1591, 0.0110))
+   expect_equivalent(round(res.ME$tau2,3), 0.157)
+   expect_equivalent(round(anova(res.RE, res.ME)$R2,0), 41)
 
    ### predicted average relative risks
    tmp <- predict(res.ME, newmods=c(33.46,42)-33.46, transf=exp, digits=2)
 
    ### compare with results on page 408
-   expect_that(round(tmp$pred,2), is_equivalent_to(c(0.53, 0.42)))
+   expect_equivalent(round(tmp$pred,2), c(0.53, 0.42))
 
 })
 
@@ -54,13 +54,13 @@ test_that("results are correct for the fixed-effects meta-regression model.", {
    res.FE <- rma(yi, vi, mods=~I(ablat-33.46), data=dat, method="FE")
 
    ### compare with results on page 408
-   expect_that(round(coef(res.FE),4), is_equivalent_to(c(-0.5949, -0.0282))) ### -0.5950 in article
-   expect_that(round(res.FE$se,4), is_equivalent_to(c(0.0696, 0.0040))) ### 0.0039 in article
+   expect_equivalent(round(coef(res.FE),4), c(-0.5949, -0.0282)) ### -0.5950 in article
+   expect_equivalent(round(res.FE$se,4), c(0.0696, 0.0040)) ### 0.0039 in article
 
    ### predicted relative risks based on the fixed-effects model
    tmp <- predict(res.FE, newmods=c(33.46,42)-33.46, transf=exp, digits=2)
 
    ### compare with results on page 408
-   expect_that(round(tmp$pred,2), is_equivalent_to(c(0.55, 0.43)))
+   expect_equivalent(round(tmp$pred,2), c(0.55, 0.43))
 
 })

@@ -1078,7 +1078,7 @@ function (yi, V, W, mods, random, struct = "CS", intercept = TRUE,
         phi.init <- rep(0.5, phis)
         QE <- sum(as.vector(sY - sX %*% b.FE)^2)
     }
-    con <- list(verbose = FALSE, optimizer = "optim", optmethod = "Nelder-Mead", 
+    con <- list(verbose = FALSE, optimizer = "nlminb", optmethod = "BFGS", 
         sigma2.init = sigma2.init, tau2.init = tau2.init, rho.init = rho.init, 
         gamma2.init = gamma2.init, phi.init = phi.init, REMLf = TRUE, 
         tol = 1e-07, cholesky = ifelse(struct == "UN", TRUE, 
@@ -1549,6 +1549,7 @@ function (yi, V, W, mods, random, struct = "CS", intercept = TRUE,
         M <- M + (Z.H1 %*% H %*% t(Z.H1)) * tcrossprod(Z.H2)
         colnames(H) <- rownames(H) <- h.levels.f[[1]]
     }
+    colnames(M) <- rownames(M) <- NULL
     if (posdefify) 
         M <- as.matrix(nearPD(M)$mat)
     if (verbose) {

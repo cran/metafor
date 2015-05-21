@@ -16,10 +16,10 @@ test_that("results are correct for the multiple outcomes random-effects model.",
    res <- rma.mv(yi, V, mods = ~ outcome - 1, random = ~ outcome | trial, struct="UN", data=dat, method="ML")
 
    ### (results for this model not given in paper)
-   expect_that(round(coef(res),3), is_equivalent_to(c(-0.338, 0.345)))
-   expect_that(round(res$se,3), is_equivalent_to(c(0.080, 0.049)))
-   expect_that(round(res$tau2,3), is_equivalent_to(c(0.026, 0.007)))
-   expect_that(round(res$rho,3), is_equivalent_to(.699))
+   expect_equivalent(round(coef(res),3), c(-0.338, 0.345))
+   expect_equivalent(round(res$se,3), c(0.080, 0.049))
+   expect_equivalent(round(res$tau2,3), c(0.026, 0.007))
+   expect_equivalent(round(res$rho,3), 0.699)
 
 })
 
@@ -29,22 +29,22 @@ test_that("results are correct for the multiple outcomes mixed-effects (meta-reg
    res <- rma.mv(yi, V, mods = ~ outcome + outcome:I(year - 1983) - 1, random = ~ outcome | trial, struct="UN", data=dat, method="ML")
 
    ### compare with results on page 2545 (Table II)
-   expect_that(round(coef(res),3), is_equivalent_to(c(-0.335, 0.348, -0.011, 0.001)))
-   expect_that(round(res$se,3), is_equivalent_to(c(0.079, 0.052, 0.024, 0.015)))
-   expect_that(round(res$tau2,3), is_equivalent_to(c(0.025, 0.008)))
-   expect_that(round(res$rho,3), is_equivalent_to(.659))
+   expect_equivalent(round(coef(res),3), c(-0.335, 0.348, -0.011, 0.001))
+   expect_equivalent(round(res$se,3), c(0.079, 0.052, 0.024, 0.015))
+   expect_equivalent(round(res$tau2,3), c(0.025, 0.008))
+   expect_equivalent(round(res$rho,3), 0.659)
 
    ### compute the covariance
    tmp <- round(res$rho*sqrt(res$tau2[1]*res$tau2[2]),3)
-   expect_that(tmp, is_equivalent_to(.009))
+   expect_equivalent(tmp, 0.009)
 
    ### test the difference in slopes
    res <- rma.mv(yi, V, mods = ~ outcome*I(year - 1983) - 1, random = ~ outcome | trial, struct="UN", data=dat, method="ML")
 
    ### (results for this model not given in paper)
-   expect_that(round(coef(res),3), is_equivalent_to(c(-0.335, 0.348, -0.011, 0.012)))
-   expect_that(round(res$se,3), is_equivalent_to(c(0.079, 0.052, 0.024, 0.020)))
-   expect_that(round(res$pval,3), is_equivalent_to(c(0.000, 0.000, 0.656, 0.553)))
+   expect_equivalent(round(coef(res),3), c(-0.335, 0.348, -0.011, 0.012))
+   expect_equivalent(round(res$se,3), c(0.079, 0.052, 0.024, 0.020))
+   expect_equivalent(round(res$pval,3), c(0.000, 0.000, 0.656, 0.553))
 
 })
 
@@ -56,7 +56,7 @@ test_that("results are correct when testing var-cov structures against each othe
    tmp <- anova(res0, res1)
 
    ### (results for this not given in paper)
-   expect_that(round(tmp$pval,4), is_equivalent_to(0.2597))
+   expect_equivalent(round(tmp$pval,4), 0.2597)
 
    ### test the correlation among the true effects
    res1 <- rma.mv(yi, V, mods = ~ outcome - 1, random = ~ outcome | trial, struct="UN", data=dat, method="ML")
@@ -64,6 +64,6 @@ test_that("results are correct when testing var-cov structures against each othe
    tmp <- anova(res0, res1)
 
    ### (results for this not given in paper)
-   expect_that(round(tmp$pval,4), is_equivalent_to(0.2452))
+   expect_equivalent(round(tmp$pval,4), 0.2452)
 
 })

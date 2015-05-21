@@ -495,7 +495,7 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
     m <- length(btt)
     con <- list(verbose = FALSE, tau2.init = NULL, tau2.min = 0, 
         tau2.max = 100, threshold = 10^-5, maxiter = 100, stepadj = 1, 
-        REMLf = TRUE, tol = 1e-07, optimizer = "nlminb", optmethod = "Nelder-Mead")
+        REMLf = TRUE, tol = 1e-07, optimizer = "nlminb", optmethod = "BFGS")
     con.pos <- pmatch(names(control), names(con))
     con[c(na.omit(con.pos))] <- control[!is.na(con.pos)]
     if (verbose) 
@@ -1572,7 +1572,7 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
     m <- length(btt)
     con <- list(verbose = FALSE, tau2.init = NULL, tau2.min = 0, 
         tau2.max = 100, threshold = 10^-5, maxiter = 100, stepadj = 1, 
-        REMLf = TRUE, tol = 1e-07, optimizer = "nlminb", optmethod = "Nelder-Mead")
+        REMLf = TRUE, tol = 1e-07, optimizer = "nlminb", optmethod = "BFGS")
     con.pos <- pmatch(names(control), names(con))
     con[c(na.omit(con.pos))] <- control[!is.na(con.pos)]
     if (verbose) 

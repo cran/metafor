@@ -1,3 +1,21 @@
+Changes in Version 1.9-7 (2015-05-21)
+=====================================
+
+   o default optimizer for rma.mv() changed to nlminb() (instead of optim()
+     with "Nelder-Mead"); extensive testing indicated that nlminb() (and
+     also optim() with "BFGS") is typically quicker and more robust; note
+     that this is in principle a non-backwards compatible change, but really
+     a necessary one; and you can always revert to the old behavior with
+     'control=list(optimizer="optim", optmethod="Nelder-Mead")'
+
+   o all tests have been updated in accordance with the recommended syntax
+     of the 'testthat' package; for example, expect_equivalent(x,y) is used
+     instead of test_that(x, is_equivalent_to(y))
+
+   o changed a few 'is_identical_to()' comparisons to expect_equivalent()
+     ones (that failed on Sparc Solaris)
+
+
 Changes in Version 1.9-6 (2015-05-07)
 =====================================
 

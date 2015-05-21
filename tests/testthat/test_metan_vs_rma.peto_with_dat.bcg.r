@@ -10,18 +10,18 @@ test_that("results match (FE model, measure='OR').", {
 
    res <- rma.peto(ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
 
-   expect_that(round(as.vector(res$b),  digits=3), equals(-0.474))
-   expect_that(round(res$ci.lb, digits=3), equals(-0.554))
-   expect_that(round(res$ci.ub, digits=3), equals(-0.395))
-   expect_that(round(res$zval,  digits=2), equals(-11.67)) ### 11.67 in Stata
-   expect_that(round(res$QE,    digits=2), equals(167.73))
+   expect_equivalent(round(res$b, digits=3), -0.474)
+   expect_equivalent(round(res$ci.lb, digits=3), -0.554)
+   expect_equivalent(round(res$ci.ub, digits=3), -0.395)
+   expect_equivalent(round(res$zval,  digits=2), -11.67) ### 11.67 in Stata
+   expect_equivalent(round(res$QE,    digits=2), 167.73)
 
    ### compare results with: metan tpos tneg cpos cneg, peto nograph or
 
    sav <- predict(res, transf=exp)
 
-   expect_that(round(c(sav$pred),  digits=3), equals(0.622))
-   expect_that(round(c(as.vector(sav$ci.lb)), digits=3), equals(0.575))
-   expect_that(round(c(as.vector(sav$ci.ub)), digits=3), equals(0.674))
+   expect_equivalent(round(sav$pred,  digits=3), 0.622)
+   expect_equivalent(round(sav$ci.lb, digits=3), 0.575)
+   expect_equivalent(round(sav$ci.ub, digits=3), 0.674)
 
 })

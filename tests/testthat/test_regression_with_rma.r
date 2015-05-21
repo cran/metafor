@@ -13,36 +13,36 @@ test_that("results for rma() and lm() match for method='FE'.", {
    res.rma <- rma(stack.loss, vi, mods =  ~ Air.Flow + Water.Temp + Acid.Conc., data=stackloss, knha=TRUE, control=list(REMLf=FALSE))
 
    ### log likelihood (REML) should be the same
-   expect_that(logLik(res.lm, REML=TRUE), equals(logLik(res.rma)))
+   expect_equivalent(logLik(res.lm, REML=TRUE), logLik(res.rma))
 
-   ### coefficients should be the same (need to strip names)
-   expect_that(as.vector(coef(res.lm)), equals(as.vector(coef(res.rma))))
+   ### coefficients should be the same
+   expect_equivalent(coef(res.lm), coef(res.rma))
 
-   ### var-cov matrix should be the same (need to strip names)
-   expect_that(matrix(vcov(res.lm), nrow=4, ncol=4), equals(matrix(vcov(res.rma), nrow=4, ncol=4)))
+   ### var-cov matrix should be the same
+   expect_equivalent(matrix(vcov(res.lm), nrow=4, ncol=4), matrix(vcov(res.rma), nrow=4, ncol=4))
 
    ### fitted values should be the same
-   expect_that(fitted(res.lm), equals(fitted(res.rma)))
+   expect_equivalent(fitted(res.lm), fitted(res.rma))
 
    ### standardized residuals should be the same
-   expect_that(as.vector(rstandard(res.lm)), equals(rstandard(res.rma)$z))
+   expect_equivalent(rstandard(res.lm), rstandard(res.rma)$z)
 
    ### studentized residuals should be the same
-   expect_that(as.vector(rstudent(res.lm)), equals(rstudent(res.rma)$z))
+   expect_equivalent(rstudent(res.lm), rstudent(res.rma)$z)
 
    ### hat values should be the same
-   expect_that(as.vector(hatvalues(res.lm)), equals(as.vector(hatvalues(res.rma))))
+   expect_equivalent(hatvalues(res.lm), hatvalues(res.rma))
 
    ### dffits should be the same
-   expect_that(as.vector(dffits(res.lm)), equals(influence(res.rma)$inf$dffits))
+   expect_equivalent(dffits(res.lm), influence(res.rma)$inf$dffits)
 
    ### covratios should be the same
-   expect_that(as.vector(covratio(res.lm)), equals(influence(res.rma)$inf$cov.r))
+   expect_equivalent(covratio(res.lm), influence(res.rma)$inf$cov.r)
 
    ### dfbetas should be the same
-   expect_that(unname(as.matrix(dfbetas(res.lm))), equals(unname(as.matrix(dfbetas(res.rma)))))
+   expect_equivalent(as.matrix(dfbetas(res.lm)), as.matrix(dfbetas(res.rma)))
 
    ### Cook's distancs should differ by a factor of p
-   expect_that(as.vector(cooks.distance(res.lm)), equals(as.vector(cooks.distance(res.rma)/res.rma$p)))
+   expect_equivalent(cooks.distance(res.lm), cooks.distance(res.rma)/res.rma$p)
 
 })

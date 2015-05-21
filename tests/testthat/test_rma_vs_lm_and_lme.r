@@ -14,20 +14,20 @@ test_that("results for rma() and lm() match for method='FE'.", {
    res.fe <- rma(yi, vi, data=dat, method="FE")
    res.lm <- lm(yi ~ 1, weights = 1/vi, data=dat)
 
-   ### coefficients should be the same (need to strip name)
-   expect_that(as.vector(coef(res.fe)), equals(as.vector(coef(res.lm))))
+   ### coefficients should be the same
+   expect_equivalent(coef(res.fe), coef(res.lm))
 
    ### standard errors should be the same after adjusting the 'lm' one for sigma
-   expect_that(res.fe$se, equals(coef(summary(res.lm))[1,2] / summary(res.lm)$sigma))
+   expect_equivalent(res.fe$se, coef(summary(res.lm))[1,2] / summary(res.lm)$sigma)
 
    ### fit the same model as is fitted by lm() with rma() function
    res.fe <- rma(yi, vi*summary(res.lm)$sigma^2, data=dat, method="FE")
 
-   ### coefficients should still be the same (need to strip name)
-   expect_that(as.vector(coef(res.fe)), equals(as.vector(coef(res.lm))))
+   ### coefficients should still be the same
+   expect_equivalent(coef(res.fe), coef(res.lm))
 
    ### standard errors should be the same
-   expect_that(res.fe$se, equals(coef(summary(res.lm))[1,2]))
+   expect_equivalent(res.fe$se, coef(summary(res.lm))[1,2])
 
 })
 
@@ -43,14 +43,14 @@ test_that("results for rma() and lme() match for method='ML'.", {
 
    res.re <- rma(yi, vi*res.lme$sigma^2, data=dat, method="ML")
 
-   ### coefficients should be the same (need to strip name)
-   expect_that(as.vector(coef(res.re)), equals(as.vector(fixef(res.lme)), tolerance=1e-6))
+   ### coefficients should be the same
+   expect_equivalent(round(coef(res.re),4), round(fixef(res.lme),4))
 
    ### standard errors should be the same after adjusting the 'rma' one by the factor sqrt(k/(k-p))
-   expect_that(res.re$se * sqrt(res.re$k / (res.re$k - res.re$p)), equals(summary(res.lme)$tTable[1,2], tolerance=1e-6))
+   expect_equivalent(round(res.re$se * sqrt(res.re$k / (res.re$k - res.re$p)),4), round(summary(res.lme)$tTable[1,2],4))
 
    ### check that BLUPs are the same
-   expect_that(blup(res.re)$pred, equals(coef(res.lme)$"(Intercept)", tolerance=1e-6))
+   expect_equivalent(round(blup(res.re)$pred,4), round(coef(res.lme)$"(Intercept)",4))
 
 })
 
@@ -66,13 +66,13 @@ test_that("results for rma() and lme() match for method='REML'.", {
 
    res.re <- rma(yi, vi*res.lme$sigma^2, data=dat, method="REML")
 
-   ### coefficients should be the same (need to strip name)
-   expect_that(as.vector(coef(res.re)), equals(as.vector(fixef(res.lme)), tolerance=1e-6))
+   ### coefficients should be the same
+   expect_equivalent(round(coef(res.re),4), round(fixef(res.lme),4))
 
    ### standard errors should be the same
-   expect_that(res.re$se, equals(summary(res.lme)$tTable[1,2], tolerance=1e-6))
+   expect_equivalent(round(res.re$se,4), round(summary(res.lme)$tTable[1,2],4))
 
    ### check that BLUPs are the same
-   expect_that(blup(res.re)$pred, equals(coef(res.lme)$"(Intercept)", tolerance=1e-6))
+   expect_equivalent(round(blup(res.re)$pred,4), round(coef(res.lme)$"(Intercept)",4))
 
 })

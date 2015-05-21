@@ -1,6 +1,6 @@
 Package: metafor
-Version: 1.9-6
-Date: 2015-05-07
+Version: 1.9-7
+Date: 2015-05-21
 Title: Meta-Analysis Package for R
 Authors@R: person('Wolfgang', 'Viechtbauer', email = 'wvb@metafor-project.org', role = c('aut','cre'))
 Depends: R (>= 3.1.0), Matrix
@@ -16,8 +16,8 @@ Encoding: UTF-8
 VignetteBuilder: R.rsp
 URL: http://www.metafor-project.org http://www.wvbauer.com
 NeedsCompilation: no
-Packaged: 2015-05-07 19:21:26 UTC; Wolfgang
+Packaged: 2015-05-21 19:49:09 UTC; Wolfgang
 Author: Wolfgang Viechtbauer [aut, cre]
 Maintainer: Wolfgang Viechtbauer <wvb@metafor-project.org>
 Repository: CRAN
-Date/Publication: 2015-05-07 22:00:56
+Date/Publication: 2015-05-22 07:49:02

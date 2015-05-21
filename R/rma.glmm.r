@@ -562,6 +562,8 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
         if (con$optimizer == "clogit") {
             if (!requireNamespace("survival", quietly = TRUE)) 
                 stop("Please install the 'survival' package to fit this model.")
+            coxph <- survival::coxph
+            Surv <- survival::Surv
         }
         if (con$optimizer == "clogistic") {
             if (!requireNamespace("Epi", quietly = TRUE)) 
@@ -964,7 +966,7 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
                   if (con$optimizer == "clogit") {
                     args.clogit <- clogitCtrl
                     args.clogit$formula <- event ~ X.fit.l + 
-                      strata(study.l)
+                      survival::strata(study.l)
                     res.FE <- try(do.call(survival::clogit, args.clogit), 
                       silent = !verbose)
                   }
@@ -989,7 +991,7 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
                 X.QE <- X.QE[, !is.na(coef(res.QE)), drop = FALSE]
                 if (con$optimizer == "clogit") {
                   args.clogit <- clogitCtrl
-                  args.clogit$formula <- event ~ X.QE.l + strata(study.l)
+                  args.clogit$formula <- event ~ X.QE.l + survival::strata(study.l)
                   if (verbose) {
                     res.QE <- try(do.call(survival::clogit, args.clogit), 
                       silent = !verbose)

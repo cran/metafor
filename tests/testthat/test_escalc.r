@@ -8,8 +8,8 @@ test_that("escalc() works correctly for measure='RR'", {
 
    dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
 
-   expect_that(round(dat$yi[1],4), equals(-0.8893))
-   expect_that(round(dat$vi[1],4), equals(0.3256))
+   expect_equivalent(round(dat$yi[1],4), -0.8893)
+   expect_equivalent(round(dat$vi[1],4),  0.3256)
 
    ### need to add lots of stuff here ...
 

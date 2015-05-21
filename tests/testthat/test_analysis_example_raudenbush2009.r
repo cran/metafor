@@ -13,9 +13,9 @@ test_that("results are correct for the fixed-effects model.", {
    res.FE <- rma(yi, vi, data=dat, digits=3, method="FE")
 
    ### compare with results on page 301 (Table 16.2) and page 302
-   expect_that(round(coef(res.FE),3), is_equivalent_to(0.060))
-   expect_that(round(res.FE$QE,2), is_equivalent_to(35.83))
-   expect_that(round(res.FE$zval,2), is_equivalent_to(1.66)) ### 1.65 in chapter
+   expect_equivalent(round(coef(res.FE),3), 0.060)
+   expect_equivalent(round(res.FE$QE,2), 35.83)
+   expect_equivalent(round(res.FE$zval,2), 1.66) ### 1.65 in chapter
 
 })
 
@@ -25,22 +25,22 @@ test_that("results are correct for the random-effects model.", {
    res.RE <- rma(yi, vi, data=dat, digits=3)
 
    ### compare with results on page 301 (Table 16.2) and page 302
-   expect_that(round(coef(res.RE),3), is_equivalent_to(0.084)) ### 0.083 in chapter
-   expect_that(round(res.RE$zval,2), is_equivalent_to(1.62))
-   expect_that(round(res.RE$tau2,3), is_equivalent_to(0.019))
+   expect_equivalent(round(coef(res.RE),3), 0.084) ### 0.083 in chapter
+   expect_equivalent(round(res.RE$zval,2), 1.62)
+   expect_equivalent(round(res.RE$tau2,3), 0.019)
 
    ### credibility/prediction interval
    tmp <- predict(res.RE)
 
    ### compare with results on page 301 (Table 16.2) and page 302
-   expect_that(round(tmp$cr.lb,3), is_equivalent_to(-0.204)) ### -0.19 in chapter but computed in a slightly different way
-   expect_that(round(tmp$cr.ub,3), is_equivalent_to( 0.371)) ###  0.35 in chapter but computed in a slightly different way
+   expect_equivalent(round(tmp$cr.lb,3), -0.204) ### -0.19 in chapter but computed in a slightly different way
+   expect_equivalent(round(tmp$cr.ub,3),  0.371) ###  0.35 in chapter but computed in a slightly different way
 
    ### range of BLUPs
    tmp <- round(range(blup(res.RE)$pred), 2)
 
    ### compare with results on page 301 (Table 16.2)
-   expect_that(tmp, is_equivalent_to(c(-0.03, 0.25)))
+   expect_equivalent(tmp, c(-0.03, 0.25))
 
 })
 
@@ -53,16 +53,16 @@ test_that("results are correct for the mixed-effects model.", {
    res.ME <- rma(yi, vi, mods = ~ weeks.c, data=dat, digits=3)
 
    ### compare with results on page 301 (Table 16.2)
-   expect_that(round(res.ME$tau2,3), is_equivalent_to(0))
-   expect_that(round(coef(res.ME),3), is_equivalent_to(c(0.407, -0.157)))
-   expect_that(round(res.ME$QE,2), is_equivalent_to(16.57))
-   expect_that(round(res.ME$zval,2), is_equivalent_to(c(4.68, -4.39)))
+   expect_equivalent(round(res.ME$tau2,3), 0)
+   expect_equivalent(round(coef(res.ME),3), c(0.407, -0.157))
+   expect_equivalent(round(res.ME$QE,2), 16.57)
+   expect_equivalent(round(res.ME$zval,2), c(4.68, -4.39))
 
    ### range of BLUPs
    tmp <- round(range(blup(res.ME)$pred), 2)
 
    ### compare with results on page 301 (Table 16.2)
-   expect_that(tmp, is_equivalent_to(c(-0.06, 0.41))) ### -0.07 in chapter
+   expect_equivalent(tmp, c(-0.06, 0.41)) ### -0.07 in chapter
 
 })
 
@@ -82,7 +82,7 @@ test_that("results are correct for the random-effects model (conventional approa
                          .Dim = 5:6, .Dimnames = list(c("FE", "ML", "REML", "DL", "HE"), c("tau2", "mu", "se", "z", "ci.lb", "ci.ub")))
 
    ### compare with results on page 309 (Table 16.3)
-   expect_that(tmp, is_equivalent_to(expected))
+   expect_equivalent(tmp, expected)
 
 })
 
@@ -102,7 +102,7 @@ test_that("results are correct for the random-effects model (Knapp & Hartung met
                          .Dim = 5:6, .Dimnames = list(c("FE", "ML", "REML", "DL", "HE"), c("tau2", "mu", "se", "z", "ci.lb", "ci.ub")))
 
    ### compare with results on page 309 (Table 16.3)
-   expect_that(tmp, is_equivalent_to(expected))
+   expect_equivalent(tmp, expected)
 
 })
 
@@ -133,6 +133,6 @@ test_that("results are correct for the random-effects model (Huber-White method)
    tmp <- sapply(res, round, 3)
 
    ### compare with results on page 309 (Table 16.3)
-   expect_that(tmp, is_equivalent_to(c(0.040, 0.047, 0.050, 0.052, 0.062)))
+   expect_equivalent(tmp, c(0.040, 0.047, 0.050, 0.052, 0.062))
 
 })
