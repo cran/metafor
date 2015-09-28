@@ -41,16 +41,16 @@ function (object, object2, btt, L, digits, ...)
             m <- length(btt)
             QM <- c(t(b)[btt] %*% chol2inv(chol(vb[btt, btt])) %*% 
                 b[btt])
-            if (x$knha || x$robust) {
+            if (x$knha) {
                 QM <- QM/m
-                QMp <- pf(QM, df1 = m, df2 = k - p, lower.tail = FALSE)
+                QMp <- pf(QM, df1 = m, df2 = x$dfs, lower.tail = FALSE)
             }
             else {
                 QMp <- pchisq(QM, df = m, lower.tail = FALSE)
             }
             res <- list(QM = QM, QMp = QMp, btt = btt, k = k, 
-                p = p, m = m, knha = x$knha, robust = x$robust, 
-                digits = digits, test = "Wald.b")
+                p = p, m = m, knha = x$knha, dfs = x$dfs, digits = digits, 
+                test = "Wald.b")
         }
         else {
             if (is.vector(L)) 
@@ -68,8 +68,8 @@ function (object, object2, btt, L, digits, ...)
             vLb <- L %*% vb %*% t(L)
             se <- sqrt(diag(vLb))
             zval <- c(Lb/se)
-            if (x$knha || x$robust) {
-                pval <- 2 * pt(abs(zval), df = k - p, lower.tail = FALSE)
+            if (x$knha) {
+                pval <- 2 * pt(abs(zval), df = x$dfs, lower.tail = FALSE)
             }
             else {
                 pval <- 2 * pnorm(abs(zval), lower.tail = FALSE)
@@ -80,9 +80,9 @@ function (object, object2, btt, L, digits, ...)
                 QM <- try(t(Lb) %*% chol2inv(chol(vLb)) %*% Lb, 
                   silent = TRUE)
                 if (!inherits(QM, "try-error")) {
-                  if (x$knha || x$robust) {
+                  if (x$knha) {
                     QM <- QM/m
-                    QMp <- pf(QM, df1 = m, df2 = k - p, lower.tail = FALSE)
+                    QMp <- pf(QM, df1 = m, df2 = x$dfs, lower.tail = FALSE)
                   }
                   else {
                     QMp <- pchisq(QM, df = m, lower.tail = FALSE)
@@ -104,7 +104,7 @@ function (object, object2, btt, L, digits, ...)
             rownames(hyp) <- paste0(seq_len(m), ":")
             res <- list(QM = QM, QMp = QMp, hyp = hyp, Lb = Lb, 
                 se = se, zval = zval, pval = pval, k = k, p = p, 
-                m = m, knha = x$knha, robust = x$robust, digits = digits, 
+                m = m, knha = x$knha, dfs = x$dfs, digits = digits, 
                 test = "Wald.L")
         }
     }

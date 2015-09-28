@@ -54,7 +54,7 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
     slab <- eval(mf.slab, data, enclos = sys.frame(sys.parent()))
     subset <- eval(mf.subset, data, enclos = sys.frame(sys.parent()))
     mods <- eval(mf.mods, data, enclos = sys.frame(sys.parent()))
-    ai <- bi <- ci <- di <- x1i <- x2i <- t1i <- t2i <- xi <- mi <- ti <- NA
+    ai <- bi <- ci <- di <- x1i <- x2i <- t1i <- t2i <- xi <- mi <- ti <- ni <- NA
     if (is.element(measure, c("OR"))) {
         mf.ai <- mf[[match("ai", names(mf))]]
         mf.bi <- mf[[match("bi", names(mf))]]
@@ -153,24 +153,16 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
     if (is.character(mods)) 
         stop("Model matrix contains character variables.")
     if (!is.null(mods) && (nrow(mods) != k)) 
-        stop("Number of rows of the model matrix does not match length of yi argument.")
+        stop("Number of rows of the model matrix does not match length of the outcome data.")
     if (very.verbose) 
         message("Generating/extracting study labels ...")
     if (is.null(slab)) {
-        if (!is.null(attr(yi, "slab"))) {
-            slab.null <- FALSE
-            slab <- attr(yi, "slab")
-        }
-        else {
-            slab.null <- TRUE
-            slab <- ids
-        }
+        slab.null <- TRUE
+        slab <- ids
     }
     else {
         if (anyNA(slab)) 
             stop("NAs in study labels.")
-        if (anyDuplicated(slab) > 0) 
-            slab <- make.unique(slab)
         if (length(slab) != k) 
             stop("Study labels not of same length as data.")
         slab.null <- FALSE
@@ -182,6 +174,9 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
         slab <- slab[subset]
         ids <- ids[subset]
     }
+    if (anyDuplicated(slab)) 
+        slab <- make.unique(as.character(slab))
+    attr(yi, "slab") <- slab
     k <- length(yi)
     if (measure == "OR") {
         if (drop00) {
@@ -219,11 +214,14 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
     mods.f <- mods
     k.f <- k
     if (is.element(measure, c("OR"))) {
-        aibicidimods.na <- is.na(cbind(ai, bi, ci, di, mods))
+        aibicidimods.na <- is.na(ai) | is.na(bi) | is.na(ci) | 
+            is.na(di) | if (is.null(mods)) 
+            FALSE
+        else apply(is.na(mods), 1, any)
         if (any(aibicidimods.na)) {
             if (very.verbose) 
                 message("Handling NAs in table data ...")
-            not.na <- rowSums(aibicidimods.na) == 0L
+            not.na <- !aibicidimods.na
             if (na.act == "na.omit" || na.act == "na.exclude" || 
                 na.act == "na.pass") {
                 ai <- ai[not.na]
@@ -242,12 +240,14 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
         }
     }
     if (is.element(measure, c("IRR"))) {
-        x1ix2it1it2imods.na <- is.na(cbind(x1i, x2i, t1i, t2i, 
-            mods))
+        x1ix2it1it2imods.na <- is.na(x1i) | is.na(x2i) | is.na(t1i) | 
+            is.na(t2i) | if (is.null(mods)) 
+            FALSE
+        else apply(is.na(mods), 1, any)
         if (any(x1ix2it1it2imods.na)) {
             if (very.verbose) 
                 message("Handling NAs in table data ...")
-            not.na <- rowSums(x1ix2it1it2imods.na) == 0L
+            not.na <- !x1ix2it1it2imods.na
             if (na.act == "na.omit" || na.act == "na.exclude" || 
                 na.act == "na.pass") {
                 x1i <- x1i[not.na]
@@ -266,11 +266,13 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
         }
     }
     if (is.element(measure, c("PLO"))) {
-        ximimods.na <- is.na(cbind(xi, mi, mods))
+        ximimods.na <- is.na(xi) | is.na(mi) | if (is.null(mods)) 
+            FALSE
+        else apply(is.na(mods), 1, any)
         if (any(ximimods.na)) {
             if (very.verbose) 
                 message("Handling NAs in table data ...")
-            not.na <- rowSums(ximimods.na) == 0L
+            not.na <- !ximimods.na
             if (na.act == "na.omit" || na.act == "na.exclude" || 
                 na.act == "na.pass") {
                 xi <- xi[not.na]
@@ -287,11 +289,13 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
         }
     }
     if (is.element(measure, c("IRLN"))) {
-        xitimods.na <- is.na(cbind(xi, ti, mods))
+        xitimods.na <- is.na(xi) | is.na(ti) | if (is.null(mods)) 
+            FALSE
+        else apply(is.na(mods), 1, any)
         if (any(xitimods.na)) {
             if (very.verbose) 
                 message("Handling NAs in table data ...")
-            not.na <- rowSums(xitimods.na) == 0L
+            not.na <- !xitimods.na
             if (na.act == "na.omit" || na.act == "na.exclude" || 
                 na.act == "na.pass") {
                 xi <- xi[not.na]
@@ -309,16 +313,20 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
     }
     if (k < 1) 
         stop("Processing terminated since k = 0.")
-    yivi.na <- is.na(cbind(yi, vi, mods.f))
+    mods.yi <- mods.f
+    yivi.na <- is.na(yi) | is.na(vi) | if (is.null(mods.yi)) 
+        FALSE
+    else apply(is.na(mods.yi), 1, any)
     if (any(yivi.na)) {
         if (very.verbose) 
             message("Handling NAs in yi/vi ...")
-        not.na.yivi <- rowSums(yivi.na) == 0L
+        not.na.yivi <- !yivi.na
         if (na.act == "na.omit" || na.act == "na.exclude" || 
             na.act == "na.pass") {
             yi <- yi[not.na.yivi]
             ni <- ni[not.na.yivi]
             vi <- vi[not.na.yivi]
+            mods.yi <- mods.f[not.na.yivi, , drop = FALSE]
             warning("Some yi/vi values are NA.")
             attr(yi, "measure") <- measure
             attr(yi, "ni") <- ni
@@ -330,20 +338,6 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
         not.na.yivi <- rep(TRUE, k)
     }
     k.yi <- length(yi)
-    vi.I2 <- vi.f
-    mods.I2 <- mods.f
-    YVX.na <- is.na(cbind(yi.f, vi.f, mods.f))
-    if (any(YVX.na)) {
-        not.na.I2 <- rowSums(YVX.na) == 0L
-        if (na.act == "na.omit" || na.act == "na.exclude" || 
-            na.act == "na.pass") {
-            vi.I2 <- vi.f[not.na.I2]
-            mods.I2 <- mods.f[not.na.I2, , drop = FALSE]
-        }
-        if (na.act == "na.fail") 
-            stop("Missing values in data.")
-    }
-    k.I2 <- length(vi.I2)
     if (is.null(mods) && !intercept) {
         warning("Must either include an intercept and/or moderators in model.\n  Coerced intercept into the model.")
         intercept <- TRUE
@@ -351,12 +345,12 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
     if (intercept) {
         X <- cbind(intrcpt = rep(1, k), mods)
         X.f <- cbind(intrcpt = rep(1, k.f), mods.f)
-        X.I2 <- cbind(intrcpt = rep(1, k.I2), mods.I2)
+        X.yi <- cbind(intrcpt = rep(1, k.yi), mods.yi)
     }
     else {
         X <- mods
         X.f <- mods.f
-        X.I2 <- mods.I2
+        X.yi <- mods.yi
     }
     is.int <- apply(X, 2, .is.int.func)
     if (any(is.int)) {
@@ -364,21 +358,28 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
         int.indx <- which(is.int, arr.ind = TRUE)
         X <- cbind(intrcpt = 1, X[, -int.indx, drop = FALSE])
         X.f <- cbind(intrcpt = 1, X.f[, -int.indx, drop = FALSE])
-        X.I2 <- cbind(intrcpt = 1, X.I2[, -int.indx, drop = FALSE])
         if (is.formula) 
             intercept <- TRUE
     }
     else {
         int.incl <- FALSE
     }
-    tmp <- lm(yi ~ X - 1)
+    is.int <- apply(X.yi, 2, .is.int.func)
+    if (any(is.int)) {
+        int.indx <- which(is.int, arr.ind = TRUE)
+        X.yi <- cbind(intrcpt = 1, X.yi[, -int.indx, drop = FALSE])
+    }
+    tmp <- lm(rep(0, k) ~ X - 1)
     coef.na <- is.na(coef(tmp))
     if (any(coef.na)) {
         warning("Redundant predictors dropped from the model.")
         X <- X[, !coef.na, drop = FALSE]
         X.f <- X.f[, !coef.na, drop = FALSE]
-        X.I2 <- X.I2[, !coef.na, drop = FALSE]
     }
+    tmp <- lm(yi ~ X.yi - 1)
+    coef.na <- is.na(coef(tmp))
+    if (any(coef.na)) 
+        X.yi <- X.yi[, !coef.na, drop = FALSE]
     p <- NCOL(X)
     if ((p == 1L) && (all(sapply(X, identical, 1)))) {
         int.only <- TRUE
@@ -531,18 +532,6 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
         if (!requireNamespace("lme4", quietly = TRUE)) 
             stop("Please install the 'lme4' package to fit this model.")
     }
-    if (is.element(measure, c("OR", "IRR"))) {
-        if ((model == "UM.FS" && method == "ML") || (model == 
-            "UM.RS") || (model == "CM.AL" && method == "ML") || 
-            (model == "CM.EL" && method == "ML")) {
-            if (!requireNamespace("lme4", quietly = TRUE)) 
-                stop("Please install the 'lme4' package to fit this model.")
-        }
-    }
-    if (is.element(measure, c("PLO", "IRLN")) && method == "ML") {
-        if (!requireNamespace("lme4", quietly = TRUE)) 
-            stop("Please install the 'lme4' package to fit this model.")
-    }
     if (measure == "OR" && model == "CM.EL") {
         if (is.element(con$optimizer, c("uobyqa", "newuoa", "bobyqa"))) {
             if (!requireNamespace("minqa", quietly = TRUE)) 
@@ -575,7 +564,6 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
         stop("Model matrix not of full rank. Cannot fit model.")
     se.tau2 <- I2 <- H2 <- QE <- QEp <- NA
     alpha <- ifelse(level > 1, (100 - level)/100, 1 - level)
-    robust <- FALSE
     if (!int.only && int.incl && con$scale) {
         Xsave <- X
         meanX <- colMeans(X[, 2:p, drop = FALSE])
@@ -864,6 +852,8 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
                   dnchgcalc = con$dnchgcalc, dnchgprec = con$dnchgprec)
                 if (verbose) 
                   message("Fitting saturated model ...")
+                QEconv <- TRUE
+                QE.Wld <- NA
                 if (k > 1) {
                   is.aliased <- is.na(coef(res.QE))
                   X.QE <- X.QE[, !is.aliased, drop = FALSE]
@@ -894,20 +884,28 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
                   if (con$optimizer == "optim" || con$optimizer == 
                     "nlminb") {
                     if (inherits(res.QE, "try-error") || res.QE$convergence != 
-                      0) 
-                      stop("Cannot fit saturated model.")
+                      0) {
+                      warning("Cannot fit saturated model.")
+                      QEconv <- FALSE
+                      res.QE <- NULL
+                    }
                   }
                   if (con$optimizer == "minqa") {
                     if (inherits(res.QE, "try-error") || res.QE$ierr != 
-                      0) 
-                      stop("Cannot fit saturated model.")
+                      0) {
+                      warning("Cannot fit saturated model.")
+                      QEconv <- FALSE
+                      res.QE <- NULL
+                    }
                   }
-                  if (very.verbose) 
-                    message("Computing Hessian ...")
-                  h.QE <- numDeriv::hessian(.dnchg, x = res.QE$par, 
-                    ai = ai, bi = bi, ci = ci, di = di, X.fit = X.QE, 
-                    random = FALSE, verbose = verbose, digits = digits, 
-                    dnchgcalc = con$dnchgcalc, dnchgprec = con$dnchgprec)
+                  if (QEconv) {
+                    if (very.verbose) 
+                      message("Computing Hessian ...")
+                    h.QE <- numDeriv::hessian(.dnchg, x = res.QE$par, 
+                      ai = ai, bi = bi, ci = ci, di = di, X.fit = X.QE, 
+                      random = FALSE, verbose = verbose, digits = digits, 
+                      dnchgcalc = con$dnchgcalc, dnchgprec = con$dnchgprec)
+                  }
                 }
                 else {
                   res.QE <- res.FE
@@ -925,29 +923,32 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
                   ll.FE <- -1 * res.FE$fval
                   ll.QE <- -1 * res.QE$fval
                 }
-                b2.QE <- res.QE$par
-                hessian <- h.QE
-                p.QE <- length(b2.QE)
-                b2.QE <- b2.QE[-p.QE]
-                hessian <- hessian[-p.QE, -p.QE, drop = FALSE]
-                p.QE <- length(b2.QE)
-                is.0 <- colSums(hessian == 0L) == p.QE
-                b2.QE <- b2.QE[!is.0]
-                hessian <- hessian[!is.0, !is.0, drop = FALSE]
-                b2.QE <- cbind(b2.QE[-seq_len(p)])
-                h.A <- hessian[seq_len(p), seq_len(p), drop = FALSE]
-                h.B <- hessian[seq_len(p), -seq_len(p), drop = FALSE]
-                h.C <- hessian[-seq_len(p), seq_len(p), drop = FALSE]
-                h.D <- hessian[-seq_len(p), -seq_len(p), drop = FALSE]
-                chol.h.A <- try(chol(h.A), silent = !verbose)
-                if (class(chol.h.A) == "try-error") {
-                  warning("Cannot invert Hessian for saturated model.")
-                  QE.Wld <- NA
-                }
-                else {
-                  Ivb2.QE <- h.D - h.C %*% chol2inv(chol.h.A) %*% 
-                    h.B
-                  QE.Wld <- c(t(b2.QE) %*% Ivb2.QE %*% b2.QE)
+                if (!QEconv) 
+                  ll.QE <- NA
+                if (QEconv) {
+                  b2.QE <- res.QE$par
+                  hessian <- h.QE
+                  p.QE <- length(b2.QE)
+                  b2.QE <- b2.QE[-p.QE]
+                  hessian <- hessian[-p.QE, -p.QE, drop = FALSE]
+                  p.QE <- length(b2.QE)
+                  is.0 <- colSums(hessian == 0L) == p.QE
+                  b2.QE <- b2.QE[!is.0]
+                  hessian <- hessian[!is.0, !is.0, drop = FALSE]
+                  b2.QE <- cbind(b2.QE[-seq_len(p)])
+                  h.A <- hessian[seq_len(p), seq_len(p), drop = FALSE]
+                  h.B <- hessian[seq_len(p), -seq_len(p), drop = FALSE]
+                  h.C <- hessian[-seq_len(p), seq_len(p), drop = FALSE]
+                  h.D <- hessian[-seq_len(p), -seq_len(p), drop = FALSE]
+                  chol.h.A <- try(chol(h.A), silent = !verbose)
+                  if (class(chol.h.A) == "try-error") {
+                    warning("Cannot invert Hessian for saturated model.")
+                  }
+                  else {
+                    Ivb2.QE <- h.D - h.C %*% chol2inv(chol.h.A) %*% 
+                      h.B
+                    QE.Wld <- c(t(b2.QE) %*% Ivb2.QE %*% b2.QE)
+                  }
                 }
             }
             if (con$optimizer == "clogit" || con$optimizer == 
@@ -966,7 +967,7 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
                   if (con$optimizer == "clogit") {
                     args.clogit <- clogitCtrl
                     args.clogit$formula <- event ~ X.fit.l + 
-                      survival::strata(study.l)
+                      strata(study.l)
                     res.FE <- try(do.call(survival::clogit, args.clogit), 
                       silent = !verbose)
                   }
@@ -991,7 +992,7 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
                 X.QE <- X.QE[, !is.na(coef(res.QE)), drop = FALSE]
                 if (con$optimizer == "clogit") {
                   args.clogit <- clogitCtrl
-                  args.clogit$formula <- event ~ X.QE.l + survival::strata(study.l)
+                  args.clogit$formula <- event ~ X.QE.l + strata(study.l)
                   if (verbose) {
                     res.QE <- try(do.call(survival::clogit, args.clogit), 
                       silent = !verbose)
@@ -1083,14 +1084,22 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
                   b <- cbind(res.FE$par[seq_len(p)])
                   chol.h <- try(chol(h.FE[seq_len(p), seq_len(p)]), 
                     silent = !verbose)
-                  if (class(chol.h) == "try-error") 
-                    stop("Cannot invert Hessian for FE model.")
-                  vb <- chol2inv(chol.h)
+                  if (class(chol.h) == "try-error") {
+                    warning("Choleski factorization of Hessian failed. Trying inversion via QR decomposition.")
+                    vb <- try(qr.solve(h.FE[seq_len(p), seq_len(p)]), 
+                      silent = !verbose)
+                    if (class(vb) == "try-error") 
+                      stop("Cannot invert Hessian for ML model.")
+                  }
+                  else {
+                    vb <- chol2inv(chol.h)
+                  }
                 }
                 if (con$optimizer == "clogit" || con$optimizer == 
                   "clogistic") {
-                  b <- cbind(coef(res.FE))
-                  vb <- vcov(res.FE)
+                  b <- cbind(coef(res.FE)[seq_len(p)])
+                  vb <- vcov(res.FE)[seq_len(p), seq_len(p), 
+                    drop = FALSE]
                 }
                 tau2 <- 0
                 sigma2 <- NA
@@ -1101,16 +1110,27 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
             if (method == "ML") {
                 b <- cbind(res.ML$par[seq_len(p)])
                 chol.h <- try(chol(h.ML), silent = !verbose)
-                if (class(chol.h) == "try-error") 
-                  stop("Cannot invert Hessian for ML model.")
-                vb.f <- chol2inv(chol.h)
+                if (class(chol.h) == "try-error") {
+                  warning("Choleski factorization of Hessian failed. Trying inversion via QR decomposition.")
+                  vb.f <- try(qr.solve(h.ML), silent = !verbose)
+                  if (class(vb.f) == "try-error") 
+                    stop("Cannot invert Hessian for ML model.")
+                }
+                else {
+                  vb.f <- chol2inv(chol.h)
+                }
                 vb <- vb.f[seq_len(p), seq_len(p), drop = FALSE]
                 tau2 <- exp(res.ML$par[p + 1])
                 sigma2 <- NA
                 parms <- p + 1
                 p.eff <- p
                 k.eff <- k
-                se.tau2 <- sqrt(vb.f[p + 1, p + 1]) * tau2
+                if (vb.f[p + 1, p + 1] >= 0) {
+                  se.tau2 <- sqrt(vb.f[p + 1, p + 1]) * tau2
+                }
+                else {
+                  se.tau2 <- NA
+                }
             }
         }
     }
@@ -1203,7 +1223,7 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
         if (dim(vb2.QE)[1] > 0) {
             chol.h <- try(chol(vb2.QE), silent = !verbose)
             if (class(chol.h) == "try-error") {
-                warnings("Cannot invert Hessian for saturated model.")
+                warning("Cannot invert Hessian for saturated model.")
                 QE.Wld <- NA
             }
             else {
@@ -1227,11 +1247,11 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
         QEp.Wld <- 1
         QEp.LRT <- 1
     }
-    wi <- 1/vi.I2
-    W <- diag(wi, nrow = k.I2, ncol = k.I2)
-    stXWX <- .invcalc(X = X.I2, W = W, k = k.I2)
-    P <- W - W %*% X.I2 %*% stXWX %*% crossprod(X.I2, W)
-    vi.avg <- (k.I2 - p)/.tr(P)
+    wi <- 1/vi
+    W <- diag(wi, nrow = k.yi, ncol = k.yi)
+    stXWX <- .invcalc(X = X.yi, W = W, k = k.yi)
+    P <- W - W %*% X.yi %*% stXWX %*% crossprod(X.yi, W)
+    vi.avg <- (k.yi - p)/.tr(P)
     I2 <- 100 * tau2/(vi.avg + tau2)
     H2 <- tau2/vi.avg + 1
     chol.h <- try(chol(vb[btt, btt]), silent = !verbose)
@@ -1250,13 +1270,15 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
     se <- sqrt(diag(vb))
     names(se) <- NULL
     zval <- c(b/se)
-    if (knha || robust) {
+    if (knha) {
+        dfs <- k - p
         QM <- QM/m
-        QMp <- pf(QM, df1 = m, df2 = k - p, lower.tail = FALSE)
-        pval <- 2 * pt(abs(zval), df = k - p, lower.tail = FALSE)
-        crit <- qt(alpha/2, df = k - p, lower.tail = FALSE)
+        QMp <- pf(QM, df1 = m, df2 = dfs, lower.tail = FALSE)
+        pval <- 2 * pt(abs(zval), df = dfs, lower.tail = FALSE)
+        crit <- qt(alpha/2, df = dfs, lower.tail = FALSE)
     }
     else {
+        dfs <- NA
         QMp <- pchisq(QM, df = m, lower.tail = FALSE)
         pval <- 2 * pnorm(abs(zval), lower.tail = FALSE)
         crit <- qnorm(alpha/2, lower.tail = FALSE)
@@ -1276,7 +1298,7 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
     AIC.REML <- NA
     BIC.REML <- NA
     AICc.REML <- NA
-    fit.stats <- matrix(c(ll.ML, dev.ML, AIC.ML, AICc.ML, BIC.ML, 
+    fit.stats <- matrix(c(ll.ML, dev.ML, AIC.ML, BIC.ML, AICc.ML, 
         ll.REML, dev.REML, AIC.REML, BIC.REML, AICc.REML), ncol = 2, 
         byrow = FALSE)
     dimnames(fit.stats) <- list(c("ll", "dev", "AIC", "BIC", 
@@ -1285,7 +1307,6 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
     if (very.verbose) 
         message("Preparing output ...")
     weighted <- TRUE
-    robust <- FALSE
     res <- list(b = b, se = se, zval = zval, pval = pval, ci.lb = ci.lb, 
         ci.ub = ci.ub, vb = vb, tau2 = tau2, se.tau2 = se.tau2, 
         sigma2 = sigma2, k = k, k.f = k.f, k.yi = k.yi, k.eff = k.eff, 
@@ -1301,7 +1322,7 @@ function (ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi,
         mi.f = mi.f, ti.f = ti.f, ni = ni, ni.f = ni.f, ids = ids, 
         not.na = not.na, not.na.yivi = not.na.yivi, slab = slab, 
         slab.null = slab.null, measure = measure, method = method, 
-        model = model, weighted = weighted, knha = knha, robust = robust, 
+        model = model, weighted = weighted, knha = knha, dfs = dfs, 
         btt = btt, intercept = intercept, digits = digits, level = level, 
         control = control, verbose = verbose, add = add, to = to, 
         drop00 = drop00, fit.stats = fit.stats, version = packageVersion("metafor"), 

@@ -5,6 +5,8 @@ function (x, center = FALSE, xlim = NULL, zlim, xlab, zlab, atz,
 {
     if (!is.element("rma", class(x))) 
         stop("Argument 'x' must be an object of class \"rma\".")
+    if (is.element("robust.rma", class(x))) 
+        stop("Function not applicable to objects of class \"robust.rma\".")
     if (missing(transf)) 
         transf <- FALSE
     if (missing(targs)) 

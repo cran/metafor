@@ -2,7 +2,7 @@
 \alias{anova.rma}
 \title{Likelihood Ratio and Wald-Type Tests for 'rma' Objects}
 \description{
-   For two (nested) models of class \code{"rma.uni"} or \code{"rma.mv"}, the function provides a full versus reduced model comparison in terms of model fit statistics and a likelihood ratio test. When a single model is specified, a Wald-type test of one or more model coefficients is carried out.
+   For two (nested) models of class \code{"rma.uni"} or \code{"rma.mv"}, the function provides a full versus reduced model comparison in terms of model fit statistics and a likelihood ratio test. When a single model is specified, a Wald-type test of one or more model coefficients or linear combinations thereof is carried out.
 }
 \usage{
 \method{anova}{rma}(object, object2, btt, L, digits, \dots)

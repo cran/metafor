@@ -10,10 +10,10 @@ function (x, digits, signif.stars = getOption("show.signif.stars"),
     if (!x$int.only) {
         cat("Test of Moderators (coefficient(s) ", paste(x$btt, 
             collapse = ","), "): \n", sep = "")
-        if (x$knha || x$robust) {
-            cat("F(df1 = ", x$m, ", df2 = ", x$k - x$p, ") = ", 
-                formatC(x$QM, digits = digits, format = "f"), 
-                ", p-val* ", .pval(x$QMp, digits = digits, showeq = TRUE, 
+        if (x$knha) {
+            cat("F(df1 = ", x$m, ", df2 = ", x$dfs, ") = ", formatC(x$QM, 
+                digits = digits, format = "f"), ", p-val* ", 
+                .pval(x$QMp, digits = digits, showeq = TRUE, 
                   sep = " "), "\n\n", sep = "")
         }
         else {
@@ -26,7 +26,7 @@ function (x, digits, signif.stars = getOption("show.signif.stars"),
         `pval*` = x$pval, ci.lb = x$ci.lb, ci.ub = x$ci.ub)
     colnames(res.table) <- c("estimate", "se", "zval", "pval*", 
         "ci.lb", "ci.ub")
-    if (x$knha || x$robust) 
+    if (x$knha) 
         colnames(res.table)[3] <- "tval"
     signif <- symnum(x$pval, corr = FALSE, na = FALSE, cutpoints = c(0, 
         0.001, 0.01, 0.05, 0.1, 1), symbols = c("***", "**", 

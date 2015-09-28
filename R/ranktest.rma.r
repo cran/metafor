@@ -3,6 +3,8 @@ function (x, ...)
 {
     if (!is.element("rma", class(x))) 
         stop("Argument 'x' must be an object of class \"rma\".")
+    if (is.element("robust.rma", class(x))) 
+        stop("Function not applicable to objects of class \"robust.rma\".")
     yi <- x$yi
     vi <- x$vi
     res <- rma(yi, vi, method = "FE")

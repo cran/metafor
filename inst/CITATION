@@ -9,8 +9,8 @@ citEntry(entry = "Article",
         number = "3",
          pages = "1--48",
            url = "http://www.jstatsoft.org/v36/i03/",
-   textVersion = paste("Wolfgang Viechtbauer (2010).",
+   textVersion = paste("Viechtbauer, W. (2010).",
                        "Conducting meta-analyses in R with the metafor package.",
                        "Journal of Statistical Software, 36(3), 1-48.",
-                       "URL http://www.jstatsoft.org/v36/i03/.")
+                       "URL: http://www.jstatsoft.org/v36/i03/")
 )

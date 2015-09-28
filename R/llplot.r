@@ -115,9 +115,9 @@ function (measure = "OR", ai, bi, ci, di, n1i, n2i, data, subset,
         id00 <- id00[subset]
     }
     k <- length(ai)
-    aibicidi.na <- is.na(cbind(ai, bi, ci, di))
+    aibicidi.na <- is.na(ai) | is.na(bi) | is.na(ci) | is.na(di)
     if (any(aibicidi.na)) {
-        not.na <- rowSums(aibicidi.na) == 0L
+        not.na <- !aibicidi.na
         if (na.act == "na.omit" || na.act == "na.exclude" || 
             na.act == "na.pass") {
             yi <- yi[not.na]

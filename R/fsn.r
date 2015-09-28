@@ -41,9 +41,9 @@ function (yi, vi, sei, data, type = "Rosenthal", alpha = 0.05,
         yi <- yi[subset]
         vi <- vi[subset]
     }
-    yivi.na <- is.na(cbind(yi, vi))
+    yivi.na <- is.na(yi) | is.na(vi)
     if (any(yivi.na)) {
-        not.na <- rowSums(yivi.na) == 0L
+        not.na <- !yivi.na
         if (na.act == "na.omit" || na.act == "na.exclude" || 
             na.act == "na.pass") {
             yi <- yi[not.na]

@@ -12,7 +12,8 @@ function (x, digits, ...)
     inf <- round(x$inf, digits)
     dfb <- round(x$dfb, digits)
     inf$inf <- ifelse(!is.na(x$is.infl) & x$is.infl, "*", "")
-    any.na <- is.na(cbind(inf, dfb))
+    any.na <- apply(is.na(inf), 1, any) | apply(is.na(dfb), 1, 
+        any)
     if (any(any.na)) {
         if (na.act == "na.omit") {
             inf <- inf[x$not.na, ]

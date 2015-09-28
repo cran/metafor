@@ -16,11 +16,11 @@ function (fitted, xlim, ylim, steps = 20, progbar = TRUE, parallel = "no",
         }
         else {
             vc.lb <- min(x$tau2, vc.ci$random[1, 2])
-            vc.ub <- max(x$tau2, vc.ci$random[1, 3])
+            vc.ub <- max(0.1, x$tau2, vc.ci$random[1, 3])
         }
         if (is.na(vc.lb) || is.na(vc.ub)) {
             vc.lb <- max(0, x$tau2 - 1.96 * x$se.tau2)
-            vc.ub <- max(0, x$tau2 + 1.96 * x$se.tau2)
+            vc.ub <- max(0.1, x$tau2 + 1.96 * x$se.tau2)
         }
         if (is.na(vc.lb) || is.na(vc.ub)) {
             vc.lb <- max(0, x$tau2/4)
@@ -46,10 +46,10 @@ function (fitted, xlim, ylim, steps = 20, progbar = TRUE, parallel = "no",
         if (progbar) 
             pbar <- txtProgressBar(min = 0, max = steps, style = 3)
         for (i in 1:length(vcs)) {
-            res <- try(rma(x$yi, x$vi, weights = x$weights, mods = x$X, 
-                method = x$method, weighted = x$weighted, intercept = FALSE, 
-                knha = x$knha, level = x$level, control = x$control, 
-                tau2 = vcs[i]), silent = TRUE)
+            res <- try(suppressWarnings(rma(x$yi, x$vi, weights = x$weights, 
+                mods = x$X, method = x$method, weighted = x$weighted, 
+                intercept = FALSE, knha = x$knha, level = x$level, 
+                control = x$control, tau2 = vcs[i])), silent = TRUE)
             if (inherits(res, "try-error")) 
                 next
             lls[i] <- c(logLik(res))

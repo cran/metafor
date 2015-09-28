@@ -4,6 +4,8 @@ function (x, model = "rma", predictor = "sei", ret.fit = FALSE,
 {
     if (!is.element("rma", class(x))) 
         stop("Argument 'x' must be an object of class \"rma\".")
+    if (is.element("robust.rma", class(x))) 
+        stop("Function not applicable to objects of class \"robust.rma\".")
     if (is.element("rma.glmm", class(x))) 
         stop("Method not yet implemented for objects of class \"rma.glmm\". Sorry!")
     if (is.element("rma.mv", class(x))) 
@@ -46,7 +48,7 @@ function (x, model = "rma", predictor = "sei", ret.fit = FALSE,
             control = x$control, ...)
         zval <- fit$zval[p + 1]
         pval <- fit$pval[p + 1]
-        dfs <- ifelse(x$knha || x$robust, fit$k - fit$p, NA)
+        dfs <- fit$dfs
     }
     else {
         fit <- lm(yi ~ X - 1, weights = 1/vi)

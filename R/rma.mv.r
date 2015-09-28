@@ -7,7 +7,7 @@ function (yi, V, W, mods, random, struct = "CS", intercept = TRUE,
     if (!is.element(method, c("FE", "ML", "REML"))) 
         stop("Unknown 'method' specified.")
     if (any(!is.element(struct, c("CS", "HCS", "UN", "AR", "HAR", 
-        "UNHO")))) 
+        "UNHO", "ID", "DIAG")))) 
         stop("Unknown 'struct' specified.")
     if (length(struct) == 1) 
         struct <- c(struct, struct)
@@ -231,20 +231,18 @@ function (yi, V, W, mods, random, struct = "CS", intercept = TRUE,
     if (very.verbose) 
         message("Generating/extracting study labels ...")
     if (is.null(slab)) {
-        if (!is.null(attr(yi, "slab"))) {
-            slab.null <- FALSE
+        if (!is.null(attr(yi, "slab"))) 
             slab <- attr(yi, "slab")
-        }
-        else {
-            slab.null <- TRUE
-            slab <- ids
-        }
+        if (is.null(slab) && length(slab) != k) 
+            slab <- NULL
+    }
+    if (is.null(slab)) {
+        slab.null <- TRUE
+        slab <- ids
     }
     else {
         if (anyNA(slab)) 
             stop("NAs in study labels.")
-        if (anyDuplicated(slab) > 0) 
-            slab <- make.unique(slab)
         if (length(slab) != k) 
             stop("Study labels not of same length as data.")
         slab.null <- FALSE
@@ -267,6 +265,9 @@ function (yi, V, W, mods, random, struct = "CS", intercept = TRUE,
         attr(yi, "measure") <- measure
         attr(yi, "ni") <- ni
     }
+    if (anyDuplicated(slab)) 
+        slab <- make.unique(as.character(slab))
+    attr(yi, "slab") <- slab
     vi <- diag(V)
     if (any(vi <= 0, na.rm = TRUE)) {
         allvipos <- FALSE
@@ -386,8 +387,8 @@ function (yi, V, W, mods, random, struct = "CS", intercept = TRUE,
             message(paste0("Processing '", as.character(random[mf.r.ncols == 
                 2][1]), "' term ..."))
         g.names <- names(mf.g)
-        if (is.element(struct[1], c("CS", "HCS", "UN", "UNHO")) && 
-            !is.factor(mf.g.f[[1]]) && !is.character(mf.g.f[[1]])) 
+        if (is.element(struct[1], c("CS", "HCS", "UN", "ID", 
+            "DIAG", "UNHO")) && !is.factor(mf.g.f[[1]]) && !is.character(mf.g.f[[1]])) 
             stop("Inner variable in (~ inner | outer) must be a factor or character variable.")
         mf.g.f <- data.frame(inner = factor(mf.g.f[[1]]), outer = factor(mf.g.f[[2]]))
         mf.g <- data.frame(inner = factor(mf.g[[1]]), outer = factor(mf.g[[2]]))
@@ -395,11 +396,11 @@ function (yi, V, W, mods, random, struct = "CS", intercept = TRUE,
             stop("No NAs allowed in variables specified in the 'random' argument.")
         g.nlevels <- c(nlevels(mf.g[[1]]), nlevels(mf.g[[2]]))
         g.levels <- list(levels(mf.g[[1]]), levels(mf.g[[2]]))
-        if (struct[1] == "CS") {
+        if (struct[1] == "CS" || struct[1] == "ID") {
             tau2s <- 1
             rhos <- 1
         }
-        if (struct[1] == "HCS") {
+        if (struct[1] == "HCS" || struct[1] == "DIAG") {
             tau2s <- g.nlevels[1]
             rhos <- 1
         }
@@ -426,7 +427,7 @@ function (yi, V, W, mods, random, struct = "CS", intercept = TRUE,
         if (is.null(rho)) 
             rho <- rep(NA_real_, rhos)
         if (length(tau2) == 1 && is.element(struct[1], c("HCS", 
-            "UN", "HAR"))) 
+            "UN", "DIAG", "HAR"))) 
             tau2 <- rep(tau2, tau2s)
         if (length(rho) == 1 && is.element(struct[1], c("UN", 
             "UNHO"))) 
@@ -482,8 +483,8 @@ function (yi, V, W, mods, random, struct = "CS", intercept = TRUE,
             message(paste0("Processing '", as.character(random[mf.r.ncols == 
                 2][2]), "' term ..."))
         h.names <- names(mf.h)
-        if (is.element(struct[2], c("CS", "HCS", "UN", "UNHO")) && 
-            !is.factor(mf.h.f[[1]]) && !is.character(mf.h.f[[1]])) 
+        if (is.element(struct[2], c("CS", "HCS", "UN", "ID", 
+            "DIAG", "UNHO")) && !is.factor(mf.h.f[[1]]) && !is.character(mf.h.f[[1]])) 
             stop("Inner variable in (~ inner | outer) must be a factor or character variable.")
         mf.h.f <- data.frame(inner = factor(mf.h.f[[1]]), outer = factor(mf.h.f[[2]]))
         mf.h <- data.frame(inner = factor(mf.h[[1]]), outer = factor(mf.h[[2]]))
@@ -491,11 +492,11 @@ function (yi, V, W, mods, random, struct = "CS", intercept = TRUE,
             stop("No NAs allowed in variables specified in the 'random' argument.")
         h.nlevels <- c(nlevels(mf.h[[1]]), nlevels(mf.h[[2]]))
         h.levels <- list(levels(mf.h[[1]]), levels(mf.h[[2]]))
-        if (struct[2] == "CS") {
+        if (struct[2] == "CS" || struct[2] == "ID") {
             gamma2s <- 1
             phis <- 1
         }
-        if (struct[2] == "HCS") {
+        if (struct[2] == "HCS" || struct[2] == "DIAG") {
             gamma2s <- h.nlevels[1]
             phis <- 1
         }
@@ -522,7 +523,7 @@ function (yi, V, W, mods, random, struct = "CS", intercept = TRUE,
         if (is.null(phi)) 
             phi <- rep(NA_real_, phis)
         if (length(gamma2) == 1 && is.element(struct[2], c("HCS", 
-            "UN", "HAR"))) 
+            "UN", "DIAG", "HAR"))) 
             gamma2 <- rep(gamma2, gamma2s)
         if (length(phi) == 1 && is.element(struct[2], c("UN", 
             "UNHO"))) 
@@ -575,18 +576,16 @@ function (yi, V, W, mods, random, struct = "CS", intercept = TRUE,
     }
     Vlt <- V
     Vlt[upper.tri(Vlt)] <- 0
-    if (is.null(A)) {
-        has.na <- is.na(cbind(yi, mods)) | apply(is.na(Vlt), 
-            MARGIN = 1, any)
-    }
-    else {
-        has.na <- is.na(cbind(yi, mods)) | apply(is.na(Vlt), 
-            MARGIN = 1, any) | apply(is.na(A), MARGIN = 1, any)
-    }
+    has.na <- is.na(yi) | if (is.null(mods)) 
+        FALSE
+    else apply(is.na(mods), 1, any) | apply(is.na(Vlt), 1, any) | 
+        if (is.null(A)) 
+            FALSE
+        else apply(is.na(A), 1, any)
     if (any(has.na)) {
         if (very.verbose) 
             message("Handling NAs ...")
-        not.na <- rowSums(has.na) == 0L
+        not.na <- !has.na
         if (na.act == "na.omit" || na.act == "na.exclude" || 
             na.act == "na.pass") {
             yi <- yi[not.na]
@@ -747,13 +746,15 @@ function (yi, V, W, mods, random, struct = "CS", intercept = TRUE,
         g.levels.r <- !is.element(g.levels.f[[1]], g.levels[[1]])
         if (any(g.levels.r)) 
             warning("One or more levels of inner factor removed due to NAs.")
+        if (is.element(struct[1], c("ID", "DIAG"))) 
+            rho <- 0
         if (g.nlevels[1] == 1 && is.element(struct[1], c("CS", 
             "HCS", "AR", "HAR")) && is.na(rho)) {
             rho <- 0
             warning("Inner factor has only a single level, so fixed value of 'rho' to 0.")
         }
         g.levels.k <- table(factor(mf.g[[1]], levels = g.levels.f[[1]]))
-        if (is.element(struct[1], c("HCS", "UN", "HAR"))) {
+        if (is.element(struct[1], c("HCS", "UN", "DIAG", "HAR"))) {
             if (any(is.na(tau2) & g.levels.k == 1)) {
                 tau2[is.na(tau2) & g.levels.k == 1] <- 0
                 warning("Inner factor has k=1 for one or more levels. Corresponding tau2 value(s) fixed to 0.")
@@ -798,6 +799,9 @@ function (yi, V, W, mods, random, struct = "CS", intercept = TRUE,
         }
         if (struct[1] == "UN") {
             G <- .con.vcov.UN(tau2, rho)
+        }
+        if (struct[1] == "ID" || struct[1] == "DIAG") {
+            G <- diag(tau2, nrow = g.nlevels.f[1], ncol = g.nlevels.f[1])
         }
         if (struct[1] == "UNHO") {
             G <- matrix(NA_real_, nrow = g.nlevels.f[1], ncol = g.nlevels.f[1])
@@ -848,12 +852,12 @@ function (yi, V, W, mods, random, struct = "CS", intercept = TRUE,
             diag(G) <- tau2
         }
         if (any(g.levels.r) && is.element(struct[1], c("CS", 
-            "AR"))) {
+            "AR", "ID"))) {
             G[g.levels.r, ] <- 0
             G[, g.levels.r] <- 0
         }
         if (any(g.levels.r) && is.element(struct[1], c("HCS", 
-            "HAR"))) {
+            "HAR", "DIAG"))) {
             G[g.levels.r, ] <- 0
             G[, g.levels.r] <- 0
             tau2[g.levels.r] <- 0
@@ -900,13 +904,15 @@ function (yi, V, W, mods, random, struct = "CS", intercept = TRUE,
         h.levels.r <- !is.element(h.levels.f[[1]], h.levels[[1]])
         if (any(h.levels.r)) 
             warning("One or more levels of inner factor removed due to NAs.")
+        if (is.element(struct[2], c("ID", "DIAG"))) 
+            phi <- 0
         if (h.nlevels[1] == 1 && is.element(struct[2], c("CS", 
             "HCS", "AR", "HAR")) && is.na(phi)) {
             phi <- 0
             warning("Inner factor has only a single level, so fixed value of 'phi' to 0.")
         }
         h.levels.k <- table(factor(mf.h[[1]], levels = h.levels.f[[1]]))
-        if (is.element(struct[2], c("HCS", "UN", "HAR"))) {
+        if (is.element(struct[2], c("HCS", "UN", "DIAG", "HAR"))) {
             if (any(is.na(gamma2) & h.levels.k == 1)) {
                 gamma2[is.na(gamma2) & h.levels.k == 1] <- 0
                 warning("Inner factor has k=1 for one or more levels. Corresponding gamma2 value(s) fixed to 0.")
@@ -952,6 +958,9 @@ function (yi, V, W, mods, random, struct = "CS", intercept = TRUE,
         }
         if (struct[2] == "UN") {
             H <- .con.vcov.UN(gamma2, phi)
+        }
+        if (struct[2] == "ID" || struct[2] == "DIAG") {
+            H <- diag(gamma2, nrow = h.nlevels.f[1], ncol = h.nlevels.f[1])
         }
         if (struct[2] == "UNHO") {
             H <- matrix(NA_real_, nrow = h.nlevels.f[1], ncol = h.nlevels.f[1])
@@ -1002,12 +1011,12 @@ function (yi, V, W, mods, random, struct = "CS", intercept = TRUE,
             diag(H) <- gamma2
         }
         if (any(h.levels.r) && is.element(struct[2], c("CS", 
-            "AR"))) {
+            "AR", "ID"))) {
             H[h.levels.r, ] <- 0
             H[, h.levels.r] <- 0
         }
         if (any(h.levels.r) && is.element(struct[2], c("HCS", 
-            "HAR"))) {
+            "HAR", "DIAG"))) {
             H[h.levels.r, ] <- 0
             H[, h.levels.r] <- 0
             gamma2[h.levels.r] <- 0
@@ -1082,7 +1091,7 @@ function (yi, V, W, mods, random, struct = "CS", intercept = TRUE,
         sigma2.init = sigma2.init, tau2.init = tau2.init, rho.init = rho.init, 
         gamma2.init = gamma2.init, phi.init = phi.init, REMLf = TRUE, 
         tol = 1e-07, cholesky = ifelse(struct == "UN", TRUE, 
-            FALSE), posdefify = FALSE)
+            FALSE), posdefify = FALSE, hessian = FALSE, vctransf = FALSE)
     con.pos <- pmatch(names(control), names(con))
     con[c(na.omit(con.pos))] <- control[!is.na(con.pos)]
     if (verbose) 
@@ -1266,7 +1275,6 @@ function (yi, V, W, mods, random, struct = "CS", intercept = TRUE,
         }
     }
     alpha <- ifelse(level > 1, (100 - level)/100, 1 - level)
-    robust <- FALSE
     if (very.verbose) 
         message("Model fitting ...")
     if (optimizer == "optim") {
@@ -1306,7 +1314,7 @@ function (yi, V, W, mods, random, struct = "CS", intercept = TRUE,
     }
     optcall <- paste(optimizer, "(", par.arg, "=c(con$sigma2.init, con$tau2.init, con$rho.init, con$gamma2.init, con$phi.init),\n      .ll.rma.mv, reml=reml, ", 
         ifelse(optimizer == "optim", "method=optmethod, ", ""), 
-        "Y=Y, M=V, X=X, k=k, pX=p,\n      D.S=D.S, Z.G1=Z.G1, Z.G2=Z.G2, Z.H1=Z.H1, Z.H2=Z.H2,\n      sigma2.val=sigma2, tau2.val=tau2, rho.val=rho, gamma2.val=gamma2, phi.val=phi,\n      sigma2s=sigma2s, tau2s=tau2s, rhos=rhos, gamma2s=gamma2s, phis=phis,\n      withS=withS, withG=withG, withH=withH,\n      struct=struct, g.levels.r=g.levels.r, h.levels.r=h.levels.r,\n      tol=tol, sparse=sparse, cholesky=cholesky, posdefify=posdefify,\n      verbose=verbose, digits=digits, REMLf=con$REMLf", 
+        "Y=Y, M=V, X.fit=X, k=k, pX=p,\n      D.S=D.S, Z.G1=Z.G1, Z.G2=Z.G2, Z.H1=Z.H1, Z.H2=Z.H2,\n      sigma2.val=sigma2, tau2.val=tau2, rho.val=rho, gamma2.val=gamma2, phi.val=phi,\n      sigma2s=sigma2s, tau2s=tau2s, rhos=rhos, gamma2s=gamma2s, phis=phis,\n      withS=withS, withG=withG, withH=withH,\n      struct=struct, g.levels.r=g.levels.r, h.levels.r=h.levels.r,\n      tol=tol, sparse=sparse, cholesky=cholesky, posdefify=posdefify, vctransf=TRUE,\n      verbose=verbose, very.verbose=very.verbose, digits=digits, REMLf=con$REMLf", 
         ctrl.arg, ")\n", sep = "")
     opt.res <- try(eval(parse(text = optcall)), silent = !verbose)
     if (inherits(opt.res, "try-error")) 
@@ -1346,11 +1354,14 @@ function (yi, V, W, mods, random, struct = "CS", intercept = TRUE,
     if (optimizer == "nlm") 
         opt.res$par <- opt.res$estimate
     if (p < k) {
+        sigma2.val <- sigma2
+        tau2.val <- tau2
+        rho.val <- rho
+        gamma2.val <- gamma2
+        phi.val <- phi
         sigma2 <- ifelse(is.na(sigma2), exp(opt.res$par[1:sigma2s]), 
             sigma2)
         if (cholesky[1]) {
-            tau2.val <- tau2
-            rho.val <- rho
             tau2 <- opt.res$par[(sigma2s + 1):(sigma2s + tau2s)]
             rho <- opt.res$par[(sigma2s + tau2s + 1):(sigma2s + 
                 tau2s + rhos)]
@@ -1364,8 +1375,6 @@ function (yi, V, W, mods, random, struct = "CS", intercept = TRUE,
                 0, tau2)
         }
         if (cholesky[2]) {
-            gamma2.val <- gamma2
-            phi.val <- phi
             gamma2 <- opt.res$par[(sigma2s + tau2s + rhos + 1):(sigma2s + 
                 tau2s + rhos + gamma2s)]
             phi <- opt.res$par[(sigma2s + tau2s + rhos + gamma2s + 
@@ -1424,6 +1433,9 @@ function (yi, V, W, mods, random, struct = "CS", intercept = TRUE,
                 tau2 <- diag(G)
                 rho <- cov2cor(G)[upper.tri(G)]
             }
+        }
+        if (struct[1] == "ID" || struct[1] == "DIAG") {
+            G <- diag(tau2, nrow = ncol.Z.G1, ncol = ncol.Z.G1)
         }
         if (struct[1] == "UNHO") {
             G <- matrix(NA_real_, nrow = ncol.Z.G1, ncol = ncol.Z.G1)
@@ -1500,6 +1512,9 @@ function (yi, V, W, mods, random, struct = "CS", intercept = TRUE,
                 gamma2 <- diag(H)
                 phi <- cov2cor(H)[upper.tri(H)]
             }
+        }
+        if (struct[2] == "ID" || struct[2] == "DIAG") {
+            H <- diag(gamma2, nrow = ncol.Z.H1, ncol = ncol.Z.H1)
         }
         if (struct[2] == "UNHO") {
             H <- matrix(NA_real_, nrow = ncol.Z.H1, ncol = ncol.Z.H1)
@@ -1587,13 +1602,15 @@ function (yi, V, W, mods, random, struct = "CS", intercept = TRUE,
     pval <- 2 * pnorm(abs(zval), lower.tail = FALSE)
     QM <- as.vector(t(b)[btt] %*% chol2inv(chol(vb[btt, btt])) %*% 
         b[btt])
-    if (knha || robust) {
+    if (knha) {
+        dfs <- k - p
         QM <- QM/m
-        QMp <- pf(QM, df1 = m, df2 = k - p, lower.tail = FALSE)
-        pval <- 2 * pt(abs(zval), df = k - p, lower.tail = FALSE)
-        crit <- qt(alpha/2, df = k - p, lower.tail = FALSE)
+        QMp <- pf(QM, df1 = m, df2 = dfs, lower.tail = FALSE)
+        pval <- 2 * pt(abs(zval), df = dfs, lower.tail = FALSE)
+        crit <- qt(alpha/2, df = dfs, lower.tail = FALSE)
     }
     else {
+        dfs <- NA
         QMp <- pchisq(QM, df = m, lower.tail = FALSE)
         pval <- 2 * pnorm(abs(zval), lower.tail = FALSE)
         crit <- qnorm(alpha/2, lower.tail = FALSE)
@@ -1618,6 +1635,95 @@ function (yi, V, W, mods, random, struct = "CS", intercept = TRUE,
     }
     ll.QE <- -1/2 * (k) * log(2 * base::pi) - 1/2 * determinant(V, 
         logarithm = TRUE)$modulus
+    if (con$hessian) {
+        if (very.verbose) 
+            message("Computing Hessian ...")
+        if (!requireNamespace("numDeriv", quietly = TRUE)) 
+            stop("Please install the 'numDeriv' package for Hessian computation.")
+        hessian <- try(numDeriv::hessian(func = .ll.rma.mv, x = if (con$vctransf) 
+            opt.res$par
+        else c(sigma2, tau2, rho, gamma2, phi), reml = reml, 
+            Y = Y, M = V, X.fit = X, k = k, pX = p, D.S = D.S, 
+            Z.G1 = Z.G1, Z.G2 = Z.G2, Z.H1 = Z.H1, Z.H2 = Z.H2, 
+            sigma2.val = sigma2.val, tau2.val = tau2.val, rho.val = rho.val, 
+            gamma2.val = gamma2.val, phi.val = phi.val, sigma2s = sigma2s, 
+            tau2s = tau2s, rhos = rhos, gamma2s = gamma2s, phis = phis, 
+            withS = withS, withG = withG, withH = withH, struct = struct, 
+            g.levels.r = g.levels.r, h.levels.r = h.levels.r, 
+            tol = tol, sparse = sparse, cholesky = ifelse(c(con$vctransf, 
+                con$vctransf) & cholesky, TRUE, FALSE), posdefify = posdefify, 
+            vctransf = con$vctransf, verbose = verbose, very.verbose = very.verbose, 
+            digits = digits, REMLf = con$REMLf), silent = TRUE)
+        if (inherits(hessian, "try-error")) 
+            warning("Error when trying to compute Hessian.")
+        colnames(hessian) <- 1:ncol(hessian)
+        if (length(sigma2) == 1) {
+            colnames(hessian)[1] <- "sigma^2"
+        }
+        else {
+            colnames(hessian)[1:length(sigma2)] <- paste("sigma^2.", 
+                1:length(sigma2), sep = "")
+        }
+        if (length(tau2) == 1) {
+            colnames(hessian)[length(sigma2) + 1] <- "tau^2"
+        }
+        else {
+            colnames(hessian)[(length(sigma2) + 1):(length(sigma2) + 
+                length(tau2))] <- paste("tau^2.", 1:length(tau2), 
+                sep = "")
+        }
+        if (length(rho) == 1) {
+            colnames(hessian)[length(sigma2) + length(tau2) + 
+                1] <- "rho"
+        }
+        else {
+            colnames(hessian)[(length(sigma2) + length(tau2) + 
+                1):(length(sigma2) + length(tau2) + length(rho))] <- paste("rho.", 
+                outer(1:g.nlevels.f[1], 1:g.nlevels.f, paste, 
+                  sep = ".")[upper.tri(matrix(NA, nrow = g.nlevels.f, 
+                  ncol = g.nlevels.f))], sep = "")
+        }
+        if (length(gamma2) == 1) {
+            colnames(hessian)[length(sigma2) + length(tau2) + 
+                length(rho) + 1] <- "gamma^2"
+        }
+        else {
+            colnames(hessian)[(length(sigma2) + length(tau2) + 
+                length(rho) + 1):(length(sigma2) + length(tau2) + 
+                length(rho) + length(gamma2))] <- paste("gamma^2.", 
+                1:length(gamma2), sep = "")
+        }
+        if (length(phi) == 1) {
+            colnames(hessian)[length(sigma2) + length(tau2) + 
+                length(rho) + length(gamma2) + 1] <- "phi"
+        }
+        else {
+            colnames(hessian)[(length(sigma2) + length(tau2) + 
+                length(rho) + length(gamma2) + 1):(length(sigma2) + 
+                length(tau2) + length(rho) + length(gamma2) + 
+                length(phi))] <- paste("phi.", outer(1:h.nlevels.f[1], 
+                1:h.nlevels.f, paste, sep = ".")[upper.tri(matrix(NA, 
+                nrow = h.nlevels.f, ncol = h.nlevels.f))], sep = "")
+        }
+        rownames(hessian) <- colnames(hessian)
+        if (withS && withG && !withH) 
+            hessian <- hessian[1:(nrow(hessian) - 2), 1:(ncol(hessian) - 
+                2), drop = FALSE]
+        if (withS && !withG && !withH) 
+            hessian <- hessian[1:(nrow(hessian) - 4), 1:(ncol(hessian) - 
+                4), drop = FALSE]
+        if (!withS && withG && withH) 
+            hessian <- hessian[2:nrow(hessian), 2:ncol(hessian), 
+                drop = FALSE]
+        if (!withS && withG && !withH) 
+            hessian <- hessian[2:(nrow(hessian) - 2), 2:(ncol(hessian) - 
+                2), drop = FALSE]
+        if (!withS && !withG && !withH) 
+            hessian <- NA
+    }
+    else {
+        hessian <- NA
+    }
     if (very.verbose) 
         message("Computing fit statistics and log likelihood ...")
     parms <- p + ifelse(withS, sum(ifelse(sigma2.fix, 0, 1)), 
@@ -1653,7 +1759,6 @@ function (yi, V, W, mods, random, struct = "CS", intercept = TRUE,
     p.eff <- p
     k.eff <- k
     weighted <- TRUE
-    robust <- FALSE
     res <- list(b = b, se = se, zval = zval, pval = pval, ci.lb = ci.lb, 
         ci.ub = ci.ub, vb = vb, sigma2 = sigma2, tau2 = tau2, 
         rho = rho, gamma2 = gamma2, phi = phi, k = k, k.f = k.f, 
@@ -1662,10 +1767,11 @@ function (yi, V, W, mods, random, struct = "CS", intercept = TRUE,
         int.incl = int.incl, allvipos = allvipos, yi = yi, vi = vi, 
         V = V, W = A, X = X, yi.f = yi.f, vi.f = vi.f, V.f = V.f, 
         X.f = X.f, ni = ni, ni.f = ni.f, M = M, G = G, H = H, 
-        ids = ids, not.na = not.na, slab = slab, slab.null = slab.null, 
-        measure = measure, method = method, weighted = weighted, 
-        knha = knha, robust = robust, btt = btt, intercept = intercept, 
-        digits = digits, level = level, control = control, fit.stats = fit.stats, 
+        hessian = hessian, ids = ids, not.na = not.na, subset = subset, 
+        slab = slab, slab.null = slab.null, measure = measure, 
+        method = method, weighted = weighted, knha = knha, dfs = dfs, 
+        btt = btt, intercept = intercept, digits = digits, level = level, 
+        sparse = sparse, control = control, fit.stats = fit.stats, 
         vc.fix = vc.fix, withS = withS, withG = withG, withH = withH, 
         withR = withR, sigma2s = sigma2s, tau2s = tau2s, rhos = rhos, 
         gamma2s = gamma2s, phis = phis, s.names = s.names, g.names = g.names, 

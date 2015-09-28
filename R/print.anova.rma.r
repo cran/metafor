@@ -9,11 +9,11 @@ function (x, digits, ...)
         cat("\n")
         cat("Test of Moderators (coefficient(s) ", paste(x$btt, 
             collapse = ","), "): \n", sep = "")
-        if (x$knha || x$robust) {
-            cat("F(df1 = ", x$m, ", df2 = ", x$k - x$p, ") = ", 
-                formatC(x$QM, digits = digits, format = "f"), 
-                ", p-val ", .pval(x$QMp, digits = digits, showeq = TRUE, 
-                  sep = " "), "\n\n", sep = "")
+        if (x$knha) {
+            cat("F(df1 = ", x$m, ", df2 = ", x$dfs, ") = ", formatC(x$QM, 
+                digits = digits, format = "f"), ", p-val ", .pval(x$QMp, 
+                digits = digits, showeq = TRUE, sep = " "), "\n\n", 
+                sep = "")
         }
         else {
             cat("QM(df = ", x$m, ") = ", formatC(x$QM, digits = digits, 
@@ -34,7 +34,7 @@ function (x, digits, ...)
         res.table <- cbind(estimate = x$Lb, se = x$se, zval = x$zval, 
             pval = x$pval)
         colnames(res.table) <- c("estimate", "se", "zval", "pval")
-        if (x$knha || x$robust) 
+        if (x$knha) 
             colnames(res.table)[3] <- "tval"
         rownames(res.table) <- paste0(seq_len(x$m), ":")
         res.table <- formatC(res.table, digits = digits, format = "f")
@@ -48,8 +48,8 @@ function (x, digits, ...)
             else {
                 cat("Omnibus Test of Hypotheses:\n")
             }
-            if (x$knha || x$robust) {
-                cat("F(df1 = ", x$m, ", df2 = ", x$k - x$p, ") = ", 
+            if (x$knha) {
+                cat("F(df1 = ", x$m, ", df2 = ", x$dfs, ") = ", 
                   formatC(x$QM, digits = digits, format = "f"), 
                   ", p-val ", .pval(x$QMp, digits = digits, showeq = TRUE, 
                     sep = " "), "\n\n", sep = "")

@@ -103,12 +103,11 @@ par(mfrow=c(2,2))
 profile(res, tau2=1, xlim=c(0,.2))
 profile(res, tau2=2, xlim=c(0,.2))
 profile(res, tau2=3, xlim=c(0,.2))
-profile(res, tau2=4, xlim=c(.1,.3))
-}
+profile(res, tau2=4, xlim=c(.1,.3))}
+
 \dontrun{
 ### profile the autocorrelation coefficient
 par(mfrow=c(1,1))
-profile(res, rho=1)
-}
+profile(res, rho=1)}
 }
 \keyword{datasets}

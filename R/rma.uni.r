@@ -74,10 +74,8 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
         if (is.matrix(yi)) 
             yi <- as.vector(yi)
         k <- length(yi)
-        if (measure == "GEN") {
-            if (!is.null(attr(yi, "measure"))) 
-                measure <- attr(yi, "measure")
-        }
+        if (measure == "GEN" && !is.null(attr(yi, "measure"))) 
+            measure <- attr(yi, "measure")
         attr(yi, "measure") <- measure
         mf.vi <- mf[[match("vi", names(mf))]]
         mf.sei <- mf[[match("sei", names(mf))]]
@@ -95,6 +93,8 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
         }
         if (is.matrix(vi)) 
             vi <- as.vector(vi)
+        if (length(vi) == 1) 
+            vi <- rep(vi, k)
         if (length(vi) != k) 
             stop("Length of yi and vi (or sei) vectors are not the same.")
         if (is.null(ni) && !is.null(attr(yi, "ni"))) 
@@ -103,8 +103,12 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
             ni <- NULL
         if (!is.null(ni)) 
             attr(yi, "ni") <- ni
-        if (is.null(slab) & !is.null(attr(yi, "slab"))) 
-            slab <- attr(yi, "slab")
+        if (is.null(slab)) {
+            if (!is.null(attr(yi, "slab"))) 
+                slab <- attr(yi, "slab")
+            if (is.null(slab) && length(slab) != k) 
+                slab <- NULL
+        }
         if (!is.null(subset)) {
             yi <- yi[subset]
             vi <- vi[subset]
@@ -346,8 +350,6 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
     else {
         if (anyNA(slab)) 
             stop("NAs in study labels.")
-        if (anyDuplicated(slab) > 0) 
-            slab <- make.unique(slab)
         if (length(slab) != k) 
             stop("Study labels not of same length as data.")
         slab.null <- FALSE
@@ -360,6 +362,9 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
         ids <- ids[subset]
         Z <- Z[subset, , drop = FALSE]
     }
+    if (anyDuplicated(slab)) 
+        slab <- make.unique(as.character(slab))
+    attr(yi, "slab") <- slab
     k <- length(yi)
     if (any(vi <= 0, na.rm = TRUE)) {
         allvipos <- FALSE
@@ -391,11 +396,17 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
     ni.f <- ni
     mods.f <- mods
     k.f <- k
-    YVXZW.na <- is.na(cbind(yi, vi, mods, Z, weights))
+    YVXZW.na <- is.na(yi) | is.na(vi) | if (is.null(mods)) 
+        FALSE
+    else apply(is.na(mods), 1, any) | if (is.null(Z)) 
+        FALSE
+    else apply(is.na(Z), 1, any) | if (is.null(weights)) 
+        FALSE
+    else is.na(weights)
     if (any(YVXZW.na)) {
         if (very.verbose) 
             message("Handling NAs ...")
-        not.na <- rowSums(YVXZW.na) == 0L
+        not.na <- !YVXZW.na
         if (na.act == "na.omit" || na.act == "na.exclude" || 
             na.act == "na.pass") {
             yi <- yi[not.na]
@@ -508,13 +519,12 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
     se.tau2 <- I2 <- H2 <- QE <- QEp <- NA
     s2w <- 1
     alpha <- ifelse(level > 1, (100 - level)/100, 1 - level)
-    robust <- FALSE
     Y <- as.matrix(yi)
     if (model == "rma.tau2") {
         if (method != "ML" && method != "REML") 
             stop("Location-scale model can only be fitted with ML or REML estimation.")
         if (!weighted) 
-            stop("Must use weighted estimation to fit location-scale model.")
+            stop("Cannot use weighted estimation to fit location-scale model.")
         if (!is.null(weights)) 
             stop("Cannot use user-defined weights for location-scale model.")
         if (any(eigen(crossprod(Z), symmetric = TRUE, only.values = TRUE)$values <= 
@@ -866,9 +876,7 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
         if (method == "EB" || method == "PM" || method == "SJIT") {
             V <- diag(vi, nrow = k, ncol = k)
             PV <- P %*% V
-            se.tau2 <- sqrt((k/(k - p))^2/sum(wi)^2 * (2 * sum(PV * 
-                t(PV)) + 4 * max(tau2, 0) * sum(PV * P) + 2 * 
-                max(tau2, 0)^2 * sum(P * P)))
+            se.tau2 <- sqrt(2 * k^2/(k - p)/sum(wi)^2)
         }
     }
     if (method == "FE") 
@@ -895,12 +903,6 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
                 stXAX
             RSS.f <- sum(wi * (yi - X %*% b)^2)
         }
-        if (robust) {
-            ei <- c(yi - X %*% b)
-            vb <- vb %*% t(X) %*% W %*% diag(ei^2, nrow = k, 
-                ncol = k) %*% W %*% X %*% vb
-            vb <- vb * k/(k - p)
-        }
         if (knha) {
             if (RSS.f <= .Machine$double.eps) {
                 s2w <- 1
@@ -920,12 +922,6 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
         b <- stXX %*% crossprod(X, Y)
         vb <- tcrossprod(stXX, X) %*% M %*% X %*% stXX
         RSS.f <- sum(wi * (yi - X %*% b)^2)
-        if (robust) {
-            ei <- c(Y - X %*% b)
-            vb <- stXX %*% t(X) %*% diag(ei^2, nrow = k, ncol = k) %*% 
-                X %*% stXX
-            vb <- vb * k/(k - p)
-        }
         if (knha) {
             stXWX <- .invcalc(X = X, W = W, k = k)
             b.knha <- stXWX %*% crossprod(X, W) %*% Y
@@ -947,13 +943,15 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
     se <- sqrt(diag(vb))
     names(se) <- NULL
     zval <- c(b/se)
-    if (knha || robust) {
+    if (knha) {
+        dfs <- k - p
         QM <- QM/m
-        QMp <- pf(QM, df1 = m, df2 = k - p, lower.tail = FALSE)
-        pval <- 2 * pt(abs(zval), df = k - p, lower.tail = FALSE)
-        crit <- qt(alpha/2, df = k - p, lower.tail = FALSE)
+        QMp <- pf(QM, df1 = m, df2 = dfs, lower.tail = FALSE)
+        pval <- 2 * pt(abs(zval), df = dfs, lower.tail = FALSE)
+        crit <- qt(alpha/2, df = dfs, lower.tail = FALSE)
     }
     else {
+        dfs <- NA
         QMp <- pchisq(QM, df = m, lower.tail = FALSE)
         pval <- 2 * pnorm(abs(zval), lower.tail = FALSE)
         crit <- qnorm(alpha/2, lower.tail = FALSE)
@@ -1055,13 +1053,13 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
         yi.f = yi.f, vi.f = vi.f, X.f = X.f, weights.f = weights.f, 
         M = M, ai.f = ai.f, bi.f = bi.f, ci.f = ci.f, di.f = di.f, 
         x1i.f = x1i.f, x2i.f = x2i.f, t1i.f = t1i.f, t2i.f = t2i.f, 
-        ni = ni, ni.f = ni.f, ids = ids, not.na = not.na, slab = slab, 
-        slab.null = slab.null, measure = measure, method = method, 
-        weighted = weighted, knha = knha, robust = robust, s2w = s2w, 
-        btt = btt, intercept = intercept, digits = digits, level = level, 
-        control = control, verbose = verbose, add = add, to = to, 
-        drop00 = drop00, fit.stats = fit.stats, version = packageVersion("metafor"), 
-        model = model, call = mf)
+        ni = ni, ni.f = ni.f, ids = ids, not.na = not.na, subset = subset, 
+        slab = slab, slab.null = slab.null, measure = measure, 
+        method = method, weighted = weighted, knha = knha, dfs = dfs, 
+        s2w = s2w, btt = btt, intercept = intercept, digits = digits, 
+        level = level, sparse = FALSE, control = control, verbose = verbose, 
+        add = add, to = to, drop00 = drop00, fit.stats = fit.stats, 
+        version = packageVersion("metafor"), model = model, call = mf)
     if (model == "rma.tau2") {
         res$b.tau2 <- b.tau2
         res$vb.tau2 <- vb.tau2
@@ -1151,10 +1149,8 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
         if (is.matrix(yi)) 
             yi <- as.vector(yi)
         k <- length(yi)
-        if (measure == "GEN") {
-            if (!is.null(attr(yi, "measure"))) 
-                measure <- attr(yi, "measure")
-        }
+        if (measure == "GEN" && !is.null(attr(yi, "measure"))) 
+            measure <- attr(yi, "measure")
         attr(yi, "measure") <- measure
         mf.vi <- mf[[match("vi", names(mf))]]
         mf.sei <- mf[[match("sei", names(mf))]]
@@ -1172,6 +1168,8 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
         }
         if (is.matrix(vi)) 
             vi <- as.vector(vi)
+        if (length(vi) == 1) 
+            vi <- rep(vi, k)
         if (length(vi) != k) 
             stop("Length of yi and vi (or sei) vectors are not the same.")
         if (is.null(ni) && !is.null(attr(yi, "ni"))) 
@@ -1180,8 +1178,12 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
             ni <- NULL
         if (!is.null(ni)) 
             attr(yi, "ni") <- ni
-        if (is.null(slab) & !is.null(attr(yi, "slab"))) 
-            slab <- attr(yi, "slab")
+        if (is.null(slab)) {
+            if (!is.null(attr(yi, "slab"))) 
+                slab <- attr(yi, "slab")
+            if (is.null(slab) && length(slab) != k) 
+                slab <- NULL
+        }
         if (!is.null(subset)) {
             yi <- yi[subset]
             vi <- vi[subset]
@@ -1423,8 +1425,6 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
     else {
         if (anyNA(slab)) 
             stop("NAs in study labels.")
-        if (anyDuplicated(slab) > 0) 
-            slab <- make.unique(slab)
         if (length(slab) != k) 
             stop("Study labels not of same length as data.")
         slab.null <- FALSE
@@ -1437,6 +1437,9 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
         ids <- ids[subset]
         Z <- Z[subset, , drop = FALSE]
     }
+    if (anyDuplicated(slab)) 
+        slab <- make.unique(as.character(slab))
+    attr(yi, "slab") <- slab
     k <- length(yi)
     if (any(vi <= 0, na.rm = TRUE)) {
         allvipos <- FALSE
@@ -1468,11 +1471,17 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
     ni.f <- ni
     mods.f <- mods
     k.f <- k
-    YVXZW.na <- is.na(cbind(yi, vi, mods, Z, weights))
+    YVXZW.na <- is.na(yi) | is.na(vi) | if (is.null(mods)) 
+        FALSE
+    else apply(is.na(mods), 1, any) | if (is.null(Z)) 
+        FALSE
+    else apply(is.na(Z), 1, any) | if (is.null(weights)) 
+        FALSE
+    else is.na(weights)
     if (any(YVXZW.na)) {
         if (very.verbose) 
             message("Handling NAs ...")
-        not.na <- rowSums(YVXZW.na) == 0L
+        not.na <- !YVXZW.na
         if (na.act == "na.omit" || na.act == "na.exclude" || 
             na.act == "na.pass") {
             yi <- yi[not.na]
@@ -1585,13 +1594,12 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
     se.tau2 <- I2 <- H2 <- QE <- QEp <- NA
     s2w <- 1
     alpha <- ifelse(level > 1, (100 - level)/100, 1 - level)
-    robust <- FALSE
     Y <- as.matrix(yi)
     if (model == "rma.tau2") {
         if (method != "ML" && method != "REML") 
             stop("Location-scale model can only be fitted with ML or REML estimation.")
         if (!weighted) 
-            stop("Must use weighted estimation to fit location-scale model.")
+            stop("Cannot use weighted estimation to fit location-scale model.")
         if (!is.null(weights)) 
             stop("Cannot use user-defined weights for location-scale model.")
         if (any(eigen(crossprod(Z), symmetric = TRUE, only.values = TRUE)$values <= 
@@ -1943,9 +1951,7 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
         if (method == "EB" || method == "PM" || method == "SJIT") {
             V <- diag(vi, nrow = k, ncol = k)
             PV <- P %*% V
-            se.tau2 <- sqrt((k/(k - p))^2/sum(wi)^2 * (2 * sum(PV * 
-                t(PV)) + 4 * max(tau2, 0) * sum(PV * P) + 2 * 
-                max(tau2, 0)^2 * sum(P * P)))
+            se.tau2 <- sqrt(2 * k^2/(k - p)/sum(wi)^2)
         }
     }
     if (method == "FE") 
@@ -1972,12 +1978,6 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
                 stXAX
             RSS.f <- sum(wi * (yi - X %*% b)^2)
         }
-        if (robust) {
-            ei <- c(yi - X %*% b)
-            vb <- vb %*% t(X) %*% W %*% diag(ei^2, nrow = k, 
-                ncol = k) %*% W %*% X %*% vb
-            vb <- vb * k/(k - p)
-        }
         if (knha) {
             if (RSS.f <= .Machine$double.eps) {
                 s2w <- 1
@@ -1997,12 +1997,6 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
         b <- stXX %*% crossprod(X, Y)
         vb <- tcrossprod(stXX, X) %*% M %*% X %*% stXX
         RSS.f <- sum(wi * (yi - X %*% b)^2)
-        if (robust) {
-            ei <- c(Y - X %*% b)
-            vb <- stXX %*% t(X) %*% diag(ei^2, nrow = k, ncol = k) %*% 
-                X %*% stXX
-            vb <- vb * k/(k - p)
-        }
         if (knha) {
             stXWX <- .invcalc(X = X, W = W, k = k)
             b.knha <- stXWX %*% crossprod(X, W) %*% Y
@@ -2024,13 +2018,15 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
     se <- sqrt(diag(vb))
     names(se) <- NULL
     zval <- c(b/se)
-    if (knha || robust) {
+    if (knha) {
+        dfs <- k - p
         QM <- QM/m
-        QMp <- pf(QM, df1 = m, df2 = k - p, lower.tail = FALSE)
-        pval <- 2 * pt(abs(zval), df = k - p, lower.tail = FALSE)
-        crit <- qt(alpha/2, df = k - p, lower.tail = FALSE)
+        QMp <- pf(QM, df1 = m, df2 = dfs, lower.tail = FALSE)
+        pval <- 2 * pt(abs(zval), df = dfs, lower.tail = FALSE)
+        crit <- qt(alpha/2, df = dfs, lower.tail = FALSE)
     }
     else {
+        dfs <- NA
         QMp <- pchisq(QM, df = m, lower.tail = FALSE)
         pval <- 2 * pnorm(abs(zval), lower.tail = FALSE)
         crit <- qnorm(alpha/2, lower.tail = FALSE)
@@ -2132,13 +2128,13 @@ function (yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i,
         yi.f = yi.f, vi.f = vi.f, X.f = X.f, weights.f = weights.f, 
         M = M, ai.f = ai.f, bi.f = bi.f, ci.f = ci.f, di.f = di.f, 
         x1i.f = x1i.f, x2i.f = x2i.f, t1i.f = t1i.f, t2i.f = t2i.f, 
-        ni = ni, ni.f = ni.f, ids = ids, not.na = not.na, slab = slab, 
-        slab.null = slab.null, measure = measure, method = method, 
-        weighted = weighted, knha = knha, robust = robust, s2w = s2w, 
-        btt = btt, intercept = intercept, digits = digits, level = level, 
-        control = control, verbose = verbose, add = add, to = to, 
-        drop00 = drop00, fit.stats = fit.stats, version = packageVersion("metafor"), 
-        model = model, call = mf)
+        ni = ni, ni.f = ni.f, ids = ids, not.na = not.na, subset = subset, 
+        slab = slab, slab.null = slab.null, measure = measure, 
+        method = method, weighted = weighted, knha = knha, dfs = dfs, 
+        s2w = s2w, btt = btt, intercept = intercept, digits = digits, 
+        level = level, sparse = FALSE, control = control, verbose = verbose, 
+        add = add, to = to, drop00 = drop00, fit.stats = fit.stats, 
+        version = packageVersion("metafor"), model = model, call = mf)
     if (model == "rma.tau2") {
         res$b.tau2 <- b.tau2
         res$vb.tau2 <- vb.tau2

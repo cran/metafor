@@ -3,6 +3,8 @@ function (object, formula., ..., evaluate = TRUE)
 {
     if (!is.element("rma", class(object))) 
         stop("Argument 'object' must be an object of class \"rma\".")
+    if (is.element("robust.rma", class(object))) 
+        stop("Function not applicable to objects of class \"robust.rma\".")
     if (is.null(call <- getCall(object))) 
         stop("need an object with call component")
     extras <- match.call(expand.dots = FALSE)$...

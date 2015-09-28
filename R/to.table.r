@@ -390,8 +390,8 @@ function (measure, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
     else {
         if (anyNA(slab)) 
             stop("NAs in study labels.")
-        if (anyDuplicated(slab) > 0) 
-            slab <- make.unique(slab)
+        if (anyDuplicated(slab)) 
+            slab <- make.unique(as.character(slab))
         if (length(slab) != k) 
             stop("Study labels not of same length as data.")
     }
@@ -400,9 +400,9 @@ function (measure, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
     if (is.element(measure, c("RR", "OR", "RD", "AS", "PETO", 
         "PHI", "YUQ", "YUY", "RTET", "PBIT", "OR2D", "OR2DN", 
         "OR2DL"))) {
-        aibicidi.na <- is.na(cbind(ai, bi, ci, di))
+        aibicidi.na <- is.na(ai) | is.na(bi) | is.na(ci) | is.na(di)
         if (any(aibicidi.na)) {
-            not.na <- rowSums(aibicidi.na) == 0L
+            not.na <- !aibicidi.na
             if (na.act == "na.omit") {
                 ai <- ai[not.na]
                 bi <- bi[not.na]
@@ -439,9 +439,10 @@ function (measure, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
         }
     }
     if (is.element(measure, c("IRR", "IRD", "IRSD"))) {
-        x1ix2it1it2i.na <- is.na(cbind(x1i, x2i, t1i, t2i))
+        x1ix2it1it2i.na <- is.na(x1i) | is.na(x2i) | is.na(t1i) | 
+            is.na(t2i)
         if (any(x1ix2it1it2i.na)) {
-            not.na <- rowSums(x1ix2it1it2i.na) == 0L
+            not.na <- !x1ix2it1it2i.na
             if (na.act == "na.omit") {
                 x1i <- x1i[not.na]
                 x2i <- x2i[not.na]
@@ -479,10 +480,10 @@ function (measure, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
     }
     if (is.element(measure, c("MD", "SMD", "SMDH", "ROM", "RPB", 
         "RBIS", "D2OR", "D2ORN", "D2ORL"))) {
-        m1im2isd1isd2in1in2i.na <- is.na(cbind(m1i, m2i, sd1i, 
-            sd2i, n1i, n2i))
+        m1im2isd1isd2in1in2i.na <- is.na(m1i) | is.na(m2i) | 
+            is.na(sd1i) | is.na(sd2i) | is.na(n1i) | is.na(n2i)
         if (any(m1im2isd1isd2in1in2i.na)) {
-            not.na <- rowSums(m1im2isd1isd2in1in2i.na) == 0L
+            not.na <- !m1im2isd1isd2in1in2i.na
             if (na.act == "na.omit") {
                 m1i <- m1i[not.na]
                 m2i <- m2i[not.na]
@@ -522,9 +523,9 @@ function (measure, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
         }
     }
     if (is.element(measure, c("COR", "UCOR", "ZCOR"))) {
-        rini.na <- is.na(cbind(ri, ni))
+        rini.na <- is.na(ri) | is.na(ni)
         if (any(rini.na)) {
-            not.na <- rowSums(rini.na) == 0L
+            not.na <- !rini.na
             if (na.act == "na.omit") {
                 ri <- ri[not.na]
                 ni <- ni[not.na]
@@ -559,9 +560,9 @@ function (measure, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
         }
     }
     if (is.element(measure, c("PR", "PLN", "PLO", "PAS", "PFT"))) {
-        ximi.na <- is.na(cbind(xi, mi))
+        ximi.na <- is.na(xi) | is.na(mi)
         if (any(ximi.na)) {
-            not.na <- rowSums(ximi.na) == 0L
+            not.na <- !ximi.na
             if (na.act == "na.omit") {
                 xi <- xi[not.na]
                 mi <- mi[not.na]
@@ -596,9 +597,9 @@ function (measure, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
         }
     }
     if (is.element(measure, c("IR", "IRLN", "IRS", "IRFT"))) {
-        xiti.na <- is.na(cbind(xi, ti))
+        xiti.na <- is.na(xi) | is.na(ti)
         if (any(xiti.na)) {
-            not.na <- rowSums(xiti.na) == 0L
+            not.na <- !xiti.na
             if (na.act == "na.omit") {
                 xi <- xi[not.na]
                 ti <- ti[not.na]
@@ -633,9 +634,9 @@ function (measure, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
         }
     }
     if (is.element(measure, c("MN"))) {
-        misdini.na <- is.na(cbind(mi, sdi, ni))
+        misdini.na <- is.na(mi) | is.na(sdi) | is.na(ni)
         if (any(misdini.na)) {
-            not.na <- rowSums(misdini.na) == 0L
+            not.na <- !misdini.na
             if (na.act == "na.omit") {
                 mi <- mi[not.na]
                 sdi <- sdi[not.na]
@@ -673,15 +674,15 @@ function (measure, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
     if (is.element(measure, c("MC", "SMCC", "SMCR", "SMCRH", 
         "ROMC"))) {
         if (is.element(measure, c("MC", "SMCC", "SMCRH", "ROMC"))) {
-            m1im2isdiniri.na <- is.na(cbind(m1i, m2i, sd1i, sd2i, 
-                ni, ri))
+            m1im2isdiniri.na <- is.na(m1i) | is.na(m2i) | is.na(sd1i) | 
+                is.na(sd2i) | is.na(ni) | is.na(ri)
         }
         else {
-            m1im2isdiniri.na <- is.na(cbind(m1i, m2i, sd1i, ni, 
-                ri))
+            m1im2isdiniri.na <- is.na(m1i) | is.na(m2i) | is.na(sd1i) | 
+                is.na(ni) | is.na(ri)
         }
         if (any(m1im2isdiniri.na)) {
-            not.na <- rowSums(m1im2isdiniri.na) == 0L
+            not.na <- !m1im2isdiniri.na
             if (na.act == "na.omit") {
                 m1i <- m1i[not.na]
                 m2i <- m2i[not.na]
@@ -745,9 +746,9 @@ function (measure, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
         }
     }
     if (is.element(measure, c("ARAW", "AHW", "ABT"))) {
-        aimini.na <- is.na(cbind(ai, mi, ni))
+        aimini.na <- is.na(ai) | is.na(mi) | is.na(ni)
         if (any(aimini.na)) {
-            not.na <- rowSums(aimini.na) == 0L
+            not.na <- !aimini.na
             if (na.act == "na.omit") {
                 ai <- ai[not.na]
                 mi <- mi[not.na]

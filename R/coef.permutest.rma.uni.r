@@ -8,7 +8,7 @@ function (object, ...)
         pval = x$pval, ci.lb = x$ci.lb, ci.ub = x$ci.ub)
     colnames(res.table) <- c("estimate", "se", "zval", "pval", 
         "ci.lb", "ci.ub")
-    if (x$knha || x$robust) 
+    if (x$knha) 
         colnames(res.table)[3] <- "tval"
     res.table <- data.frame(res.table)
     return(res.table)

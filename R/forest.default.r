@@ -154,9 +154,9 @@ function (x, vi, sei, ci.lb, ci.ub, annotate = TRUE, showweights = FALSE,
     psize <- psize[k:1]
     col <- col[k:1]
     rows <- rows[k:1]
-    yivi.na <- is.na(cbind(yi, vi))
+    yivi.na <- is.na(yi) | is.na(vi)
     if (any(yivi.na)) {
-        not.na <- rowSums(yivi.na) == 0L
+        not.na <- !yivi.na
         if (na.act == "na.omit") {
             yi <- yi[not.na]
             vi <- vi[not.na]

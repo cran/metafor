@@ -15,7 +15,7 @@
 \details{
    The output includes:
    \itemize{
-   \item estimate of the model coefficient or variance component
+   \item estimate of the model coefficient or variance/correlation parameter
    \item lower bound of the confidence interval
    \item upper bound of the confidence interval
    }

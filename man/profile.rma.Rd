@@ -19,7 +19,7 @@
    \item{phi}{integer specifying for which \eqn{\phi} value the likelihood should be profiled (only relevant for \code{"rma.mv"} objects).}
    \item{xlim}{optional vector specifying the lower and upper limit of the parameter over which the profiling should be done. If unspecified, the function tries to set these limits automatically.}
    \item{ylim}{optional vector specifying the y-axis limits when plotting the profiled likelihood. If unspecified, the function tries to set these limits automatically.}
-   \item{steps}{number of points between \code{xlim[1]} and \code{xlim[2]} (inclusive) for which the likelihood should be obtained (default is 20).}
+   \item{steps}{number of points between \code{xlim[1]} and \code{xlim[2]} (inclusive) for which the likelihood should be evaluated (default is 20).}
    \item{startmethod}{method for picking starting values for the optimization. Default is \code{"init"}, which starts each model fit at the default initial values. The alternative is \code{"prev"}, which starts at the estimates from the previous model fit (usually faster, but also less stable for ill-defined models).}
    \item{progbar}{logical indicating whether a progress bar should be shown (default is \code{TRUE}).}
    \item{parallel}{character string indicating whether parallel processing should be used (the default is \code{"no"}). For parallel processing, set to either \code{"snow"} or \code{"multicore"}.}
@@ -30,13 +30,13 @@
    \item{\dots}{other arguments.}
 }
 \details{
-   The function fixes a particular variance component or correlation parameter of the model and then computes the maximized (restricted) log-likelihood over the remaining parameters of the model. By doing this for a range of values for the parameter that was fixed, a profile of the (restricted) log-likelihood is obtained.
+   The function fixes a particular variance component or correlation parameter of the model and then computes the maximized (restricted) log-likelihood over the remaining parameters of the model. By doing this for a range of values for the parameter that was fixed, a profile of the (restricted) log-likelihood is constructed.
 
-   For objects of class \code{"rma.uni"}, the function profiles over parameter \if{latex}{\eqn{\tau^2}}\if{html}{\eqn{\tau²}}\if{text}{\eqn{\tau^2}}. If \code{method="ML"} or \code{method="REML"} when fitting the model with the \code{\link{rma.uni}} function, the profiled regular/restricted log-likelihood should be maximized at the ML/REML estimate of \if{latex}{\eqn{\tau^2}}\if{html}{\eqn{\tau²}}\if{text}{\eqn{\tau^2}}.
+   For objects of class \code{"rma.uni"} obtained with the \code{\link{rma.uni}} function, the function profiles over parameter \if{latex}{\eqn{\tau^2}}\if{html}{\eqn{\tau²}}\if{text}{\eqn{\tau^2}}. If the model was fitted with \code{method="ML"} or \code{method="REML"}, the profiled (restricted) log-likelihood should be maximized at the ML/REML estimate of \if{latex}{\eqn{\tau^2}}\if{html}{\eqn{\tau²}}\if{text}{\eqn{\tau^2}}.
 
-   For objects of class \code{"rma.mv"} obtained with the \code{\link{rma.mv}} function, one must use the \code{sigma2}, \code{tau2}, and \code{rho} arguments to specify over which parameter the profiling should be done. Only one of these arguments can be used at a time. A single integer is used to specify the number of the parameter. Each profile plot should show a clear peak at the corresponding ML/REML estimate. If the profiled likelihood is flat (over the entire parameter space or large portions of it), then this suggests that at least some of the parameters of the model are not identifiable (and the parameter estimates obtained are essentially arbitrary).
+   For objects of class \code{"rma.mv"} obtained with the \code{\link{rma.mv}} function, profiling is done by default over all (non-fixed) variance and correlation components of the model. Alternatively, one can use the \code{sigma2}, \code{tau2}, \code{rho}, \code{gamma2}, or \code{phi} arguments to specify over which parameter the profiling should be done. Only one of these arguments can be used at a time. A single integer is used to specify the number of the parameter. Each profile plot should show a peak at the corresponding ML/REML estimate. If the profiled likelihood is flat (over the entire parameter space or large portions of it), then this suggests that at least some of the parameters of the model are not identifiable (and the parameter estimates obtained are to some extent arbitrary).
 
-   Profiling requires repeatedly refitting the same model, which can be slow when \eqn{k} is large and/or the model is complex (the latter especially applies to \code{"rma.mv"} objects). On machines with multiple cores, one can usually speed things up by delegating the model fitting to separate worker processes, that is, by setting \code{parallel="snow"} or \code{parallel="multicore"} and \code{ncpus} to some value larger than 1. Parallel processing makes use of the \code{\link[parallel]{parallel}} package, using the \code{\link[parallel]{makePSOCKcluster}} and \code{\link[parallel]{parLapply}} functions when \code{parallel="snow"} or using the \code{\link[parallel]{mclapply}} function when \code{parallel="multicore"} (the latter only works on Unix/Linux-alikes). With \code{parallel::detectCores()}, one can check on the available cores on the local machine. Note that argument \code{startmethod} is ignored when using parallel processing and no progress bar will be shown.
+   Profiling requires repeatedly refitting the same model, which can be slow when \eqn{k} is large and/or the model is complex (the latter especially applies to \code{"rma.mv"} objects). On machines with multiple cores, one can usually speed things up by delegating the model fitting to separate worker processes, that is, by setting \code{parallel="snow"} or \code{parallel="multicore"} and \code{ncpus} to some value larger than 1. Parallel processing makes use of the \code{\link[parallel]{parallel}} package, using the \code{\link[parallel]{makePSOCKcluster}} and \code{\link[parallel]{parLapply}} functions when \code{parallel="snow"} or using the \code{\link[parallel]{mclapply}} function when \code{parallel="multicore"} (the latter only works on Unix/Linux-alikes). With \code{parallel::detectCores()}, one can check on the number of available cores on the local machine. Note that argument \code{startmethod} is ignored when using parallel processing and no progress bar will be shown.
 }
 \value{
    An object of class \code{"profile.rma.uni"} or \code{"profile.rma.mv"}. The object is a list containing the following components:
@@ -92,12 +92,11 @@ res <- rma.mv(yi, vi, mods = ~ group, random = ~ group | study, struct="UN", dat
 res
 
 ### profile over tau^2_1, tau^2_2, and rho
-### note: for rho, adjust region over which profiling is done ("zoom in" on area around estimate)
+### note: for rho, adjust region over which profiling is done ('zoom in' on area around estimate)
 \dontrun{
 par(mfrow=c(3,1))
 profile(res, tau2=1)
 profile(res, tau2=2)
-profile(res, rho=1, xlim=c(.90, .98))
-}
+profile(res, rho=1, xlim=c(.90, .98))}
 }
 \keyword{hplot}

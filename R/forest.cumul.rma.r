@@ -92,9 +92,9 @@ function (x, annotate = TRUE, xlim, alim, clim, ylim, at, steps = 5,
     pch <- pch[k:1]
     psize <- psize[k:1]
     rows <- rows[k:1]
-    yivi.na <- is.na(cbind(yi, vi))
+    yivi.na <- is.na(yi) | is.na(vi)
     if (any(yivi.na)) {
-        not.na <- rowSums(yivi.na) == 0L
+        not.na <- !yivi.na
         if (na.act == "na.omit") {
             yi <- yi[not.na]
             vi <- vi[not.na]

@@ -17,7 +17,7 @@
 }
 \arguments{
    \item{object}{an object of class \code{"rma.uni"}, \code{"rma.mh"}, \code{"rma.peto"}, or \code{"rma.mv"}. The method is not yet implemented for objects of class \code{"rma.glmm"}.}
-   \item{type}{character string indicating whether to return only the diagonal of the weight matrix (\code{"diagonal"}) or the entire matrix (\code{"matrix"}).}
+   \item{type}{character string indicating whether to return only the diagonal of the weight matrix (\code{"diagonal"}) or the entire weight matrix (\code{"matrix"}).}
    \item{\dots}{other arguments.}
 }
 \value{

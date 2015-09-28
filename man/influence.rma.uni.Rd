@@ -6,7 +6,7 @@
 \alias{hatvalues.rma.uni}
 \title{Outlier and Influential Case Diagnostics for 'rma.uni' Objects}
 \description{
-   The functions compute various outlier and influential case diagnostics that indicate the influence of deleting one case/study at a time on the model fit and the fitted/residual values for objects of class \code{"rma.uni"}.
+   The functions compute various outlier and influential case diagnostics (some of which indicate the influence of deleting one case/study at a time on the model fit and the fitted/residual values) for objects of class \code{"rma.uni"}.
 }
 \usage{
 \method{influence}{rma.uni}(model, digits, \dots)
@@ -22,7 +22,7 @@
    \item{model}{an object of class \code{"rma.uni"}.}
    \item{x}{an object of class \code{"infl.rma.uni"} (for \code{print}).}
    \item{digits}{integer specifying the number of decimal places to which the printed results should be rounded (if unspecified, the default is to take the value from the object).}
-   \item{type}{character string indicating whether to return only the diagonal of the hat matrix (\code{"diagonal"}) or the entire matrix (\code{"matrix"}).}
+   \item{type}{character string indicating whether to return only the diagonal of the hat matrix (\code{"diagonal"}) or the entire hat matrix (\code{"matrix"}).}
    \item{\dots}{other arguments.}
 }
 \details{

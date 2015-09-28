@@ -226,15 +226,22 @@ function (x, eps = 1e-08)
     all(abs(x - 1) < eps)
 }
 .ll.rma.mv <-
-function (par, reml, Y, M, X, k, pX, D.S, Z.G1, Z.G2, Z.H1, Z.H2, 
-    sigma2.val, tau2.val, rho.val, gamma2.val, phi.val, sigma2s, 
-    tau2s, rhos, gamma2s, phis, withS, withG, withH, struct, 
-    g.levels.r, h.levels.r, tol, sparse, cholesky, posdefify, 
-    verbose, digits, REMLf) 
+function (par, reml, Y, M, X.fit, k, pX, D.S, Z.G1, Z.G2, Z.H1, 
+    Z.H2, sigma2.val, tau2.val, rho.val, gamma2.val, phi.val, 
+    sigma2s, tau2s, rhos, gamma2s, phis, withS, withG, withH, 
+    struct, g.levels.r, h.levels.r, tol, sparse, cholesky, posdefify, 
+    vctransf, verbose, very.verbose, digits, REMLf) 
 {
     if (withS) {
-        sigma2 <- ifelse(is.na(sigma2.val), exp(par[1:sigma2s]), 
-            sigma2.val)
+        if (vctransf) {
+            sigma2 <- ifelse(is.na(sigma2.val), exp(par[1:sigma2s]), 
+                sigma2.val)
+        }
+        else {
+            sigma2 <- ifelse(is.na(sigma2.val), par[1:sigma2s], 
+                sigma2.val)
+            sigma2[sigma2 < 0] <- 0
+        }
         for (j in seq_len(sigma2s)) {
             M <- M + sigma2[j] * D.S[[j]]
         }
@@ -246,10 +253,21 @@ function (par, reml, Y, M, X, k, pX, D.S, Z.G1, Z.G2, Z.H1, Z.H2,
                 rhos)]
         }
         else {
-            tau2 <- ifelse(is.na(tau2.val), exp(par[(sigma2s + 
-                1):(sigma2s + tau2s)]), tau2.val)
-            rho <- ifelse(is.na(rho.val), transf.ztor(par[(sigma2s + 
-                tau2s + 1):(sigma2s + tau2s + rhos)]), rho.val)
+            if (vctransf) {
+                tau2 <- ifelse(is.na(tau2.val), exp(par[(sigma2s + 
+                  1):(sigma2s + tau2s)]), tau2.val)
+                rho <- ifelse(is.na(rho.val), transf.ztor(par[(sigma2s + 
+                  tau2s + 1):(sigma2s + tau2s + rhos)]), rho.val)
+            }
+            else {
+                tau2 <- ifelse(is.na(tau2.val), par[(sigma2s + 
+                  1):(sigma2s + tau2s)], tau2.val)
+                rho <- ifelse(is.na(rho.val), par[(sigma2s + 
+                  tau2s + 1):(sigma2s + tau2s + rhos)], rho.val)
+                tau2[tau2 < 0] <- 0
+                rho[rho > 1] <- 1
+                rho[rho < -1] <- -1
+            }
         }
         ncol.Z.G1 <- ncol(Z.G1)
         if (struct[1] == "CS") {
@@ -277,6 +295,9 @@ function (par, reml, Y, M, X, k, pX, D.S, Z.G1, Z.G2, Z.H1, Z.H2,
                 tau2 <- diag(G)
                 rho <- cov2cor(G)[upper.tri(G)]
             }
+        }
+        if (struct[1] == "ID" || struct[1] == "DIAG") {
+            G <- diag(tau2, nrow = ncol.Z.G1, ncol = ncol.Z.G1)
         }
         if (struct[1] == "UNHO") {
             G <- matrix(1, nrow = ncol.Z.G1, ncol = ncol.Z.G1)
@@ -332,12 +353,25 @@ function (par, reml, Y, M, X, k, pX, D.S, Z.G1, Z.G2, Z.H1, Z.H2,
                 tau2s + rhos + gamma2s + phis)]
         }
         else {
-            gamma2 <- ifelse(is.na(gamma2.val), exp(par[(sigma2s + 
-                tau2s + rhos + 1):(sigma2s + tau2s + rhos + gamma2s)]), 
-                gamma2.val)
-            phi <- ifelse(is.na(phi.val), transf.ztor(par[(sigma2s + 
-                tau2s + rhos + gamma2s + 1):(sigma2s + tau2s + 
-                rhos + gamma2s + phis)]), phi.val)
+            if (vctransf) {
+                gamma2 <- ifelse(is.na(gamma2.val), exp(par[(sigma2s + 
+                  tau2s + rhos + 1):(sigma2s + tau2s + rhos + 
+                  gamma2s)]), gamma2.val)
+                phi <- ifelse(is.na(phi.val), transf.ztor(par[(sigma2s + 
+                  tau2s + rhos + gamma2s + 1):(sigma2s + tau2s + 
+                  rhos + gamma2s + phis)]), phi.val)
+            }
+            else {
+                gamma2 <- ifelse(is.na(gamma2.val), par[(sigma2s + 
+                  tau2s + rhos + 1):(sigma2s + tau2s + rhos + 
+                  gamma2s)], gamma2.val)
+                phi <- ifelse(is.na(phi.val), par[(sigma2s + 
+                  tau2s + rhos + gamma2s + 1):(sigma2s + tau2s + 
+                  rhos + gamma2s + phis)], phi.val)
+                gamma2[gamma2 < 0] <- 0
+                phi[phi > 1] <- 1
+                phi[phi < -1] <- -1
+            }
         }
         ncol.Z.H1 <- ncol(Z.H1)
         if (struct[2] == "CS") {
@@ -365,6 +399,9 @@ function (par, reml, Y, M, X, k, pX, D.S, Z.G1, Z.G2, Z.H1, Z.H2,
                 gamma2 <- diag(H)
                 phi <- cov2cor(H)[upper.tri(H)]
             }
+        }
+        if (struct[2] == "ID" || struct[2] == "DIAG") {
+            H <- diag(gamma2, nrow = ncol.Z.H1, ncol = ncol.Z.H1)
         }
         if (struct[2] == "UNHO") {
             H <- matrix(1, nrow = ncol.Z.H1, ncol = ncol.Z.H1)
@@ -426,23 +463,23 @@ function (par, reml, Y, M, X, k, pX, D.S, Z.G1, Z.G2, Z.H1, Z.H2,
     else {
         W <- chol2inv(L)
         U <- chol(W)
-        sX <- U %*% X
+        sX <- U %*% X.fit
         sY <- U %*% Y
         b <- solve(crossprod(sX), crossprod(sX, sY))
         RSS.f <- sum(as.vector(sY - sX %*% b)^2)
         if (reml) {
             llval <- -1/2 * (k - pX) * log(2 * base::pi) + ifelse(REMLf, 
-                1/2 * determinant(crossprod(X), logarithm = TRUE)$modulus, 
+                1/2 * determinant(crossprod(X.fit), logarithm = TRUE)$modulus, 
                 0) - 1/2 * determinant(M, logarithm = TRUE)$modulus - 
-                1/2 * determinant(crossprod(X, W) %*% X, logarithm = TRUE)$modulus - 
-                1/2 * RSS.f
+                1/2 * determinant(crossprod(X.fit, W) %*% X.fit, 
+                  logarithm = TRUE)$modulus - 1/2 * RSS.f
         }
         else {
             llval <- -1/2 * (k) * log(2 * base::pi) - 1/2 * determinant(M, 
                 logarithm = TRUE)$modulus - 1/2 * RSS.f
         }
     }
-    if (verbose) {
+    if ((vctransf && verbose) || (!vctransf && very.verbose)) {
         if (withS) 
             cat("sigma2 =", ifelse(is.na(sigma2), NA, paste(formatC(sigma2, 
                 digits = digits, format = "f", flag = " "), " ", 
@@ -518,7 +555,7 @@ function (Y, X, V, k, tol = 1e-07)
 }
 .profile.rma.mv <-
 function (val, obj, comp, sigma2.pos, tau2.pos, rho.pos, gamma2.pos, 
-    phi.pos, parallel) 
+    phi.pos, parallel = FALSE, CI = FALSE, objective, verbose = FALSE) 
 {
     if (parallel == "snow") 
         library(metafor)
@@ -537,39 +574,81 @@ function (val, obj, comp, sigma2.pos, tau2.pos, rho.pos, gamma2.pos,
         gamma2.arg[gamma2.pos] <- val
     if (comp == "phi") 
         phi.arg[phi.pos] <- val
-    res <- try(rma.mv(obj$yi, obj$V, obj$W, mods = obj$X, random = obj$random, 
-        struct = obj$struct, intercept = FALSE, method = obj$method, 
-        tdist = obj$knha, level = obj$level, R = obj$R, Rscale = obj$Rscale, 
-        data = obj$mf.r, sigma2 = sigma2.arg, tau2 = tau2.arg, 
-        rho = rho.arg, gamma2 = gamma2.arg, phi = phi.arg, control = obj$control), 
+    res <- try(suppressWarnings(rma.mv(obj$yi, obj$V, obj$W, 
+        mods = obj$X, random = obj$random, struct = obj$struct, 
+        intercept = FALSE, method = obj$method, tdist = obj$knha, 
+        level = obj$level, R = obj$R, Rscale = obj$Rscale, data = obj$mf.r, 
+        sigma2 = sigma2.arg, tau2 = tau2.arg, rho = rho.arg, 
+        gamma2 = gamma2.arg, phi = phi.arg, control = obj$control)), 
         silent = TRUE)
-    if (inherits(res, "try-error")) {
-        list(ll = NA, b = matrix(NA, nrow = nrow(obj$b), ncol = 1), 
-            ci.lb = rep(NA, length(obj$ci.lb)), ci.ub = rep(NA, 
-                length(obj$ci.ub)))
+    if (!CI) {
+        if (inherits(res, "try-error")) {
+            list(ll = NA, b = matrix(NA, nrow = nrow(obj$b), 
+                ncol = 1), ci.lb = rep(NA, length(obj$ci.lb)), 
+                ci.ub = rep(NA, length(obj$ci.ub)))
+        }
+        else {
+            list(ll = logLik(res), b = res$b, ci.lb = res$ci.lb, 
+                ci.ub = res$ci.ub)
+        }
     }
     else {
-        list(ll = logLik(res), b = res$b, ci.lb = res$ci.lb, 
-            ci.ub = res$ci.ub)
+        if (inherits(res, "try-error")) {
+            if (verbose) 
+                cat("vc =", formatC(val, digits = obj$digits, 
+                  width = obj$digits + 4, format = "f"), " LRT - objective = NA", 
+                  "\n")
+            stop()
+        }
+        else {
+            difference <- -2 * (logLik(res) - logLik(obj)) - 
+                objective
+            if (verbose) 
+                cat("vc =", formatC(val, digits = obj$digits, 
+                  width = obj$digits + 4, format = "f"), " LRT - objective =", 
+                  difference, "\n")
+            return(difference)
+        }
     }
 }
 .profile.rma.uni <-
-function (val, obj, parallel) 
+function (val, obj, parallel = FALSE, CI = FALSE, objective, 
+    verbose = FALSE) 
 {
     if (parallel == "snow") 
         library(metafor)
-    res <- try(rma.uni(obj$yi, obj$vi, weights = obj$weights, 
+    res <- try(suppressWarnings(rma.uni(obj$yi, obj$vi, weights = obj$weights, 
         mods = obj$X, method = obj$method, weighted = obj$weighted, 
         intercept = FALSE, knha = obj$knha, level = obj$level, 
-        control = obj$control, tau2 = val), silent = TRUE)
-    if (inherits(res, "try-error")) {
-        list(ll = NA, b = matrix(NA, nrow = nrow(obj$b), ncol = 1), 
-            ci.lb = rep(NA, length(obj$ci.lb)), ci.ub = rep(NA, 
-                length(obj$ci.ub)))
+        control = obj$control, tau2 = val)), silent = TRUE)
+    if (!CI) {
+        if (inherits(res, "try-error")) {
+            list(ll = NA, b = matrix(NA, nrow = nrow(obj$b), 
+                ncol = 1), ci.lb = rep(NA, length(obj$ci.lb)), 
+                ci.ub = rep(NA, length(obj$ci.ub)))
+        }
+        else {
+            list(ll = logLik(res), b = res$b, ci.lb = res$ci.lb, 
+                ci.ub = res$ci.ub)
+        }
     }
     else {
-        list(ll = logLik(res), b = res$b, ci.lb = res$ci.lb, 
-            ci.ub = res$ci.ub)
+        if (inherits(res, "try-error")) {
+            if (verbose) 
+                cat("tau2 =", formatC(val, digits = obj$digits, 
+                  width = obj$digits + 4, format = "f"), " LRT - objective = NA", 
+                  "\n")
+            stop()
+        }
+        else {
+            difference <- -2 * (logLik(res) - logLik(obj)) - 
+                objective
+            if (verbose) 
+                cat("tau2 =", formatC(val, digits = obj$digits, 
+                  width = obj$digits + 4, format = "f"), " LRT - objective =", 
+                  difference, "\n")
+            return(difference)
+        }
     }
 }
 .pval <-
@@ -642,7 +721,7 @@ function (ai, bi, ci, di, maxcor = 0.9999)
         1), ai = ai, bi = bi, ci = ci, di = di, maxcor = maxcor, 
         fixcut = TRUE), silent = TRUE))
     if (inherits(res, "try-error")) {
-        warnings("Could not estimate tetrachoric correlation coefficient.")
+        warning("Could not estimate tetrachoric correlation coefficient.")
         return(list(yi = NA, vi = NA))
     }
     res <- try(optim(par = c(res$minimum, qnorm((ai + bi)/ni), 
@@ -650,12 +729,12 @@ function (ai, bi, ci, di, maxcor = 0.9999)
         di = di, maxcor = maxcor, fixcut = FALSE, hessian = TRUE), 
         silent = TRUE)
     if (inherits(res, "try-error")) {
-        warnings("Could not estimate tetrachoric correlation coefficient.")
+        warning("Could not estimate tetrachoric correlation coefficient.")
         return(list(yi = NA, vi = NA))
     }
     vi <- try(chol2inv(chol(res$hessian))[1, 1], silent = TRUE)
     if (inherits(vi, "try-error")) {
-        warnings("Could not estimate sampling variance of tetrachoric correlation coefficient.")
+        warning("Could not estimate sampling variance of tetrachoric correlation coefficient.")
         vi <- NA
     }
     yi <- res$par[1]

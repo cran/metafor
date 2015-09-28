@@ -67,9 +67,9 @@ function (x, vi, sei, ci.lb, ci.ub, rows = -1, level = 95, digits = 2,
     }
     if (length(rows) != length(yi)) 
         stop("Number of outcomes does not correspond to the length of the 'rows' argument.")
-    yivi.na <- is.na(cbind(yi, vi))
+    yivi.na <- is.na(yi) | is.na(vi)
     if (any(yivi.na)) {
-        not.na <- rowSums(yivi.na) == 0L
+        not.na <- !yivi.na
         if (na.act == "na.omit") {
             yi <- yi[not.na]
             vi <- vi[not.na]

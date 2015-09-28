@@ -40,9 +40,10 @@ function (x, order, digits, transf, targs, ...)
     I2 <- rep(NA_real_, x$k.f)
     H2 <- rep(NA_real_, x$k.f)
     for (i in seq_len(x$k.f)[not.na]) {
-        res <- try(rma(yi.f[seq_len(i)], vi.f[seq_len(i)], weights = weights.f[seq_len(i)], 
-            method = x$method, weighted = x$weighted, intercept = TRUE, 
-            knha = x$knha, control = x$control), silent = TRUE)
+        res <- try(suppressWarnings(rma(yi.f[seq_len(i)], vi.f[seq_len(i)], 
+            weights = weights.f[seq_len(i)], method = x$method, 
+            weighted = x$weighted, intercept = TRUE, knha = x$knha, 
+            control = x$control)), silent = TRUE)
         if (inherits(res, "try-error")) 
             next
         b[i] <- res$b

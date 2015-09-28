@@ -182,9 +182,9 @@ function (x, annotate = TRUE, addfit = TRUE, addcred = FALSE,
     pch <- pch[k:1]
     psize <- psize[k:1]
     rows <- rows[k:1]
-    yiviX.na <- is.na(cbind(yi, vi, X))
+    yiviX.na <- is.na(yi) | is.na(vi) | apply(is.na(X), 1, any)
     if (any(yiviX.na)) {
-        not.na <- rowSums(yiviX.na) == 0L
+        not.na <- !yiviX.na
         if (na.act == "na.omit") {
             yi <- yi[not.na]
             vi <- vi[not.na]

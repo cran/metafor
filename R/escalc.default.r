@@ -329,11 +329,19 @@ function (measure, formula, ai, bi, ci, di, n1i, n2i, x1i, x2i,
         k <- length(m1i)
         ni <- ni.u
         mi <- ni - 2
-        spi <- sqrt(((n1i - 1) * sd1i^2 + (n2i - 1) * sd2i^2)/mi)
-        di <- (m1i - m2i)/spi
+        sdpi <- sqrt(((n1i - 1) * sd1i^2 + (n2i - 1) * sd2i^2)/mi)
+        di <- (m1i - m2i)/sdpi
         if (measure == "MD") {
             yi <- m1i - m2i
-            vi <- sd1i^2/n1i + sd2i^2/n2i
+            if (length(vtype) == 1L) 
+                vtype <- rep(vtype, k)
+            vi <- rep(NA_real_, k)
+            for (i in seq_len(k)) {
+                if (vtype[i] == "UB" || vtype[i] == "LS") 
+                  vi[i] <- sd1i[i]^2/n1i[i] + sd2i[i]^2/n2i[i]
+                if (vtype[i] == "HO") 
+                  vi[i] <- sdpi[i]^2 * (1/n1i[i] + 1/n2i[i])
+            }
         }
         if (measure == "SMD") {
             warn.before <- getOption("warn")
@@ -371,7 +379,17 @@ function (measure, formula, ai, bi, ci, di, n1i, n2i, x1i, x2i,
         }
         if (measure == "ROM") {
             yi <- log(m1i/m2i)
-            vi <- sd1i^2/(n1i * m1i^2) + sd2i^2/(n2i * m2i^2)
+            if (length(vtype) == 1L) 
+                vtype <- rep(vtype, k)
+            vi <- rep(NA_real_, k)
+            for (i in seq_len(k)) {
+                if (vtype[i] == "LS") 
+                  vi[i] <- sd1i[i]^2/(n1i[i] * m1i[i]^2) + sd2i[i]^2/(n2i[i] * 
+                    m2i[i]^2)
+                if (vtype[i] == "HO") 
+                  vi[i] <- sdpi[i]^2/(n1i[i] * m1i[i]^2) + sdpi[i]^2/(n2i[i] * 
+                    m2i[i]^2)
+            }
         }
         if (is.element(measure, c("RPB", "RBIS"))) {
             hi <- mi/n1i + mi/n2i
@@ -779,8 +797,8 @@ function (measure, formula, ai, bi, ci, di, n1i, n2i, x1i, x2i,
             slab <- slab[subset]
         if (anyNA(slab)) 
             stop("NAs in study labels.")
-        if (anyDuplicated(slab) > 0) 
-            slab <- make.unique(slab)
+        if (anyDuplicated(slab)) 
+            slab <- make.unique(as.character(slab))
         if (length(slab) != length(yi)) 
             stop("Study labels not of same length as data.")
         attr(yi, "slab") <- slab

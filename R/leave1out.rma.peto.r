@@ -29,9 +29,9 @@ function (x, digits, transf, targs, ...)
     QE <- rep(NA_real_, x$k.f)
     QEp <- rep(NA_real_, x$k.f)
     for (i in seq_len(x$k.f)[x$not.na]) {
-        res <- try(rma.peto(ai = x$ai.f[-i], bi = x$bi.f[-i], 
-            ci = x$ci.f[-i], di = x$di.f[-i], add = x$add, to = x$to, 
-            drop00 = x$drop00), silent = TRUE)
+        res <- try(suppressWarnings(rma.peto(ai = x$ai.f[-i], 
+            bi = x$bi.f[-i], ci = x$ci.f[-i], di = x$di.f[-i], 
+            add = x$add, to = x$to, drop00 = x$drop00)), silent = TRUE)
         if (inherits(res, "try-error")) 
             next
         b[i] <- res$b

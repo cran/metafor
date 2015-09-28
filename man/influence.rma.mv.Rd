@@ -2,14 +2,14 @@
 \alias{hatvalues.rma.mv}
 \title{Hat values for 'rma.mv' Objects}
 \description{
-   The function compute the hat values for objects of class \code{"rma.mv"}.
+   The function computes the hat values for objects of class \code{"rma.mv"}.
 }
 \usage{
 \method{hatvalues}{rma.mv}(model, type="diagonal", \dots)
 }
 \arguments{
    \item{model}{an object of class \code{"rma.mv"}.}
-   \item{type}{character string indicating whether to return only the diagonal of the hat matrix (\code{"diagonal"}) or the entire matrix (\code{"matrix"}).}
+   \item{type}{character string indicating whether to return only the diagonal of the hat matrix (\code{"diagonal"}) or the entire hat matrix (\code{"matrix"}).}
    \item{\dots}{other arguments.}
 }
 \value{

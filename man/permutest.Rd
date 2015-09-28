@@ -81,16 +81,16 @@ dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
 
 ### random-effects model
 res <- rma(yi, vi, data=dat)
+res
 
 ### permutation test (approximate and exact)
 \dontrun{
-
 permutest(res)
-permutest(res, exact=TRUE)
-}
+permutest(res, exact=TRUE)}
 
 ### mixed-effects model with two moderators (absolute latitude and publication year)
 res <- rma(yi, vi, mods = ~ ablat + year, data=dat)
+res
 
 ### permutation test (approximate only; exact not feasible)
 \dontrun{

@@ -73,16 +73,18 @@ function (x, digits, showfit = FALSE, signif.stars = getOption("show.signif.star
                 collapse = ""), " (nlvls = ", x$g.nlevels.f[1], 
                 ")\n", sep = "")
             cat("\n")
-            if (is.element(x$struct[1], c("CS", "AR"))) {
+            if (is.element(x$struct[1], c("CS", "AR", "ID"))) {
                 vc <- cbind(tau2, tau, ifelse(x$vc.fix$tau2, 
                   "yes", "no"))
                 vc <- rbind(vc, c(rho, "", ifelse(x$vc.fix$rho, 
                   "yes", "no")))
                 colnames(vc) <- c("estim", "sqrt", "fixed")
                 rownames(vc) <- c("tau^2    ", "rho")
+                if (x$struct[1] == "ID") 
+                  vc <- vc[1, , drop = FALSE]
                 print(vc, quote = FALSE, right = right, print.gap = 2)
             }
-            if (is.element(x$struct[1], c("HCS", "HAR"))) {
+            if (is.element(x$struct[1], c("HCS", "HAR", "DIAG"))) {
                 vc <- cbind(tau2, tau, x$g.levels.k, ifelse(x$vc.fix$tau2, 
                   "yes", "no"), x$g.levels.f[[1]])
                 vc <- rbind(vc, c(rho, "", "", ifelse(x$vc.fix$rho, 
@@ -96,6 +98,8 @@ function (x, digits, showfit = FALSE, signif.stars = getOption("show.signif.star
                   rownames(vc) <- c(paste("tau^2.", 1:length(x$tau2), 
                     "  ", sep = ""), "rho")
                 }
+                if (x$struct[1] == "DIAG") 
+                  vc <- vc[1:length(tau2), , drop = FALSE]
                 print(vc, quote = FALSE, right = right, print.gap = 2)
             }
             if (is.element(x$struct[1], c("UN", "UNHO"))) {
@@ -168,6 +172,8 @@ function (x, digits, showfit = FALSE, signif.stars = getOption("show.signif.star
                   "yes", "no")))
                 colnames(vc) <- c("estim", "sqrt", "fixed")
                 rownames(vc) <- c("gamma^2  ", "phi")
+                if (x$struct[2] == "ID") 
+                  vc <- vc[1, , drop = FALSE]
                 print(vc, quote = FALSE, right = right, print.gap = 2)
             }
             if (is.element(x$struct[2], c("HCS", "HAR"))) {
@@ -184,6 +190,8 @@ function (x, digits, showfit = FALSE, signif.stars = getOption("show.signif.star
                   rownames(vc) <- c(paste("gamma^2.", 1:length(x$gamma2), 
                     "  ", sep = ""), "phi")
                 }
+                if (x$struct[2] == "DIAG") 
+                  vc <- vc[1:length(gamma2), , drop = FALSE]
                 print(vc, quote = FALSE, right = right, print.gap = 2)
             }
             if (is.element(x$struct[2], c("UN", "UNHO"))) {
@@ -257,14 +265,22 @@ function (x, digits, showfit = FALSE, signif.stars = getOption("show.signif.star
     if (x$p > 1) {
         cat("Test of Moderators (coefficient(s) ", paste(x$btt, 
             collapse = ","), "): \n", sep = "")
-        cat("QM(df = ", x$m, ") = ", formatC(x$QM, digits = digits, 
-            format = "f"), ", p-val ", .pval(x$QMp, digits = digits, 
-            showeq = TRUE, sep = " "), "\n\n", sep = "")
+        if (x$knha) {
+            cat("F(df1 = ", x$m, ", df2 = ", x$dfs, ") = ", formatC(x$QM, 
+                digits = digits, format = "f"), ", p-val ", .pval(x$QMp, 
+                digits = digits, showeq = TRUE, sep = " "), "\n\n", 
+                sep = "")
+        }
+        else {
+            cat("QM(df = ", x$m, ") = ", formatC(x$QM, digits = digits, 
+                format = "f"), ", p-val ", .pval(x$QMp, digits = digits, 
+                showeq = TRUE, sep = " "), "\n\n", sep = "")
+        }
     }
     if (x$int.only) {
         res.table <- c(estimate = x$b, se = x$se, zval = x$zval, 
             pval = x$pval, ci.lb = x$ci.lb, ci.ub = x$ci.ub)
-        if (x$knha || x$robust) 
+        if (x$knha) 
             names(res.table)[3] <- "tval"
         res.table <- formatC(res.table, digits = digits, format = "f")
         signif <- symnum(x$pval, corr = FALSE, na = FALSE, cutpoints = c(0, 
@@ -286,7 +302,7 @@ function (x, digits, showfit = FALSE, signif.stars = getOption("show.signif.star
             pval = x$pval, ci.lb = x$ci.lb, ci.ub = x$ci.ub)
         colnames(res.table) <- c("estimate", "se", "zval", "pval", 
             "ci.lb", "ci.ub")
-        if (x$knha || x$robust) 
+        if (x$knha) 
             colnames(res.table)[3] <- "tval"
         signif <- symnum(x$pval, corr = FALSE, na = FALSE, cutpoints = c(0, 
             0.001, 0.01, 0.05, 0.1, 1), symbols = c("***", "**", 

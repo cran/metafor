@@ -10,20 +10,93 @@ function (fitted, sigma2, tau2, rho, gamma2, phi, xlim, ylim,
     x <- fitted
     parallel <- match.arg(parallel, c("no", "snow", "multicore"))
     if (missing(sigma2) && missing(tau2) && missing(rho) && missing(gamma2) && 
-        missing(phi)) 
-        stop("Must specify one of the arguments 'sigma2', 'tau2', 'rho', 'gamma2', or 'phi'.")
+        missing(phi)) {
+        cl <- match.call()
+        comps <- ifelse(x$withS, sum(!x$vc.fix$sigma2), 0) + 
+            ifelse(x$withG, sum(!x$vc.fix$tau2) + sum(!x$vc.fix$rho), 
+                0) + ifelse(x$withH, sum(!x$vc.fix$gamma2) + 
+            sum(!x$vc.fix$phi), 0)
+        if (comps == 0) 
+            stop("No components to profile.")
+        if (plot) {
+            if (dev.cur() == 1) 
+                par(mfrow = c(comps, 1))
+        }
+        res <- list()
+        j <- 0
+        if (x$withS && any(!x$vc.fix$sigma2)) {
+            for (pos in (1:x$sigma2s)[!x$vc.fix$sigma2]) {
+                j <- j + 1
+                cl.vc <- cl
+                cl.vc$sigma2 <- pos
+                cl.vc$fitted <- quote(x)
+                if (progbar) 
+                  cat("Profiling sigma2 =", pos, "\n")
+                res[[j]] <- eval(cl.vc)
+            }
+        }
+        if (x$withG) {
+            if (any(!x$vc.fix$tau2)) {
+                for (pos in (1:x$tau2s)[!x$vc.fix$tau2]) {
+                  j <- j + 1
+                  cl.vc <- cl
+                  cl.vc$tau2 <- pos
+                  cl.vc$fitted <- quote(x)
+                  if (progbar) 
+                    cat("Profiling tau2 =", pos, "\n")
+                  res[[j]] <- eval(cl.vc)
+                }
+            }
+            if (any(!x$vc.fix$rho)) {
+                for (pos in (1:x$rhos)[!x$vc.fix$rho]) {
+                  j <- j + 1
+                  cl.vc <- cl
+                  cl.vc$rho <- pos
+                  cl.vc$fitted <- quote(x)
+                  if (progbar) 
+                    cat("Profiling rho =", pos, "\n")
+                  res[[j]] <- eval(cl.vc)
+                }
+            }
+        }
+        if (x$withH) {
+            if (any(!x$vc.fix$gamma2)) {
+                for (pos in (1:x$gamma2s)[!x$vc.fix$gamma2]) {
+                  j <- j + 1
+                  cl.vc <- cl
+                  cl.vc$gamma2 <- pos
+                  cl.vc$fitted <- quote(x)
+                  if (progbar) 
+                    cat("Profiling gamma2 =", pos, "\n")
+                  res[[j]] <- eval(cl.vc)
+                }
+            }
+            if (any(!x$vc.fix$phi)) {
+                for (pos in (1:x$phis)[!x$vc.fix$phi]) {
+                  j <- j + 1
+                  cl.vc <- cl
+                  cl.vc$phi <- pos
+                  cl.vc$fitted <- quote(x)
+                  if (progbar) 
+                    cat("Profiling phi =", pos, "\n")
+                  res[[j]] <- eval(cl.vc)
+                }
+            }
+        }
+        return(invisible(res))
+    }
     if (sum(!missing(sigma2), !missing(tau2), !missing(rho), 
         !missing(gamma2), !missing(phi)) > 1L) 
         stop("Must specify only one of the arguments 'sigma2', 'tau2', 'rho', 'gamma2', or 'phi'.")
-    if (!missing(sigma2) && (is.na(x$vc.fix$sigma2) || all(x$vc.fix$sigma2))) 
+    if (!missing(sigma2) && (all(is.na(x$vc.fix$sigma2)) || all(x$vc.fix$sigma2))) 
         stop("Model does not contain any (estimated) 'sigma2' components.")
-    if (!missing(tau2) && (is.na(x$vc.fix$tau2) || all(x$vc.fix$tau2))) 
+    if (!missing(tau2) && (all(is.na(x$vc.fix$tau2)) || all(x$vc.fix$tau2))) 
         stop("Model does not contain any (estimated) 'tau2' components.")
-    if (!missing(rho) && c(is.na(x$vc.fix$rho) || all(x$vc.fix$rho))) 
+    if (!missing(rho) && c(all(is.na(x$vc.fix$rho)) || all(x$vc.fix$rho))) 
         stop("Model does not contain any (estimated) 'rho' components.")
-    if (!missing(gamma2) && (is.na(x$vc.fix$gamma2) || all(x$vc.fix$gamma2))) 
+    if (!missing(gamma2) && (all(is.na(x$vc.fix$gamma2)) || all(x$vc.fix$gamma2))) 
         stop("Model does not contain any (estimated) 'gamma2' components.")
-    if (!missing(phi) && c(is.na(x$vc.fix$phi) || all(x$vc.fix$phi))) 
+    if (!missing(phi) && c(all(is.na(x$vc.fix$phi)) || all(x$vc.fix$phi))) 
         stop("Model does not contain any (estimated) 'phi' components.")
     if (!missing(sigma2) && (length(sigma2) > 1L)) 
         stop("Can only specify one 'sigma2' component.")
@@ -191,22 +264,22 @@ function (fitted, sigma2, tau2, rho, gamma2, phi, xlim, ylim,
                 else {
                   x.control[[con.pos.phi.init]] <- res$phi
                 }
-                res <- try(rma.mv(x$yi, x$V, x$W, mods = x$X, 
-                  random = x$random, struct = x$struct, intercept = FALSE, 
-                  method = x$method, tdist = x$knha, level = x$level, 
-                  R = x$R, Rscale = x$Rscale, data = x$mf.r, 
-                  sigma2 = sigma2.arg, tau2 = tau2.arg, rho = rho.arg, 
-                  gamma2 = gamma2.arg, phi = phi.arg, control = x.control), 
-                  silent = TRUE)
+                res <- try(suppressWarnings(rma.mv(x$yi, x$V, 
+                  x$W, mods = x$X, random = x$random, struct = x$struct, 
+                  intercept = FALSE, method = x$method, tdist = x$knha, 
+                  level = x$level, R = x$R, Rscale = x$Rscale, 
+                  data = x$mf.r, sigma2 = sigma2.arg, tau2 = tau2.arg, 
+                  rho = rho.arg, gamma2 = gamma2.arg, phi = phi.arg, 
+                  control = x.control)), silent = TRUE)
             }
             else {
-                res <- try(rma.mv(x$yi, x$V, x$W, mods = x$X, 
-                  random = x$random, struct = x$struct, intercept = FALSE, 
-                  method = x$method, tdist = x$knha, level = x$level, 
-                  R = x$R, Rscale = x$Rscale, data = x$mf.r, 
-                  sigma2 = sigma2.arg, tau2 = tau2.arg, rho = rho.arg, 
-                  gamma2 = gamma2.arg, phi = phi.arg, control = x$control), 
-                  silent = TRUE)
+                res <- try(suppressWarnings(rma.mv(x$yi, x$V, 
+                  x$W, mods = x$X, random = x$random, struct = x$struct, 
+                  intercept = FALSE, method = x$method, tdist = x$knha, 
+                  level = x$level, R = x$R, Rscale = x$Rscale, 
+                  data = x$mf.r, sigma2 = sigma2.arg, tau2 = tau2.arg, 
+                  rho = rho.arg, gamma2 = gamma2.arg, phi = phi.arg, 
+                  control = x$control)), silent = TRUE)
             }
             if (inherits(res, "try-error")) 
                 next

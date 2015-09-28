@@ -98,10 +98,10 @@ function (x, exact = FALSE, iter = 1000, progbar = TRUE, retpermdist = FALSE,
         if (exact) {
             permmat <- .genuperms(indices)
             for (i in seq_len(iter)) {
-                res <- try(rma(x$yi, x$vi, weights = x$weights, 
+                res <- try(suppressWarnings(rma(x$yi, x$vi, weights = x$weights, 
                   mods = cbind(X[permmat[i, ], ]), method = x$method, 
                   weighted = x$weighted, intercept = FALSE, knha = x$knha, 
-                  control = x$control, btt = x$btt), silent = FALSE)
+                  control = x$control, btt = x$btt)), silent = FALSE)
                 if (inherits(res, "try-error")) 
                   next
                 zval.perm[i, ] <- res$zval
@@ -113,10 +113,10 @@ function (x, exact = FALSE, iter = 1000, progbar = TRUE, retpermdist = FALSE,
         else {
             i <- 1
             while (i <= iter) {
-                res <- try(rma(x$yi, x$vi, weights = x$weights, 
+                res <- try(suppressWarnings(rma(x$yi, x$vi, weights = x$weights, 
                   mods = cbind(X[sample(x$k), ]), method = x$method, 
                   weighted = x$weighted, intercept = FALSE, knha = x$knha, 
-                  control = x$control, btt = x$btt), silent = FALSE)
+                  control = x$control, btt = x$btt)), silent = FALSE)
                 if (inherits(res, "try-error")) 
                   next
                 zval.perm[i, ] <- res$zval
@@ -148,7 +148,7 @@ function (x, exact = FALSE, iter = 1000, progbar = TRUE, retpermdist = FALSE,
         close(pbar)
     out <- list(pval = pval, QMp = QMp, b = x$b, se = x$se, zval = x$zval, 
         ci.lb = x$ci.lb, ci.ub = x$ci.ub, QM = x$QM, k = x$k, 
-        p = x$p, btt = x$btt, m = x$m, knha = x$knha, robust = x$robust, 
+        p = x$p, btt = x$btt, m = x$m, knha = x$knha, dfs = x$dfs, 
         int.only = x$int.only, digits = digits, exact.iter = exact.iter)
     if (retpermdist) {
         out$QM.perm <- QM.perm

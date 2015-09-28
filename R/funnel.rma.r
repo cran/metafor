@@ -7,6 +7,8 @@ function (x, yaxis = "sei", xlim, ylim, xlab, ylab, steps = 5,
 {
     if (!is.element("rma", class(x))) 
         stop("Argument 'x' must be an object of class \"rma\".")
+    if (is.element("robust.rma", class(x))) 
+        stop("Function not applicable to objects of class \"robust.rma\".")
     na.act <- getOption("na.action")
     yaxis <- match.arg(yaxis, c("sei", "vi", "seinv", "vinv", 
         "ni", "ninv", "sqrtni", "sqrtninv", "lni", "wi"))

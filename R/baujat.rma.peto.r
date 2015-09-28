@@ -16,9 +16,9 @@ function (x, xlim, ylim, xlab, ylab, cex, grid = TRUE, ...)
     on.exit(options(warn = o.warn))
     options(warn = -1)
     for (i in seq_len(x$k.f)[x$not.na]) {
-        res <- try(rma.peto(ai = x$ai.f[-i], bi = x$bi.f[-i], 
-            ci = x$ci.f[-i], di = x$di.f[-i], add = x$add, to = x$to, 
-            drop00 = x$drop00), silent = TRUE)
+        res <- try(suppressWarnings(rma.peto(ai = x$ai.f[-i], 
+            bi = x$bi.f[-i], ci = x$ci.f[-i], di = x$di.f[-i], 
+            add = x$add, to = x$to, drop00 = x$drop00)), silent = TRUE)
         if (inherits(res, "try-error")) 
             next
         Xi <- matrix(x$X.f[i, ], nrow = 1)

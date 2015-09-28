@@ -4,6 +4,8 @@ function (x, xlim, ylim, xlab, ylab, add = x$add, to = x$to,
 {
     if (!is.element("rma", class(x))) 
         stop("Argument 'x' must be an object of class \"rma\".")
+    if (is.element("robust.rma", class(x))) 
+        stop("Function not applicable to objects of class \"robust.rma\".")
     if (!x$int.only) 
         stop("L'Abbe plot only applicable for models without moderators.")
     if (!is.element(x$measure, c("RR", "OR", "RD", "AS", "IRR", 
@@ -108,9 +110,10 @@ function (x, xlim, ylim, xlab, ylab, add = x$add, to = x$to,
             add = add, to = to)
     }
     options(na.action = na.act)
-    dat.t.dat.c.na <- is.na(cbind(dat.t, dat.c))
+    dat.t.dat.c.na <- apply(is.na(dat.t), 1, any) | apply(is.na(dat.c), 
+        1, any)
     if (any(dat.t.dat.c.na)) {
-        not.na <- rowSums(dat.t.dat.c.na) == 0L
+        not.na <- !dat.t.dat.c.na
         dat.t <- dat.t[not.na, ]
         dat.c <- dat.c[not.na, ]
     }

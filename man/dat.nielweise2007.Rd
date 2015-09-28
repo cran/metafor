@@ -39,7 +39,6 @@ predict(res, transf=exp, digits=2)
 \dontrun{
 res <- rma.glmm(measure="OR", ai=ai, n1i=n1i, ci=ci, n2i=n2i, data=dat, model="CM.EL")
 print(res, digits=3)
-predict(res, transf=exp, digits=2)
-}
+predict(res, transf=exp, digits=2)}
 }
 \keyword{datasets}

@@ -42,16 +42,18 @@ function (x, order, digits, transf, targs, ...)
     QEp <- rep(NA_real_, x$k.f)
     for (i in seq_len(x$k.f)[not.na]) {
         if (is.element(x$measure, c("RR", "OR", "RD"))) {
-            res <- try(rma.mh(ai = ai.f[seq_len(i)], bi = bi.f[seq_len(i)], 
-                ci = ci.f[seq_len(i)], di = di.f[seq_len(i)], 
-                measure = x$measure, add = x$add, to = x$to, 
-                drop00 = x$drop00, correct = x$correct), silent = TRUE)
+            res <- try(suppressWarnings(rma.mh(ai = ai.f[seq_len(i)], 
+                bi = bi.f[seq_len(i)], ci = ci.f[seq_len(i)], 
+                di = di.f[seq_len(i)], measure = x$measure, add = x$add, 
+                to = x$to, drop00 = x$drop00, correct = x$correct)), 
+                silent = TRUE)
         }
         else {
-            res <- try(rma.mh(x1i = x1i.f[seq_len(i)], x2i = x2i.f[seq_len(i)], 
-                t1i = t1i.f[seq_len(i)], t2i = t2i.f[seq_len(i)], 
-                measure = x$measure, add = x$add, to = x$to, 
-                drop00 = x$drop00, correct = x$correct), silent = TRUE)
+            res <- try(suppressWarnings(rma.mh(x1i = x1i.f[seq_len(i)], 
+                x2i = x2i.f[seq_len(i)], t1i = t1i.f[seq_len(i)], 
+                t2i = t2i.f[seq_len(i)], measure = x$measure, 
+                add = x$add, to = x$to, drop00 = x$drop00, correct = x$correct)), 
+                silent = TRUE)
         }
         if (inherits(res, "try-error")) 
             next

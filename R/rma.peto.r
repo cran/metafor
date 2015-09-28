@@ -68,8 +68,6 @@ function (ai, bi, ci, di, n1i, n2i, data, slab, subset, add = 1/2,
     else {
         if (anyNA(slab)) 
             stop("NAs in study labels.")
-        if (anyDuplicated(slab) > 0) 
-            slab <- make.unique(slab)
         if (length(slab) != k) 
             stop("Study labels not of same length as data.")
         slab.null <- FALSE
@@ -86,6 +84,8 @@ function (ai, bi, ci, di, n1i, n2i, data, slab, subset, add = 1/2,
         ids <- ids[subset]
         k <- length(ai)
     }
+    if (anyDuplicated(slab)) 
+        slab <- make.unique(as.character(slab))
     dat <- escalc(measure = "PETO", ai = ai, bi = bi, ci = ci, 
         di = di, add = add[1], to = to[1], drop00 = drop00[1])
     yi <- dat$yi
@@ -106,11 +106,11 @@ function (ai, bi, ci, di, n1i, n2i, data, slab, subset, add = 1/2,
     vi.f <- vi
     ni.f <- ni
     k.f <- k
-    aibicidi.na <- is.na(cbind(ai, bi, ci, di))
+    aibicidi.na <- is.na(ai) | is.na(bi) | is.na(ci) | is.na(di)
     if (any(aibicidi.na)) {
         if (verbose) 
             message("Handling NAs in table data ...")
-        not.na <- rowSums(aibicidi.na) == 0L
+        not.na <- !aibicidi.na
         if (na.act == "na.omit" || na.act == "na.exclude" || 
             na.act == "na.pass") {
             ai <- ai[not.na]
@@ -128,11 +128,11 @@ function (ai, bi, ci, di, n1i, n2i, data, slab, subset, add = 1/2,
     }
     if (k < 1) 
         stop("Processing terminated since k = 0.")
-    yivi.na <- is.na(cbind(yi, vi))
+    yivi.na <- is.na(yi) | is.na(vi)
     if (any(yivi.na)) {
         if (verbose) 
             message("Handling NAs in yi/vi ...")
-        not.na.yivi <- rowSums(yivi.na) == 0L
+        not.na.yivi <- !yivi.na
         if (na.act == "na.omit" || na.act == "na.exclude" || 
             na.act == "na.pass") {
             yi <- yi[not.na.yivi]
@@ -243,7 +243,7 @@ function (ai, bi, ci, di, n1i, n2i, data, slab, subset, add = 1/2,
     method <- "FE"
     weighted <- TRUE
     knha <- FALSE
-    robust <- FALSE
+    dfs <- NA
     res <- list(b = b, se = se, zval = zval, pval = pval, ci.lb = ci.lb, 
         ci.ub = ci.ub, vb = vb, tau2 = tau2, k = k, k.f = k.f, 
         k.yi = k.yi, k.pos = k.pos, k.eff = k.eff, p = p, parms = parms, 
@@ -253,9 +253,9 @@ function (ai, bi, ci, di, n1i, n2i, data, slab, subset, add = 1/2,
         di.f = di.f, ni = ni, ni.f = ni.f, ids = ids, not.na = not.na, 
         not.na.yivi = not.na.yivi, slab = slab, slab.null = slab.null, 
         measure = measure, method = method, weighted = weighted, 
-        knha = knha, robust = robust, intercept = intercept, 
-        digits = digits, level = level, add = add, to = to, drop00 = drop00, 
-        fit.stats = fit.stats, call = mf)
+        knha = knha, dfs = dfs, intercept = intercept, digits = digits, 
+        level = level, add = add, to = to, drop00 = drop00, fit.stats = fit.stats, 
+        call = mf)
     class(res) <- c("rma.peto", "rma")
     return(res)
 }

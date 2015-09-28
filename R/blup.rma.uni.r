@@ -16,8 +16,8 @@ function (x, level, digits, transf, targs, ...)
     if (missing(targs)) 
         targs <- NULL
     alpha <- ifelse(level > 1, (100 - level)/100, 1 - level)
-    if (x$knha || x$robust) {
-        crit <- qt(alpha/2, df = x$k - x$p, lower.tail = FALSE)
+    if (x$knha) {
+        crit <- qt(alpha/2, df = x$dfs, lower.tail = FALSE)
     }
     else {
         crit <- qnorm(alpha/2, lower.tail = FALSE)

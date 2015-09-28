@@ -178,6 +178,8 @@ rma.glmm(ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi, ti, ni,
 
    Stijnen, T., Hamza, T. H., & Ozdemir, P. (2010). Random effects meta-analysis of event outcome in the framework of the generalized linear mixed model with applications in sparse data. \emph{Statistics in Medicine}, \bold{29}, 3046--3067.
 
+   Turner, R. M., Omar, R. Z., Yang, M., Goldstein, H., & Thompson, S. G. (2000). A multilevel model framework for meta-analysis of clinical trials with binary outcomes. \emph{Statistics in Medicine}, \bold{19}, 3417--3432.
+
    Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \url{http://www.jstatsoft.org/v36/i03/}.
 }
 \seealso{
@@ -198,26 +200,22 @@ rma(measure="OR", ai=tpos, bi=tneg, ci=cpos, di=cneg,
 ### unconditional model with fixed study effects
 \dontrun{
 rma.glmm(measure="OR", ai=tpos, bi=tneg, ci=cpos, di=cneg,
-         data=dat.bcg, model="UM.FS", verbose=TRUE)
-}
+         data=dat.bcg, model="UM.FS", verbose=TRUE)}
 
 ### unconditional model with random study effects
 \dontrun{
 rma.glmm(measure="OR", ai=tpos, bi=tneg, ci=cpos, di=cneg,
-         data=dat.bcg, model="UM.RS", verbose=TRUE)
-}
+         data=dat.bcg, model="UM.RS", verbose=TRUE)}
 
 ### conditional model with approximate likelihood
 \dontrun{
 rma.glmm(measure="OR", ai=tpos, bi=tneg, ci=cpos, di=cneg,
-         data=dat.bcg, model="CM.AL", verbose=TRUE)
-}
+         data=dat.bcg, model="CM.AL", verbose=TRUE)}
 
 ### conditional model with exact likelihood (be patient!)
 ### note: fitting this model is very slow, so be patient
 \dontrun{
 rma.glmm(measure="OR", ai=tpos, bi=tneg, ci=cpos, di=cneg,
-         data=dat.bcg, model="CM.EL", verbose=TRUE)
-}
+         data=dat.bcg, model="CM.EL", verbose=TRUE)}
 }
 \keyword{models}
