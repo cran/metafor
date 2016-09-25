@@ -1,3 +1,2 @@
-forest <-
-function (x, ...) 
-UseMethod("forest")
+forest <- function(x, ...)
+   UseMethod("forest")

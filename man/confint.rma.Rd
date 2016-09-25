@@ -24,8 +24,8 @@
 \arguments{
    \item{object}{an object of class \code{"rma.uni"}, \code{"rma.mh"}, \code{"rma.peto"}, or \code{"rma.mv"}. The method is not yet implemented for objects of class \code{"rma.glmm"}.}
    \item{parm}{this argument is here for compatability with the generic function \code{\link{confint}}, but is (currently) ignored.}
-   \item{fixed}{logical indicating whether confidence intervals for the model coefficients should be returned (default is \code{FALSE}).}
-   \item{random}{logical indicating whether a confidence interval for the amount of (residual) heterogeneity should be returned (default is \code{TRUE}) (only relevant for \code{"rma.uni"} objects).}
+   \item{fixed}{logical indicating whether confidence intervals for the model coefficients should be returned (the default is \code{FALSE}).}
+   \item{random}{logical indicating whether a confidence interval for the amount of (residual) heterogeneity should be returned (the default is \code{TRUE}) (only relevant for \code{"rma.uni"} objects).}
    \item{sigma2}{integer specifying for which \if{latex}{\eqn{\sigma^2}}\if{html}{\eqn{\sigma²}}\if{text}{\eqn{\sigma^2}} value a confidence interval should be obtained (only relevant for \code{"rma.mv"} objects).}
    \item{tau2}{integer specifying for which \if{latex}{\eqn{\tau^2}}\if{html}{\eqn{\tau²}}\if{text}{\eqn{\tau^2}} value a confidence interval should be obtained (only relevant for \code{"rma.mv"} objects).}
    \item{rho}{integer specifying for which \eqn{\rho} value the confidence interval should be obtained (only relevant for \code{"rma.mv"} objects).}
@@ -33,9 +33,9 @@
    \item{phi}{integer specifying for which \eqn{\phi} value a confidence interval should be obtained (only relevant for \code{"rma.mv"} objects).}
    \item{level}{numerical value between 0 and 100 specifying the confidence interval level (if unspecified, the default is to take the value from the object).}
    \item{digits}{integer specifying the number of decimal places to which the results should be rounded (if unspecified, the default is to take the value from the object).}
-   \item{transf}{optional argument specifying the name of a function that should be used to transform the model coefficients and interval bounds (e.g., \code{transf=exp}). If unspecified, no transformation is used.}
+   \item{transf}{optional argument specifying the name of a function that should be used to transform the model coefficients and interval bounds (e.g., \code{transf=exp}; see also \link{transf}). If unspecified, no transformation is used.}
    \item{targs}{optional arguments needed by the function specified under \code{transf}.}
-   \item{verbose}{logical indicating whether output should be generated on the progress of the iterative algorithms used to obtain the confidence intervals (default is \code{FALSE}). See \sQuote{Note}.}
+   \item{verbose}{logical indicating whether output should be generated on the progress of the iterative algorithms used to obtain the confidence intervals (the default is \code{FALSE}). See \sQuote{Note}.}
    \item{control}{list of control values for the iterative algorithm. If unspecified, default values are defined inside the function. See \sQuote{Note}.}
    \item{\dots}{other arguments.}
 }
@@ -95,9 +95,6 @@
    \code{\link{rma.uni}}, \code{\link{rma.mh}}, \code{\link{rma.peto}}, \code{\link{rma.glmm}}, \code{\link{rma.mv}}
 }
 \examples{
-### load BCG vaccine data
-data(dat.bcg)
-
 ### meta-analysis of the log relative risks using a random-effects model
 res <- rma(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
 
@@ -111,11 +108,8 @@ res <- rma(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg,
 ### confidence interval for the residual amount of heterogeneity
 confint(res)
 
-### load data
-dat <- get(data(dat.konstantopoulos2011))
-
 ### multilevel random-effects model
-res <- rma.mv(yi, vi, random = ~ 1 | district/school, data=dat)
+res <- rma.mv(yi, vi, random = ~ 1 | district/school, data=dat.konstantopoulos2011)
 
 ### profile plots and confidence intervals for the variance components
 \dontrun{
@@ -132,7 +126,7 @@ sav
 abline(v=sav$random[1,2:3], lty="dotted")}
 
 ### multivariate parameterization of the model
-res <- rma.mv(yi, vi, random = ~ factor(school) | district, data=dat)
+res <- rma.mv(yi, vi, random = ~ factor(school) | district, data=dat.konstantopoulos2011)
 
 ### profile plots and confidence intervals for the variance component and correlation
 \dontrun{

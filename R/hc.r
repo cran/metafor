@@ -1,3 +1,2 @@
-hc <-
-function (object, ...) 
-UseMethod("hc")
+hc <- function(object, ...)
+   UseMethod("hc")

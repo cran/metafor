@@ -14,7 +14,7 @@
 escalc(measure, formula, \dots)
 
 \method{escalc}{default}(measure, formula, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
-       m1i, m2i, sd1i, sd2i, xi, mi, ri, ti, sdi, ni, data, slab, subset,
+       m1i, m2i, sd1i, sd2i, xi, mi, ri, ti, sdi, ni, yi, vi, sei, data, slab, subset,
        add=1/2, to="only0", drop00=FALSE, vtype="LS",
        var.names=c("yi","vi"), add.measure=FALSE,
        append=TRUE, replace=TRUE, digits=4, \dots)
@@ -47,6 +47,9 @@ escalc(measure, formula, \dots)
    \item{ti}{vector to specify the total person-times.}
    \item{sdi}{vector to specify the standard deviations.}
    \item{ni}{vector to specify the sample/group sizes.}
+   \item{yi}{vector to specify the observed effect size or outcomes.}
+   \item{vi}{vector to specify the corresponding sampling variances.}
+   \item{sei}{vector to specify the corresponding standard errors.}
    \item{data}{optional data frame containing the variables given to the arguments above.}
    \item{slab}{optional vector with labels for the studies.}
    \item{subset}{optional vector indicating the subset of studies that should be used. This can be a logical vector or a numeric vector indicating the indices of the studies to include.}
@@ -54,11 +57,11 @@ escalc(measure, formula, \dots)
    \item{to}{a character string indicating when the values under \code{add} should be added (either \code{"all"}, \code{"only0"}, \code{"if0all"}, or \code{"none"}). See \sQuote{Details}.}
    \item{drop00}{logical indicating whether studies with no cases/events (or only cases) in both groups should be dropped when calculating the observed outcomes of the individual studies. See \sQuote{Details}.}
    \item{vtype}{a character string indicating the type of sampling variances to calculate (either \code{"LS"}, \code{"UB"}, \code{"HO"}, \code{"ST"}, or \code{vtype="CS"}). See \sQuote{Details}.}
-   \item{var.names}{a character string with two elements, specifying the name of the variable for the observed outcomes and the name of the variable for the corresponding sampling variances (default is \code{"yi"} and \code{"vi"}).}
+   \item{var.names}{a character string with two elements, specifying the name of the variable for the observed outcomes and the name of the variable for the corresponding sampling variances (the default is \code{"yi"} and \code{"vi"}).}
    \item{add.measure}{logical indicating whether a variable should be added to the data frame (with default name \code{"measure"}) that indicates the type of outcome measure computed. When using this option, \code{var.names} can have a third element to change this variable name.}
-   \item{append}{logical indicating whether the data frame specified via the \code{data} argument (if one has been specified) should be returned together with the observed outcomes and corresponding sampling variances (default is \code{TRUE}).}
+   \item{append}{logical indicating whether the data frame specified via the \code{data} argument (if one has been specified) should be returned together with the observed outcomes and corresponding sampling variances (the default is \code{TRUE}).}
    \item{replace}{logical indicating whether existing values for \code{yi} and \code{vi} in the data frame should be replaced or not. Only relevant when \code{append=TRUE} and the data frame already contains the \code{yi} and \code{vi} variables. If \code{replace=TRUE} (the default), all of the existing values will be overwritten. If \code{replace=FALSE}, only \code{NA} values will be replaced. See \sQuote{Value} section below for more details.}
-   \item{digits}{integer specifying the number of decimal places to which the printed results should be rounded (default is 4). Note that the values are stored without rounding in the returned object.}
+   \item{digits}{integer specifying the number of decimal places to which the printed results should be rounded (the default is 4). Note that the values are stored without rounding in the returned object.}
    \item{\dots}{other arguments.}
 }
 \details{
@@ -160,7 +163,7 @@ escalc(measure, formula, \dots)
          \item \code{"ROM"} for the \emph{log transformed ratio of means} (Hedges et al., 1999; Lajeunesse, 2011).
          } Note that the log is taken of the ratio of means, which makes this outcome measures symmetric around 0 and yields a corresponding sampling distribution that is closer to normality. However, note that if \code{m1i} and \code{m2i} have opposite signs, this outcome measure cannot be computed.
 
-         The positive bias in the standardized mean difference is automatically corrected for within the function, yielding Hedges' g for \code{measure="SMD"} (Hedges, 1981). Similarly, the same bias correction is applied for \code{measure="SMDH"} (Bonett, 2009). For \code{measure="SMD"}, one can choose between \code{vtype="LS"} (the default) and \code{vtype="UB"}. The former uses a large sample approximation to compute the sampling variances. The latter provides unbiased estimates of the sampling variances. Finally, for \code{measure="MD"} and \code{measure="ROM"}, one can choose between \code{vtype="LS"} (the default) and \code{vtype="HO"}. The former computes the sampling variances without assuming homoscedasticity (i.e., that the true variances of the measurements are the same in group 1 and group 2 within each study), while the latter assumes homoscedasticity.
+         The positive bias in the standardized mean difference is automatically corrected for within the function, yielding Hedges' g for \code{measure="SMD"} (Hedges, 1981). Similarly, the same bias correction is applied for \code{measure="SMDH"} (Bonett, 2009). For \code{measure="SMD"}, one can choose between \code{vtype="LS"} (the default) and \code{vtype="UB"}. The former uses a large-sample approximation to compute the sampling variances. The latter provides unbiased estimates of the sampling variances. Finally, for \code{measure="MD"} and \code{measure="ROM"}, one can choose between \code{vtype="LS"} (the default) and \code{vtype="HO"}. The former computes the sampling variances without assuming homoscedasticity (i.e., that the true variances of the measurements are the same in group 1 and group 2 within each study), while the latter assumes homoscedasticity.
 
          A dataset corresponding to data of this type is provided in \code{\link{dat.normand1999}} (for mean differences and standardized mean differences). A dataset showing the use of the ratio of means measure is provided in \code{\link{dat.curtis1998}}.
 
@@ -187,9 +190,9 @@ escalc(measure, formula, \dots)
          For these measures, one needs to specify \code{ri}, the vector with the raw correlation coefficients, and \code{ni}, the corresponding sample sizes. The options for the \code{measure} argument are then:
          \itemize{
          \item \code{"COR"} for the \emph{raw correlation coefficient}.
-         \item \code{"UCOR"} for the \emph{raw correlation coefficient} corrected for its slight negative bias (based on equation 2.7 in Olkin & Pratt, 1958).
+         \item \code{"UCOR"} for the \emph{raw correlation coefficient} corrected for its slight negative bias (based on equation 2.3 in Olkin & Pratt, 1958).
          \item \code{"ZCOR"} for the \emph{Fisher's r-to-z transformed correlation coefficient} (Fisher, 1921).
-         } For \code{measure="COR"} and \code{measure="UCOR"}, one can choose between \code{vtype="LS"} (the default) and \code{vtype="UB"}. The former uses a large sample approximation to compute the sampling variances. The latter provides approximately unbiased estimates of the sampling variances (see Hedges, 1989).
+         } For \code{measure="UCOR"}, one can choose between \code{vtype="LS"} (the default) and \code{vtype="UB"}. The former uses the standard large-sample approximation to compute the sampling variances. The latter provides unbiased estimates of the sampling variances (see Hedges, 1989, but using the exact equation instead of the approximation).
 
          Datasets corresponding to data of this type are provided in \code{\link{dat.mcdaniel1994}} and \code{\link{dat.molloy2014}}.
 
@@ -384,6 +387,12 @@ escalc(measure, formula, \dots)
 
    }
 
+   \subsection{Converting a Data Frame to an 'escalc' Object}{
+
+      The function can also be used to convert a regular data frame to an 'escalc' object. One simply sets the \code{measure} argument to one of the options described above (or to \code{measure="GEN"} for a generic outcome measure not further specified) and passes the observed effect sizes or outcomes via the \code{yi} argument and the corresponding sampling variances via the \code{vi} argument (or the standard errors via the \code{sei} argument).
+
+   }
+
 }
 \value{
    An object of class \code{c("escalc","data.frame")}. The object is a data frame containing the following components:
@@ -453,10 +462,6 @@ escalc(measure, formula, \dots)
 
    Morris, S. B., & DeShon, R. P. (2002). Combining effect size estimates in meta-analysis with repeated measures and independent-groups designs. \emph{Psychological Methods}, \bold{7}, 105--125.
 
-   Rücker, G., Schwarzer, G., Carpenter, J., & Olkin, I. (2009). Why add anything to nothing? The arcsine difference as a measure of treatment effect in meta-analysis with zero cells. \emph{Statistics in Medicine}, \bold{28}, 721--738.
-
-   Sánchez-Meca, J., Marín-Martínez, F., & Chacón-Moscoso, S. (2003). Effect-size indices for dichotomized outcomes in meta-analysis. \emph{Psychological Methods}, \bold{8}, 448--467.
-
    Olkin, I., & Pratt, J. W. (1958). Unbiased estimation of certain correlation coefficients. \emph{Annals of Mathematical Statistics}, \bold{29}, 201--211.
 
    Pearson, K. (1900). Mathematical contribution to the theory of evolution. VII. On the correlation of characters not quantitatively measurable. \emph{Philosophical Transactions of the Royal Society of London, Series A}, \bold{195}, 1--47.
@@ -464,6 +469,10 @@ escalc(measure, formula, \dots)
    Pearson, K. (1909). On a new method of determining correlation between a measured character A, and a character B, of which only the percentage of cases wherein B exceeds (or falls short of) a given intensity is recorded for each grade of A. \emph{Biometrika}, \bold{7}, 96--105.
 
    Rothman, K. J., Greenland, S., & Lash, T. L. (2008). \emph{Modern epidemiology} (3rd ed.). Philadelphia: Lippincott Williams & Wilkins.
+
+   Rücker, G., Schwarzer, G., Carpenter, J., & Olkin, I. (2009). Why add anything to nothing? The arcsine difference as a measure of treatment effect in meta-analysis with zero cells. \emph{Statistics in Medicine}, \bold{28}, 721--738.
+
+   Sánchez-Meca, J., Marín-Martínez, F., & Chacón-Moscoso, S. (2003). Effect-size indices for dichotomized outcomes in meta-analysis. \emph{Psychological Methods}, \bold{8}, 448--467.
 
    Soper, H. E. (1914). On the probable error of the bi-serial expression for the correlation coefficient. \emph{Biometrika}, \bold{10}, 384--390.
 
@@ -482,10 +491,10 @@ escalc(measure, formula, \dots)
 }
 \examples{
 ### load BCG vaccine data
-data(dat.bcg)
+dat <- get(data(dat.bcg))
 
 ### calculate log relative risks and corresponding sampling variances
-dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
+dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat)
 dat
 
 ### suppose that for a particular study, yi and vi are known (i.e., have
@@ -498,7 +507,17 @@ dat
 
 ### using formula interface (first rearrange data into long format)
 dat.long <- to.long(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg,
-                    data=dat.bcg, append=FALSE, vlong=TRUE)
+                    data=dat, append=FALSE, vlong=TRUE)
 escalc(measure="RR", outcome ~ group | study, weights=freq, data=dat.long)
+
+### convert a regular data frame to an 'escalc' object
+### dataset from Lipsey & Wilson (2001), Table 7.1, page 130
+dat <- data.frame(id = c(100, 308, 1596, 2479, 9021, 9028, 161, 172, 537, 7049),
+                  yi = c(-0.33, 0.32, 0.39, 0.31, 0.17, 0.64, -0.33, 0.15, -0.02, 0.00),
+                  vi = c(0.084, 0.035, 0.017, 0.034, 0.072, 0.117, 0.102, 0.093, 0.012, 0.067),
+                  random = c(0, 0, 0, 0, 0, 0, 1, 1, 1, 1),
+                  intensity = c(7, 3, 7, 5, 7, 7, 4, 4, 5, 6))
+dat <- escalc(measure="SMD", yi=yi, vi=vi, data=dat, slab=paste("Study ID:", id), digits=3)
+dat
 }
 \keyword{datagen}

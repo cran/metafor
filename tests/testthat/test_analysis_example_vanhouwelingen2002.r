@@ -2,7 +2,7 @@
 
 ### see also: http://www.metafor-project.org/doku.php/analyses:vanhouwelingen2002
 
-context("Checking analysis example vanhouwelingen2002")
+context("Checking analysis example: vanhouwelingen2002")
 
 ### load data
 dat <- get(data(dat.colditz1994, package="metafor"))
@@ -42,7 +42,7 @@ test_that("results for the random-effects model are correct.", {
    expect_equivalent(round(tmp$random[1,3],3), 1.181) ### 1.181 based on a Satterthwaite approximation (page 597)
 
    ### CI for mu with Knapp & Hartung method
-   res <- rma(yi, vi, data=dat, method="ML", knha=TRUE)
+   res <- rma(yi, vi, data=dat, method="ML", test="knha")
    tmp <- predict(res, transf=exp, digits=3)
 
    ### (results for this not given in paper)
@@ -57,10 +57,11 @@ test_that("profile plot for tau^2 can be drawn.", {
 
    res <- rma(yi, vi, data=dat, method="ML")
 
-   par(mfrow=c(1,1))
+   opar <- par(no.readonly=TRUE)
    profile(res, xlim=c(.01,2), steps=200, log="x", cex=0, lwd=2, progbar=FALSE)
    abline(h=logLik(res) - 1.92, lwd=2)
    abline(v=c(.12, .89), lty="dashed")
+   par(opar)
 
 })
 
@@ -71,7 +72,7 @@ test_that("forest plot of observed log(OR)s and corresponding BLUPs can be drawn
    res <- rma(yi, vi, data=dat, method="ML")
    sav <- blup(res)
 
-   par(mfrow=c(1,1))
+   opar <- par(no.readonly=TRUE)
    par(family="mono", mar=c(5,4,1,2))
    forest(res, refline=res$b, addcred=TRUE, xlim=c(-7,8), alim=c(-3,3), slab=1:13, psize=.8,
           ilab=paste0("(n = ", formatC(apply(dat[,c(4:7)], 1, sum), width=7, big.mark=","), ")"),
@@ -80,6 +81,7 @@ test_that("forest plot of observed log(OR)s and corresponding BLUPs can be drawn
    points(sav$pred, 13:1 - .15, pch=15, cex=.8)
    text(-7, 15, "Trial (total n)", pos=4)
    text( 8, 15, "Log Odds Ratio [95% CI]", pos=2)
+   par(opar)
 
 })
 
@@ -88,7 +90,7 @@ test_that("the credibility/prediction interval is correct.", {
    res <- rma(yi, vi, data=dat, method="ML")
 
    ### computation as done in the paper
-   tmp <- round(res$b + c(-1,+1) * qnorm(.975) * sqrt(res$tau2), 3)
+   tmp <- round(c(res$b) + c(-1,+1) * qnorm(.975) * sqrt(res$tau2), 3)
 
    ### compare with results on page 599 (in text)
    expect_equivalent(tmp, c(-1.820, 0.336))
@@ -108,8 +110,9 @@ test_that("L'Abbe plot can be drawn.", {
 
    res <- rma(measure="OR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat, method="FE")
 
-   par(mfrow=c(1,1))
+   opar <- par(no.readonly=TRUE)
    labbe(res, xlim=c(-7,-1), ylim=c(-7,-1), xlab="ln(odds) not-vaccinated group", ylab="ln(odds) vaccinated group")
+   par(opar)
 
 })
 
@@ -137,7 +140,7 @@ test_that("results for the bivariate model are correct.", {
    expect_equivalent(round(res$se,3), c(0.435, 0.180))
 
    ### estimated odds ratio
-   tmp <- predict(res, newmods=1, intercept=FALSE, transf=exp, digits=3)
+   expect_warning(tmp <- predict(res, newmods=1, intercept=FALSE, transf=exp, digits=3))
    expect_equivalent(round(tmp$pred,3), 0.478)
    expect_equivalent(round(tmp$ci.lb,3), 0.336)
    expect_equivalent(round(tmp$ci.ub,3), 0.680)

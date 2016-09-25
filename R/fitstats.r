@@ -1,3 +1,2 @@
-fitstats <-
-function (object, ...) 
-UseMethod("fitstats")
+fitstats <- function (object, ...)
+   UseMethod("fitstats")

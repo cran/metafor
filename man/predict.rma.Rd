@@ -17,7 +17,7 @@
    \item{addx}{logical specifying whether the values of the moderator variables should be added to the returned object. See \sQuote{Examples}.}
    \item{level}{numerical value between 0 and 100 specifying the confidence and credibility/prediction interval level (if unspecified, the default is to take the value from the object).}
    \item{digits}{integer specifying the number of decimal places to which the printed results should be rounded (if unspecified, the default is to take the value from the object).}
-   \item{transf}{optional argument specifying the name of a function that should be used to transform the predicted values and interval bounds (e.g., \code{transf=exp}). If unspecified, no transformation is used.}
+   \item{transf}{optional argument specifying the name of a function that should be used to transform the predicted values and interval bounds (e.g., \code{transf=exp}; see also \link{transf}). If unspecified, no transformation is used.}
    \item{targs}{optional arguments needed by the function specified under \code{transf}.}
    \item{\dots}{other arguments.}
 }
@@ -58,7 +58,7 @@
 
    When using the \code{transf} option, the transformation is applied to the predicted values and the corresponding interval bounds. The standard errors are then set equal to \code{NA} and are omitted from the printed output.
 
-   Confidence and credibility/prediction intervals are calculated based on the critical values from a standard normal distribution (i.e., \eqn{\pm 1.96}{+- 1.96} for \code{level=95}). When the model was fitted with the Knapp and Hartung (2003) method (i.e., \code{knha=TRUE} in the \code{\link{rma.uni}} function or \code{tdist=TRUE} in the \code{\link{rma.glmm}} and \code{\link{rma.mv}} functions), then the t-distribution with \eqn{k-p} degrees of freedom is used.
+   Confidence and credibility/prediction intervals are calculated based on the critical values from a standard normal distribution (i.e., \eqn{\pm 1.96}{+- 1.96} for \code{level=95}). When the model was fitted with the Knapp and Hartung (2003) method (i.e., \code{test="knha"} in the \code{\link{rma.uni}} function) or with \code{test="t"} in the \code{\link{rma.glmm}} and \code{\link{rma.mv}} functions, then the t-distribution with \eqn{k-p} degrees of freedom is used.
 }
 \author{
    Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr
@@ -78,9 +78,6 @@
    \code{\link{fitted.rma}}, \code{\link{blup.rma.uni}}
 }
 \examples{
-### load BCG vaccine data
-data(dat.bcg)
-
 ### meta-analysis of the log relative risks using a random-effects model
 res <- rma(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
 

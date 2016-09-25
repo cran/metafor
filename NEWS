@@ -1,3 +1,126 @@
+Changes in Version 1.9-9 (2016-09-25)
+=====================================
+
+   o started to use git as version control system, GitHub to host the
+     repository (https://github.com/wviechtb/metafor) for the development
+     version of the package, Travis CI as continuous integration service
+     (https://travis-ci.org/wviechtb/metafor), and Codecov for automated
+     code coverage reporting (https://codecov.io/github/wviechtb/metafor)
+
+   o argument 'knha' in rma.uni() and argument 'tdist' in rma.glmm() and
+     rma.mv() are now superseded by argument 'test' in all three functions;
+     for backwards compatibility, the 'knha' and 'tdist' arguments still
+     work, but are no longer documented
+
+   o rma(yi, vi, weights=1, test="knha") now yields the same results as
+     rma(yi, vi, weighted=FALSE, test="knha") (but use of the Knapp and
+     Hartung method in the context of an unweighted analysis remains an
+     experimental feature)
+
+   o one can now pass an 'escalc' object directly to rma.uni(), which then
+     tries to automatically determine the 'yi' and 'vi' variables in the
+     data frame (thanks to Christian Röver for the suggestion)
+
+   o escalc() can now also be used to convert a regular data frame to an
+     'escalc' object
+
+   o for measure="UCOR", the exact bias-correction is now used (instead of
+     the approximation); when vtype="UB", the exact equation is now used to
+     compute the unbiased estimate of the variance of the bias-corrected
+     correlation coefficient; hence 'gsl' is now a suggested package (needed
+     to compute the hypergeometric function) and is loaded when required
+
+   o cooks.distance() now also works with 'rma.mv' objects; and since model
+     fitting can take some time, an option to show a progress bar has been
+     added
+
+   o fixed an issue with robust.rma.mv() throwing errors when the model was
+     fitted with sparse=TRUE
+
+   o fixed an error with robust.rma.mv() when the model was fitted with
+     user-defined weights (or a user-defined weight matrix)
+
+   o added ranef() for extracting the BLUPs of the random effects (only for
+     'rma.uni' objects at the moment)
+
+   o reverted back to the pre-1.1-0 way of computing p-values for individual
+     coefficients in permutest.rma.uni(), that is, the p-value is computed
+     with mean(abs(z_perm) >= abs(z_obs) - tol) (where 'tol' is a numerical
+     tolerance)
+
+   o permutest.rma.uni() gains 'permci' argument, which can be used to
+     obtain permutation-based CIs of the model coefficients (note that this
+     is computationally very demanding and may take a long time to complete)
+
+   o rma.glmm() continues to work even when the saturated model cannot be
+     fitted (although the tests for heterogeneity are not available then)
+
+   o rma.glmm() now allows control over the arguments used for 'method.args'
+     (via control=list(hessianCtrl=list(...))) passed to hessian() (from
+     the 'numDeriv' package) when using model="CM.EL" and measure="OR"
+
+   o in rma.glmm(), default 'method.args' value for 'r' passed to hessian()
+     has been increased to 16 (while this slows things down a bit, this
+     appears to improve the accuracy of the numerical approximation to the
+     Hessian, especially when tau^2 is close to 0)
+
+   o the various forest() and addpoly() functions now have a new argument
+     called 'width', which provides manual control over the width of the
+     annotation columns; this is useful when creating complex forest plots
+     with a monospaced font and we want to ensure that all annotations are
+     properly lined up at the decimal point
+
+   o the annotations created by the various forest() and addpoly() functions
+     are now a bit more compact by default
+
+   o more flexible 'efac' argument in the various forest() functions
+
+   o trailing zeros in the axis labels are now dropped in forest and funnel
+     plots by default; but trailing zeros can be retained by specifying a
+     numeric (and not an integer) value for the 'digits' argument
+
+   o added funnel.default(), which directly takes as input a vector with the
+     observed effect sizes or outcomes and the corresponding sampling
+     variances, standard errors, and/or sample sizes
+
+   o added plot.profile.rma(), a plot method for objects returned by the
+     profile.rma.uni() and profile.rma.mv() functions
+
+   o simplified baujat.rma.uni(), baujat.rma.mh(), and baujat.rma.peto() to
+     baujat.rma(), which now handles objects of class 'rma.uni', 'rma.mh',
+     and 'rma.peto'
+
+   o baujat.rma() gains argument 'symbol' for more control over the plotting
+     symbol
+
+   o labbe() gains a 'grid' argument
+
+   o more logical placement of labels in qqnorm.rma.uni(), qqnorm.rma.mh(),
+     and qqnorm.rma.peto() functions (and more control thereof)
+
+   o qqnorm.rma.uni() gains 'lty' argument
+
+   o added gosh.rma() and plot.gosh.rma() for creating GOSH (i.e., graphical
+     display of study heterogeneity) plots based on Olkin et al. (2012)
+
+   o in the (rare) case where all observed outcomes are exactly equal to
+     each other, test="knha" (i.e., knha=TRUE) in rma() now leads to more
+     appropriate results
+
+   o updated datasets so those containing precomputed effect size estimates
+     or observed outcomes are already declared to be 'escalc' objects
+
+   o added new datasets (dat.egger2001 and dat.li2007) on the effectiveness
+     of intravenous magnesium in acute myocardial infarction
+
+   o 'methods' package is now under 'Depends' (in addition to 'Matrix'), so
+     that rma.mv(..., sparse=TRUE) always works, even under Rscript
+
+   o some general code cleanup
+
+   o added more tests (and used a more consistent naming scheme for tests)
+
+
 Changes in Version 1.9-8 (2015-09-28)
 =====================================
 
@@ -21,7 +144,7 @@ Changes in Version 1.9-8 (2015-09-28)
    o confint() now works for models fitted with the rma.mv() function; for
      variance and correlation parameters, the function provides profile
      likelihood confidence intervals; the output generated by the confint()
-     function has been adjusted in general to make the formating more
+     function has been adjusted in general to make the formatting more
      consistent across the different model types
 
    o for objects of class 'rma.mv', profile() now provides profile plots for
@@ -468,7 +591,7 @@ Changes in Version 1.9-3 (2014-05-05)
 
    o escalc() and its summary() method now keep better track when the data
      frame contains multiple columns with outcome or effect size values (and
-     corresponding sampling variances) for print formating; also simplified
+     corresponding sampling variances) for print formatting; also simplified
      the class structure a bit (and hence, print.summary.escalc() removed)
 
    o summary.escalc() has a new argument 'H0' to specify the value of the

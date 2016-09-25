@@ -23,7 +23,7 @@
    \item{ci.lb}{corresponding lower bound of the confidence interval(s).}
    \item{ci.ub}{corresponding upper bound of the confidence interval(s).}
 
-   When the model was fitted with the Knapp and Hartung (2003) method (i.e., \code{knha=TRUE} in the \code{\link{rma.uni}} function), then \code{zval} is called \code{tval} in the data frame that is returned by the function.
+   When the model was fitted with the Knapp and Hartung (2003) method (i.e., \code{test="knha"} in the \code{\link{rma.uni}} function) or with \code{test="t"} in the \code{\link{rma.glmm}} and \code{\link{rma.mv}} functions, then \code{zval} is called \code{tval} in the data frame that is returned by the function.
 }
 \author{
    Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr
@@ -37,9 +37,6 @@
    \code{\link{rma.uni}}, \code{\link{rma.mh}}, \code{\link{rma.peto}}, \code{\link{rma.glmm}}, \code{\link{rma.mv}}
 }
 \examples{
-### load BCG vaccine data
-data(dat.bcg)
-
 ### meta-analysis of the log relative risks using a mixed-effects model
 ### with two moderators (absolute latitude and publication year)
 res <- rma(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg,

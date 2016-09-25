@@ -12,6 +12,7 @@
 \bold{ni}         \tab \code{numeric}    \tab number of patients \cr
 \bold{outcome}    \tab \code{character}  \tab outcome (PD = probing depth; AL = attachment level) \cr
 \bold{yi}         \tab \code{numeric}    \tab observed mean difference in outcome (surgical versus non-surgical) \cr
+\bold{vi}         \tab \code{numeric}    \tab corresponding sampling variance \cr
 \bold{v1i}        \tab \code{numeric}    \tab variances and covariances of the observed effects \cr
 \bold{v2i}        \tab \code{numeric}    \tab variances and covariances of the observed effects
 }
@@ -36,7 +37,14 @@ V <- lapply(split(dat[,c("v1i", "v2i")], dat$trial), as.matrix)
 ### construct block diagonal matrix
 V <- bldiag(V)
 
-### fit multiple outcomes (meta-regression) model (with ML estimation)
+### fit multiple outcomes (meta-regression) model (with REML estimation)
+res <- rma.mv(yi, V, mods = ~ outcome - 1, random = ~ outcome | trial, struct="UN", data=dat)
+print(res, digits=3)
+
+### test/estimate difference between the two outcomes
+anova(res, L=c(1,-1))
+
+### fit model including publication year as moderator for both outcomes (with ML estimation)
 res <- rma.mv(yi, V, mods = ~ outcome + outcome:I(year - 1983) - 1,
               random = ~ outcome | trial, struct="UN", data=dat, method="ML")
 print(res, digits=3)

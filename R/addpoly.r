@@ -1,3 +1,2 @@
-addpoly <-
-function (x, ...) 
-UseMethod("addpoly")
+addpoly <- function(x, ...)
+   UseMethod("addpoly")

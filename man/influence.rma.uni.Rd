@@ -13,15 +13,15 @@
 
 \method{print}{infl.rma.uni}(x, digits, \dots)
 
-\method{cooks.distance}{rma.uni}(model, \dots)
+\method{cooks.distance}{rma.uni}(model, progbar=FALSE, \dots)
 \method{dfbetas}{rma.uni}(model, \dots)
-
 \method{hatvalues}{rma.uni}(model, type="diagonal", \dots)
 }
 \arguments{
    \item{model}{an object of class \code{"rma.uni"}.}
    \item{x}{an object of class \code{"infl.rma.uni"} (for \code{print}).}
    \item{digits}{integer specifying the number of decimal places to which the printed results should be rounded (if unspecified, the default is to take the value from the object).}
+   \item{progbar}{logical indicating whether a progress bar should be shown (the default is \code{FALSE}).}
    \item{type}{character string indicating whether to return only the diagonal of the hat matrix (\code{"diagonal"}) or the entire hat matrix (\code{"matrix"}).}
    \item{\dots}{other arguments.}
 }
@@ -62,7 +62,7 @@
 \value{
    An object of class \code{"infl.rma.uni"}. The object is a list containing the following components:
    \item{inf}{a data frame with columns equal to the externally standardized residuals, DFFITS values, Cook's distances, covariance ratios, leave-one-out \if{latex}{\eqn{\tau^2}}\if{html}{\eqn{\tau²}}\if{text}{\eqn{\tau^2}} estimates, leave-one-out (residual) heterogeneity test statistics, hat values, and weights.}
-   \item{dfb}{a data frame with columns equal to the DFBETAS values.}
+   \item{dfbs}{a data frame with columns equal to the DFBETAS values.}
    \item{is.infl}{a logical vector indicating whether a particular study is considered to be \sQuote{influential}.}
    \item{\dots}{some additional elements/values.}
 
@@ -95,9 +95,6 @@
    \code{\link{plot.infl.rma.uni}}, \code{\link{rstudent.rma.uni}}, \code{\link{weights.rma.uni}}
 }
 \examples{
-### load BCG vaccine data
-data(dat.bcg)
-
 ### meta-analysis of the log relative risks using a mixed-effects model
 ### with two moderators (absolute latitude and publication year)
 res <- rma(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg,

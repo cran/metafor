@@ -1,3 +1,2 @@
-cumul <-
-function (x, ...) 
-UseMethod("cumul")
+cumul <- function(x, ...)
+   UseMethod("cumul")

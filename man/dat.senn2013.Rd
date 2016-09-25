@@ -26,13 +26,14 @@
 ### load data
 dat <- get(data(dat.senn2013))
 
-### create network graph (using 'plyr' and 'igraph' packages if installed)
-if (require(plyr) && require(igraph)) {
-   pairs <- do.call(rbind, sapply(split(dat$treatment, dat$study), function(x) t(combn(x,2))))
-   pairs <- ddply(data.frame(pairs), .(X1, X2), count)
-   g <- graph.edgelist(as.matrix(pairs[,1:2]), directed=FALSE)
-   plot(g, edge.curved=FALSE, edge.width=pairs$freq, vertex.label.dist=.8)
-}
+### create network graph ('plyr' and 'igraph' packages must be installed)
+\dontrun{
+require(plyr)
+require(igraph)
+pairs <- do.call(rbind, sapply(split(dat$treatment, dat$study), function(x) t(combn(x,2))))
+pairs <- ddply(data.frame(pairs), .(X1, X2), count)
+g <- graph.edgelist(as.matrix(pairs[,1:2]), directed=FALSE)
+plot(g, edge.curved=FALSE, edge.width=pairs$freq, vertex.label.dist=.8)}
 
 ### table of studies versus treatments examined
 print(addmargins(table(dat$study, dat$treatment)), zero.print="")
@@ -84,9 +85,9 @@ anova(res.re, btt=(res.re$p-8):res.re$p)
 
 ### forest plot of the contrast estimates (treatments versus placebos)
 forest(tail(coef(res.re), 9), tail(diag(vcov(res.re)), 9), slab=levels(dat$treatment)[-1],
-       xlim=c(-2.5, 2.0), alim=c(-1.5, 0.5), psize=1, xlab="Estimate")
-text(-2.5, 11, "Treatment", pos=4, font=2)
-text( 2.0, 11, "Estimate [95\% CI]", pos=2, font=2)
+       xlim=c(-3.0, 2.5), alim=c(-1.5, 0.5), psize=1, xlab="Estimate")
+text(-3.0, 11, "Treatment", pos=4, font=2)
+text( 2.5, 11, "Estimate [95\% CI]", pos=2, font=2)
 
 ### compute contribution of each study to the overall Q-test value
 qi <- sort(by((resid(res.fe) / sqrt(dat$vi))^2, dat$study, sum))
@@ -141,5 +142,13 @@ res.cb <- rma.mv(yi, V, mods = ~ acarbose + benfluorex + metformin + miglitol + 
                                  rosiglitazone + sitagliptin + sulfonylurea + vildagliptin - 1,
                  random = ~ factor(id) | study, rho=1/2, data=dat.c)
 res.cb
+
+### estimate all pairwise differences between treatments (using the 'multcomp' package)
+if (require(multcomp)) {
+   contr <- contrMat(setNames(rep(1,res.cb$p), colnames(res.cb$X)), type="Tukey")
+   sav <- predict(res.cb, newmods=contr)
+   sav$slab <- rownames(contr)
+   sav
+}
 }
 \keyword{datasets}

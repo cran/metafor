@@ -5,27 +5,27 @@
    Plot method for objects of class \code{"infl.rma.uni"}.
 }
 \usage{
-\method{plot}{infl.rma.uni}(x, plotinf=TRUE, plotdfb=FALSE, dfbnew=FALSE, logcov=TRUE,
+\method{plot}{infl.rma.uni}(x, plotinf=TRUE, plotdfbs=FALSE, dfbsnew=FALSE, logcov=TRUE,
      layout, slab.style=1, las=0, pch=21, bg="black",
      bg.infl="red", col.na="lightgray", \dots)
 }
 \arguments{
    \item{x}{an object of class \code{"infl.rma.uni"}.}
-   \item{plotinf}{logical indicating whether the various case diagnostics should be plotted (default is \code{TRUE}). Can also be a vector of up to 8 integers indicating which plots to draw (see \sQuote{Details} for the numbers corresponding to the various plots).}
-   \item{plotdfb}{logical indicating whether the DFBETAS values should be plotted (default is \code{FALSE}). Can also be a vector of integers to indicate for which coefficient(s) to plot the DFBETAS values.}
-   \item{dfbnew}{logical indicating whether a new device should be opened for plotting the DFBETAS values (default is \code{FALSE}).}
-   \item{logcov}{logical indicating whether the covariance ratios should be plotted on a log scale (default is \code{TRUE}).}
+   \item{plotinf}{logical indicating whether the various case diagnostics should be plotted (the default is \code{TRUE}). Can also be a vector of up to 8 integers indicating which plots to draw (see \sQuote{Details} for the numbers corresponding to the various plots).}
+   \item{plotdfbs}{logical indicating whether the DFBETAS values should be plotted (the default is \code{FALSE}). Can also be a vector of integers to indicate for which coefficient(s) to plot the DFBETAS values.}
+   \item{dfbsnew}{logical indicating whether a new device should be opened for plotting the DFBETAS values (the default is \code{FALSE}).}
+   \item{logcov}{logical indicating whether the covariance ratios should be plotted on a log scale (the default is \code{TRUE}).}
    \item{layout}{optional vector of two numbers, indicating the number of rows and columns for the layout of the figure.}
    \item{slab.style}{integer to indicate the style of the x-axis labels: 1 = study number, 2 = study label, 3 = abbreviated study label. Note that study labels, even when abbreviated, may be too long to fit in the margin.)}
    \item{las}{integer between 0 and 3 to specify the alignment of the axis labels (see \code{\link{par}}). The most useful alternative to 0 is 3, so that the x-axis labels are drawn vertical to the axis.}
    \item{pch}{plotting symbol to use. By default, a filled circle is used. See \code{\link{points}} for other options.}
-   \item{bg}{color to use for filling the plotting symbol (default is \code{"black"}).}
-   \item{bg.infl}{color to use for filling the plotting symbol when the point is considered influential (default is \code{"red"}).}
-   \item{col.na}{color to use for lines connecting two points with \code{NA} values in between (default is \code{"lightgray"}).}
+   \item{bg}{color to use for filling the plotting symbol (the default is \code{"black"}).}
+   \item{bg.infl}{color to use for filling the plotting symbol when the point is considered influential (the default is \code{"red"}).}
+   \item{col.na}{color to use for lines connecting two points with \code{NA} values in between (the default is \code{"lightgray"}).}
    \item{\dots}{other arguments.}
 }
 \details{
-   When \code{plotinf=TRUE}, the function plots the (1) externally standardized residuals, (2) DFFITS values, (3) Cook's distances, (4) covariance ratios, (5) leave-one-out \if{latex}{\eqn{\tau^2}}\if{html}{\eqn{\tau²}}\if{text}{\eqn{\tau^2}} estimates, (6) leave-one-out (residual) heterogeneity test statistics, (7) hat values, and (8) weights. If \code{plotdfb=TRUE}, the DFBETAS values are also plotted either after confirming the page change (if \code{newdfb=FALSE}) or on a separate device (if \code{newdfb=TRUE}).
+   When \code{plotinf=TRUE}, the function plots the (1) externally standardized residuals, (2) DFFITS values, (3) Cook's distances, (4) covariance ratios, (5) leave-one-out \if{latex}{\eqn{\tau^2}}\if{html}{\eqn{\tau²}}\if{text}{\eqn{\tau^2}} estimates, (6) leave-one-out (residual) heterogeneity test statistics, (7) hat values, and (8) weights. If \code{plotdfbs=TRUE}, the DFBETAS values are also plotted either after confirming the page change (if \code{dfbsnew=FALSE}) or on a separate device (if \code{dfbsnew=TRUE}).
 
    A study may be considered to be \sQuote{influential} if at least one of the following is true:
    \itemize{
@@ -53,9 +53,6 @@
    \code{\link{influence.rma.uni}}
 }
 \examples{
-### load BCG vaccine data
-data(dat.bcg)
-
 ### meta-analysis of the log relative risks using a mixed-effects model
 ### with two moderators (absolute latitude and publication year)
 res <- rma(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg,
@@ -63,6 +60,6 @@ res <- rma(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg,
 plot(influence(res))
 plot(influence(res), plotinf=1:4)
 plot(influence(res), plotinf=1:4, layout=c(4,1))
-plot(influence(res), plotdfb=TRUE)
+plot(influence(res), plotdfbs=TRUE)
 }
 \keyword{hplot}

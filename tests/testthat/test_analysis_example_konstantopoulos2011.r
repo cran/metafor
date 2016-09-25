@@ -2,7 +2,7 @@
 
 ### see also: http://www.metafor-project.org/doku.php/analyses:konstantopoulos2011
 
-context("Checking analysis example konstantopoulos2011")
+context("Checking analysis example: konstantopoulos2011")
 
 dat <- get(data(dat.konstantopoulos2011, package="metafor"))
 
@@ -18,6 +18,7 @@ test_that("results are correct for the two-level random-effects model fitted wit
 
    ### CI for tau^2 based on the Q-profile method (CI in paper is based on a Satterthwaite approximation)
    tmp <- confint(res, digits=3)
+   out <- capture.output(print(tmp)) ### so that print.confint.rma() is run (at least once)
    expect_equivalent(round(tmp$random[1,2],3), 0.056)
    expect_equivalent(round(tmp$random[1,3],3), 0.139)
 
@@ -104,9 +105,11 @@ test_that("profiling works for the three-level random-effects model (multilevel 
    res.ml <- rma.mv(yi, vi, random = ~ 1 | district/study, data=dat)
 
    ### profile variance components
+   opar <- par(no.readonly=TRUE)
    par(mfrow=c(2,1))
    profile(res.ml, sigma2=1, progbar=FALSE)
    profile(res.ml, sigma2=2, progbar=FALSE)
+   par(opar)
 
 })
 
@@ -134,8 +137,10 @@ test_that("profiling works for the three-level random-effects model (multivariat
    res.mv <- rma.mv(yi, vi, random = ~ factor(study) | district, data=dat)
 
    ### profile variance components
+   opar <- par(no.readonly=TRUE)
    par(mfrow=c(2,1))
    profile(res.mv, tau2=1, progbar=FALSE)
    profile(res.mv, rho=1, progbar=FALSE)
+   par(opar)
 
 })

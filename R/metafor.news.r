@@ -1,5 +1,2 @@
-metafor.news <-
-function () 
-{
-    news(package = "metafor")
-}
+metafor.news <- function()
+    news(package="metafor")

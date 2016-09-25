@@ -3,8 +3,8 @@
 \title{Add Polygons to Forest Plots (Default Method)}
 \description{Function to add one or more polygons to a forest plot.}
 \usage{
-\method{addpoly}{default}(x, vi, sei, ci.lb, ci.ub, rows=-1, level=95, digits=2,
-        annotate=TRUE, mlab, transf, atransf, targs,
+\method{addpoly}{default}(x, vi, sei, ci.lb, ci.ub, rows=-1, level=95,
+        annotate=TRUE, digits=2, width, mlab, transf, atransf, targs,
         efac=1, col, border, cex, \dots)
 }
 \arguments{
@@ -14,12 +14,13 @@
    \item{ci.lb}{vector with the corresponding lower confidence intervals bounds. Not needed if \code{vi} or \code{sei} is specified. See \sQuote{Details}.}
    \item{ci.ub}{vector with the corresponding upper confidence intervals bounds. Not needed if \code{vi} or \code{sei} is specified. See \sQuote{Details}.}
    \item{rows}{vector specifying the rows (or more generally, the horizontal positions) for plotting the polygons (defaults is \code{-1}). Can also be a single value specifying the row (horizontal position) of the first polygon (the remaining polygons are then plotted below this starting row).}
-   \item{level}{numerical value between 0 and 100 specifying the confidence interval level (default is 95).}
-   \item{digits}{integer specifying the number of decimal places to which the annotations should be rounded (default is 2).}
-   \item{annotate}{logical specifying whether annotations should be added to the plot for the polygons that are drawn (default is \code{TRUE}).}
+   \item{level}{numerical value between 0 and 100 specifying the confidence interval level (the default is 95).}
+   \item{annotate}{logical specifying whether annotations should be added to the plot for the polygons that are drawn (the default is \code{TRUE}).}
+   \item{digits}{integer specifying the number of decimal places to which the annotations should be rounded (the default is 2).}
+   \item{width}{optional integer to manually adjust the width of the columns for the annotations.}
    \item{mlab}{optional character vector with the same length as \code{x} giving labels for the polygons that are drawn.}
-   \item{transf}{optional argument specifying the name of a function that should be used to transform the \code{x} values and confidence interval bounds. If unspecified, no transformation is used.}
-   \item{atransf}{optional argument specifying the name of a function that should be used to transform the annotations. If unspecified, no transformation is used.}
+   \item{transf}{optional argument specifying the name of a function that should be used to transform the \code{x} values and confidence interval bounds (e.g., \code{transf=exp}; see also \link{transf}). If unspecified, no transformation is used.}
+   \item{atransf}{optional argument specifying the name of a function that should be used to transform the annotations (e.g., \code{atransf=exp}; see also \link{transf}). If unspecified, no transformation is used.}
    \item{targs}{optional arguments needed by the function specified via \code{transf} or \code{atransf}.}
    \item{efac}{vertical expansion factor for the polygons. The default value of 1 should usually work okay.}
    \item{col}{optional character string specifying the name of a color to use for the polygons. If unspecified, the function sets a default color.}
@@ -46,17 +47,14 @@
    \code{\link{forest.rma}}, \code{\link{forest.default}}
 }
 \examples{
-### load BCG vaccine data
-data(dat.bcg)
-
 ### meta-analysis of the log relative risks using a mixed-
 ### effects model with absolute latitude as a moderator
 res <- rma(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, mods = ~ ablat,
            slab=paste(author, year, sep=", "), data=dat.bcg)
 
 ### forest plot of the observed relative risks
-forest(res, addfit=FALSE, atransf=exp, xlim=c(-8,5), ylim=c(-4.5,16), cex=.8, 
-       order=order(dat.bcg$ablat), ilab=dat.bcg$ablat, ilab.xpos=-3.5)
+forest(res, addfit=FALSE, atransf=exp, xlim=c(-8,5), ylim=c(-4.5,16), cex=.8,
+       order=order(dat.bcg$ablat), ilab=dat.bcg$ablat, ilab.xpos=-2.8, ilab.pos=2)
 
 ### predicted average log relative risk for 10, 30, and 50 degrees absolute latitude
 x <- predict(res, newmods=c(10, 30, 50))
@@ -68,6 +66,6 @@ abline(h=0)
 text(-8,   -1, "Model-Based Estimates of RR:", pos=4, cex=.8)
 text(-8,   15, "Author(s) and Year",     pos=4, cex=.8)
 text(5,    15, "Relative Risk [95\% CI]", pos=2, cex=.8)
-text(-3.5, 15, "Latitude", cex=.8)
+text(-3.3, 15, "Latitude", cex=.8)
 }
 \keyword{aplot}

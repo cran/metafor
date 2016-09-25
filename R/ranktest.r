@@ -1,3 +1,2 @@
-ranktest <-
-function (x, ...) 
-UseMethod("ranktest")
+ranktest <- function(x, ...)
+   UseMethod("ranktest")

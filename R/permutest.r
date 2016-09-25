@@ -1,3 +1,2 @@
-permutest <-
-function (x, ...) 
-UseMethod("permutest")
+permutest <- function(x, ...)
+   UseMethod("permutest")

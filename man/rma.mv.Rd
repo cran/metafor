@@ -4,9 +4,9 @@
 \description{Function to fit meta-analytic multivariate/multilevel fixed- and random/mixed-effects models with or without moderators via linear (mixed-effects) models. See below and the documentation of the \pkg{\link{metafor-package}} for more details on these models.}
 \usage{
 rma.mv(yi, V, W, mods, random, struct="CS", intercept=TRUE,
-       data, slab, subset, method="REML", tdist=FALSE,
+       data, slab, subset, method="REML", test="z",
        level=95, digits=4, btt, R, Rscale="cor",
-       sigma2, tau2, rho, gamma2, phi, sparse=FALSE, verbose=FALSE, control)
+       sigma2, tau2, rho, gamma2, phi, sparse=FALSE, verbose=FALSE, control, \dots)
 }
 \arguments{
    \item{yi}{vector of length \eqn{k} with the observed effect sizes or outcomes. See \sQuote{Details}.}
@@ -15,14 +15,14 @@ rma.mv(yi, V, W, mods, random, struct="CS", intercept=TRUE,
    \item{mods}{optional argument to include one or more moderators in the model. A single moderator can be given as a vector of length \eqn{k} specifying the values of the moderator. Multiple moderators are specified by giving a matrix with \eqn{k} rows and as many columns as there are moderator variables. Alternatively, a model \code{\link{formula}} can be used to specify the model. See \sQuote{Details}.}
    \item{random}{either a single one-sided formula or list of one-sided formulas to specify the random-effects structure of the model. See \sQuote{Details}.}
    \item{struct}{character string to specify the variance structure of an \code{~ inner | outer} formula in the \code{random} argument. Either \code{"CS"} for compound symmetry, \code{"HCS"} for heteroscedastic compound symmetry, \code{"UN"} for an unstructured variance-covariance matrix, \code{"ID"} for a scaled identity matrix, \code{"DIAG"} for a diagonal matrix, \code{"AR"} for an AR(1) autoregressive structure, or \code{"HAR"} for a heteroscedastic AR(1) autoregressive structure. See \sQuote{Details}.}
-   \item{intercept}{logical indicating whether an intercept term should be added to the model (default is \code{TRUE}).}
+   \item{intercept}{logical indicating whether an intercept term should be added to the model (the default is \code{TRUE}).}
    \item{data}{optional data frame containing the data supplied to the function.}
    \item{slab}{optional vector with labels for the \eqn{k} outcomes/studies.}
    \item{subset}{optional vector indicating the subset of outcomes/studies that should be used for the analysis. This can be a logical vector of length \eqn{k} or a numeric vector indicating the indices of the observations to include.}
    \item{method}{character string specifying whether the model should be fitted via maximum-likelihood (\code{"ML"}) or via restricted maximum-likelihood (\code{"REML"}) estimation. Default is \code{"REML"}.}
-   \item{tdist}{logical specifying whether test statistics and confidence intervals should be based on the normal (when \code{FALSE}, the default) or the t-distribution (when \code{TRUE}). See \sQuote{Details}.}
-   \item{level}{numerical value between 0 and 100 specifying the confidence interval level (default is 95).}
-   \item{digits}{integer specifying the number of decimal places to which the printed results should be rounded (default is 4).}
+   \item{test}{character string specifying how test statistics and confidence intervals for the fixed effects should be computed. By default (\code{test="z"}), Wald-type tests and CIs are obtained, which are based on a standard normal distribution. When \code{test="t"}, a t-distribution is used instead. See \sQuote{Details}.}
+   \item{level}{numerical value between 0 and 100 specifying the confidence interval level (the default is 95).}
+   \item{digits}{integer specifying the number of decimal places to which the printed results should be rounded (the default is 4).}
    \item{btt}{optional vector of indices specifying which coefficients to include in the omnibus test of moderators. See \sQuote{Details}.}
    \item{R}{an optional named list of known correlation matrices corresponding to (some of) the components specified via the \code{random} argument. See \sQuote{Details}.}
    \item{Rscale}{character string, integer, or logical indicating how matrices specified via the \code{R} argument should be scaled. See \sQuote{Details}.}
@@ -32,8 +32,9 @@ rma.mv(yi, V, W, mods, random, struct="CS", intercept=TRUE,
    \item{gamma2}{as \code{tau2} argument, but for a second \code{~ inner | outer} formula specified in the \code{random} argument. See \sQuote{Details}.}
    \item{phi}{as \code{rho} argument, but for a second \code{~ inner | outer} formula specified in the \code{random} argument. See \sQuote{Details}.}
    \item{sparse}{logical indicating whether the function should use sparse matrix objects to the extent possible (can speed up model fitting substantially for certain models). See \sQuote{Note}.}
-   \item{verbose}{logical indicating whether output should be generated on the progress of the model fitting (default is \code{FALSE}). Can also be an integer. Values > 1 generate more verbose output. See \sQuote{Note}.}
+   \item{verbose}{logical indicating whether output should be generated on the progress of the model fitting (the default is \code{FALSE}). Can also be an integer. Values > 1 generate more verbose output. See \sQuote{Note}.}
    \item{control}{optional list of control values for the estimation algorithms. If unspecified, default values are defined inside the function. See \sQuote{Note}.}
+   \item{\dots}{additional arguments.}
 }
 \details{
 
@@ -109,7 +110,7 @@ rma.mv(yi, V, W, mods, random, struct="CS", intercept=TRUE,
 
    \bold{Tests and Confidence Intervals}
 
-   By default, the test statistics of the individual coefficients in the model (and the corresponding confidence intervals) are based on the normal distribution, while the omnibus test is based on a chi-square distribution with \eqn{m} degrees of freedom (\eqn{m} being the number of coefficients tested). As an alternative, one can set \code{tdist=TRUE}, which slightly mimics the Knapp and Hartung (2003) method by using a t-distribution with \eqn{k-p} degrees of freedom for tests of individual coefficients and confidence intervals and an F-distribution with \eqn{m} and \eqn{k-p} degrees of freedom (\eqn{p} being the total number of model coefficients including the intercept if it is present) for the omnibus test statistic.
+   By default, the test statistics of the individual coefficients in the model (and the corresponding confidence intervals) are based on a standard normal distribution, while the omnibus test is based on a chi-square distribution with \eqn{m} degrees of freedom (\eqn{m} being the number of coefficients tested). As an alternative, one can set \code{test="t"}, which slightly mimics the Knapp and Hartung (2003) method by using a t-distribution with \eqn{k-p} degrees of freedom for tests of individual coefficients and confidence intervals and an F-distribution with \eqn{m} and \eqn{k-p} degrees of freedom (\eqn{p} being the total number of model coefficients including the intercept if it is present) for the omnibus test statistic.
 
    \bold{Test for (Residual) Heterogeneity}
 
@@ -203,9 +204,6 @@ rma.mv(yi, V, W, mods, random, struct="CS", intercept=TRUE,
    \code{\link{dat.konstantopoulos2011}}, \code{\link{dat.hasselblad1998}}, \code{\link{dat.begg1989}}, \code{\link{dat.berkey1998}}, \code{\link{dat.fine1993}}, and \code{\link{dat.ishak2007}} for further examples of the use of the \code{rma.mv} function.
 }
 \examples{
-### load BCG vaccine data
-data(dat.bcg)
-
 ### calculate log odds ratios and corresponding sampling variances
 dat <- escalc(measure="OR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
 

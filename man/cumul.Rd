@@ -18,7 +18,7 @@ cumul(x, \dots)
    \item{x}{an object of class \code{"rma.mh"}, \code{"rma.peto"}, \code{"rma.uni"}.}
    \item{order}{optional vector with indices giving the desired order for the cumulative meta-analysis.}
    \item{digits}{integer specifying the number of decimal places to which the printed results should be rounded (if unspecified, the default is to take the value from the object).}
-   \item{transf}{optional argument specifying the name of a function that should be used to transform the model coefficients and interval bounds (e.g., \code{transf=exp}). If unspecified, no transformation is used.}
+   \item{transf}{optional argument specifying the name of a function that should be used to transform the model coefficients and interval bounds (e.g., \code{transf=exp}; see also \link{transf}). If unspecified, no transformation is used.}
    \item{targs}{optional arguments needed by the function specified under \code{transf}.}
    \item{\dots}{other arguments.}
 }
@@ -60,9 +60,6 @@ cumul(x, \dots)
    \code{\link{forest.cumul.rma}}, \code{\link{plot.cumul.rma}}
 }
 \examples{
-### load BCG vaccine data
-data(dat.bcg)
-
 ### calculate log relative risks and corresponding sampling variances
 dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
 

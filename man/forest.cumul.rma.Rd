@@ -5,33 +5,34 @@
 \usage{
 \method{forest}{cumul.rma}(x, annotate=TRUE,
        xlim, alim, clim, ylim, at, steps=5,
-       level=x$level, digits=2, refline=0, xlab,
-       ilab, ilab.xpos, ilab.pos,
+       level=x$level, refline=0, digits=2L, width,
+       xlab, ilab, ilab.xpos, ilab.pos,
        transf, atransf, targs, rows,
        efac=1, pch=15, psize=1, lty,
        cex, cex.lab, cex.axis, \dots)
 }
 \arguments{
    \item{x}{an object of class \code{"cumul.rma"}.}
-   \item{annotate}{logical specifying whether annotations should be added to the plot (default is \code{TRUE}).}
+   \item{annotate}{logical specifying whether annotations should be added to the plot (the default is \code{TRUE}).}
    \item{xlim}{horizontal limits of the plot region. If unspecified, the function tries to set the horizontal plot limits to some sensible values.}
    \item{alim}{the actual x-axis limits. If unspecified, the function tries to set the x-axis limits to some sensible values.}
    \item{clim}{limits for the confidence intervals. If unspecified, no limits are used.}
    \item{ylim}{the y limits of the plot. If unspecified, the function tries to set the y-axis limits to some sensible values.}
    \item{at}{position of the x-axis tick marks and corresponding labels. If unspecified, the function tries to set the tick mark positions/labels to some sensible values.}
-   \item{steps}{the number of tick marks for the x-axis (default is 5). Ignored when the user specifies the positions via the \code{at} argument.}
+   \item{steps}{the number of tick marks for the x-axis (the default is 5). Ignored when the user specifies the positions via the \code{at} argument.}
    \item{level}{numerical value between 0 and 100 specifying the confidence interval level (the default is to take the value from the object).}
-   \item{digits}{integer specifying the number of decimal places to which the tick mark labels of the x-axis and the annotations should be rounded (default is 2). Can also be a vector of two integers, the first specifying the number of decimal places for the annotations, the second for the x-axis labels.}
-   \item{refline}{value at which a vertical \sQuote{reference} line should be drawn (default is 0). The line can be suppressed by setting this argument to \code{NA}.}
+   \item{refline}{value at which a vertical \sQuote{reference} line should be drawn (the default is 0). The line can be suppressed by setting this argument to \code{NA}.}
+   \item{digits}{integer specifying the number of decimal places to which the tick mark labels of the x-axis and the annotations should be rounded (the default is \code{2L}). Can also be a vector of two integers, the first specifying the number of decimal places for the annotations, the second for the x-axis labels. When specifying an integer (e.g., \code{2L}), trailing zeros after the decimal mark are dropped for the x-axis labels. When specifying a numerical value (e.g., \code{2}), trailing zeros are retained.}
+   \item{width}{optional integer to manually adjust the width of the columns for the annotations.}
    \item{xlab}{title for the x-axis. If unspecified, the function tries to set an appropriate axis title.}
-   \item{ilab}{optional vector or matrix of character strings providing additional information about the studies.}
-   \item{ilab.xpos}{vector of numerical value(s) specifying the x-axis position(s) of the character vector(s) given via \code{ilab} (must be specified if \code{ilab} is specified).}
-   \item{ilab.pos}{integer(s) (either 1, 2, 3, or 4) specifying the alignment of the character vector(s) given via \code{ilab} (2 means right, 4 means left aligned). If unspecified, the default is to center the labels.}
-   \item{transf}{optional argument specifying the name of a function that should be used to transform the observed effect sizes, summary estimates, fitted values, and confidence interval bounds (e.g., \code{transf=exp}). If unspecified, no transformation is used.}
-   \item{atransf}{optional argument specifying the name of a function that should be used to transform the x-axis labels and annotations (e.g., \code{transf=exp}). If unspecified, no transformation is used.}
+   \item{ilab}{optional vector, matrix, or data frame providing additional information about the studies that should be added to the plot.}
+   \item{ilab.xpos}{vector of numerical value(s) specifying the x-axis position(s) of the variable(s) given via \code{ilab} (must be specified if \code{ilab} is specified).}
+   \item{ilab.pos}{integer(s) (either 1, 2, 3, or 4) specifying the alignment of the vector(s) given via \code{ilab} (2 means right, 4 mean left aligned). If unspecified, the default is to center the labels.}
+   \item{transf}{optional argument specifying the name of a function that should be used to transform the observed effect sizes, summary estimates, fitted values, and confidence interval bounds (e.g., \code{transf=exp}; see also \link{transf}). If unspecified, no transformation is used.}
+   \item{atransf}{optional argument specifying the name of a function that should be used to transform the x-axis labels and annotations (e.g., \code{atransf=exp}; see also \link{transf}). If unspecified, no transformation is used.}
    \item{targs}{optional arguments needed by the function specified via \code{transf} or \code{atransf}.}
    \item{rows}{optional vector specifying the rows (or more generally, the horizontal positions) for plotting the outcomes. If unspecified, the function sets this value automatically. Can also be a single value specifying the row (horizontal position) of the first outcome (the remaining outcomes are then plotted below this starting row).}
-   \item{efac}{vertical expansion factor for arrows and confidence interval limits. The default value of 1 should usually work okay.}
+   \item{efac}{vertical expansion factor for confidence interval limits and arrows. The default value of 1 should usually work okay. Can also be a vector of two numbers, the first for CI limits, the second for arrows.}
    \item{pch}{plotting symbol to use for the observed effect sizes or outcomes. By default, a filled square is used. See \code{\link{points}} for other options. Can also be a vector of values.}
    \item{psize}{optional vector with point sizes for the observed effect sizes or outcomes. Default is 1.}
    \item{lty}{optional character string specifying the line type for the confidence intervals (if unspecified, the function sets this to \code{"solid"} by default).}
@@ -74,9 +75,6 @@
    \code{\link{forest}}, \code{\link{cumul}}
 }
 \examples{
-### load BCG vaccine data
-data(dat.bcg)
-
 ### calculate log relative risks and corresponding sampling variances
 dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
 

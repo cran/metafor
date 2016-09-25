@@ -1,3 +1,2 @@
-robust <-
-function (x, cluster, ...) 
-UseMethod("robust")
+robust <- function(x, cluster, ...)
+   UseMethod("robust")

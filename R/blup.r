@@ -1,3 +1,2 @@
-blup <-
-function (x, ...) 
-UseMethod("blup")
+blup <- function(x, ...)
+   UseMethod("blup")

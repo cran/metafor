@@ -1,3 +1,2 @@
-labbe <-
-function (x, ...) 
-UseMethod("labbe")
+labbe <- function(x, ...)
+   UseMethod("labbe")

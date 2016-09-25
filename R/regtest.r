@@ -1,3 +1,2 @@
-regtest <-
-function (x, ...) 
-UseMethod("regtest")
+regtest <- function(x, ...)
+   UseMethod("regtest")

@@ -18,7 +18,7 @@
 }
 \arguments{
    \item{x}{an object of class \code{"rma.uni"}, \code{"rma.mh"}, or \code{"rma.peto"}. The method is not yet implemented for objects of class \code{"rma.glmm"}.}
-   \item{qqplot}{logical indicating whether a normal QQ plot should be drawn (default is \code{FALSE}).}
+   \item{qqplot}{logical indicating whether a normal QQ plot should be drawn (the default is \code{FALSE}).}
    \item{\dots}{other arguments.}
 }
 \details{
@@ -41,9 +41,6 @@
    \code{\link{forest}}, \code{\link{funnel}}, \code{\link{radial}}, \code{\link{qqnorm.rma.uni}}
 }
 \examples{
-### load BCG vaccine data
-data(dat.bcg)
-
 ### meta-analysis of the log relative risks using a random-effects model
 res <- rma(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
 plot(res, qqplot=TRUE)

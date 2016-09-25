@@ -1,3 +1,2 @@
-baujat <-
-function (x, ...) 
-UseMethod("baujat")
+baujat <- function(x, ...)
+   UseMethod("baujat")

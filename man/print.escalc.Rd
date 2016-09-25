@@ -18,22 +18,22 @@
    \item{out.names}{character string with four elements, specifying the variable names for the standard errors, test statistics, and lower/upper confidence interval bounds.}
    \item{var.names}{character string with two elements, specifying the variable names for the observed outcomes and the sampling variances (the default is to take the value from the object if possible).}
    \item{H0}{numeric value specifying the value of the outcome under the null hypothesis.}
-   \item{append}{logical indicating whether the data frame specified via the \code{object} argument should be returned together with the additional variables that are calculated by the \code{summary} function (default is \code{TRUE}).}
+   \item{append}{logical indicating whether the data frame specified via the \code{object} argument should be returned together with the additional variables that are calculated by the \code{summary} function (the default is \code{TRUE}).}
    \item{replace}{logical indicating whether existing values for \code{sei}, \code{zi}, \code{ci.lb}, and \code{ci.ub} in the data frame should be replaced or not. Only relevant when the data frame already contains these variables. If \code{replace=TRUE} (the default), all of the existing values will be overwritten. If \code{replace=FALSE}, only \code{NA} values will be replaced.}
    \item{level}{numerical value between 0 and 100 specifying the confidence interval level (the default is 95).}
-   \item{transf}{optional argument specifying the name of a function that should be used to transform the observed outcomes and interval bounds (e.g., \code{transf=exp}). If unspecified, no transformation is used. Any additional arguments needed for the function specified here can be passed via \code{\ldots}.}
+   \item{transf}{optional argument specifying the name of a function that should be used to transform the observed outcomes and interval bounds (e.g., \code{transf=exp}; see also \link{transf}). If unspecified, no transformation is used. Any additional arguments needed for the function specified here can be passed via \code{\ldots}.}
    \item{\dots}{other arguments.}
 }
 \value{
    The \code{print.escalc} function formats and prints the data frame, so that the observed outcomes and sampling variances are rounded (to the number of digits specified).
 
    The \code{summary.escalc} function creates an object that is a data frame containing the original data (if \code{append=TRUE}) and the following components:
-   \item{yi}{observed outcomes or effect size estimates (transformed if \code{transf} is not \code{FALSE}).}
+   \item{yi}{observed outcomes or effect size estimates (transformed if \code{transf} is specified).}
    \item{vi}{corresponding (estimated) sampling variances.}
    \item{sei}{standard errors of the observed outcomes or effect size estimates.}
    \item{zi}{test statistics for testing \if{latex}{\eqn{H_0: \theta_i = H0}}\if{html}{\eqn{H₀: \thetaᵢ = H0}}\if{text}{\eqn{H_0: \theta_i = H0}} (i.e., \code{(yi-H0)/sei}).}
-   \item{ci.lb}{lower confidence interval bounds (transformed if \code{transf} is not \code{FALSE}).}
-   \item{ci.ub}{upper confidence interval bounds (transformed if \code{transf} is not \code{FALSE}).}
+   \item{ci.lb}{lower confidence interval bounds (transformed if \code{transf} is specified).}
+   \item{ci.ub}{upper confidence interval bounds (transformed if \code{transf} is specified).}
 
    Note that the actual variable names above depend on the \code{out.names} (and \code{var.names}) arguments. If the data frame already contains variables with names as specified by the \code{out.names} argument, the values for these variables will be overwritten when \code{replace=TRUE} (which is the default). By setting \code{replace=FALSE}, only values that are \code{NA} will be replaced.
 
@@ -56,9 +56,6 @@
    \code{\link{escalc}}
 }
 \examples{
-### load BCG vaccine data
-data(dat.bcg)
-
 ### calculate log relative risks and corresponding sampling variances
 dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
 dat

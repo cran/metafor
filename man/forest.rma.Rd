@@ -5,39 +5,40 @@
 \usage{
 \method{forest}{rma}(x, annotate=TRUE, addfit=TRUE, addcred=FALSE, showweights=FALSE,
        xlim, alim, clim, ylim, at, steps=5,
-       level=x$level, digits=2, refline=0, xlab,
-       slab, mlab, ilab, ilab.xpos, ilab.pos,
+       level=x$level, refline=0, digits=2L, width,
+       xlab, slab, mlab, ilab, ilab.xpos, ilab.pos,
        order, transf, atransf, targs, rows,
        efac=1, pch=15, psize, col, border, lty,
        cex, cex.lab, cex.axis, \dots)
 }
 \arguments{
    \item{x}{an object of class \code{"rma"}.}
-   \item{annotate}{logical specifying whether annotations should be added to the plot (default is \code{TRUE}).}
+   \item{annotate}{logical specifying whether annotations should be added to the plot (the default is \code{TRUE}).}
    \item{addfit}{logical specifying whether the summary estimate (for models without moderators) or fitted values (for models with moderators) should be added to the plot. See \sQuote{Details}.}
    \item{addcred}{logical specifying whether the bounds of the credibility/prediction interval should be added to the plot. See \sQuote{Details}.}
-   \item{showweights}{logical specifying whether the annotations should also include the weights given to the observed effects or outcomes during the model fitting (default is \code{FALSE}).}
+   \item{showweights}{logical specifying whether the annotations should also include the weights given to the observed effects or outcomes during the model fitting (the default is \code{FALSE}).}
    \item{xlim}{horizontal limits of the plot region. If unspecified, the function tries to set the horizontal plot limits to some sensible values.}
    \item{alim}{the actual x-axis limits. If unspecified, the function tries to set the x-axis limits to some sensible values.}
    \item{clim}{limits for the confidence/credibility/prediction intervals. If unspecified, no limits are used.}
    \item{ylim}{the y limits of the plot. If unspecified, the function tries to set the y-axis limits to some sensible values.}
    \item{at}{position of the x-axis tick marks and corresponding labels. If unspecified, the function tries to set the tick mark positions/labels to some sensible values.}
-   \item{steps}{the number of tick marks for the x-axis (default is 5). Ignored when the user specifies the positions via the \code{at} argument.}
+   \item{steps}{the number of tick marks for the x-axis (the default is 5). Ignored when the user specifies the positions via the \code{at} argument.}
    \item{level}{numerical value between 0 and 100 specifying the confidence interval level (the default is to take the value from the object).}
-   \item{digits}{integer specifying the number of decimal places to which the tick mark labels of the x-axis and the annotations should be rounded (default is 2). Can also be a vector of two integers, the first specifying the number of decimal places for the annotations, the second for the x-axis labels.}
-   \item{refline}{value at which a vertical \sQuote{reference} line should be drawn (default is 0). The line can be suppressed by setting this argument to \code{NA}.}
+   \item{refline}{value at which a vertical \sQuote{reference} line should be drawn (the default is 0). The line can be suppressed by setting this argument to \code{NA}.}
+   \item{digits}{integer specifying the number of decimal places to which the tick mark labels of the x-axis and the annotations should be rounded (the default is \code{2L}). Can also be a vector of two integers, the first specifying the number of decimal places for the annotations, the second for the x-axis labels. When specifying an integer (e.g., \code{2L}), trailing zeros after the decimal mark are dropped for the x-axis labels. When specifying a numerical value (e.g., \code{2}), trailing zeros are retained.}
+   \item{width}{optional integer to manually adjust the width of the columns for the annotations.}
    \item{xlab}{title for the x-axis. If unspecified, the function tries to set an appropriate axis title.}
    \item{slab}{optional vector with labels for the \eqn{k} studies. If unspecified, the labels are either taken from the object (if study labels were specified) or simple labels are created within the function. To suppress labels, set this argument to \code{NA}.}
    \item{mlab}{optional character string giving a label to the summary estimate from a fixed- or random-effects model. If unspecified, the label is created within the function.}
-   \item{ilab}{optional vector or matrix of character strings providing additional information about the studies.}
-   \item{ilab.xpos}{vector of numerical value(s) specifying the x-axis position(s) of the character vector(s) given via \code{ilab} (must be specified if \code{ilab} is specified).}
-   \item{ilab.pos}{integer(s) (either 1, 2, 3, or 4) specifying the alignment of the character vector(s) given via \code{ilab} (2 means right, 4 mean left aligned). If unspecified, the default is to center the labels.}
+   \item{ilab}{optional vector, matrix, or data frame providing additional information about the studies that should be added to the plot.}
+   \item{ilab.xpos}{vector of numerical value(s) specifying the x-axis position(s) of the variable(s) given via \code{ilab} (must be specified if \code{ilab} is specified).}
+   \item{ilab.pos}{integer(s) (either 1, 2, 3, or 4) specifying the alignment of the vector(s) given via \code{ilab} (2 means right, 4 mean left aligned). If unspecified, the default is to center the labels.}
    \item{order}{optional character string specifying how the studies should be ordered. See \sQuote{Details}.}
-   \item{transf}{optional argument specifying the name of a function that should be used to transform the observed effect sizes, summary estimates, fitted values, and confidence interval bounds (e.g., \code{transf=exp}). If unspecified, no transformation is used.}
-   \item{atransf}{optional argument specifying the name of a function that should be used to transform the x-axis labels and annotations (e.g., \code{transf=exp}). If unspecified, no transformation is used.}
+   \item{transf}{optional argument specifying the name of a function that should be used to transform the observed effect sizes, summary estimates, fitted values, and confidence interval bounds (e.g., \code{transf=exp}; see also \link{transf}). If unspecified, no transformation is used.}
+   \item{atransf}{optional argument specifying the name of a function that should be used to transform the x-axis labels and annotations (e.g., \code{atransf=exp}; see also \link{transf}). If unspecified, no transformation is used.}
    \item{targs}{optional arguments needed by the function specified via \code{transf} or \code{atransf}.}
    \item{rows}{optional vector specifying the rows (or more generally, the horizontal positions) for plotting the outcomes. If unspecified, the function sets this value automatically. Can also be a single value specifying the row (horizontal position) of the first outcome (the remaining outcomes are then plotted below this starting row).}
-   \item{efac}{vertical expansion factor for arrows, confidence interval limits, and the symbol used to denote summary estimates. The default value of 1 should usually work okay. Can also be a vector of two numbers, the first for arrows and CI limits, the second for summary estimates.}
+   \item{efac}{vertical expansion factor for confidence interval limits, arrows, and the symbol used to denote summary estimates. The default value of 1 should usually work okay. Can also be a vector of two numbers, the first for CI limits and arrows, the second for summary estimates. Can also be a vector of three numbers, the first for CI limits, the second for arrows, the third for summary estimates.}
    \item{pch}{plotting symbol to use for the observed effect sizes or outcomes. By default, a filled square is used. See \code{\link{points}} for other options. Can also be a vector of values.}
    \item{psize}{optional vector with point sizes for the observed effect sizes or outcomes. If unspecified, the point sizes are drawn proportional to the precision of the estimates.}
    \item{cex}{optional character and symbol expansion factor. If unspecified, the function tries to set this to a sensible value.}
@@ -57,7 +58,7 @@
 
    For models involving moderators, the fitted value for each study is added as a polygon to the plot. By default, the width of the polygons corresponds to the confidence interval limits for the fitted values. By setting \code{addcred=TRUE}, the width reflects the credibility/prediction interval limits. Again, the \code{col} and \code{border} arguments can be used to adjust the (border) color of the polygons. These polygons can be suppressed by setting \code{addfit=FALSE}.
 
-   With the \code{transf} argument, the observed effect sizes or outcomes, summary estimate, fitted values, confidence interval bounds, and credibility/prediction interval bounds can be transformed with some suitable function. For example, when plotting log odds ratios, one could use \code{transf=exp} to obtain a forest plot showing the odds ratios. Alternatively, one can use the \code{atransf} argument to transform the x-axis labels and annotations (e.g., \code{atransf=exp}). The examples below illustrate the use of these arguments.
+   With the \code{transf} argument, the observed effect sizes or outcomes, summary estimate, fitted values, confidence interval bounds, and credibility/prediction interval bounds can be transformed with some suitable function. For example, when plotting log odds ratios, one could use \code{transf=exp} to obtain a forest plot showing the odds ratios. Alternatively, one can use the \code{atransf} argument to transform the x-axis labels and annotations (e.g., \code{atransf=exp}). See also \link{transf} for some transformation functions useful for meta-analyses. The examples below illustrate the use of these arguments.
 
    By default, the studies are ordered from top to bottom (i.e., the first study in the dataset will be placed in row \eqn{k}, the second study in row \eqn{k-1}, and so on, until the last study, which is placed in the first row). The studies can be reordered with the \code{order} argument:
    \itemize{
@@ -103,9 +104,6 @@
    \code{\link{forest}}, \code{\link{forest.default}}, \code{\link{addpoly}}
 }
 \examples{
-### load BCG vaccine data
-data(dat.bcg)
-
 ### meta-analysis of the log relative risks using a random-effects model
 res <- rma(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg,
            slab=paste(author, year, sep=", "))
@@ -148,7 +146,8 @@ forest(res, atransf=exp, at=log(c(.05,.25,1,4,20)), xlim=c(-8,7), cex=.8)
 forest(res, atransf=exp, at=log(c(.05,.25,1,4,20)), xlim=c(-8,8),
        order="prec", showweights=TRUE, cex=.8)
 
-### forest plot with extra annotations (may need to stretch plotting device)
+### forest plot with extra annotations
+### note: may need to widen plotting device to avoid overlapping text
 forest(res, atransf=exp, at=log(c(.05, .25, 1, 4)), xlim=c(-16,6),
        ilab=cbind(dat.bcg$tpos, dat.bcg$tneg, dat.bcg$cpos, dat.bcg$cneg),
        ilab.xpos=c(-9.5,-8,-6,-4.5), cex=.75)
@@ -182,7 +181,8 @@ forest(res, ylim=c(-1.5, 16)) ### the default
 forest(res, ylim=c(-1.5, 20)) ### extra space in plot
 forest(res, ylim=c(-1.5, 20), rows=c(17:15, 12:6, 3:1)) ### set positions
 
-### forest plot with subgrouping of studies (may need to stretch plotting device)
+### forest plot with subgrouping of studies
+### note: may need to widen plotting device to avoid overlapping text
 forest(res, xlim=c(-16, 6), at=log(c(.05, .25, 1, 4)), atransf=exp,
        ilab=cbind(dat.bcg$tpos, dat.bcg$tneg, dat.bcg$cpos, dat.bcg$cneg),
        ilab.xpos=c(-9.5,-8,-6,-4.5), cex=.75, ylim=c(-1, 21),

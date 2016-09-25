@@ -3,19 +3,20 @@
 \title{Add Polygons to Forest Plots (Method for 'rma' Objects)}
 \description{Function to add a polygon to a forest plot showing the summary estimate with correspondong confidence interval based on an object of class \code{"rma"}.}
 \usage{
-\method{addpoly}{rma}(x, row=-2, level=x$level, digits=2,
-        annotate=TRUE, mlab, transf, atransf, targs,
+\method{addpoly}{rma}(x, row=-2, level=x$level,
+        annotate=TRUE, digits=2, width, mlab, transf, atransf, targs,
         efac=1, col, border, cex, \dots)
 }
 \arguments{
    \item{x}{an object of class \code{"rma"}.}
-   \item{row}{value specifying the row (or more generally, the horizontal position) for plotting the polygon (default is \code{-2}).}
+   \item{row}{value specifying the row (or more generally, the horizontal position) for plotting the polygon (the default is \code{-2}).}
    \item{level}{numerical value between 0 and 100 specifying the confidence interval level (the default is to take the value from the object).}
-   \item{digits}{integer specifying the number of decimal places to which the annotations should be rounded (default is 2).}
-   \item{annotate}{logical specifying whether annotations for the summary estimate should be added to the plot (default is \code{TRUE}).}
+   \item{annotate}{logical specifying whether annotations for the summary estimate should be added to the plot (the default is \code{TRUE}).}
+   \item{digits}{integer specifying the number of decimal places to which the annotations should be rounded (the default is 2).}
+   \item{width}{optional integer to manually adjust the width of the columns for the annotations.}
    \item{mlab}{optional character string giving a label for the summary estimate polygon. If unspecified, the function sets a default label.}
-   \item{transf}{optional argument specifying the name of a function that should be used to transform the summary estimate and confidence interval bound. If unspecified, no transformation is used.}
-   \item{atransf}{optional argument specifying the name of a function that should be used to transform the annotations. If unspecified, no transformation is used.}
+   \item{transf}{optional argument specifying the name of a function that should be used to transform the summary estimate and confidence interval bound (e.g., \code{transf=exp}; see also \link{transf}). If unspecified, no transformation is used.}
+   \item{atransf}{optional argument specifying the name of a function that should be used to transform the annotations (e.g., \code{atransf=exp}; see also \link{transf}). If unspecified, no transformation is used.}
    \item{targs}{optional arguments needed by the function specified via \code{transf} or \code{atransf}.}
    \item{efac}{vertical expansion factor for the polygon. The default value of 1 should usually work okay.}
    \item{col}{optional character string specifying the name of a color to use for the polygon. If unspecified, the function sets a default color.}
@@ -40,15 +41,12 @@
    \code{\link{forest.rma}}, \code{\link{forest.default}}
 }
 \examples{
-### load BCG vaccine data
-data(dat.bcg)
-
 ### meta-analysis of the log relative risks using the Mantel-Haenszel method
 res <- rma.mh(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg,
               slab=paste(author, year, sep=", "))
 
 ### forest plot of the observed relative risks with summary estimate
-forest(res, atransf=exp, xlim=c(-7,5), ylim=c(-2.5,16))
+forest(res, atransf=exp, xlim=c(-8,6), ylim=c(-2.5,16))
 
 ### meta-analysis of the log relative risks using a random-effects model
 res <- rma(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
@@ -57,6 +55,7 @@ res <- rma(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
 addpoly(res, atransf=exp)
 
 ### forest plot with subgrouping of studies and summaries per subgroup
+### note: may need to widen plotting device to avoid overlapping text
 res <- rma(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg,
            slab=paste(author, year, sep=", "))
 forest(res, xlim=c(-16, 6), at=log(c(.05, .25, 1, 4)), atransf=exp,

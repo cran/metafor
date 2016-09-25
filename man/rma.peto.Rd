@@ -21,9 +21,9 @@ rma.peto(ai, bi, ci, di, n1i, n2i,
    \item{add}{non-negative number indicating the amount to add to zero cells, counts, or frequencies when calculating the observed outcomes of the individual studies. Can also be a vector of two numbers, where the first number is used in the calculation of the observed outcomes and the second number is used when applying Peto's method. See below and the documentation of the \code{\link{escalc}} function for more details.}
    \item{to}{character string indicating when the values under \code{add} should be added (either \code{"only0"}, \code{"all"}, \code{"if0all"}, or \code{"none"}). Can also be a character vector, where the first string again applies when calculating the observed outcomes and the second string when applying Peto's method. See below and the documentation of the \code{\link{escalc}} function for more details.}
    \item{drop00}{logical indicating whether studies with no cases (or only cases) in both groups should be dropped when calculating the observed outcomes (the outcomes for such studies are set to \code{NA}). Can also be a vector of two logicals, where the first applies to the calculation of the observed outcomes and the second when applying Peto's method. See below and the documentation of the \code{\link{escalc}} function for more details.}
-   \item{level}{numerical value between 0 and 100 specifying the confidence interval level (default is 95).}
-   \item{digits}{integer specifying the number of decimal places to which the printed results should be rounded (default is 4).}
-   \item{verbose}{logical indicating whether output should be generated on the progress of the model fitting (default is \code{FALSE}).}
+   \item{level}{numerical value between 0 and 100 specifying the confidence interval level (the default is 95).}
+   \item{digits}{integer specifying the number of decimal places to which the printed results should be rounded (the default is 4).}
+   \item{verbose}{logical indicating whether output should be generated on the progress of the model fitting (the default is \code{FALSE}).}
 }
 \details{
 
@@ -67,7 +67,7 @@ rma.peto(ai, bi, ci, di, n1i, n2i,
 
    The \code{\link{residuals.rma}}, \code{\link{rstandard.rma.peto}}, and \code{\link{rstudent.rma.peto}} functions extract raw and standardized residuals. Leave-one-out diagnostics can be obtained with \code{\link{leave1out.rma.peto}}.
 
-   Forest, funnel, radial, L'abbé, and Baujat plots can be obtained with \code{\link{forest.rma}}, \code{\link{funnel.rma}}, \code{\link{radial.rma}}, \code{\link{labbe.rma}}, and \code{\link{baujat.rma.peto}}. The \code{\link{qqnorm.rma.peto}} function provides normal QQ plots of the standardized residuals. One can also just call \code{\link{plot.rma.peto}} on the fitted model object to obtain various plots at once.
+   Forest, funnel, radial, L'abbé, and Baujat plots can be obtained with \code{\link{forest.rma}}, \code{\link{funnel.rma}}, \code{\link{radial.rma}}, \code{\link{labbe.rma}}, and \code{\link{baujat}}. The \code{\link{qqnorm.rma.peto}} function provides normal QQ plots of the standardized residuals. One can also just call \code{\link{plot.rma.peto}} on the fitted model object to obtain various plots at once.
 
    A cumulative meta-analysis (i.e., adding one obervation at a time) can be obtained with \code{\link{cumul.rma.peto}}.
 
@@ -96,9 +96,6 @@ rma.peto(ai, bi, ci, di, n1i, n2i,
    \code{\link{dat.collins1985a}}, \code{\link{dat.collins1985b}}, and \code{\link{dat.yusuf1985}} for further examples of the use of the \code{rma.peto} function.
 }
 \examples{
-### load data
-data(dat.bcg)
-
 ### meta-analysis of the (log) odds ratios using Peto's method
 rma.peto(ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
 }

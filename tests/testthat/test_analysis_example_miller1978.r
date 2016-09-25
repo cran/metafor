@@ -2,7 +2,7 @@
 
 ### see also: http://www.metafor-project.org/doku.php/analyses:miller1978
 
-context("Checking analysis example miller1978")
+context("Checking analysis example: miller1978")
 
 ### create dataset
 dat <- data.frame(xi=c(3, 6, 10, 1), ni=c(11, 17, 21, 6))
@@ -78,12 +78,13 @@ test_that("back-transformations work as intended for individual studies and the 
    skip_on_cran()
 
    ### create forest plot with CI bounds supplied and then add model estimate
-   par(mfrow=c(1,1))
+   opar <- par(no.readonly=TRUE)
    forest(dat.back$yi, ci.lb=dat.back$ci.lb, ci.ub=dat.back$ci.ub, psize=1,
           xlim=c(-.5,1.8), alim=c(0,1), ylim=c(-1,8), refline=NA, digits=3, xlab="Proportion")
    addpoly(pred$pred, ci.lb=pred$ci.lb, ci.ub=pred$ci.ub, row=-0.5, digits=3, mlab="FE Model", efac=1.3)
    abline(h=0.5)
    text(-0.5, 7, "Study",               pos=4)
    text( 1.8, 7, "Proportion [95% CI]", pos=2)
+   par(opar)
 
 })

@@ -11,9 +11,9 @@ trimfill(x, \dots)
 \arguments{
    \item{x}{an object of class \code{"rma.uni"}.}
    \item{side}{either \code{"left"} or \code{"right"}, indicating on which side of the funnel plot the missing studies should be imputed. If left undefined, the side is chosen within the function depending on the results of Egger's regression test (see \code{\link{regtest}} for details on this test).}
-   \item{estimator}{either \code{"L0"}, \code{"R0"}, or \code{"Q0"}, indicating the estimator to use for estimating the number of missing studies (default is \code{"L0"}).}
-   \item{maxiter}{integer indicating the maximum number of iterations to use for the trim and fill method (default is \code{100}).}
-   \item{verbose}{logical indicating whether output should be generated on the progress of the iterative algorithm used as part of the trim and fill method (default is \code{FALSE}).}
+   \item{estimator}{either \code{"L0"}, \code{"R0"}, or \code{"Q0"}, indicating the estimator to use for estimating the number of missing studies (the default is \code{"L0"}).}
+   \item{maxiter}{integer indicating the maximum number of iterations to use for the trim and fill method (the default is \code{100}).}
+   \item{verbose}{logical indicating whether output should be generated on the progress of the iterative algorithm used as part of the trim and fill method (the default is \code{FALSE}).}
    \item{\dots}{other arguments.}
 }
 \details{
@@ -50,9 +50,6 @@ trimfill(x, \dots)
    \code{\link{funnel.rma}}
 }
 \examples{
-### load BCG vaccine data
-data(dat.bcg)
-
 ### meta-analysis of the log relative risks using a fixed-effects model
 res <- rma(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg, method="FE")
 res.tf <- trimfill(res)

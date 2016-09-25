@@ -5,8 +5,8 @@
 \usage{
 \method{forest}{default}(x, vi, sei, ci.lb, ci.ub, annotate=TRUE, showweights=FALSE,
        xlim, alim, clim, ylim, at, steps=5,
-       level=95, digits=2, refline=0, xlab,
-       slab, ilab, ilab.xpos, ilab.pos,
+       level=95, refline=0, digits=2L, width,
+       xlab, slab, ilab, ilab.xpos, ilab.pos,
        subset, transf, atransf, targs, rows,
        efac=1, pch=15, psize, col, lty,
        cex, cex.lab, cex.axis, \dots)
@@ -17,28 +17,29 @@
    \item{sei}{vector of length \eqn{k} with the corresponding standard errors.\cr(note: only one of the two, \code{vi} or \code{sei}, needs to be specified)}
    \item{ci.lb}{vector of length \eqn{k} with the corresponding lower confidence intervals bounds. Not needed if \code{vi} or \code{sei} is specified. See \sQuote{Details}.}
    \item{ci.ub}{vector of length \eqn{k} with the corresponding upper confidence intervals bounds. Not needed if \code{vi} or \code{sei} is specified. See \sQuote{Details}.}
-   \item{annotate}{logical specifying whether annotations should be added to the plot (default is \code{TRUE}).}
-   \item{showweights}{logical specifying whether the annotations should also include inverse variance weights (default is \code{FALSE}).}
+   \item{annotate}{logical specifying whether annotations should be added to the plot (the default is \code{TRUE}).}
+   \item{showweights}{logical specifying whether the annotations should also include inverse variance weights (the default is \code{FALSE}).}
    \item{xlim}{horizontal limits of the plot region. If unspecified, the function tries to set the horizontal plot limits to some sensible values.}
    \item{alim}{the actual x-axis limits. If unspecified, the function tries to set the x-axis limits to some sensible values.}
    \item{clim}{limits for the confidence intervals. If unspecified, no limits are used.}
    \item{ylim}{the y limits of the plot. If unspecified, the function tries to set the y-axis limits to some sensible values.}
    \item{at}{position of the x-axis tick marks and corresponding labels. If unspecified, the function tries to set the tick mark positions/labels to some sensible values.}
-   \item{steps}{the number of tick marks for the x-axis (default is 5). Ignored when the user specifies the positions via the \code{at} argument.}
-   \item{level}{numerical value between 0 and 100 specifying the confidence interval level (default is 95).}
-   \item{digits}{integer specifying the number of decimal places to which the tick mark labels of the x-axis and the annotations should be rounded (default is 2). Can also be a vector of two integers, the first specifying the number of decimal places for the annotations, the second for the x-axis labels.}
-   \item{refline}{value at which a vertical \sQuote{reference} line should be drawn (default is 0). The line can be suppressed by setting this argument to \code{NA}.}
+   \item{steps}{the number of tick marks for the x-axis (the default is 5). Ignored when the user specifies the positions via the \code{at} argument.}
+   \item{level}{numerical value between 0 and 100 specifying the confidence interval level (the default is 95).}
+   \item{refline}{value at which a vertical \sQuote{reference} line should be drawn (the default is 0). The line can be suppressed by setting this argument to \code{NA}.}
+   \item{digits}{integer specifying the number of decimal places to which the tick mark labels of the x-axis and the annotations should be rounded (the default is \code{2L}). Can also be a vector of two integers, the first specifying the number of decimal places for the annotations, the second for the x-axis labels. When specifying an integer (e.g., \code{2L}), trailing zeros after the decimal mark are dropped for the x-axis labels. When specifying a numerical value (e.g., \code{2}), trailing zeros are retained.}
+   \item{width}{optional integer to manually adjust the width of the columns for the annotations.}
    \item{xlab}{title for the x-axis. If unspecified, the function tries to set an appropriate axis title.}
    \item{slab}{optional vector with labels for the \eqn{k} studies. If unspecified, simple labels are created within the function. To suppress labels, set this argument to \code{NA}.}
-   \item{ilab}{optional vector or matrix of character strings providing additional information about the studies.}
-   \item{ilab.xpos}{numerical value(s) specifying the x-axis position(s) of the character vector(s) given via \code{ilab} (must be specified if \code{ilab} is specified).}
-   \item{ilab.pos}{integer(s) (either 1, 2, 3, or 4) specifying the alignment of the character vector(s) given via \code{ilab} (2 means right, 4 mean left aligned). If unspecified, the default is to center the labels.}
+   \item{ilab}{optional vector, matrix, or data frame providing additional information about the studies that should be added to the plot.}
+   \item{ilab.xpos}{vector of numerical value(s) specifying the x-axis position(s) of the variable(s) given via \code{ilab} (must be specified if \code{ilab} is specified).}
+   \item{ilab.pos}{integer(s) (either 1, 2, 3, or 4) specifying the alignment of the vector(s) given via \code{ilab} (2 means right, 4 mean left aligned). If unspecified, the default is to center the labels.}
    \item{subset}{optional vector indicating the subset of studies that should be used for the plot. This can be a logical vector of length \eqn{k} or a numeric vector indicating the indices of the observations to include. Note that this argument can also be used for reordering the studies.}
-   \item{transf}{optional argument specifying the name of a function that should be used to transform the observed effect sizes or outcomes and corresponding confidence interval bounds (e.g., \code{transf=exp}). If unspecified, no transformation is used.}
-   \item{atransf}{optional argument specifying the name of a function that should be used to transform the x-axis labels and annotations (e.g., \code{transf=exp}). If unspecified, no transformation is used.}
+   \item{transf}{optional argument specifying the name of a function that should be used to transform the observed effect sizes or outcomes and corresponding confidence interval bounds (e.g., \code{transf=exp}; see also \link{transf}). If unspecified, no transformation is used.}
+   \item{atransf}{optional argument specifying the name of a function that should be used to transform the x-axis labels and annotations (e.g., \code{atransf=exp}; see also \link{transf}). If unspecified, no transformation is used.}
    \item{targs}{optional arguments needed by the function specified via \code{transf} or \code{atransf}.}
    \item{rows}{optional vector specifying the rows (or more generally, the horizontal positions) for plotting the outcomes. If unspecified, the function sets this value automatically. Can also be a single value specifying the row (horizontal position) of the first outcome (the remaining outcomes are then plotted below this starting row).}
-   \item{efac}{vertical expansion factor for arrows and confidence interval limits. The default value of 1 should usually work okay.}
+   \item{efac}{vertical expansion factor for confidence interval limits and arrows. The default value of 1 should usually work okay. Can also be a vector of two numbers, the first for CI limits, the second for arrows.}
    \item{pch}{plotting symbol to use for the observed effect sizes or outcomes. By default, a filled square is used. See \code{\link{points}} for other options. Can also be a vector of values.}
    \item{psize}{optional vector with point sizes for the observed effect sizes or outcomes. If unspecified, the point sizes are drawn proportional to the precision of the estimates.}
    \item{col}{optional character string specifying the name of a color to use for plotting ("black" is used by default if not specified). Can also be a vector of color names.}
@@ -51,7 +52,7 @@
 \details{
    The plot shows the individual observed effect sizes or outcomes with corresponding confidence intervals. To use the function, one should specify the observed effect sizes or outcomes (via the \code{x} argument) together with the corresponding sampling variances (via the \code{vi} argument) or with the corresponding standard errors (via the \code{sei} argument). Alternatively, one can specify the observed effect sizes or outcomes together with the corresponding confidence interval bounds (via the \code{ci.lb} and \code{ci.ub} arguments).
 
-   With the \code{transf} argument, the observed effect sizes or outcomes and corresponding confidence interval bounds can be transformed with some suitable function. For example, when plotting log odds ratios, then one could use \code{transf=exp} to obtain a forest plot showing the odds ratios. Alternatively, one can use the \code{atransf} argument to transform the x-axis labels and annotations (e.g., \code{atransf=exp}). The examples below illustrate the use of these arguments.
+   With the \code{transf} argument, the observed effect sizes or outcomes and corresponding confidence interval bounds can be transformed with some suitable function. For example, when plotting log odds ratios, then one could use \code{transf=exp} to obtain a forest plot showing the odds ratios. Alternatively, one can use the \code{atransf} argument to transform the x-axis labels and annotations (e.g., \code{atransf=exp}). See also \link{transf} for some transformation functions useful for meta-analyses. The examples below illustrate the use of these arguments.
 
    By default, the studies are ordered from top to bottom (i.e., the first study in the dataset will be placed in row \eqn{k}, the second study in row \eqn{k-1}, and so on, until the last study, which is placed in the first row). The studies can be reordered with the \code{subset} argument (by specifying a vector with indices with the desired order).
 
@@ -84,9 +85,6 @@
    \code{\link{forest}}, \code{\link{forest.rma}}, \code{\link{addpoly}}
 }
 \examples{
-### load BCG vaccine data
-data(dat.bcg)
-
 ### calculate log relative risks and corresponding sampling variances
 dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
 
@@ -95,11 +93,15 @@ forest(dat$yi, dat$vi)
 
 ### forest plot of the observed relative risks
 forest(dat$yi, dat$vi, slab=paste(dat$author, dat$year, sep=", "), transf=exp,
-       alim=c(0,2), steps=5, xlim=c(-2,3.5), refline=1, cex=.9)
+       alim=c(0,2), steps=5, xlim=c(-2.5,4), refline=1, cex=.9)
 
 ### forest plot of the observed relative risks
 forest(dat$yi, dat$vi, slab=paste(dat$author, dat$year, sep=", "), atransf=exp,
        at=log(c(.05,.25,1,4,20)), xlim=c(-10,8), cex=.9)
+
+### forest plot of the observed relative risks with studies ordered by the RRs
+forest(dat$yi, dat$vi, slab=paste(dat$author, dat$year, sep=", "), atransf=exp,
+       at=log(c(.05,.25,1,4,20)), xlim=c(-10,8), cex=.9, subset=order(dat$yi))
 
 ### see also examples for the forest.rma function
 }

@@ -1,3 +1,2 @@
-trimfill <-
-function (x, ...) 
-UseMethod("trimfill")
+trimfill <- function(x, ...)
+   UseMethod("trimfill")

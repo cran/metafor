@@ -8,7 +8,7 @@ labbe(x, \dots)
 
 \method{labbe}{rma}(x, xlim, ylim, xlab, ylab,
       add=x$add, to=x$to, transf, targs,
-      pch=21, psize, bg="gray", \dots)
+      pch=21, psize, bg="gray", grid=FALSE, \dots)
 }
 \arguments{
    \item{x}{an object of class \code{"rma"}. See \sQuote{Details}.}
@@ -18,17 +18,18 @@ labbe(x, \dots)
    \item{ylab}{title for the y-axis. If unspecified, the function tries to set an appropriate axis title.}
    \item{add}{See below and the documentation of the \code{\link{escalc}} function for more details.}
    \item{to}{See below and the documentation of the \code{\link{escalc}} function for more details.}
-   \item{transf}{optional argument specifying the name of a function that should be used to transform the outcomes (e.g., \code{transf=exp}). If unspecified, no transformation is used.}
+   \item{transf}{optional argument specifying the name of a function that should be used to transform the outcomes (e.g., \code{transf=exp}; see also \link{transf}). If unspecified, no transformation is used.}
    \item{targs}{optional arguments needed by the function specified under \code{transf}.}
    \item{pch}{plotting symbol to use for the outcomes. By default, a filled circle is used. Can also be a vector of values. See \code{\link{points}} for other options.}
    \item{psize}{optional vector with point sizes for the outcomes. If unspecified, the point sizes are drawn proportional to the precision of the estimates.}
-   \item{bg}{color to use for filling the plotting symbol (default is \code{"gray"}). Can also be a vector of values. Set to \code{NA} to make the plotting symbols transparent.}
+   \item{bg}{color to use for filling the plotting symbol (the default is \code{"gray"}). Can also be a vector of values. Set to \code{NA} to make the plotting symbols transparent.}
+   \item{grid}{logical indicating whether a grid should be added to the plot.}
    \item{\dots}{other arguments.}
 }
 \details{
-   The model specified by \code{x} must be a model without moderators (i.e., either a fixed- or a random-effects model) fitted with either the \code{\link{rma.uni}}, \code{\link{rma.mh}}, \code{\link{rma.peto}}, or \code{\link{rma.glmm}} functions. Moreover, the model must be fitted with \code{measure} set equal to \code{"RD"} (for risk differences), \code{"RR"} (for relative risks), \code{"OR"} (for odds ratios), \code{"AS"} (for arcsine square-root transformed risk differences), \code{"IRR"} (for incidence rate ratios), \code{"IRD"} (for incidence rate differences), or \code{"IRSD"} (for square-root transformed incidence rate differences).
+   The model specified via \code{x} must be a model without moderators (i.e., either a fixed- or a random-effects model) fitted with either the \code{\link{rma.uni}}, \code{\link{rma.mh}}, \code{\link{rma.peto}}, or \code{\link{rma.glmm}} function. Moreover, the model must be fitted with \code{measure} set equal to \code{"RD"} (for risk differences), \code{"RR"} (for relative risks), \code{"OR"} (for odds ratios), \code{"AS"} (for arcsine square-root transformed risk differences), \code{"IRR"} (for incidence rate ratios), \code{"IRD"} (for incidence rate differences), or \code{"IRSD"} (for square-root transformed incidence rate differences).
 
-   The function calculates the arm-level outcomes for the two experimental groups (e.g., treatment and control groups) and plots them against each other. In particular, the function plots the raw proportions of the two groups again each other when analyzing risk differences, the log of the proportions when analyzing (log) relative risks, the log odds when analyzing (log) odds ratios, the arcsine square-root transformed proportions when analyzing arcsine square-root transformed risk differences, the raw incidence rates when analyzing incidence rate differences, the log of the incidence rates when analyzing (log) incidence rate ratios, and the square-root transformed incidence rates when analyzing square-root transformed incidence rate differences. The \code{transf} argument can be used to transform these values (for example, \code{transf=exp} to transform the log of the proportions back to raw proportions).
+   The function calculates the arm-level outcomes for the two experimental groups (e.g., treatment and control groups) and plots them against each other. In particular, the function plots the raw proportions of the two groups again each other when analyzing risk differences, the log of the proportions when analyzing (log) relative risks, the log odds when analyzing (log) odds ratios, the arcsine square-root transformed proportions when analyzing arcsine square-root transformed risk differences, the raw incidence rates when analyzing incidence rate differences, the log of the incidence rates when analyzing (log) incidence rate ratios, and the square-root transformed incidence rates when analyzing square-root transformed incidence rate differences. The \code{transf} argument can be used to transform these values (for example, \code{transf=exp} to transform the log of the proportions back to raw proportions; see also \link{transf}).
 
    As described under the documentation for the \code{\link{escalc}} function, zero cells can lead to problems when calculating particular outcomes. Adding a small constant to the cells of the \eqn{2 \times 2}{2x2} tables is a common solution to this problem. By default, the functions adopts the same method for handling zero cells as was done when fitting the model.
 
@@ -48,9 +49,6 @@ labbe(x, \dots)
    \code{\link{rma.uni}}, \code{\link{rma.mh}}, \code{\link{rma.peto}}, \code{\link{rma.glmm}}
 }
 \examples{
-### load BCG vaccine data
-data(dat.bcg)
-
 ### meta-analysis of the log relative risks using a random-effects model
 res <- rma(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
 

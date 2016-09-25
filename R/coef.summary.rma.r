@@ -1,17 +1,20 @@
-coef.summary.rma <-
-function (object, ...) 
-{
-    if (!is.element("summary.rma", class(object))) 
-        stop("Argument 'object' must be an object of class \"summary.rma\".")
-    x <- object
-    if (is.element("robust.rma", class(object))) 
-        x$zval <- x$tval
-    res.table <- cbind(estimate = x$b, se = x$se, zval = x$zval, 
-        pval = x$pval, ci.lb = x$ci.lb, ci.ub = x$ci.ub)
-    colnames(res.table) <- c("estimate", "se", "zval", "pval", 
-        "ci.lb", "ci.ub")
-    if (x$knha) 
-        colnames(res.table)[3] <- "tval"
-    res.table <- data.frame(res.table)
-    return(res.table)
+# Note: Works with "robust.rma" objects.
+
+coef.summary.rma <- function(object, ...) {
+
+   if (!inherits(object, "summary.rma"))
+      stop("Argument 'object' must be an object of class \"summary.rma\".")
+
+   x <- object
+
+   if (inherits(x, "robust.rma")) ### so that code below works with x$zval
+      x$zval <- x$tval
+
+   res.table <- data.frame(estimate=x$b, se=x$se, zval=x$zval, pval=x$pval, ci.lb=x$ci.lb, ci.ub=x$ci.ub)
+
+   if (is.element(x$test, c("knha","adhoc","t")))
+      colnames(res.table)[3] <- "tval"
+
+   return(res.table)
+
 }
