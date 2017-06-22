@@ -1,15 +1,12 @@
 funnel.rma <- function(x, yaxis="sei", xlim, ylim, xlab, ylab,
 steps=5, at, atransf, targs, digits, level=x$level, addtau2=FALSE,
 type="rstandard", back="lightgray", shade="white", hlines="white",
-refline, pch=19, pch.fill=21, ci.res=1000, ...) {
+refline, pch=19, pch.fill=21, col, bg, ci.res=1000, ...) {
 
    #########################################################################
 
    if (!inherits(x, "rma"))
       stop("Argument 'x' must be an object of class \"rma\".")
-
-   if (inherits(x, "robust.rma"))
-      stop("Function not applicable to objects of class \"robust.rma\".")
 
    na.act <- getOption("na.action")
 
@@ -46,9 +43,9 @@ refline, pch=19, pch.fill=21, ci.res=1000, ...) {
       if(yaxis == "ninv")
          ylab <- "Inverse Sample Size"
       if(yaxis == "sqrtni")
-         ylab <- "Square-Root Sample Size"
+         ylab <- "Square Root Sample Size"
       if(yaxis == "sqrtninv")
-         ylab <- "Inverse Square-Root Sample Size"
+         ylab <- "Inverse Square Root Sample Size"
       if(yaxis == "lni")
          ylab <- "Log Sample Size"
       if(yaxis == "wi")
@@ -91,6 +88,18 @@ refline, pch=19, pch.fill=21, ci.res=1000, ...) {
 
    ### note: digits can also be a list (e.g., digits=list(2L,3))
 
+   if (missing(col))
+      col <- "black"
+
+   if (length(col) == 1L)
+      col <- c(col, col)
+
+   if (missing(bg))
+      bg <- "white"
+
+   if (length(bg) == 1L)
+      bg <- c(bg, bg)
+
    #########################################################################
 
    ### get values for the x-axis (and corresponding vi, sei, and ni values)
@@ -99,7 +108,7 @@ refline, pch=19, pch.fill=21, ci.res=1000, ...) {
    if (x$int.only) {
 
       if (missing(refline))
-         refline <- c(x$b)
+         refline <- c(x$beta)
 
       if (inherits(x, "rma.mv"))
          addtau2 <- FALSE
@@ -224,27 +233,27 @@ refline, pch=19, pch.fill=21, ci.res=1000, ...) {
 
    if (is.element(yaxis, c("sei", "vi", "seinv", "vinv"))) {
 
-      alpha     <- ifelse(level > 1, (100-level)/100, 1-level) ### note: there may be multiple level values
-      alpha.min <- min(alpha)                                  ### note: smallest alpha is the widest CI
-      avals     <- length(alpha)
+      level     <- ifelse(level > 1, (100-level)/100, ifelse(level > .5, 1-level, level)) ### note: there may be multiple level values
+      level.min <- min(level)                                                             ### note: smallest level is the widest CI
+      lvals     <- length(level)
 
       ### calculate the CI bounds at the bottom of the figure (for the widest CI if there are multiple)
 
       if (yaxis == "sei") {
-         x.lb.bot <- refline - qnorm(alpha.min/2, lower.tail=FALSE) * sqrt(ylim[1]^2 + tau2)
-         x.ub.bot <- refline + qnorm(alpha.min/2, lower.tail=FALSE) * sqrt(ylim[1]^2 + tau2)
+         x.lb.bot <- refline - qnorm(level.min/2, lower.tail=FALSE) * sqrt(ylim[1]^2 + tau2)
+         x.ub.bot <- refline + qnorm(level.min/2, lower.tail=FALSE) * sqrt(ylim[1]^2 + tau2)
       }
       if (yaxis == "vi") {
-         x.lb.bot <- refline - qnorm(alpha.min/2, lower.tail=FALSE) * sqrt(ylim[1] + tau2)
-         x.ub.bot <- refline + qnorm(alpha.min/2, lower.tail=FALSE) * sqrt(ylim[1] + tau2)
+         x.lb.bot <- refline - qnorm(level.min/2, lower.tail=FALSE) * sqrt(ylim[1] + tau2)
+         x.ub.bot <- refline + qnorm(level.min/2, lower.tail=FALSE) * sqrt(ylim[1] + tau2)
       }
       if (yaxis == "seinv") {
-         x.lb.bot <- refline - qnorm(alpha.min/2, lower.tail=FALSE) * sqrt(1/ylim[1]^2 + tau2)
-         x.ub.bot <- refline + qnorm(alpha.min/2, lower.tail=FALSE) * sqrt(1/ylim[1]^2 + tau2)
+         x.lb.bot <- refline - qnorm(level.min/2, lower.tail=FALSE) * sqrt(1/ylim[1]^2 + tau2)
+         x.ub.bot <- refline + qnorm(level.min/2, lower.tail=FALSE) * sqrt(1/ylim[1]^2 + tau2)
       }
       if (yaxis == "vinv") {
-         x.lb.bot <- refline - qnorm(alpha.min/2, lower.tail=FALSE) * sqrt(1/ylim[1] + tau2)
-         x.ub.bot <- refline + qnorm(alpha.min/2, lower.tail=FALSE) * sqrt(1/ylim[1] + tau2)
+         x.lb.bot <- refline - qnorm(level.min/2, lower.tail=FALSE) * sqrt(1/ylim[1] + tau2)
+         x.ub.bot <- refline + qnorm(level.min/2, lower.tail=FALSE) * sqrt(1/ylim[1] + tau2)
       }
 
       if (missing(xlim)) {
@@ -343,10 +352,10 @@ refline, pch=19, pch.fill=21, ci.res=1000, ...) {
       if (yaxis == "vinv")
          vi.vals  <- 1/yi.vals
 
-      for (m in avals:1) {
+      for (m in lvals:1) {
 
-         ci.left  <- refline - qnorm(alpha[m]/2, lower.tail=FALSE) * sqrt(vi.vals + tau2)
-         ci.right <- refline + qnorm(alpha[m]/2, lower.tail=FALSE) * sqrt(vi.vals + tau2)
+         ci.left  <- refline - qnorm(level[m]/2, lower.tail=FALSE) * sqrt(vi.vals + tau2)
+         ci.right <- refline + qnorm(level[m]/2, lower.tail=FALSE) * sqrt(vi.vals + tau2)
 
          polygon(c(ci.left,ci.right[ci.res:1]), c(yi.vals,yi.vals[ci.res:1]), border=NA, col=shade[m], ...)
          lines(ci.left,  yi.vals, lty="dotted", ...)
@@ -401,12 +410,12 @@ refline, pch=19, pch.fill=21, ci.res=1000, ...) {
    if (yaxis == "wi")
       yaxis.vals <- weights
 
-   points(xaxis.vals, yaxis.vals, pch=pch, ...)
+   points(xaxis.vals, yaxis.vals, pch=pch, col=col[1], bg=bg[2], ...)
 
    ### add trim-and-fill points
 
    if (inherits(x, "rma.uni.trimfill"))
-      points(xaxis.vals[x$fill], yaxis.vals[x$fill], pch=pch.fill, col="black", bg="white", ...)
+      points(xaxis.vals[x$fill], yaxis.vals[x$fill], pch=pch.fill, col=col[2], bg=bg[2], ...)
 
    #########################################################################
 

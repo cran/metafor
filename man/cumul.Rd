@@ -10,9 +10,9 @@
 \usage{
 cumul(x, \dots)
 
-\method{cumul}{rma.uni}(x, order, digits, transf, targs, \dots)
-\method{cumul}{rma.mh}(x, order, digits, transf, targs, \dots)
-\method{cumul}{rma.peto}(x, order, digits, transf, targs, \dots)
+\method{cumul}{rma.uni}(x, order, digits, transf, targs, progbar=FALSE, \dots)
+\method{cumul}{rma.mh}(x, order, digits, transf, targs, progbar=FALSE, \dots)
+\method{cumul}{rma.peto}(x, order, digits, transf, targs, progbar=FALSE, \dots)
 }
 \arguments{
    \item{x}{an object of class \code{"rma.mh"}, \code{"rma.peto"}, \code{"rma.uni"}.}
@@ -20,6 +20,7 @@ cumul(x, \dots)
    \item{digits}{integer specifying the number of decimal places to which the printed results should be rounded (if unspecified, the default is to take the value from the object).}
    \item{transf}{optional argument specifying the name of a function that should be used to transform the model coefficients and interval bounds (e.g., \code{transf=exp}; see also \link{transf}). If unspecified, no transformation is used.}
    \item{targs}{optional arguments needed by the function specified under \code{transf}.}
+   \item{progbar}{logical indicating whether a progress bar should be shown (the default is \code{FALSE}).}
    \item{\dots}{other arguments.}
 }
 \details{
@@ -60,7 +61,7 @@ cumul(x, \dots)
    \code{\link{forest.cumul.rma}}, \code{\link{plot.cumul.rma}}
 }
 \examples{
-### calculate log relative risks and corresponding sampling variances
+### calculate log risk ratios and corresponding sampling variances
 dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
 
 ### random-effects model
@@ -69,7 +70,7 @@ res <- rma(yi, vi, data=dat)
 ### cumulative meta-analysis (in the order of publication year)
 cumul(res, transf=exp, order=order(dat$year))
 
-### meta-analysis of the (log) relative risks using the Mantel-Haenszel method
+### meta-analysis of the (log) risk ratios using the Mantel-Haenszel method
 res <- rma.mh(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
 
 ### cumulative meta-analysis

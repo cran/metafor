@@ -1,4 +1,4 @@
-cumul.rma.mh <- function(x, order, digits, transf, targs, ...) {
+cumul.rma.mh <- function(x, order, digits, transf, targs, progbar=FALSE, ...) {
 
    if (!inherits(x, "rma.mh"))
       stop("Argument 'x' must be an object of class \"rma.mh\".")
@@ -38,7 +38,7 @@ cumul.rma.mh <- function(x, order, digits, transf, targs, ...) {
    not.na <- x$not.na[order]
    slab   <- x$slab[order]
 
-   b     <- rep(NA_real_, x$k.f)
+   beta  <- rep(NA_real_, x$k.f)
    se    <- rep(NA_real_, x$k.f)
    zval  <- rep(NA_real_, x$k.f)
    pval  <- rep(NA_real_, x$k.f)
@@ -49,7 +49,16 @@ cumul.rma.mh <- function(x, order, digits, transf, targs, ...) {
 
    ### note: skipping NA cases
 
-   for (i in seq_len(x$k.f)[not.na]) {
+   if (progbar)
+      pbar <- txtProgressBar(min=0, max=x$k.f, style=3)
+
+   for (i in seq_len(x$k.f)) {
+
+      if (progbar)
+         setTxtProgressBar(pbar, i)
+
+      if (!not.na[i])
+         next
 
       if (is.element(x$measure, c("RR","OR","RD"))) {
          res <- try(suppressWarnings(rma.mh(ai=ai.f, bi=bi.f, ci=ci.f, di=di.f, measure=x$measure, add=x$add, to=x$to, drop00=x$drop00, correct=x$correct, subset=seq_len(i))), silent=TRUE)
@@ -60,7 +69,7 @@ cumul.rma.mh <- function(x, order, digits, transf, targs, ...) {
       if (inherits(res, "try-error"))
          next
 
-      b[i]     <- res$b
+      beta[i]  <- res$beta
       se[i]    <- res$se
       zval[i]  <- res$zval
       pval[i]  <- res$pval
@@ -71,6 +80,9 @@ cumul.rma.mh <- function(x, order, digits, transf, targs, ...) {
 
    }
 
+   if (progbar)
+      close(pbar)
+
    #########################################################################
 
    ### if requested, apply transformation function
@@ -80,12 +92,12 @@ cumul.rma.mh <- function(x, order, digits, transf, targs, ...) {
 
    if (is.function(transf)) {
       if (is.null(targs)) {
-         b     <- sapply(b, transf)
+         beta  <- sapply(beta, transf)
          se    <- rep(NA,x$k.f)
          ci.lb <- sapply(ci.lb, transf)
          ci.ub <- sapply(ci.ub, transf)
       } else {
-         b     <- sapply(b, transf, targs)
+         beta  <- sapply(beta, transf, targs)
          se    <- rep(NA,x$k.f)
          ci.lb <- sapply(ci.lb, transf, targs)
          ci.ub <- sapply(ci.ub, transf, targs)
@@ -102,12 +114,12 @@ cumul.rma.mh <- function(x, order, digits, transf, targs, ...) {
    #########################################################################
 
    if (na.act == "na.omit") {
-      out <- list(estimate=b[not.na], se=se[not.na], zval=zval[not.na], pval=pval[not.na], ci.lb=ci.lb[not.na], ci.ub=ci.ub[not.na], QE=QE[not.na], QEp=QEp[not.na])
+      out <- list(estimate=beta[not.na], se=se[not.na], zval=zval[not.na], pval=pval[not.na], ci.lb=ci.lb[not.na], ci.ub=ci.ub[not.na], QE=QE[not.na], QEp=QEp[not.na])
       out$slab <- slab[not.na]
    }
 
    if (na.act == "na.exclude" || na.act == "na.pass") {
-      out <- list(estimate=b, se=se, zval=zval, pval=pval, ci.lb=ci.lb, ci.ub=ci.ub, QE=QE, QEp=QEp)
+      out <- list(estimate=beta, se=se, zval=zval, pval=pval, ci.lb=ci.lb, ci.ub=ci.ub, QE=QE, QEp=QEp)
       out$slab <- slab
    }
 

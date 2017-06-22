@@ -32,25 +32,27 @@ print.rma.mh <- function(x, digits, showfit=FALSE, ...) {
 
    if (x$measure == "OR" || x$measure == "RR" || x$measure == "IRR") {
 
-      res.table     <- c(x$b, x$se, x$zval, x$pval, x$ci.lb, x$ci.ub)
-      res.table.exp <- c(exp(x$b), exp(x$ci.lb), exp(x$ci.ub))
+      res.table     <- c(x$beta, x$se, x$zval, x$pval, x$ci.lb, x$ci.ub)
+      res.table.exp <- c(exp(x$beta), exp(x$ci.lb), exp(x$ci.ub))
 
-      if (!is.na(x$b)) {
+      if (!is.na(x$beta)) {
          res.table    <- formatC(res.table, digits=digits, format="f")
          res.table[4] <- .pval(x$pval, digits=digits)
       }
 
-      if (!is.na(x$b))
+      if (!is.na(x$beta))
          res.table.exp <- formatC(res.table.exp, digits=digits, format="f")
 
       names(res.table)     <- c("estimate", "se", "zval", "pval", "ci.lb", "ci.ub")
       names(res.table.exp) <- c("estimate", "ci.lb", "ci.ub")
 
       cat("\n\nModel Results (log scale):\n\n")
-      print(res.table, quote=FALSE, right=TRUE)
+      .print.out(res.table)
+      #print(res.table, quote=FALSE, right=TRUE)
 
       cat("\nModel Results (", x$measure, " scale):", "\n\n", sep="")
-      print(res.table.exp, quote=FALSE, right=TRUE)
+      .print.out(res.table.exp)
+      #print(res.table.exp, quote=FALSE, right=TRUE)
       cat("\n")
 
       if (x$measure == "OR") {
@@ -79,9 +81,9 @@ print.rma.mh <- function(x, digits, showfit=FALSE, ...) {
 
    } else {
 
-      res.table <- c(x$b, x$se, x$zval, x$pval, x$ci.lb, x$ci.ub)
+      res.table <- c(x$beta, x$se, x$zval, x$pval, x$ci.lb, x$ci.ub)
 
-      if (!is.na(x$b)) {
+      if (!is.na(x$beta)) {
          res.table    <- formatC(res.table, digits=digits, format="f")
          res.table[4] <- .pval(x$pval, digits=digits)
       }
@@ -89,7 +91,8 @@ print.rma.mh <- function(x, digits, showfit=FALSE, ...) {
       names(res.table) <- c("estimate", "se", "zval", "pval", "ci.lb", "ci.ub")
 
       cat("\n\nModel Results:\n\n")
-      print(res.table, quote=FALSE, right=TRUE)
+      .print.out(res.table)
+      #print(res.table, quote=FALSE, right=TRUE)
       cat("\n")
 
    }

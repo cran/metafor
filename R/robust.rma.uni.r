@@ -9,7 +9,7 @@ robust.rma.uni <- function(x, cluster, adjust=TRUE, digits, ...) {
    if (missing(digits))
       digits <- x$digits
 
-   alpha <- ifelse(x$level > 1, (100-x$level)/100, 1-x$level)
+   level <- ifelse(x$level > 1, (100-x$level)/100, ifelse(x$level > .5, 1-x$level, x$level))
 
    #########################################################################
 
@@ -62,8 +62,9 @@ robust.rma.uni <- function(x, cluster, adjust=TRUE, digits, ...) {
 
          ### if no weights were specified, then vb = (X'WX)^-1, so we can use that part
 
-         wi <- 1/(x$vi[ocl] + x$tau2)
-         W  <- diag(wi, nrow=x$k, ncol=x$k)
+         wi    <- 1/(x$vi + x$tau2)
+         wi    <- wi[ocl]
+         W     <- diag(wi, nrow=x$k, ncol=x$k)
          bread <- x$vb %*% crossprod(x$X[ocl,], W)
 
       } else {
@@ -80,14 +81,14 @@ robust.rma.uni <- function(x, cluster, adjust=TRUE, digits, ...) {
 
       ### for unweighted analysis
 
-      stXX <- .invcalc(X=x$X[ocl,], W=diag(x$k), k=x$k)
+      stXX  <- .invcalc(X=x$X[ocl,], W=diag(x$k), k=x$k)
       bread <- stXX %*% t(x$X[ocl,])
 
    }
 
    ### construct meat part
 
-   ei <- c(x$yi - x$X %*% x$b) ### use this instead of resid(), since this guarantees that the length is correct
+   ei <- c(x$yi - x$X %*% x$beta) ### use this instead of resid(), since this guarantees that the length is correct
    ei <- ei[ocl]
 
    cluster <- factor(cluster, levels=unique(cluster))
@@ -115,16 +116,20 @@ robust.rma.uni <- function(x, cluster, adjust=TRUE, digits, ...) {
 
    ### prepare results
 
-   b <- x$b
+   beta <- x$beta
    se <- sqrt(diag(vb))
    names(se) <- NULL
-   tval <- c(b/se)
-   pval <- 2*pt(abs(tval), df=dfs, lower.tail=FALSE)
-   crit <- qt(alpha/2, df=dfs, lower.tail=FALSE)
-   ci.lb <- c(b - crit * se)
-   ci.ub <- c(b + crit * se)
+   zval <- c(beta/se)
+   pval <- 2*pt(abs(zval), df=dfs, lower.tail=FALSE)
+   crit <- qt(level/2, df=dfs, lower.tail=FALSE)
+   ci.lb <- c(beta - crit * se)
+   ci.ub <- c(beta + crit * se)
 
-   QM <- c(t(b)[x$btt] %*% chol2inv(chol(vb[x$btt,x$btt])) %*% b[x$btt])
+   QM <- try(as.vector(t(beta)[x$btt] %*% chol2inv(chol(vb[x$btt,x$btt])) %*% beta[x$btt]), silent=TRUE)
+
+   if (inherits(QM, "try-error"))
+      QM <- NA
+
    QM <- QM / x$m ### careful: m is the number of coefficients in btt, not the number of unique clusters
    QMp <- pf(QM, df1=x$m, df2=dfs, lower.tail=FALSE)
 
@@ -133,11 +138,26 @@ robust.rma.uni <- function(x, cluster, adjust=TRUE, digits, ...) {
    ### table of cluster variable
    tcl <- table(cluster)
 
-   res <- list(b=b, se=se, tval=tval, pval=pval, ci.lb=ci.lb, ci.ub=ci.ub, vb=vb,
-               k=x$k, k.f=x$k.f, p=x$p, m=x$m, n=n, dfs=dfs, tcl=tcl, QM=QM, QMp=QMp, yi.f=x$yi.f, vi.f=x$vi.f, X=x$X, X.f=x$X.f, method=x$method,
-               int.only=x$int.only, int.incl=x$int.incl, test="t", btt=x$btt, intercept=x$intercept, digits=digits, level=x$level, tau2=x$tau2, slab=x$slab,
-               slab.null=x$slab.null, not.na=x$not.na,
-               fit.stats=x$fit.stats, k.eff=x$k.eff, p.eff=x$p.eff, parms=x$parms, measure=x$measure)
+   res <- x
+   res$digits <- digits
+
+   ### replace elements with robust results
+
+   res$dfs   <- dfs
+   res$vb    <- vb
+   res$se    <- se
+   res$zval  <- zval
+   res$pval  <- pval
+   res$ci.lb <- ci.lb
+   res$ci.ub <- ci.ub
+   res$QM    <- QM
+   res$QMp   <- QMp
+   res$n     <- n
+   res$tcl   <- tcl
+   res$test  <- "t"
+   res$s2w   <- 1 ### just in case test="knha" originally
+   res$meat <- matrix(NA_real_, nrow=nrow(meat), ncol=ncol(meat))
+   res$meat[ocl,ocl] <- meat
 
    class(res) <- c("robust.rma", "rma", "rma.uni")
    return(res)

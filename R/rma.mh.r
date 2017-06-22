@@ -1,7 +1,7 @@
 rma.mh   <- function(ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, measure="OR",
 data, slab, subset,
 add=1/2, to="only0", drop00=TRUE, ### for add/to/drop00, 1st element for escalc(), 2nd for MH method
-correct=TRUE, level=95, digits=4, verbose=FALSE) {
+correct=TRUE, level=95, digits=4, verbose=FALSE, ...) {
 
    #########################################################################
 
@@ -41,6 +41,12 @@ correct=TRUE, level=95, digits=4, verbose=FALSE) {
    if (!is.element(to[2], c("all","only0","if0all","none")))
       stop("Unknown 'to' argument specified.")
 
+   ### get ... argument and check for extra/superfluous arguments
+
+   ddd <- list(...)
+
+   .chkdots(ddd, c("outlist"))
+
    #########################################################################
 
    if (verbose)
@@ -54,14 +60,14 @@ correct=TRUE, level=95, digits=4, verbose=FALSE) {
    if (is.null(data)) {
       data <- sys.frame(sys.parent())
    } else {
-      if (!is.data.frame(data)) {
+      if (!is.data.frame(data))
          data <- data.frame(data)
-      }
    }
+
+   mf <- match.call()
 
    ### extract slab and subset values, possibly from the data frame specified via data (arguments not specified are NULL)
 
-   mf <- match.call()
    mf.slab   <- mf[[match("slab",   names(mf))]]
    mf.subset <- mf[[match("subset", names(mf))]]
    slab   <- eval(mf.slab,   data, enclos=sys.frame(sys.parent()))
@@ -137,7 +143,7 @@ correct=TRUE, level=95, digits=4, verbose=FALSE) {
       ### check if study labels are unique; if not, make them unique
 
       if (anyDuplicated(slab))
-         slab <- make.unique(as.character(slab)) ### make.unique() only works with character vectors
+         slab <- .make.unique(slab)
 
       ### calculate observed effect estimates and sampling variances
 
@@ -170,14 +176,13 @@ correct=TRUE, level=95, digits=4, verbose=FALSE) {
 
       ### check for NAs in table data and act accordingly
 
-      aibicidi.na <- is.na(ai) | is.na(bi) | is.na(ci) | is.na(di)
+      has.na <- is.na(ai) | is.na(bi) | is.na(ci) | is.na(di)
+      not.na <- !has.na
 
-      if (any(aibicidi.na)) {
+      if (any(has.na)) {
 
          if (verbose)
             message("Handling NAs in table data ...")
-
-         not.na <- !aibicidi.na
 
          if (na.act == "na.omit" || na.act == "na.exclude" || na.act == "na.pass") {
             ai <- ai[not.na]
@@ -191,8 +196,6 @@ correct=TRUE, level=95, digits=4, verbose=FALSE) {
          if (na.act == "na.fail")
             stop("Missing values in tables.")
 
-      } else {
-         not.na <- rep(TRUE, k)
       }
 
       ### at least one study left?
@@ -203,13 +206,12 @@ correct=TRUE, level=95, digits=4, verbose=FALSE) {
       ### check for NAs in yi/vi and act accordingly
 
       yivi.na <- is.na(yi) | is.na(vi)
+      not.na.yivi <- !yivi.na
 
       if (any(yivi.na)) {
 
          if (verbose)
             message("Handling NAs in yi/vi ...")
-
-         not.na.yivi <- !yivi.na
 
          if (na.act == "na.omit" || na.act == "na.exclude" || na.act == "na.pass") {
 
@@ -226,8 +228,6 @@ correct=TRUE, level=95, digits=4, verbose=FALSE) {
          if (na.act == "na.fail")
             stop("Missing yi/vi values.")
 
-      } else {
-         not.na.yivi <- rep(TRUE, k)
       }
 
       k.yi <- length(yi) ### number of yi/vi pairs that are not NA (needed for QE df and fitstats calculation)
@@ -346,7 +346,7 @@ correct=TRUE, level=95, digits=4, verbose=FALSE) {
       ### check if study labels are unique; if not, make them unique
 
       if (anyDuplicated(slab))
-         slab <- make.unique(as.character(slab)) ### make.unique() only works with character vectors
+         slab <- .make.unique(slab)
 
       ### calculate observed effect estimates and sampling variances
 
@@ -377,14 +377,13 @@ correct=TRUE, level=95, digits=4, verbose=FALSE) {
 
       ### check for NAs in table data and act accordingly
 
-      x1ix2it1it2i.na <- is.na(x1i) | is.na(x2i) | is.na(t1i) | is.na(t2i)
+      has.na <- is.na(x1i) | is.na(x2i) | is.na(t1i) | is.na(t2i)
+      not.na <- !has.na
 
-      if (any(x1ix2it1it2i.na)) {
+      if (any(has.na)) {
 
          if (verbose)
             message("Handling NAs in table data ...")
-
-         not.na <- !x1ix2it1it2i.na
 
          if (na.act == "na.omit" || na.act == "na.exclude" || na.act == "na.pass") {
             x1i  <- x1i[not.na]
@@ -398,8 +397,6 @@ correct=TRUE, level=95, digits=4, verbose=FALSE) {
          if (na.act == "na.fail")
             stop("Missing values in tables.")
 
-      } else {
-         not.na <- rep(TRUE, k)
       }
 
       ### at least one study left?
@@ -410,13 +407,12 @@ correct=TRUE, level=95, digits=4, verbose=FALSE) {
       ### check for NAs in yi/vi and act accordingly
 
       yivi.na <- is.na(yi) | is.na(vi)
+      not.na.yivi <- !yivi.na
 
       if (any(yivi.na)) {
 
          if (verbose)
             message("Handling NAs in yi/vi ...")
-
-         not.na.yivi <- !yivi.na
 
          if (na.act == "na.omit" || na.act == "na.exclude" || na.act == "na.pass") {
 
@@ -433,8 +429,6 @@ correct=TRUE, level=95, digits=4, verbose=FALSE) {
          if (na.act == "na.fail")
             stop("Missing yi/vi values.")
 
-      } else {
-         not.na.yivi <- rep(TRUE, k)
       }
 
       k.yi <- length(yi) ### number of yi/vi pairs that are not NA (needed for QE df and fitstats calculation)
@@ -483,7 +477,7 @@ correct=TRUE, level=95, digits=4, verbose=FALSE) {
 
    #########################################################################
 
-   alpha <- ifelse(level > 1, (100-level)/100, 1-level)
+   level <- ifelse(level > 1, (100-level)/100, ifelse(level > .5, 1-level, level))
 
    CO <- COp <- MH <- MHp <- BD <- BDp <- TA <- TAp <- k.pos <- NA
 
@@ -502,24 +496,24 @@ correct=TRUE, level=95, digits=4, verbose=FALSE) {
       S  <- sum(Si)
 
       if (identical(R,0) || identical(S,0)) {
-         b.exp <- NA
-         b     <- NA
-         se    <- NA
-         zval  <- NA
-         pval  <- NA
-         ci.lb <- NA
-         ci.ub <- NA
+         beta.exp <- NA
+         beta     <- NA
+         se       <- NA
+         zval     <- NA
+         pval     <- NA
+         ci.lb    <- NA
+         ci.ub    <- NA
       } else {
-         b.exp <- R/S
-         b     <- log(b.exp)
-         se    <- sqrt(1/2 * (sum(Pi*Ri)/R^2 + sum(Pi*Si + Qi*Ri)/(R*S) + sum(Qi*Si)/S^2)) ### based on Robins et al. (1986)
-         zval  <- b / se
-         pval  <- 2*pnorm(abs(zval), lower.tail=FALSE)
-         ci.lb <- b - qnorm(alpha/2, lower.tail=FALSE) * se
-         ci.ub <- b + qnorm(alpha/2, lower.tail=FALSE) * se
+         beta.exp <- R/S
+         beta     <- log(beta.exp)
+         se       <- sqrt(1/2 * (sum(Pi*Ri)/R^2 + sum(Pi*Si + Qi*Ri)/(R*S) + sum(Qi*Si)/S^2)) ### based on Robins et al. (1986)
+         zval     <- beta / se
+         pval     <- 2*pnorm(abs(zval), lower.tail=FALSE)
+         ci.lb    <- beta - qnorm(level/2, lower.tail=FALSE) * se
+         ci.ub    <- beta + qnorm(level/2, lower.tail=FALSE) * se
       }
 
-      names(b) <- "intrcpt"
+      names(beta) <- "intrcpt"
       vb <- matrix(se^2, dimnames=list("intrcpt", "intrcpt"))
 
       ### Cochran and Cochran-Mantel-Haenszel Statistics
@@ -541,19 +535,19 @@ correct=TRUE, level=95, digits=4, verbose=FALSE) {
 
       ### Breslow-Day and Tarone's Test for Heterogeneity
 
-      if (is.na(b)) {
+      if (is.na(beta)) {
          BD    <- NA
          TA    <- NA
          BDp   <- NA
          TAp   <- NA
          k.pos <- 0
       } else {
-         if (identical(b.exp,1)) {
+         if (identical(beta.exp,1)) {
             N11 <- (n1i/Ni)*xt
          } else {
-            A   <- b.exp * (n1i + xt) + (n2i - xt)
-            B   <- sqrt(A^2 - 4*n1i*xt*b.exp*(b.exp-1))
-            N11 <- (A-B) / (2*(b.exp-1))
+            A   <- beta.exp * (n1i + xt) + (n2i - xt)
+            B   <- sqrt(A^2 - 4*n1i*xt*beta.exp*(beta.exp-1))
+            N11 <- (A-B) / (2*(beta.exp-1))
          }
          pos   <- (N11 > 0) & (xt > 0) & (yt > 0)
          k.pos <- sum(pos)
@@ -580,39 +574,39 @@ correct=TRUE, level=95, digits=4, verbose=FALSE) {
       S <- sum(ci * (n1i/Ni))
 
       if (identical(sum(ai),0) || identical(sum(ci),0)) {
-         b.exp <- NA
-         b     <- NA
-         se    <- NA
-         zval  <- NA
-         pval  <- NA
-         ci.lb <- NA
-         ci.ub <- NA
+         beta.exp <- NA
+         beta     <- NA
+         se       <- NA
+         zval     <- NA
+         pval     <- NA
+         ci.lb    <- NA
+         ci.ub    <- NA
       } else {
-         b.exp <- R/S
-         b     <- log(b.exp)
-         se    <- sqrt(sum(((n1i/Ni)*(n2i/Ni)*(ai+ci) - (ai/Ni)*ci)) / (R*S))
-         zval  <- b / se
-         pval  <- 2*pnorm(abs(zval), lower.tail=FALSE)
-         ci.lb <- b - qnorm(alpha/2, lower.tail=FALSE) * se
-         ci.ub <- b + qnorm(alpha/2, lower.tail=FALSE) * se
+         beta.exp <- R/S
+         beta     <- log(beta.exp)
+         se       <- sqrt(sum(((n1i/Ni)*(n2i/Ni)*(ai+ci) - (ai/Ni)*ci)) / (R*S))
+         zval     <- beta / se
+         pval     <- 2*pnorm(abs(zval), lower.tail=FALSE)
+         ci.lb    <- beta - qnorm(level/2, lower.tail=FALSE) * se
+         ci.ub    <- beta + qnorm(level/2, lower.tail=FALSE) * se
       }
 
-      names(b) <- "intrcpt"
+      names(beta) <- "intrcpt"
       vb <- matrix(se^2, dimnames=list("intrcpt", "intrcpt"))
 
    }
 
    if (measure == "RD") {
 
-      b     <- sum(ai*(n2i/Ni) - ci*(n1i/Ni)) / sum(n1i*(n2i/Ni))
-      se    <- sqrt((b * (sum(ci*(n1i/Ni)^2 - ai*(n2i/Ni)^2 + (n1i/Ni)*(n2i/Ni)*(n2i-n1i)/2)) + sum(ai*(n2i-ci)/Ni + ci*(n1i-ai)/Ni)/2) / sum(n1i*(n2i/Ni))^2) ### equation in: Sato, Greenland, & Robins (1989)
+      beta  <- sum(ai*(n2i/Ni) - ci*(n1i/Ni)) / sum(n1i*(n2i/Ni))
+      se    <- sqrt((beta * (sum(ci*(n1i/Ni)^2 - ai*(n2i/Ni)^2 + (n1i/Ni)*(n2i/Ni)*(n2i-n1i)/2)) + sum(ai*(n2i-ci)/Ni + ci*(n1i-ai)/Ni)/2) / sum(n1i*(n2i/Ni))^2) ### equation in: Sato, Greenland, & Robins (1989)
       #se   <- sqrt(sum(((ai/Ni^2)*bi*(n2i^2/n1i) + (ci/Ni^2)*di*(n1i^2/n2i))) / sum(n1i*(n2i/Ni))^2) ### equation in: Greenland & Robins (1985)
-      zval  <- b / se
+      zval  <- beta / se
       pval  <- 2*pnorm(abs(zval), lower.tail=FALSE)
-      ci.lb <- b - qnorm(alpha/2, lower.tail=FALSE) * se
-      ci.ub <- b + qnorm(alpha/2, lower.tail=FALSE) * se
+      ci.lb <- beta - qnorm(level/2, lower.tail=FALSE) * se
+      ci.ub <- beta + qnorm(level/2, lower.tail=FALSE) * se
 
-      names(b) <- "intrcpt"
+      names(beta) <- "intrcpt"
       vb <- matrix(se^2, dimnames=list("intrcpt", "intrcpt"))
 
    }
@@ -623,24 +617,24 @@ correct=TRUE, level=95, digits=4, verbose=FALSE) {
       S <- sum(x2i * (t1i/Ti))
 
       if (identical(sum(x1i),0) || identical(sum(x2i),0)) {
-         b.exp <- NA
-         b     <- NA
-         se    <- NA
-         zval  <- NA
-         pval  <- NA
-         ci.lb <- NA
-         ci.ub <- NA
+         beta.exp <- NA
+         beta     <- NA
+         se       <- NA
+         zval     <- NA
+         pval     <- NA
+         ci.lb    <- NA
+         ci.ub    <- NA
       } else {
-         b.exp <- R/S
-         b     <- log(b.exp)
-         se    <- sqrt(sum((t1i/Ti)*(t2i/Ti)*(x1i+x2i)) / (R*S))
-         zval  <- b / se
-         pval  <- 2*pnorm(abs(zval), lower.tail=FALSE)
-         ci.lb <- b - qnorm(alpha/2, lower.tail=FALSE) * se
-         ci.ub <- b + qnorm(alpha/2, lower.tail=FALSE) * se
+         beta.exp <- R/S
+         beta     <- log(beta.exp)
+         se       <- sqrt(sum((t1i/Ti)*(t2i/Ti)*(x1i+x2i)) / (R*S))
+         zval     <- beta / se
+         pval     <- 2*pnorm(abs(zval), lower.tail=FALSE)
+         ci.lb    <- beta - qnorm(level/2, lower.tail=FALSE) * se
+         ci.ub    <- beta + qnorm(level/2, lower.tail=FALSE) * se
       }
 
-      names(b) <- "intrcpt"
+      names(beta) <- "intrcpt"
       vb <- matrix(se^2, dimnames=list("intrcpt", "intrcpt"))
 
       ### Mantel-Haenszel Statistic
@@ -658,14 +652,14 @@ correct=TRUE, level=95, digits=4, verbose=FALSE) {
 
    if (measure == "IRD") {
 
-      b     <- sum((x1i*t2i - x2i*t1i)/Ti) / sum((t1i/Ti)*t2i)
+      beta  <- sum((x1i*t2i - x2i*t1i)/Ti) / sum((t1i/Ti)*t2i)
       se    <- sqrt(sum(((t1i/Ti)*t2i)^2*(x1i/t1i^2+x2i/t2i^2))) / sum((t1i/Ti)*t2i) ### from Rothland et al. (2008), chapter 15
-      zval  <- b / se
+      zval  <- beta / se
       pval  <- 2*pnorm(abs(zval), lower.tail=FALSE)
-      ci.lb <- b - qnorm(alpha/2, lower.tail=FALSE) * se
-      ci.ub <- b + qnorm(alpha/2, lower.tail=FALSE) * se
+      ci.lb <- beta - qnorm(level/2, lower.tail=FALSE) * se
+      ci.ub <- beta + qnorm(level/2, lower.tail=FALSE) * se
 
-      names(b) <- "intrcpt"
+      names(beta) <- "intrcpt"
       vb <- matrix(se^2, dimnames=list("intrcpt", "intrcpt"))
 
    }
@@ -679,7 +673,7 @@ correct=TRUE, level=95, digits=4, verbose=FALSE) {
 
    wi <- 1/vi
 
-   QE <- max(0, sum(wi*(yi-b)^2))
+   QE <- max(0, sum(wi*(yi-beta)^2))
 
    if (k.yi > 1) {
       QEp <- pchisq(QE, df=k.yi-1, lower.tail=FALSE)
@@ -741,18 +735,30 @@ correct=TRUE, level=95, digits=4, verbose=FALSE) {
    test      <- "z"
    dfs       <- NA
 
-   res <- list(b=b, se=se, zval=zval, pval=pval, ci.lb=ci.lb, ci.ub=ci.ub, vb=vb,
-               tau2=tau2,
-               k=k, k.f=k.f, k.yi=k.yi, k.pos=k.pos, k.eff=k.eff, p=p, parms=parms,
-               QE=QE, QEp=QEp, CO=CO, COp=COp, MH=MH, MHp=MHp, BD=BD, BDp=BDp, TA=TA, TAp=TAp, I2=I2, H2=H2,
-               int.only=int.only,
-               yi=yi, vi=vi, yi.f=yi.f, vi.f=vi.f, X.f=X.f,
-               ai=ai, bi=bi, ci=ci, di=di, ai.f=ai.f, bi.f=bi.f, ci.f=ci.f, di.f=di.f,
-               x1i=x1i, x2i=x2i, t1i=t1i, t2i=t2i, x1i.f=x1i.f, x2i.f=x2i.f, t1i.f=t1i.f, t2i.f=t2i.f, ni=ni, ni.f=ni.f,
-               ids=ids, not.na=not.na, not.na.yivi=not.na.yivi, slab=slab, slab.null=slab.null,
-               measure=measure, method=method, weighted=weighted, test=test, dfs=dfs, intercept=intercept, digits=digits, level=level,
-               add=add, to=to, drop00=drop00, correct=correct,
-               fit.stats=fit.stats, version=packageVersion("metafor"), call=mf)
+   if (is.null(ddd$outlist)) {
+
+      res <- list(b=beta, beta=beta, se=se, zval=zval, pval=pval, ci.lb=ci.lb, ci.ub=ci.ub, vb=vb,
+                  tau2=tau2,
+                  k=k, k.f=k.f, k.yi=k.yi, k.pos=k.pos, k.eff=k.eff, p=p, parms=parms,
+                  QE=QE, QEp=QEp, CO=CO, COp=COp, MH=MH, MHp=MHp, BD=BD, BDp=BDp, TA=TA, TAp=TAp, I2=I2, H2=H2,
+                  int.only=int.only,
+                  yi=yi, vi=vi, yi.f=yi.f, vi.f=vi.f, X.f=X.f,
+                  ai=ai, bi=bi, ci=ci, di=di, ai.f=ai.f, bi.f=bi.f, ci.f=ci.f, di.f=di.f,
+                  x1i=x1i, x2i=x2i, t1i=t1i, t2i=t2i, x1i.f=x1i.f, x2i.f=x2i.f, t1i.f=t1i.f, t2i.f=t2i.f, ni=ni, ni.f=ni.f,
+                  ids=ids, not.na=not.na, not.na.yivi=not.na.yivi, slab=slab, slab.null=slab.null,
+                  measure=measure, method=method, weighted=weighted, test=test, dfs=dfs, intercept=intercept, digits=digits, level=level,
+                  add=add, to=to, drop00=drop00, correct=correct,
+                  fit.stats=fit.stats, version=packageVersion("metafor"), call=mf)
+
+   }
+
+   if (!is.null(ddd$outlist)) {
+      if (ddd$outlist == "minimal") {
+         res <- list(b=beta, beta=beta, se=se, zval=zval, pval=pval, ci.lb=ci.lb, ci.ub=ci.ub, vb=vb, digits=digits, k=k, k.yi=k.yi, k.pos=k.pos, k.eff=k.eff, p=p, parms=parms, fit.stats=fit.stats, QE=QE, QEp=QEp, MH=MH, MHp=MHp, TA=TA, TAp=TAp, measure=measure)
+      } else {
+         res <- eval(parse(text=paste0("list(", ddd$outlist, ")")))
+      }
+   }
 
    class(res) <- c("rma.mh", "rma")
    return(res)

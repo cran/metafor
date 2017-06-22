@@ -40,7 +40,7 @@ rma.mv(yi, V, W, mods, random, struct="CS", intercept=TRUE,
 
    \bold{Specifying the Data}
 
-   The function can be used in conjunction with any of the usual effect size or outcome measures used in meta-analyses (e.g., log odds ratios, log relative risks, risk differences, mean differences, standardized mean differences, raw correlation coefficients, correlation coefficients transformed with Fisher's r-to-z transformation, and so on). Simply specify the observed outcomes via the \code{yi} argument and the corresponding sampling variances via the \code{V} argument. In case the sampling errors are correlated, then one can specify the entire variance-covariance matrix of the sampling errors via the \code{V} argument.
+   The function can be used in conjunction with any of the usual effect size or outcome measures used in meta-analyses (e.g., log risk ratios, log odds ratios, risk differences, mean differences, standardized mean differences, raw correlation coefficients, correlation coefficients transformed with Fisher's r-to-z transformation, and so on). Simply specify the observed outcomes via the \code{yi} argument and the corresponding sampling variances via the \code{V} argument. In case the sampling errors are correlated, then one can specify the entire variance-covariance matrix of the sampling errors via the \code{V} argument.
 
    The \code{\link{escalc}} function can be used to compute a wide variety of effect size and outcome measures (and the corresponding sampling variances) based on summary statistics. Equations for computing the covariance between sampling errors for a variety of different effect size or outcome measures can be found, for example, in Gleser and Olkin (2009). For raw and Fisher's r-to-z transformed correlations, one can find suitable equations, for example, in Steiger (1980).
 
@@ -118,7 +118,7 @@ rma.mv(yi, V, W, mods, random, struct="CS", intercept=TRUE,
 }
 \value{
    An object of class \code{c("rma.mv","rma")}. The object is a list containing the following components:
-   \item{b}{estimated coefficients of the model.}
+   \item{beta}{estimated coefficients of the model.}
    \item{se}{standard errors of the coefficients.}
    \item{zval}{test statistics of the coefficients.}
    \item{pval}{p-values for the test statistics.}

@@ -16,7 +16,7 @@ test_that("plot can be drawn for rma().", {
    ### load BCG vaccine data
    data(dat.bcg, package="metafor")
 
-   ### calculate (log) relative risks and corresponding sampling variances
+   ### calculate log risk ratios and corresponding sampling variances
    dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
 
    ### fit fixed- and random-effects models
@@ -63,5 +63,14 @@ test_that("plot can be drawn for rma.peto().", {
    qqnorm(res)
    qqnorm(res, type="rstudent", label=TRUE)
    par(opar)
+
+})
+
+test_that("plot cannot be drawn for rma.mv().", {
+
+   data(dat.bcg, package="metafor")
+   dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
+   res <- rma.mv(yi, vi, random = ~ 1 | trial, data=dat)
+   expect_error(qqnorm(res))
 
 })

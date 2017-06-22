@@ -30,10 +30,10 @@ test_that("results are correct for the Henmi & Copas method.", {
 
    ### apply Henmi & Copas method
    sav <- hc(res)
-   out <- capture.output(print(sav)) ### so that print.hc.rma.mv() is run (at least once)
+   out <- capture.output(print(sav)) ### so that print.hc.rma.uni() is run (at least once)
 
    ### compare with results on page 2978
-   expect_equivalent(round(sav$b,3), -0.514)
+   expect_equivalent(round(sav$beta,3), -0.514)
    expect_equivalent(round(sav$ci.lb,3), -0.999)
    expect_equivalent(round(sav$ci.ub,3), -0.030)
 

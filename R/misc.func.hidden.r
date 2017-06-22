@@ -18,14 +18,61 @@
 
    } else {
 
-      btt <- btt[(btt >= 1) & (btt <= p)] ### weed out values below 1 or above p
-      btt <- unique(round(btt))           ### round values and then take unique values
+      ### round, take unique values, and sort
+      btt <- sort(unique(round(btt)))
 
-      if (length(btt) == 0L)              ### make sure that at least one valid value is left
+      ### check for mix of positive and negative values
+      if (any(btt < 0) && any(btt > 0))
+         stop("Cannot mix positive and negative 'btt' values.")
+
+      ### keep/remove from 1:p vector as specified
+      btt <- seq_len(p)[btt]
+
+      ### (1:5)[5:6] yields c(5, NA) so remove NAs if this happens
+      btt <- btt[!is.na(btt)]
+
+      ### make sure that at least one valid value is left
+      if (length(btt) == 0L)
          stop("Non-existent coefficients specified via 'btt'.")
+
    }
 
    return(btt)
+
+}
+
+### function to format 'btt' values for printing
+
+.format.btt <- function(btt) {
+
+   sav <- c()
+
+   if (length(btt) > 1) {
+
+      while (length(btt) > 0) {
+
+         x <- rle(diff(btt))
+
+         if (x$values[1] == 1 && length(x$values) != 0) {
+            sav <- c(sav, c(btt[1], ":", btt[x$lengths[1] + 1]))
+            btt <- btt[-c(1:(x$lengths[1] + 1))]
+            sav <- c(sav, ", ")
+         } else {
+            sav <- c(sav, btt[1], ",")
+            btt <- btt[-1]
+         }
+
+      }
+
+      sav <- paste0(sav[-length(sav)], collapse="")
+
+   } else {
+
+      sav <- paste0(btt)
+
+   }
+
+   return(sav)
 
 }
 
@@ -55,7 +102,7 @@
 
    n <- nrow(xy)
 
-   for (i in 1:n) {
+   for (i in seq_len(n)) {
       if (anyNA(xy[i,]))
          next
       xy[i,] <- sort(xy[i,])
@@ -92,19 +139,29 @@
 .tr <- function(X)
    return(sum(diag(X)))
 
-############################################################################
+### function to check if a matrix is square
+
+.is.square <- function(X)
+   NROW(X) == NCOL(X)
+
+### use NROW/NCOL to better deal with scalars; compare:
+### (V <- list(matrix(1, nrow=2, ncol=2), 3, c(1,4), cbind(c(2,1)))); sapply(V, function(x) nrow(x) == ncol(x)); sapply(V, function(x) NROW(x) == NCOL(x))
 
 ### function to test whether a vector is all equal to 1s (e.g., to find intercept(s) in a model matrix)
 
-.is.int.func <- function(x, eps=1e-08)
+.is.intercept <- function(x, eps=1e-08)
    return(all(abs(x - 1) < eps))
+
+.is.dummy <- function(x, eps=1e-08)
+   return(all(abs(x) < eps | abs(x - 1) < eps))
+   #return(all(sapply(x, identical, 0) | sapply(x, identical, 1)))
 
 ############################################################################
 
 ### function to test each row for any missings in the lower triangular part of a matrix
 
 .anyNAlt <- function(x)
-   return(sapply(1:nrow(x), FUN=function(i) anyNA(x[i,1:i])))
+   return(sapply(seq_len(nrow(x)), FUN=function(i) anyNA(x[i,seq_len(i)])))
 
 ### function above is faster (and does not require making a copy of the object)
 
@@ -134,6 +191,64 @@
 
 ############################################################################
 
+### function to print a named (character) vector right aligned with
+### a gap of two spaces between adjacent values and no padding
+
+.print.out <- function(x) {
+
+   if (is.null(names(x)))
+      names(x) <- 1:length(x)
+
+   len.n   <- nchar(names(x))
+   len.x   <- nchar(x)
+   len.max <- pmax(len.n, len.x)
+   format  <- sapply(len.max, function(x) paste("%", x, "s", sep=""))
+
+   row.n <- paste(sprintf(format, names(x)), collapse="  ")
+   row.x <- paste(sprintf(format, x), collapse="  ")
+
+   cat(row.n, "\n", row.x, "\n", sep="")
+
+}
+
+############################################################################
+
+### function like make.unique(), but starts at .1 for the first instance
+### of a repeated element
+
+.make.unique <- function(x) {
+
+   x <- as.character(x)
+   ux <- unique(x)
+
+   for (i in 1:length(ux)) {
+      xiTF <- x == ux[i]
+      xi <- x[xiTF]
+      if (length(xi) == 1L)
+         next
+      x[xiTF] <- paste(xi, seq_along(xi), sep=".")
+   }
+
+   return(x)
+
+}
+
+############################################################################
+
+### function to check if extra/superfluous arguments are specified via ...
+
+.chkdots <- function(ddd, okargs) {
+
+   for (i in seq_along(okargs))
+      ddd[okargs[i]] <- NULL
+
+   if (length(ddd) > 0)
+      warning(paste0("Extra argument", ifelse(length(ddd) > 1, "s ", " "), "(", paste0("'", names(ddd), "'", collapse=", "), ") disregarded."), call.=FALSE)
+
+}
+
+############################################################################
+
 ### function to calculate:
 ### solve(t(X) %*% W %*% X) = .invcalc(X=X, W=W, k=k)
 ### solve(t(X) %*% X)       = .invcalc(X=X, W=diag(k), k=k)
@@ -141,8 +256,11 @@
 
 .invcalc <- function(X, W, k) {
 
-   sWX     <- sqrt(W) %*% X
+   sWX <- sqrt(W) %*% X
    res.qrs <- qr.solve(sWX, diag(k))
+   #res.qrs <- try(qr.solve(sWX, diag(k)), silent=TRUE)
+   #if (inherits(res.qrs, "try-error"))
+   #   stop("Cannot compute QR decomposition.")
    return(tcrossprod(res.qrs))
 
 }
@@ -172,7 +290,7 @@
 
 ### function for confint.rma.uni() with method="GENQ"
 
-.GENQ.func <- function(tau2val, P, vi, Q, alpha, k, p, getlower, verbose=FALSE, digits=4) {
+.GENQ.func <- function(tau2val, P, vi, Q, level, k, p, getlower, verbose=FALSE, digits=4) {
 
    S <- diag(sqrt(vi + tau2val), nrow=k, ncol=k)
    lambda <- Re(eigen(S %*% P %*% S, symmetric=TRUE, only.values=TRUE)$values)
@@ -185,9 +303,9 @@
       tmp$Qq <- tmp$res
 
    if (getlower) {
-      res <- tmp$Qq - alpha
+      res <- tmp$Qq - level
    } else {
-      res <- (1 - tmp$Qq) - alpha
+      res <- (1 - tmp$Qq) - level
    }
 
    if (verbose)
@@ -198,6 +316,339 @@
 }
 
 ############################################################################
+
+.process.G.aftersub <- function(verbose, mf.g, struct, tau2, rho, isG, k, sparse) {
+
+   if (verbose > 1)
+      message(paste0("Processing '", paste0("~ ", names(mf.g)[1], " | ", names(mf.g)[2]), "' term ..."))
+
+   ### get variables names in mf.g
+
+   g.names <- names(mf.g) ### two names for inner and outer factor
+
+   if (is.element(struct, c("CS","HCS","UN","ID","DIAG","UNHO")) && !is.factor(mf.g[[1]]) && !is.character(mf.g[[1]]))
+      stop("Inner variable in (~ inner | outer) must be a factor or character variable.")
+
+   ### turn each variable in mf.g into a factor (and turn the list into a data frame with 2 columns)
+   ### if a variable was a factor to begin with, this drops any unused levels, but order of existing levels is preserved
+
+   mf.g <- data.frame(inner=factor(mf.g[[1]]), outer=factor(mf.g[[2]]))
+
+   ### check if there are any NAs anywhere in mf.g
+
+   if (anyNA(mf.g))
+      stop("No NAs allowed in variables specified in the 'random' argument.")
+
+   ### get number of levels of each variable in mf.g (vector with two values, for the inner and outer factor)
+
+   g.nlevels <- c(nlevels(mf.g[[1]]), nlevels(mf.g[[2]]))
+
+   ### get levels of each variable in mf.g
+
+   g.levels <- list(levels(mf.g[[1]]), levels(mf.g[[2]]))
+
+   ### determine appropriate number of tau2 and rho values (care: this is done *after* subsetting)
+   ### care: if g.nlevels[1] is 1, then technically there is no correlation, but we need one rho
+   ### for the optimization function (this rho is fixed to 0 further in the rma.mv() function)
+
+   if (struct == "CS" || struct == "ID") {
+      tau2s <- 1
+      rhos  <- 1
+   }
+   if (struct == "HCS" || struct == "DIAG") {
+      tau2s <- g.nlevels[1]
+      rhos  <- 1
+   }
+   if (struct == "UN") {
+      tau2s <- g.nlevels[1]
+      rhos  <- ifelse(g.nlevels[1] > 1, g.nlevels[1]*(g.nlevels[1]-1)/2, 1)
+   }
+   if (struct == "AR") {
+      tau2s <- 1
+      rhos  <- 1
+   }
+   if (struct == "HAR") {
+      tau2s <- g.nlevels[1]
+      rhos  <- 1
+   }
+   if (struct == "UNHO") {
+      tau2s <- 1
+      rhos  <- ifelse(g.nlevels[1] > 1, g.nlevels[1]*(g.nlevels[1]-1)/2, 1)
+   }
+
+   ### set default value(s) for tau2 if it is unspecified
+
+   if (is.null(tau2))
+      tau2 <- rep(NA_real_, tau2s)
+
+   ### set default value(s) for rho argument if it is unspecified
+
+   if (is.null(rho))
+      rho <- rep(NA_real_, rhos)
+
+   ### allow quickly setting all tau2 values to a fixed value
+
+   if (length(tau2) == 1)
+      tau2 <- rep(tau2, tau2s)
+
+   ### allow quickly setting all rho values to a fixed value
+
+   if (length(rho) == 1)
+      rho <- rep(rho, rhos)
+
+   ### check if tau2 and rho are of correct length
+
+   if (length(tau2) != tau2s)
+      stop(paste0("Length of ", ifelse(isG, 'tau2', 'gamma2'), " argument (", length(tau2), ") does not match actual number of variance components (", tau2s, ")."))
+   if (length(rho) != rhos)
+      stop(paste0("Length of ", ifelse(isG, 'rho', 'phi'), " argument (", length(rho), ") does not match actual number of correlations (", rhos, ")."))
+
+   ### checks on any fixed values of tau2 and rho arguments
+
+   if (any(tau2 < 0, na.rm=TRUE))
+      stop(paste0("Specified value(s) of ", ifelse(isG, 'tau2', 'gamma2'), " must be non-negative."))
+   if (any(rho > 1 | rho < -1, na.rm=TRUE))
+      stop(paste0("Specified value(s) of ", ifelse(isG, 'rho', 'phi'), " must be in [-1,1]."))
+
+   ### create model matrix for inner and outer factors of mf.g
+
+   if (g.nlevels[1] == 1) {
+      Z.G1 <- cbind(rep(1,k))
+   } else {
+      if (sparse) {
+         #Z.G1 <- Matrix(model.matrix(~ mf.g[[1]] - 1), sparse=TRUE, dimnames=list(NULL, NULL))
+         Z.G1 <- sparse.model.matrix(~ mf.g[[1]] - 1)
+      } else {
+         Z.G1 <- model.matrix(~ mf.g[[1]] - 1)
+      }
+   }
+   if (g.nlevels[2] == 1) {
+      Z.G2 <- cbind(rep(1,k))
+   } else {
+      if (sparse) {
+         #Z.G2 <- Matrix(model.matrix(~ mf.g[[2]] - 1), sparse=TRUE, dimnames=list(NULL, NULL))
+         Z.G2 <- sparse.model.matrix(~ mf.g[[2]] - 1)
+      } else {
+         Z.G2 <- model.matrix(~ mf.g[[2]] - 1)
+      }
+   }
+
+   attr(Z.G1, "assign")    <- NULL
+   attr(Z.G1, "contrasts") <- NULL
+   attr(Z.G2, "assign")    <- NULL
+   attr(Z.G2, "contrasts") <- NULL
+
+   return(list(mf.g=mf.g, g.names=g.names, g.nlevels=g.nlevels, g.levels=g.levels, tau2s=tau2s, rhos=rhos, tau2=tau2, rho=rho, Z.G1=Z.G1, Z.G2=Z.G2))
+
+}
+
+.process.G.afterrmna <- function(mf.g, g.nlevels, g.levels, struct, tau2, rho, Z.G1, Z.G2, isG) {
+
+   ### copy g.nlevels and g.levels
+
+   g.nlevels.f <- g.nlevels
+   g.levels.f  <- g.levels
+
+   ### redo: turn each variable in mf.g into a factor (reevaluates the levels present, but order of existing levels is preserved)
+
+   mf.g <- data.frame(inner=factor(mf.g[[1]]), outer=factor(mf.g[[2]]))
+
+   ### redo: get number of levels of each variable in mf.g (vector with two values, for the inner and outer factor)
+
+   g.nlevels <- c(nlevels(mf.g[[1]]), nlevels(mf.g[[2]]))
+
+   ### redo: get levels of each variable in mf.g
+
+   g.levels <- list(levels(mf.g[[1]]), levels(mf.g[[2]]))
+
+   ### determine which levels of the inner factor were removed
+
+   g.levels.r <- !is.element(g.levels.f[[1]], g.levels[[1]])
+
+   ### warn if any levels were removed
+
+   if (any(g.levels.r))
+      warning("One or more levels of inner factor removed due to NAs.")
+
+   ### for "ID" and "DIAG", fix rho to 0
+
+   if (is.element(struct, c("ID","DIAG")))
+      rho <- 0
+
+   ### if there is only a single arm for "CS","HCS","AR","HAR" (either to begin with or after removing NAs), then fix rho to 0
+
+   if (g.nlevels[1] == 1 && is.element(struct, c("CS","HCS","AR","HAR")) && is.na(rho)) {
+      rho <- 0
+      warning(paste0("Inner factor has only a single level, so fixed value of ", ifelse(isG, 'rho', 'phi'), " to 0."))
+   }
+
+   ### k per level of the inner factor
+
+   g.levels.k <- table(factor(mf.g[[1]], levels=g.levels.f[[1]]))
+
+   ### for "HCS","UN","DIAG","HAR": if a particular level of the inner factor only occurs once, then set corresponding tau2 value to 0 (if not already fixed)
+   ### note: no longer done; variance component should still be (weakly) identifiable
+
+   #if (is.element(struct, c("HCS","UN","DIAG","HAR"))) {
+   #   if (any(is.na(tau2) & g.levels.k == 1)) {
+   #      tau2[is.na(tau2) & g.levels.k == 1] <- 0
+   #      warning("Inner factor has k=1 for one or more levels. Corresponding 'tau2' value(s) fixed to 0.")
+   #   }
+   #}
+
+   ### create matrix where each row (= study) indicates how often each arm occurred
+   ### then turn this into a list (with each element equal to a row (= study))
+
+   g.levels.comb.k <- crossprod(Z.G2, Z.G1)
+   g.levels.comb.k <- split(g.levels.comb.k, seq_len(nrow(g.levels.comb.k)))
+
+   ### check if each study has only a single arm (could be different arms!)
+   ### for "CS","HCS","AR","HAR", if yes, then must fix rho to 0 (if not already fixed)
+
+   if (all(unlist(lapply(g.levels.comb.k, sum)) == 1)) {
+      if (is.element(struct, c("CS","HCS","AR","HAR")) && is.na(rho)) {
+         rho <- 0
+         warning(paste0("Each level of the outer factor contains only a single level of the inner factor, so fixed value of ", ifelse(isG, 'rho', 'phi'), " to 0."))
+      }
+   }
+
+   ### create matrix for each element (= study) that indicates which combinations occurred
+   ### sum up all matrices (numbers indicate in how many studies each combination occurred)
+   ### take upper triangle part that corresponds to the arm combinations (in order of rho)
+
+   g.levels.comb.k <- lapply(g.levels.comb.k, function(x) outer(x,x, FUN="&"))
+   g.levels.comb.k <- Reduce("+", g.levels.comb.k)
+   g.levels.comb.k <- g.levels.comb.k[upper.tri(g.levels.comb.k)]
+
+   ### UN/UNHO: if a particular combination of arms never occurs in any of the studies, then must fix the corresponding rho to 0 (if not already fixed)
+   ### this also takes care of the case where each study has only a single arm
+
+   if (is.element(struct, c("UN","UNHO")) && any(g.levels.comb.k == 0 & is.na(rho))) {
+      rho[g.levels.comb.k == 0] <- 0
+      warning(paste0("Some combinations of the levels of the inner factor never occurred. Corresponding ", ifelse(isG, 'rho', 'phi'), " value(s) fixed to 0."))
+   }
+
+   ### if there was only a single arm for "UN/UNHO" to begin with, then fix rho to 0
+   ### (technically there is then no rho at all to begin with, but rhos was still set to 1 earlier for the optimization routine)
+   ### (if there is a single arm after removing NAs, then this is dealt with below by setting tau2 and rho values to 0)
+
+   if (is.element(struct, c("UN","UNHO")) && g.nlevels.f[1] == 1 && is.na(rho)) {
+      rho <- 0
+      warning(paste0("Inner factor has only a single level, so fixed value of ", ifelse(isG, 'rho', 'phi'), " to 0."))
+   }
+
+   ### construct G matrix for the various structures
+
+   if (struct == "CS") {
+      G <- matrix(rho*tau2, nrow=g.nlevels.f[1], ncol=g.nlevels.f[1])
+      diag(G) <- tau2
+   }
+
+   if (struct == "HCS") {
+      G <- matrix(rho, nrow=g.nlevels.f[1], ncol=g.nlevels.f[1])
+      diag(G) <- 1
+      G <- diag(sqrt(tau2), nrow=g.nlevels.f[1], ncol=g.nlevels.f[1]) %*% G %*% diag(sqrt(tau2), nrow=g.nlevels.f[1], ncol=g.nlevels.f[1])
+      diag(G) <- tau2
+   }
+
+   if (struct == "UN") {
+      G <- .con.vcov.UN(tau2, rho)
+   }
+
+   if (struct == "ID" || struct == "DIAG" ) {
+      G <- diag(tau2, nrow=g.nlevels.f[1], ncol=g.nlevels.f[1])
+   }
+
+   if (struct == "UNHO") {
+      G <- matrix(NA_real_, nrow=g.nlevels.f[1], ncol=g.nlevels.f[1])
+      G[upper.tri(G)] <- rho
+      G[lower.tri(G)] <- t(G)[lower.tri(G)]
+      diag(G) <- 1
+      G <- diag(sqrt(rep(tau2, g.nlevels.f[1])), nrow=g.nlevels.f[1], ncol=g.nlevels.f[1]) %*% G %*% diag(sqrt(rep(tau2, g.nlevels.f[1])), nrow=g.nlevels.f[1], ncol=g.nlevels.f[1])
+      diag(G) <- tau2
+   }
+
+   if (struct == "AR") {
+      if (is.na(rho)) {
+         G <- matrix(NA_real_, nrow=g.nlevels.f[1], ncol=g.nlevels.f[1])
+      } else {
+         ### is g.nlevels.f[1] == 1 even possible here?
+         if (g.nlevels.f[1] > 1) {
+            G <- toeplitz(ARMAacf(ar=rho, lag.max=g.nlevels.f[1]-1))
+         } else {
+            G <- diag(1)
+         }
+      }
+      G <- diag(sqrt(rep(tau2, g.nlevels.f[1])), nrow=g.nlevels.f[1], ncol=g.nlevels.f[1]) %*% G %*% diag(sqrt(rep(tau2, g.nlevels.f[1])), nrow=g.nlevels.f[1], ncol=g.nlevels.f[1])
+      diag(G) <- tau2
+   }
+
+   if (struct == "HAR") {
+      if (is.na(rho)) {
+         G <- matrix(NA_real_, nrow=g.nlevels.f[1], ncol=g.nlevels.f[1])
+      } else {
+         ### is g.nlevels.f[1] == 1 even possible here?
+         if (g.nlevels.f[1] > 1) {
+            G <- toeplitz(ARMAacf(ar=rho, lag.max=g.nlevels.f[1]-1))
+         } else {
+            G <- diag(1)
+         }
+      }
+      G <- diag(sqrt(tau2), nrow=g.nlevels.f[1], ncol=g.nlevels.f[1]) %*% G %*% diag(sqrt(tau2), nrow=g.nlevels.f[1], ncol=g.nlevels.f[1])
+      diag(G) <- tau2
+   }
+
+   ### for "CS","AR","ID" set tau2 value to 0 for any levels that were removed
+
+   if (any(g.levels.r) && is.element(struct, c("CS","AR","ID"))) {
+      G[g.levels.r,] <- 0
+      G[,g.levels.r] <- 0
+   }
+
+   ### for "HCS","HAR","DIAG" set tau2 value(s) to 0 for any levels that were removed
+
+   if (any(g.levels.r) && is.element(struct, c("HCS","HAR","DIAG"))) {
+      G[g.levels.r,] <- 0
+      G[,g.levels.r] <- 0
+      tau2[g.levels.r] <- 0
+      warning(paste0("Fixed ", ifelse(isG, 'tau2', 'gamma2'), " to 0 for removed level(s)."))
+   }
+
+   ### for "UN", set tau2 value(s) and corresponding rho(s) to 0 for any levels that were removed
+
+   if (any(g.levels.r) && struct == "UN") {
+      G[g.levels.r,] <- 0
+      G[,g.levels.r] <- 0
+      tau2[g.levels.r] <- 0
+      rho <- G[upper.tri(G)]
+      warning(paste0("Fixed ", ifelse(isG, 'tau2', 'gamma2'), " and corresponding ", ifelse(isG, 'rho', 'phi'), " value(s) to 0 for removed level(s)."))
+   }
+
+   ### for "UNHO", set rho(s) to 0 corresponding to any levels that were removed
+
+   if (any(g.levels.r) && struct == "UNHO") {
+      G[g.levels.r,] <- 0
+      G[,g.levels.r] <- 0
+      diag(G) <- tau2 ### don't really need this
+      rho <- G[upper.tri(G)]
+      warning(paste0("Fixed ", ifelse(isG, 'rho', 'phi'), " value(s) to 0 corresponding to removed level(s)."))
+   }
+
+   ### special handling for the bivariate model:
+   ### if tau2 (for "CS","AR","UNHO") or either tau2.1 or tau2.2 (for "HCS","UN","HAR") is fixed to 0, then rho must be fixed to 0
+
+   if (g.nlevels.f[1] == 2) {
+      if (is.element(struct, c("CS","AR","UNHO")) && !is.na(tau2) && tau2 == 0)
+         rho <- 0
+      if (is.element(struct, c("HCS","UN","HAR")) && ((!is.na(tau2[1]) && tau2[1] == 0) || (!is.na(tau2[2]) && tau2[2] == 0)))
+         rho <- 0
+   }
+
+   #return(list(G=G, tau2=tau2, rho=rho, Z.G1=Z.G1, Z.G2=Z.G2))
+
+   return(list(mf.g=mf.g, g.nlevels=g.nlevels, g.nlevels.f=g.nlevels.f, g.levels=g.levels, g.levels.f=g.levels.f, g.levels.r=g.levels.r, g.levels.k=g.levels.k, g.levels.comb.k=g.levels.comb.k, tau2=tau2, rho=rho, G=G))
+
+}
 
 ### function to construct var-cov matrix for struct="UN" given vector of variances and correlations
 
@@ -342,10 +793,10 @@
 
       if (vctransf) {
          ### sigma2 is optimized in log-space, so exponentiate
-         sigma2 <- ifelse(is.na(sigma2.val), exp(par[1:sigma2s]), sigma2.val)
+         sigma2 <- ifelse(is.na(sigma2.val), exp(par[seq_len(sigma2s)]), sigma2.val)
       } else {
          ### for Hessian computation, leave as is
-         sigma2 <- ifelse(is.na(sigma2.val), par[1:sigma2s], sigma2.val)
+         sigma2 <- ifelse(is.na(sigma2.val), par[seq_len(sigma2s)], sigma2.val)
          sigma2[sigma2 < 0] <- 0
       }
 
@@ -433,34 +884,35 @@
 
          if (!dofit || is.null(A)) {
 
-            sX <- U %*% X.fit
-            sY <- U %*% Y
-            b  <- solve(crossprod(sX), crossprod(sX, sY))
+            sX   <- U %*% X.fit
+            sY   <- U %*% Y
+            beta <- solve(crossprod(sX), crossprod(sX, sY))
+            RSS  <- sum(as.vector(sY - sX %*% beta)^2)
             if (dofit)
                vb <- matrix(solve(crossprod(sX)), nrow=pX, ncol=pX)
-            RSS.f <- sum(as.vector(sY - sX %*% b)^2)
 
          } else {
 
             stXAX <- chol2inv(chol(as.matrix(t(X.fit) %*% A %*% X.fit)))
             #stXAX <- tcrossprod(qr.solve(sX, diag(k)))
-            b     <- matrix(stXAX %*% crossprod(X.fit,A) %*% Y, ncol=1)
+            beta  <- matrix(stXAX %*% crossprod(X.fit,A) %*% Y, ncol=1)
+            RSS   <- as.vector(t(Y - X.fit %*% beta) %*% W %*% (Y - X.fit %*% beta))
             vb    <- matrix(stXAX %*% t(X.fit) %*% A %*% M %*% A %*% X.fit %*% stXAX, nrow=pX, ncol=pX)
-            RSS.f <- as.vector(t(Y - X.fit %*% b) %*% W %*% (Y - X.fit %*% b))
 
          }
 
          llvals <- c(NA_real_, NA_real_)
 
          if (dofit || !reml)
-            llvals[1]  <- -1/2 * (k)    * log(2*base::pi)                                                                                 - 1/2 * determinant(M, logarithm=TRUE)$modulus                                                                           - 1/2 * RSS.f
+            llvals[1]  <- -1/2 * (k) * log(2*base::pi) - 1/2 * determinant(M, logarithm=TRUE)$modulus - 1/2 * RSS
 
          if (dofit || reml)
-            llvals[2]  <- -1/2 * (k-pX) * log(2*base::pi) + ifelse(REMLf, 1/2 * determinant(crossprod(X.fit), logarithm=TRUE)$modulus, 0) - 1/2 * determinant(M, logarithm=TRUE)$modulus - 1/2 * determinant(crossprod(X.fit,W) %*% X.fit, logarithm=TRUE)$modulus - 1/2 * RSS.f
+            llvals[2]  <- -1/2 * (k-pX) * log(2*base::pi) + ifelse(REMLf, 1/2 * determinant(crossprod(X.fit), logarithm=TRUE)$modulus, 0) +
+                          -1/2 * determinant(M, logarithm=TRUE)$modulus - 1/2 * determinant(crossprod(X.fit,W) %*% X.fit, logarithm=TRUE)$modulus - 1/2 * RSS
 
          if (dofit) {
 
-            res <- list(b=b, vb=vb, M=M, llvals=llvals)
+            res <- list(beta=beta, vb=vb, M=M, llvals=llvals)
 
             if (withS)
                res$sigma2 <- sigma2
@@ -525,9 +977,9 @@
       if (profile) {
 
          if (inherits(res, "try-error")) {
-            sav <- list(ll = NA, b = matrix(NA, nrow=nrow(obj$b), ncol=1), ci.lb = rep(NA, length(obj$ci.lb)), ci.ub = rep(NA, length(obj$ci.ub)))
+            sav <- list(ll = NA, beta = matrix(NA, nrow=nrow(obj$beta), ncol=1), ci.lb = rep(NA, length(obj$ci.lb)), ci.ub = rep(NA, length(obj$ci.ub)))
          } else {
-            sav <- list(ll = logLik(res), b = res$b, ci.lb = res$ci.lb, ci.ub = res$ci.ub)
+            sav <- list(ll = logLik(res), beta = res$beta, ci.lb = res$ci.lb, ci.ub = res$ci.ub)
          }
 
       }
@@ -581,9 +1033,9 @@
          }
          tau2 <- 0
          if (parallel == "snow" || parallel == "multicore") {
-            sav <- list(b=est, het = c(k=k, QE=Q, I2=I2, H2=H2, tau2=tau2))
+            sav <- list(beta=est, het = c(k=k, QE=Q, I2=I2, H2=H2, tau2=tau2))
          } else {
-            sav <- list(b=est, k=k, QE=Q, I2=I2, H2=H2, tau2=tau2)
+            sav <- list(beta=est, k=k, QE=Q, I2=I2, H2=H2, tau2=tau2)
          }
 
       } else {
@@ -591,9 +1043,9 @@
          res <- try(suppressWarnings(rma.uni(obj$yi, obj$vi, weights=obj$weights, mods=obj$X, intercept=FALSE, method=obj$method, weighted=obj$weighted, test=obj$test, level=obj$level, control=obj$control, tau2=ifelse(obj$tau2.fix, obj$tau2, NA), subset=sel[val,])), silent=TRUE)
 
          if (inherits(res, "try-error") || any(res$coef.na)) {
-            sav <- list(b = matrix(NA, nrow=nrow(obj$b), ncol=1), het = rep(NA, 5))
+            sav <- list(beta = matrix(NA, nrow=nrow(obj$beta), ncol=1), het = rep(NA, 5))
          } else {
-            sav <- list(b = res$b, het = c(res$k, res$QE, res$I2, res$H2, res$tau2))
+            sav <- list(beta = res$beta, het = c(res$k, res$QE, res$I2, res$H2, res$tau2))
          }
 
       }
@@ -640,9 +1092,9 @@
       if (profile) {
 
          if (inherits(res, "try-error")) {
-            sav <- list(ll = NA, b = matrix(NA, nrow=nrow(obj$b), ncol=1), ci.lb = rep(NA, length(obj$ci.lb)), ci.ub = rep(NA, length(obj$ci.ub)))
+            sav <- list(ll = NA, beta = matrix(NA, nrow=nrow(obj$beta), ncol=1), ci.lb = rep(NA, length(obj$ci.lb)), ci.ub = rep(NA, length(obj$ci.ub)))
          } else {
-            sav <- list(ll = logLik(res), b = res$b, ci.lb = res$ci.lb, ci.ub = res$ci.ub)
+            sav <- list(ll = logLik(res), beta = res$beta, ci.lb = res$ci.lb, ci.ub = res$ci.ub)
          }
 
       }
@@ -689,9 +1141,9 @@
       }
 
       if (inherits(res, "try-error")) {
-         sav <- list(b = NA, het = rep(NA, 5))
+         sav <- list(beta = NA, het = rep(NA, 5))
       } else {
-         sav <- list(b = res$b, het = c(res$k, res$QE, res$I2, res$H2, res$tau2))
+         sav <- list(beta = res$beta, het = c(res$k, res$QE, res$I2, res$H2, res$tau2))
       }
 
    }
@@ -712,9 +1164,9 @@
       res <- try(suppressWarnings(rma.peto(ai=obj$ai, bi=obj$bi, ci=obj$ci, di=obj$di, add=obj$add, to=obj$to, drop00=obj$drop00, subset=sel[val,])), silent=TRUE)
 
       if (inherits(res, "try-error")) {
-         sav <- list(b = NA, het = rep(NA, 5))
+         sav <- list(beta = NA, het = rep(NA, 5))
       } else {
-         sav <- list(b = res$b, het = c(res$k, res$QE, res$I2, res$H2, res$tau2))
+         sav <- list(beta = res$beta, het = c(res$k, res$QE, res$I2, res$H2, res$tau2))
       }
 
    }
@@ -727,25 +1179,25 @@
 
 ### generate all possible permutations
 
-.genperms <- function(k) {
-
-   v <- seq_len(k)
-
-   sub <- function(k, v) {
-      if (k==1L) {
-         matrix(v,1,k)
-      } else {
-         X  <-  NULL
-         for(i in seq_len(k)) {
-            X <- rbind(X, cbind(v[i], Recall(k-1, v[-i])))
-         }
-      X
-      }
-   }
-
-   return(sub(k, v[seq_len(k)]))
-
-}
+# .genperms <- function(k) {
+#
+#    v <- seq_len(k)
+#
+#    sub <- function(k, v) {
+#       if (k==1L) {
+#          matrix(v,1,k)
+#       } else {
+#          X  <-  NULL
+#          for(i in seq_len(k)) {
+#             X <- rbind(X, cbind(v[i], Recall(k-1, v[-i])))
+#          }
+#       X
+#       }
+#    }
+#
+#    return(sub(k, v[seq_len(k)]))
+#
+# }
 
 ### generate all possible unique permutations
 
@@ -774,7 +1226,7 @@
 
 }
 
-.permci <- function(val, obj, j, exact, iter, progbar, comp.tol, alpha, digits, control) {
+.permci <- function(val, obj, j, exact, iter, progbar, comp.tol, level, digits, control) {
 
    ### fit model with shifted outcome
    res <- try(suppressWarnings(rma.uni(obj$yi - c(val*obj$X[,j]), obj$vi, weights=obj$weights, mods=obj$X, intercept=FALSE, method=obj$method, weighted=obj$weighted, test=obj$test, tau2=ifelse(obj$tau2.fix, obj$tau2, NA), control=obj$control)), silent=TRUE)
@@ -785,14 +1237,14 @@
    ### p-value based on permutation test
    pval <- permutest(res, exact=exact, iter=iter, progbar=FALSE, tol=comp.tol, control=control)$pval[j]
 
-   ### get difference between p-value and alpha
-   diff <- pval - alpha / ifelse(control$alternative == "two.sided", 1, 2)
+   ### get difference between p-value and level
+   diff <- pval - level / ifelse(control$alternative == "two.sided", 1, 2)
 
    ### show progress
    if (progbar)
       cat("pval =", formatC(pval, format="f", digits=digits), " diff =", formatC(diff, format="f", digits=digits, flag=" "), " val =", formatC(val, format="f", digits=digits, flag=" "), "\n")
 
-   ### penalize negative differences, which should force the CI bound to correspond to a p-value of *at least* alpha
+   ### penalize negative differences, which should force the CI bound to correspond to a p-value of *at least* level
    diff <- ifelse(diff < 0, diff*10, diff)
 
    return(diff)
@@ -815,18 +1267,18 @@
    if (!is.null(measure)) {
 
       ######################################################################
-      if (measure == "RR") {
+      if (is.element(measure, c("RR","MPRR"))) {
          if (transf.char == "FALSE" && atransf.char == "FALSE") {
-            lab <- "Log Relative Risk"
+            lab <- "Log Risk Ratio"
          } else {
-            lab <- "Transformed Log Relative Risk"
+            lab <- "Transformed Log Risk Ratio"
             if (atransf.char == "exp" || atransf.char == "transf.exp.int")
-               lab <- "Relative Risk (log scale)"
+               lab <- "Risk Ratio (log scale)"
             if (transf.char == "exp" || transf.char == "transf.exp.int")
-               lab <- "Relative Risk"
+               lab <- "Risk Ratio"
          }
       }
-      if (is.element(measure, c("OR","PETO","D2OR","D2ORN","D2ORL"))) {
+      if (is.element(measure, c("OR","PETO","D2OR","D2ORN","D2ORL","MPOR","MPORC","MPPETO"))) {
          if (transf.char == "FALSE" && atransf.char == "FALSE") {
             lab <- "Log Odds Ratio"
          } else {
@@ -837,7 +1289,7 @@
                lab <- "Odds Ratio"
          }
       }
-      if (measure == "RD") {
+      if (is.element(measure, c("RD","MPRD"))) {
          if (transf.char == "FALSE" && atransf.char == "FALSE") {
             lab <- "Risk Difference"
          } else {
@@ -877,7 +1329,7 @@
          if (transf.char == "FALSE" && atransf.char == "FALSE") {
             lab <- "Log Incidence Rate Ratio"
          } else {
-            lab <- "Transformed Log Incidence Relative Risk"
+            lab <- "Transformed Log Incidence Rate Ratio"
             if (atransf.char == "exp" || atransf.char == "transf.exp.int")
                lab <- "Incidence Rate Ratio (log scale)"
             if (transf.char == "exp" || transf.char == "transf.exp.int")
@@ -893,9 +1345,9 @@
       }
       if (measure == "IRSD") {
          if (transf.char == "FALSE" && atransf.char == "FALSE") {
-            lab <- "Square-Root Transformed Incidence Rate Difference"
+            lab <- "Square Root Transformed Incidence Rate Difference"
          } else {
-            lab <- "Transformed Square-Root Transformed Incidence Rate Difference"
+            lab <- "Transformed Square Root Transformed Incidence Rate Difference"
          }
       }
       ######################################################################
@@ -931,6 +1383,28 @@
             lab <- "Transformed Point-Biserial Correlation"
          }
       }
+      if (measure == "CVR") {
+         if (transf.char == "FALSE" && atransf.char == "FALSE") {
+            lab <- "Log Coefficient of Variation Ratio"
+         } else {
+            lab <- "Transformed Log Coefficient of Variation Ratio"
+            if (atransf.char == "exp" || atransf.char == "transf.exp.int")
+               lab <- "Coefficient of Variation Ratio (log scale)"
+            if (transf.char == "exp" || transf.char == "transf.exp.int")
+               lab <- "Coefficient of Variation Ratio"
+         }
+      }
+      if (measure == "VR") {
+         if (transf.char == "FALSE" && atransf.char == "FALSE") {
+            lab <- "Log Variability Ratio"
+         } else {
+            lab <- "Transformed Log Variability Ratio"
+            if (atransf.char == "exp" || atransf.char == "transf.exp.int")
+               lab <- "Variability Ratio (log scale)"
+            if (transf.char == "exp" || transf.char == "transf.exp.int")
+               lab <- "Variability Ratio"
+         }
+      }
       ######################################################################
       if (is.element(measure, c("COR","UCOR","RTET","RBIS"))) {
          if (transf.char == "FALSE" && atransf.char == "FALSE") {
@@ -948,6 +1422,32 @@
                lab <- "Correlation Coefficient"
             if (transf.char == "transf.ztor" || transf.char == "transf.ztor.int")
                lab <- "Correlation Coefficient"
+         }
+      }
+      ######################################################################
+      if (measure == "PCOR") {
+         if (transf.char == "FALSE" && atransf.char == "FALSE") {
+            lab <- "Partial Correlation Coefficient"
+         } else {
+            lab <- "Transformed Partial Correlation Coefficient"
+         }
+      }
+      if (measure == "ZPCOR") {
+         if (transf.char == "FALSE" && atransf.char == "FALSE") {
+            lab <- "Fisher's z Transformed Partial Correlation Coefficient"
+         } else {
+            lab <- "Transformed Fisher's z Transformed Partial Correlation Coefficient"
+            if (atransf.char == "transf.ztor" || atransf.char == "transf.ztor.int")
+               lab <- "Partial Correlation Coefficient"
+            if (transf.char == "transf.ztor" || transf.char == "transf.ztor.int")
+               lab <- "Partial Correlation Coefficient"
+         }
+      }
+      if (measure == "SPCOR") {
+         if (transf.char == "FALSE" && atransf.char == "FALSE") {
+            lab <- "Semi-Partial Correlation Coefficient"
+         } else {
+            lab <- "Transformed Semi-Partial Correlation Coefficient"
          }
       }
       ######################################################################
@@ -1000,9 +1500,9 @@
             lab <- "Double Arcsine Transformed Proportion"
          } else {
             lab <- "Transformed Double Arcsine Transformed Proportion"
-            if (atransf.char == "transf.ift.hm")
+            if (atransf.char == "transf.ipft.hm")
                lab <- "Proportion"
-            if (transf.char == "transf.ift.hm")
+            if (transf.char == "transf.ipft.hm")
                lab <- "Proportion"
          }
       }
@@ -1027,11 +1527,11 @@
       }
       if (measure == "IRS") {
          if (transf.char == "FALSE" && atransf.char == "FALSE") {
-            lab <- "Square-Root Transformed Incidence Rate"
+            lab <- "Square Root Transformed Incidence Rate"
          } else {
-            lab <- "Transformed Square-Root Transformed Incidence Rate"
+            lab <- "Transformed Square Root Transformed Incidence Rate"
             if (atransf.char == "transf.isqrt" || atransf.char == "transf.isqrt.int")
-               lab <- "Incidence Rate (square-root scale)"
+               lab <- "Incidence Rate (square root scale)"
             if (transf.char == "transf.isqrt" || transf.char == "transf.isqrt.int")
                lab <- "Incidence Rate"
          }
@@ -1049,6 +1549,39 @@
             lab <- "Mean"
          } else {
             lab <- "Transformed Mean"
+         }
+      }
+      if (measure == "MNLN") {
+         if (transf.char == "FALSE" && atransf.char == "FALSE") {
+            lab <- "Log Mean"
+         } else {
+            lab <- "Transformed Log Mean"
+            if (atransf.char == "exp" || atransf.char == "transf.exp.int")
+               lab <- "Mean (log scale)"
+            if (transf.char == "exp" || transf.char == "transf.exp.int")
+               lab <- "Mean"
+         }
+      }
+      if (measure == "CVLN") {
+         if (transf.char == "FALSE" && atransf.char == "FALSE") {
+            lab <- "Log Coefficient of Variation"
+         } else {
+            lab <- "Transformed Log Coefficient of Variation"
+            if (atransf.char == "exp" || atransf.char == "transf.exp.int")
+               lab <- "Coefficient of Variation (log scale)"
+            if (transf.char == "exp" || transf.char == "transf.exp.int")
+               lab <- "Coefficient of Variation"
+         }
+      }
+      if (measure == "SDLN") {
+         if (transf.char == "FALSE" && atransf.char == "FALSE") {
+            lab <- "Log Standard Deviation"
+         } else {
+            lab <- "Transformed Log Standard Deviation"
+            if (atransf.char == "exp" || atransf.char == "transf.exp.int")
+               lab <- "Standard Deviation (log scale)"
+            if (transf.char == "exp" || transf.char == "transf.exp.int")
+               lab <- "Standard Deviation"
          }
       }
       ######################################################################
@@ -1225,9 +1758,9 @@
 
    p    <- ncol(X.fit)
    k    <- length(ai)
-   b    <- parms[seq_len(p)]                  ### first p elemenets in parms are the model coefficients
+   beta <- parms[seq_len(p)]                  ### first p elemenets in parms are the model coefficients
    tau2 <- ifelse(random, exp(parms[p+1]), 0) ### next value is tau^2 -- optimize over exp(tau^2) value or hold at 0 if random=FALSE
-   mu.i <- X.fit %*% cbind(b)
+   mu.i <- X.fit %*% cbind(beta)
 
    lli  <- rep(NA_real_, k)
 
@@ -1238,7 +1771,7 @@
       }
 
       if (verbose)
-         cat("ll =", formatC(sum(lli), digits=digits, format="f"), " ", formatC(b, digits=digits, format="f"), "\n")
+         cat("ll =", formatC(sum(lli), digits=digits, format="f"), " ", formatC(beta, digits=digits, format="f"), "\n")
 
    }
 
@@ -1261,7 +1794,7 @@
       }
 
       if (verbose)
-         cat("ll = ", formatC(sum(lli), digits=digits, format="f"), " ", formatC(tau2, digits=digits, format="f"), " ", formatC(b, digits=digits, format="f"), "\n")
+         cat("ll = ", formatC(sum(lli), digits=digits, format="f"), " ", formatC(tau2, digits=digits, format="f"), " ", formatC(beta, digits=digits, format="f"), "\n")
 
    }
 
@@ -1271,42 +1804,58 @@
 
 ############################################################################
 
-### -1 times the log likelihood (regular or restricted) for rma() location-scale models
+### -1 times the log likelihood (regular or restricted) for location-scale model
 
-.ll.rma.ls <- function(par, yi, vi, X, Z, reml, k, p, verbose, digits, REMLf) {
+.ll.rma.ls <- function(par, yi, vi, X, Z, reml, k, pX, verbose, digits, REMLf, link) {
 
-   #b.fe   <- par[1:p]
-   #b.tau2 <- par[-c(1:p)]
+   #beta  <- par[1:pX]
+   #alpha <- par[-c(1:pX)]
 
-   b.tau2 <- par
+   alpha <- par
 
-   ### compute predicted tau2 values and exponentiate (to force variances to be non-negative)
-   tau2 <- exp(c(Z %*% b.tau2))
+   ### compute predicted tau2 values
 
-   ### compute weights
-   wi <- 1/(vi + tau2)
+   if (link == "log")
+      tau2 <- exp(c(Z %*% alpha))
+   if (link == "identity")
+      tau2 <- c(Z %*% alpha)
 
-   ### when using this, the optimization only pertains to the parameter(s) in 'b.tau2', as 'b.fe' is then fully
-   ### determined by the current value(s) of 'b.tau2'; this is actually also how the standard RE/ME model is fitted;
-   ### but is this really the best way of doing this? one could also optimize over b.fe and b.tau2 jointly
-   W <- diag(wi, nrow=k, ncol=k)
-   stXWX <- .invcalc(X=X, W=W, k=k)
-   b.fe <- stXWX %*% crossprod(X,W) %*% as.matrix(yi)
+   if (any(tau2 < 0)) {
 
-   ### compute residual sum of squares
-   RSS.f <- sum(wi*(yi - X %*% b.fe)^2)
+      llval <- -Inf
 
-   ### log-likelihood (could leave out additive constants)
-   if (!reml) {
-      llval <- -1/2 * (k)   * log(2*base::pi)                                                                             - 1/2 * sum(log(vi + tau2))                                                                   - 1/2 * RSS.f
    } else {
-      llval <- -1/2 * (k-p) * log(2*base::pi) + ifelse(REMLf, 1/2 * determinant(crossprod(X), logarithm=TRUE)$modulus, 0) - 1/2 * sum(log(vi + tau2)) - 1/2 * determinant(crossprod(X,W) %*% X, logarithm=TRUE)$modulus - 1/2 * RSS.f
+
+      ### compute weights
+      wi <- 1/(vi + tau2)
+
+      ### when using this, the optimization only pertains to the parameter(s) in 'alpha', as 'beta' is then fully
+      ### determined by the current value(s) of 'alpha'; this is actually also how the standard RE/ME model is fitted;
+      ### but is this really the best way of doing this? one could also optimize over beta and alpha jointly
+      W <- diag(wi, nrow=k, ncol=k)
+
+      #print(any(wi <= 0))
+      stXWX <- .invcalc(X=X, W=W, k=k)
+      beta <- stXWX %*% crossprod(X,W) %*% as.matrix(yi)
+
+      ### compute residual sum of squares
+      RSS <- sum(wi*(yi - X %*% beta)^2)
+
+      ### log-likelihood (could leave out additive constants)
+      if (!reml) {
+         llval <- -1/2 * (k) * log(2*base::pi) - 1/2 * sum(log(vi + tau2)) - 1/2 * RSS
+      } else {
+         llval <- -1/2 * (k-pX) * log(2*base::pi) + ifelse(REMLf, 1/2 * determinant(crossprod(X), logarithm=TRUE)$modulus, 0) +
+                  -1/2 * sum(log(vi + tau2)) - 1/2 * determinant(crossprod(X,W) %*% X, logarithm=TRUE)$modulus - 1/2 * RSS
+      }
+
    }
 
    if (verbose) {
-      cat("ll = ", ifelse(is.na(llval), NA, formatC(llval, digits=digits, format="f", flag=" ")), " ", sep="")
-      cat("b.tau2 =", ifelse(is.na(b.tau2), NA, paste(formatC(b.tau2, digits=digits, format="f", flag=" "), " ", sep="")), "\n", sep="")
+      cat("ll = ",   ifelse(is.na(llval), NA, formatC(llval, digits=digits, format="f", flag=" ")), " ", sep="")
+      cat("alpha =", ifelse(is.na(alpha), NA, paste(formatC(alpha, digits=digits, format="f", flag=" "), " ", sep="")), "\n", sep="")
    }
+
    return(-1 * llval)
 
 }
@@ -1461,15 +2010,23 @@
    if (!requireNamespace("gsl", quietly=TRUE))
       stop("Please install the 'gsl' package to use measure='UCOR'.")
 
-   k <- length(g)
+   k.g <- length(g)
+   k.x <- length(x)
+   k   <- max(k.g, k.x)
+
    res <- rep(NA_real_, k)
+
+   if (k.g == 1)
+      g <- rep(g, k)
+   if (k.x == 1)
+      x <- rep(x, k)
 
    if (length(g) != length(x))
       stop("Length of 'g' and 'x' arguments do not match.")
 
-   for (i in 1:k) {
+   for (i in seq_len(k)) {
 
-      if (g[i] > (a+b)) {
+      if (!is.na(g[i]) && !is.na(x[i]) && g[i] > (a+b)) {
          res[i] <- gsl::hyperg_2F1(a, b, g[i], x[i])
       } else {
          res[i] <- NA
@@ -1480,5 +2037,90 @@
    return(res)
 
 }
+
+############################################################################
+
+### pdf of SMD (with or without bias correction)
+
+.dsmd <- function(x, n1, n2, theta, correct=TRUE, warn=FALSE) {
+
+   nt <- n1 * n2 / (n1 + n2)
+   m  <- n1 + n2 - 2
+
+   if (correct) {
+      cm <- .cmicalc(m)
+   } else {
+      cm <- 1
+   }
+
+   if (warn) {
+      res <- dt(x * sqrt(nt) / cm, df = m, ncp = sqrt(nt) * theta) * sqrt(nt) / cm
+   } else {
+      res <- suppressWarnings(dt(x * sqrt(nt) / cm, df = m, ncp = sqrt(nt) * theta) * sqrt(nt) / cm)
+   }
+
+   return(res)
+
+}
+
+#integrate(function(x) .dsmd(x, n1=4, n2=4, theta=.5), lower=-Inf, upper=Inf)
+#integrate(function(x) x*.dsmd(x, n1=4, n2=4, theta=.5), lower=-Inf, upper=Inf)
+
+### pdf of COR
+
+.dcor <- function(x, n, rho) {
+
+   x[x < -1] <- NA
+   x[x >  1] <- NA
+
+   ### only accurate for n >= 5
+   n[n <= 4] <- NA
+
+   ### calculate density
+   res <- exp(log(n-2) + lgamma(n-1) + (n-1)/2 * log(1 - rho^2) + (n-4)/2 * log(1 - x^2) -
+          1/2 * log(2*base::pi) - lgamma(n-1/2) - (n-3/2) * log(1 - rho*x)) *
+          .Fcalc(1/2, 1/2, n-1/2, (rho*x + 1)/2)
+
+   ### make sure that density is 0 for r = +-1
+   res[abs(x) == 1] <- 0
+
+   return(res)
+
+}
+
+#integrate(function(x) .dcor(x, n=5, rho=.8), lower=-1, upper=1)
+#integrate(function(x) x*.dcor(x, n=5, rho=.8), lower=-1, upper=1) ### should not be rho due to bias!
+#integrate(function(x) x*.Fcalc(1/2, 1/2, (5-2)/2, 1-x^2)*.dcor(x, n=5, rho=.8), lower=-1, upper=1) ### should be ~rho
+
+### pdf of ZCOR
+
+.dzcor <- function(x, n, rho, zrho) {
+
+   ### only accurate for n >= 5
+   n[n <= 4] <- NA
+
+   ### if rho is missing, then back-transform zrho value(s)
+   if (missing(rho))
+      rho <- tanh(zrho)
+
+   ### copy x to z and back-transform z values (so x = correlation)
+   z <- x
+   x <- tanh(z)
+
+   ### calculate density
+   res <- exp(log(n-2) + lgamma(n-1) + (n-1)/2 * log(1 - rho^2) + (n-4)/2 * log(1 - x^2) -
+          1/2 * log(2*base::pi) - lgamma(n-1/2) - (n-3/2) * log(1 - rho*x) +
+          log(4) + 2*z - 2*log(exp(2*z) + 1)) *
+          .Fcalc(1/2, 1/2, n-1/2, (rho*x + 1)/2)
+
+   ### make sure that density is 0 for r = +-1
+   res[abs(x) == 1] <- 0
+
+   return(res)
+
+}
+
+#integrate(function(x) .dzcor(x, n=5, rho=.8), lower=-100, upper=100)
+#integrate(function(x) x*.dzcor(x, n=5, rho=.8), lower=-100, upper=100)
 
 ############################################################################

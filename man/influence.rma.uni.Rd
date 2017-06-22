@@ -9,12 +9,12 @@
    The functions compute various outlier and influential case diagnostics (some of which indicate the influence of deleting one case/study at a time on the model fit and the fitted/residual values) for objects of class \code{"rma.uni"}.
 }
 \usage{
-\method{influence}{rma.uni}(model, digits, \dots)
+\method{influence}{rma.uni}(model, digits, progbar=FALSE, \dots)
 
 \method{print}{infl.rma.uni}(x, digits, \dots)
 
 \method{cooks.distance}{rma.uni}(model, progbar=FALSE, \dots)
-\method{dfbetas}{rma.uni}(model, \dots)
+\method{dfbetas}{rma.uni}(model, progbar=FALSE, \dots)
 \method{hatvalues}{rma.uni}(model, type="diagonal", \dots)
 }
 \arguments{
@@ -95,7 +95,7 @@
    \code{\link{plot.infl.rma.uni}}, \code{\link{rstudent.rma.uni}}, \code{\link{weights.rma.uni}}
 }
 \examples{
-### meta-analysis of the log relative risks using a mixed-effects model
+### meta-analysis of the log risk ratios using a mixed-effects model
 ### with two moderators (absolute latitude and publication year)
 res <- rma(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg,
            mods = ~ ablat + year, data=dat.bcg)

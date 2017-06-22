@@ -20,13 +20,18 @@ blup.rma.uni <- function(x, level, digits, transf, targs, ...) {
    if (missing(targs))
       targs <- NULL
 
-   alpha <- ifelse(level > 1, (100-level)/100, 1-level)
+   level <- ifelse(level > 1, (100-level)/100, ifelse(level > .5, 1-level, level))
 
    if (is.element(x$test, c("knha","adhoc","t"))) {
-      crit <- qt(alpha/2, df=x$dfs, lower.tail=FALSE)
+      crit <- qt(level/2, df=x$dfs, lower.tail=FALSE)
    } else {
-      crit <- qnorm(alpha/2, lower.tail=FALSE)
+      crit <- qnorm(level/2, lower.tail=FALSE)
    }
+
+   ### TODO: check computations for user-defined weights
+
+   if (!is.null(x$weights) || !x$weighted)
+      stop("Extraction of random effects for models with non-standard weights not currently implemented.")
 
    #########################################################################
 
@@ -36,13 +41,11 @@ blup.rma.uni <- function(x, level, digits, transf, targs, ...) {
    ### see Appendix in: Raudenbush, S. W., & Bryk, A. S. (1985). Empirical
    ### Bayes meta-analysis. Journal of Educational Statistics, 10(2), 75-98
 
-   ### TODO: is this still correct if user has specified arbitrary weights?
-
    li <- x$tau2 / (x$tau2 + x$vi.f)
 
    for (i in seq_len(x$k.f)[x$not.na]) { ### note: skipping NA cases
       Xi <- matrix(x$X.f[i,], nrow=1)
-      pred[i]  <- li[i] * x$yi.f[i] + (1 - li[i])   * Xi %*% x$b
+      pred[i]  <- li[i] * x$yi.f[i] + (1 - li[i])   * Xi %*% x$beta
       vpred[i] <- li[i] * x$vi.f[i] + (1 - li[i])^2 * Xi %*% tcrossprod(x$vb,Xi)
    }
 

@@ -1,5 +1,3 @@
-# Note: Works with "robust.rma" objects.
-
 addpoly.rma <- function(x, row=-2, level=x$level,
 annotate=TRUE, digits=2, width, mlab, transf, atransf, targs,
 efac=1, col, border, cex, ...) {
@@ -45,7 +43,7 @@ efac=1, col, border, cex, ...) {
 
    ### passing ci.lb and ci.ub, so that the bounds are correct when the model was fitted with test="knha"
 
-   addpoly(x$b, ci.lb=x$ci.lb, ci.ub=x$ci.ub, rows=row, level=level,
+   addpoly(x$beta, ci.lb=x$ci.lb, ci.ub=x$ci.ub, rows=row, level=level,
            annotate=annotate, digits=digits, width=width, mlab=mlab,
            transf=transf, atransf=atransf, targs=targs,
            efac=efac, col=col, border=border, cex=cex, ...)

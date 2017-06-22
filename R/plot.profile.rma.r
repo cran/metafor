@@ -1,4 +1,4 @@
-plot.profile.rma <- function(x, ylim, pch=19, ...) {
+plot.profile.rma <- function(x, ylim, pch=19, ylab, ...) {
 
    #########################################################################
 
@@ -7,7 +7,7 @@ plot.profile.rma <- function(x, ylim, pch=19, ...) {
 
    if (dev.cur() == 1) {
       par(mfrow=c(x$comps, 1))
-      on.exit(par(mfrow=c(1,1)))
+      #on.exit(par(mfrow=c(1,1)))
    }
 
    if (missing(ylim)) {
@@ -16,24 +16,36 @@ plot.profile.rma <- function(x, ylim, pch=19, ...) {
       missing.ylim <- FALSE
    }
 
+   if (missing(ylab)) {
+      missing.ylab <- TRUE
+   } else {
+      missing.ylab <- FALSE
+   }
+
    if (x$comps == 1) {
 
       if (missing.ylim)
          ylim <- x$ylim
 
-      plot(x[[1]], x[[2]], type="o", xlab=x$xlab, ylab=paste(ifelse(x$method=="REML", "Restricted", ""), " Log-Likelihood", sep=""), main=x$title, bty="l", pch=pch, ylim=ylim, ...)
+      if (missing.ylab)
+         ylab <- paste(ifelse(x$method=="REML", "Restricted ", ""), "Log-Likelihood", sep="")
+
+      plot(x[[1]], x[[2]], type="o", xlab=x$xlab, ylab=ylab, main=x$title, bty="l", pch=pch, ylim=ylim, ...)
       abline(v=x$vc, lty="dotted")
       abline(h=x$maxll, lty="dotted")
-      #abline(h=max(lls, na.rm=TRUE), lty="dotted")
+      #abline(h=x$maxll - qchisq(.95, df=1)/2, lty="dotted")
 
    } else {
 
-      for (j in 1:x$comps) {
+      for (j in seq_len(x$comps)) {
 
          if (missing.ylim)
             ylim <- x[[j]]$ylim
 
-         plot(x[[j]], ylim=ylim, pch=pch, ...)
+      if (missing.ylab)
+         ylab <- paste(ifelse(x[[j]]$method=="REML", "Restricted ", ""), "Log-Likelihood", sep="")
+
+         plot(x[[j]], ylim=ylim, pch=pch, ylab=ylab, ...)
 
       }
 

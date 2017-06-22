@@ -1,4 +1,4 @@
-regtest.rma <- function(x, model="rma", predictor="sei", ret.fit=FALSE, ...) {
+regtest.rma <- function(x, model="rma", predictor="sei", ret.fit=FALSE, digits, ...) {
 
    #########################################################################
 
@@ -6,7 +6,7 @@ regtest.rma <- function(x, model="rma", predictor="sei", ret.fit=FALSE, ...) {
       stop("Argument 'x' must be an object of class \"rma\".")
 
    if (inherits(x, "robust.rma"))
-      stop("Function not applicable to objects of class \"robust.rma\".")
+      stop("Method not yet implemented for objects of class \"robust.rma\". Sorry!")
 
    if (inherits(x, "rma.glmm"))
       stop("Method not yet implemented for objects of class \"rma.glmm\". Sorry!")
@@ -14,8 +14,14 @@ regtest.rma <- function(x, model="rma", predictor="sei", ret.fit=FALSE, ...) {
    if (inherits(x, "rma.mv"))
       stop("Method not yet implemented for objects of class \"rma.mv\". Sorry!")
 
+   if (inherits(x, "rma.ls"))
+      stop("Method not yet implemented for objects of class \"rma.ls\". Sorry!")
+
    model <- match.arg(model, c("lm", "rma"))
    predictor <- match.arg(predictor, c("sei", "vi", "ni", "ninv", "sqrtni", "sqrtninv"))
+
+   if (missing(digits))
+      digits <- x$digits
 
    #########################################################################
 
@@ -52,7 +58,7 @@ regtest.rma <- function(x, model="rma", predictor="sei", ret.fit=FALSE, ...) {
 
    }
 
-   ### check if X is no longer of full rank (in which case we cannot carry out the test)
+   ### check if X of full rank (if not, cannot carry out the test)
 
    tmp <- lm(yi ~ X - 1)
    coef.na <- is.na(coef(tmp))
@@ -77,7 +83,7 @@ regtest.rma <- function(x, model="rma", predictor="sei", ret.fit=FALSE, ...) {
 
    }
 
-   res <- list(model=model, predictor=predictor, zval=zval, pval=pval, dfs=dfs, method=x$method, digits=x$digits, ret.fit=ret.fit, fit=fit)
+   res <- list(model=model, predictor=predictor, zval=zval, pval=pval, dfs=dfs, method=x$method, digits=digits, ret.fit=ret.fit, fit=fit)
 
    class(res) <- "regtest.rma"
    return(res)

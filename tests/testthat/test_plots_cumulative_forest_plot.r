@@ -16,7 +16,7 @@ test_that("plot can be drawn.", {
    ### load BCG vaccine data
    data(dat.bcg, package="metafor")
 
-   ### calculate (log) relative risks and corresponding sampling variances
+   ### calculate log risk ratios and corresponding sampling variances
    dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
 
    ### fit random-effects models
@@ -33,8 +33,8 @@ test_that("plot can be drawn.", {
    par(cex=.75, font=2)
 
    ### add column headings to the plot
-   text(-4, 15, "Author(s) and Year", pos=4)
-   text( 2, 15, "Rel. Risk [95% CI]", pos=2)
+   text(-4, 15, "Author(s) and Year",  pos=4)
+   text( 2, 15, "Risk Ratio [95% CI]", pos=2)
 
    par(opar)
 
@@ -66,8 +66,8 @@ test_that("plot can be drawn.", {
    par(cex=.75, font=2)
 
    ### add column headings to the plot
-   text(-4, 15, "Author(s) and Year", pos=4)
-   text( 2, 15, "Rel. Risk [95% CI]", pos=2)
+   text(-4, 15, "Author(s) and Year",  pos=4)
+   text( 2, 15, "Risk Ratio [95% CI]", pos=2)
 
    par(opar)
 
@@ -99,8 +99,8 @@ test_that("plot can be drawn.", {
    par(cex=.75, font=2)
 
    ### add column headings to the plot
-   text(-4, 15, "Author(s) and Year", pos=4)
-   text( 2, 15, "Rel. Risk [95% CI]", pos=2)
+   text(-4, 15, "Author(s) and Year",  pos=4)
+   text( 2, 15, "Risk Ratio [95% CI]", pos=2)
 
    par(opar)
 

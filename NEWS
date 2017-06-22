@@ -1,3 +1,94 @@
+Changes in Version 2.0-0 (2017-06-22)
+=====================================
+
+   o added simulate() method for 'rma' objects; added MASS to 'Suggests'
+     (since simulating for 'rma.mv' objects requires mvrnorm() from MASS)
+
+   o cooks.distance.rma.mv() now works properly even when there are missing
+     values in the data
+
+   o residuals() gains 'type' argument and can compute Pearson residuals
+
+   o the 'newmods' argument in predict() can now be a named vector or a
+     matrix/data frame with column names that get properly matched up with
+     the variables in the model
+
+   o added ranef.rma.mv() for extracting the BLUPs of the random effects for
+     'rma.mv' models
+
+   o all functions that repeatedly refit models now have the option to show
+     a progress bar
+
+   o added ranktest.default(), so user can now pass the outcomes and
+     corresponding sampling variances directly to the function
+
+   o added regtest.default(), so user can now pass the outcomes and
+     corresponding sampling variances directly to the function
+
+   o funnel.default() gains 'subset' argument
+
+   o funnel.default() and funnel.rma() gain 'col' and 'bg' arguments
+
+   o plot.profile.rma() gains 'ylab' argument
+
+   o more consistent handling of 'robust.rma' objects
+
+   o added location-scale model
+
+   o added a print method for 'rma.gosh' objects
+
+   o the (log) relative risk is now called the (log) risk ratio in all help
+     files, plots, code, and comments
+
+   o escalc() can now compute outcome measures based on paired binary data
+     ("MPRR", "MPOR", "MPRD", "MPORC", and "MPPETO")
+
+   o escalc() can now compute (semi-)partial correlation coefficients
+     ("PCOR", "ZPCOR", "SPCOR")
+
+   o escalc() can now compute measures of variability for single groups
+     ("CVLN", "SDLN") and for the difference in variability between two
+     groups ("CVR", "VR"); also the log transformed mean ("MNLN") has been
+     added for consistency
+
+   o escalc() can now compute the sampling variance for measure="PHI" for
+     studies using stratified sampling (vtpye="ST")
+
+   o the `[` method for 'escalc' objects now properly handles the 'ni' and
+     'slab' attributes and does a better job of cleaning out superfluous
+     variable name information
+
+   o added rbind() method for 'escalc' objects
+
+   o added as.data.frame() method for 'list.rma' objects
+
+   o added a new dataset (dat.pagliaro1992) for another illustration of a
+     network meta-analysis
+
+   o added a new dataset (dat.laopaiboon2015) on the effectiveness of
+     azithromycin for treating lower respiratory tract infections
+
+   o rma.uni() and rma.mv() now check if the ratio of the largest to
+     smallest sampling variance is extreme large; results may not be stable
+     then (and very large ratios typically indicate wrongly coded data)
+
+   o model fitting functions now check if extra/superfluous arguments are
+     specified via ... and issues are warning if so
+
+   o instead of defining own generic ranef(), import ranef() from 'nlme'
+
+   o improved output formatting
+
+   o added more tests (but disabled a few tests on CRAN to avoid some issues
+     when R is compiled with --disable-long-double)
+
+   o some general code cleanup
+
+   o renamed diagram_metafor.pdf vignette to just diagram.pdf
+
+   o minor updates in the documentation
+
+
 Changes in Version 1.9-9 (2016-09-25)
 =====================================
 

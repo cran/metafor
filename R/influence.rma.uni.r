@@ -1,10 +1,16 @@
 ### Note: The definitions used for dffits, dfbetas, and cook.d below give the same results as
 ### influence.measures(lm(...)) when all vi=0 (except for cook.d which is not scaled by 1/p).
 
-influence.rma.uni <- function(model, digits, ...) {
+influence.rma.uni <- function(model, digits, progbar=FALSE, ...) {
 
    if (!inherits(model, "rma.uni"))
       stop("Argument 'model' must be an object of class \"rma.uni\".")
+
+   if (inherits(model, "robust.rma"))
+      stop("Method not yet implemented for objects of class \"robust.rma\". Sorry!")
+
+   if (inherits(model, "rma.ls"))
+      stop("Method not yet implemented for objects of class \"rma.ls\". Sorry!")
 
    na.act <- getOption("na.action")
 
@@ -26,14 +32,14 @@ influence.rma.uni <- function(model, digits, ...) {
    vdelpred <- rep(NA_real_, x$k.f)
    QE.del   <- rep(NA_real_, x$k.f)
    dffits   <- rep(NA_real_, x$k.f)
-   dfbs     <- matrix(NA_real_, nrow=x$k.f, ncol=length(x$b))
+   dfbs     <- matrix(NA_real_, nrow=x$k.f, ncol=length(x$beta))
    cook.d   <- rep(NA_real_, x$k.f)
    cov.r    <- rep(NA_real_, x$k.f)
    weight   <- rep(NA_real_, x$k.f)
 
    ### predicted values under the full model
 
-   pred.full <- x$X.f %*% x$b
+   pred.full <- x$X.f %*% x$beta
 
    ### calculate inverse of variance-covariance matrix under the full model (needed for the Cook's distances)
    ### also need H matrix for dffits calculation (when not using the standard weights)
@@ -63,7 +69,16 @@ influence.rma.uni <- function(model, digits, ...) {
    ### note: skipping NA cases
    ### also: it is possible that model fitting fails, so that generates more NAs (these NAs will always be shown in output)
 
-   for (i in seq_len(x$k.f)[x$not.na]) {
+   if (progbar)
+      pbar <- txtProgressBar(min=0, max=x$k.f, style=3)
+
+   for (i in seq_len(x$k.f)) {
+
+      if (progbar)
+         setTxtProgressBar(pbar, i)
+
+      if (!x$not.na[i])
+         next
 
       res <- try(suppressWarnings(rma.uni(x$yi.f, x$vi.f, weights=x$weights.f, mods=x$X.f, intercept=FALSE, method=x$method, weighted=x$weighted, test=x$test, tau2=ifelse(x$tau2.fix, x$tau2, NA), control=x$control, subset=-i)), silent=TRUE)
 
@@ -83,7 +98,7 @@ influence.rma.uni <- function(model, digits, ...) {
       ### 'deleted' predicted value for the ith observation based on the model without the ith observation included
 
       Xi          <- matrix(x$X.f[i,], nrow=1)
-      delpred[i]  <- Xi %*% res$b
+      delpred[i]  <- Xi %*% res$beta
       vdelpred[i] <- Xi %*% tcrossprod(res$vb,Xi)
 
       ### compute dffits
@@ -113,20 +128,23 @@ influence.rma.uni <- function(model, digits, ...) {
 
       ### compute dbeta and dfbetas value(s)
 
-      dfb <- x$b - res$b
+      dfb <- x$beta - res$beta
       dfbs[i,] <- dfb / sqrt(res$s2w * diag(vb.del))
       #dfbs[i,] <- dfb / sqrt(diag(res$vb))
 
       ### compute Cook's distance
 
       cook.d[i]  <- crossprod(dfb,svb) %*% dfb # / x$p
-      #cook.d[i] <- sum(1/(x$vi.f+tau2.del[i]) * (pred.full - x$X.f %*% res$b)^2) / x$p
+      #cook.d[i] <- sum(1/(x$vi.f+tau2.del[i]) * (pred.full - x$X.f %*% res$beta)^2) / x$p
 
       ### compute covariance ratio
 
       cov.r[i]   <- det(res$vb) / det(x$vb)
 
    }
+
+   if (progbar)
+      close(pbar)
 
    ### calculate studentized residual
 
@@ -169,7 +187,7 @@ influence.rma.uni <- function(model, digits, ...) {
    rownames(out$inf) <- x$slab
    rownames(out$dfbs) <- x$slab
 
-   colnames(out$dfbs) <- rownames(x$b)
+   colnames(out$dfbs) <- rownames(x$beta)
    colnames(out$inf) <- c("rstudent", "dffits", "cook.d", "cov.r", "tau2.del", "QE.del", "hat", "weight")
 
    class(out) <- "infl.rma.uni"

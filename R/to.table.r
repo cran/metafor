@@ -5,15 +5,22 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, rows, cols) {
 
    if (!is.element(measure, c("RR","OR","PETO","RD","AS","PHI","YUQ","YUY","RTET", ### 2x2 table measures
                               "PBIT","OR2D","OR2DN","OR2DL",                       ### - transformations to SMD
+                              "MPRD","MPRR","MPOR","MPORC","MPPETO",               ### - measures for matched pairs data
                               "IRR","IRD","IRSD",                                  ### two-group person-time data measures
                               "MD","SMD","SMDH","ROM",                             ### two-group mean/SD measures
+                              "CVR","VR",                                          ### coefficient of variation ratio, variability ratio
                               "RPB","RBIS","D2OR","D2ORN","D2ORL",                 ### - transformations to r_PB, r_BIS, and log(OR)
                               "COR","UCOR","ZCOR",                                 ### correlations (raw and r-to-z transformed)
+                              "PCOR","ZPCOR","SPCOR",                              ### partial and semi-partial correlations
                               "PR","PLN","PLO","PAS","PFT",                        ### single proportions (and transformations thereof)
                               "IR","IRLN","IRS","IRFT",                            ### single-group person-time data (and transformations thereof)
-                              "MN","MC","SMCC","SMCR","SMCRH","ROMC",              ### raw/standardized mean change and log(ROM) for dependent samples
+                              "MN","MNLN","CVLN","SDLN",                           ### mean, log(mean), log(CV), log(SD)
+                              "MC","SMCC","SMCR","SMCRH","ROMC",                   ### raw/standardized mean change and log(ROM) for dependent samples
                               "ARAW","AHW","ABT")))                                ### alpha (and transformations thereof)
       stop("Unknown 'measure' specified.")
+
+   if (is.element(measure, c("CVR","VR","PCOR","ZPCOR","SPCOR","CVLN","SDLN")))
+      stop("Function (currently) not implemented for this outcome measure.")
 
    na.act <- getOption("na.action")
 
@@ -31,9 +38,8 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, rows, cols) {
    if (is.null(data)) {
       data <- sys.frame(sys.parent())
    } else {
-      if (!is.data.frame(data)) {
+      if (!is.data.frame(data))
          data <- data.frame(data)
-      }
    }
 
    mf <- match.call()
@@ -49,7 +55,7 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, rows, cols) {
    #########################################################################
    #########################################################################
 
-   if (is.element(measure, c("RR","OR","RD","AS","PETO","PHI","YUQ","YUY","RTET","PBIT","OR2D","OR2DN","OR2DL"))) {
+   if (is.element(measure, c("RR","OR","RD","AS","PETO","PHI","YUQ","YUY","RTET","PBIT","OR2D","OR2DN","OR2DL","MPRD","MPRR","MPOR","MPORC","MPPETO"))) {
 
       mf.ai   <- mf[[match("ai",  names(mf))]]
       mf.bi   <- mf[[match("bi",  names(mf))]]
@@ -243,7 +249,7 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, rows, cols) {
       n1i     <- eval(mf.n1i,  data, enclos=sys.frame(sys.parent()))
       n2i     <- eval(mf.n2i,  data, enclos=sys.frame(sys.parent()))
 
-      k <- length(m1i) ### number of outcomes before subsetting
+      k <- length(n1i) ### number of outcomes before subsetting
 
       if (!is.null(subset)) {
          m1i  <- m1i[subset]
@@ -439,7 +445,7 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, rows, cols) {
 
    #########################################################################
 
-   if (is.element(measure, c("MN"))) {
+   if (is.element(measure, c("MN","MNLN"))) {
 
       mf.mi   <- mf[[match("mi",  names(mf))]]
       mf.sdi  <- mf[[match("sdi", names(mf))]]
@@ -448,7 +454,7 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, rows, cols) {
       sdi     <- eval(mf.sdi, data, enclos=sys.frame(sys.parent()))
       ni      <- eval(mf.ni,  data, enclos=sys.frame(sys.parent()))
 
-      k <- length(mi) ### number of outcomes before subsetting
+      k <- length(ni) ### number of outcomes before subsetting
 
       if (!is.null(subset)) {
          mi  <- mi[subset]
@@ -467,6 +473,9 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, rows, cols) {
 
       if (any(ni < 0, na.rm=TRUE))
          stop("One or more sample sizes are negative.")
+
+      if (is.element(measure, c("MNLN","CVLN")) && any(mi < 0, na.rm=TRUE))
+         stop("One or more means are negative.")
 
       ni.u <- ni ### unadjusted total sample sizes
 
@@ -590,7 +599,7 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, rows, cols) {
       ### check if study labels are unique; if not, make them unique
 
       if (anyDuplicated(slab))
-         slab <- make.unique(as.character(slab)) ### make.unique() only works with character vectors
+         slab <- .make.unique(slab)
 
       if (length(slab) != k)
          stop("Study labels not of same length as data.")
@@ -610,11 +619,11 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, rows, cols) {
 
       ### check for NAs in table data and act accordingly
 
-      aibicidi.na <- is.na(ai) | is.na(bi) | is.na(ci) | is.na(di)
+      has.na <- is.na(ai) | is.na(bi) | is.na(ci) | is.na(di)
 
-      if (any(aibicidi.na)) {
+      if (any(has.na)) {
 
-         not.na <- !aibicidi.na
+         not.na <- !has.na
 
          if (na.act == "na.omit") {
             ai   <- ai[not.na]
@@ -655,7 +664,123 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, rows, cols) {
 
       dat <- array(NA, dim=c(2,2,k), dimnames=list(rows, cols, slab))
 
-      for (i in 1:k) {
+      for (i in seq_len(k)) {
+         tab.i <- rbind(c(ai[i],bi[i]), c(ci[i],di[i]))
+         dat[,,i] <- tab.i
+      }
+
+   }
+
+   #########################################################################
+
+   if (is.element(measure, c("MPRD","MPRR","MPOR"))) {
+
+      ### check for NAs in table data and act accordingly
+
+      has.na <- is.na(ai) | is.na(bi) | is.na(ci) | is.na(di)
+
+      if (any(has.na)) {
+
+         not.na <- !has.na
+
+         if (na.act == "na.omit") {
+            ai   <- ai[not.na]
+            bi   <- bi[not.na]
+            ci   <- ci[not.na]
+            di   <- di[not.na]
+            slab <- slab[not.na]
+            warning("Tables with NAs omitted.")
+         }
+
+         if (na.act == "na.fail")
+            stop("Missing values in tables.")
+
+      }
+
+      k <- length(ai)
+
+      ### at least one study left?
+
+      if (k < 1)
+         stop("Processing terminated since k = 0.")
+
+      ### row/group and column/outcome names
+
+      if (missing(rows)) {
+         rows <- c("Time1", "Time2")
+      } else {
+         if (length(rows) != 2)
+            stop("Time names not of length 2.")
+      }
+
+      if (missing(cols)) {
+         cols <- c("Out1", "Out2")
+      } else {
+         if (length(cols) != 2)
+            stop("Outcome names not of length 2.")
+      }
+
+      dat <- array(NA, dim=c(2,2,k), dimnames=list(rows, cols, slab))
+
+      for (i in seq_len(k)) {
+         tab.i <- rbind(c(ai[i]+bi[i],ci[i]+di[i]), c(ai[i]+ci[i],bi[i]+di[i]))
+         dat[,,i] <- tab.i
+      }
+
+   }
+
+   #########################################################################
+
+   if (is.element(measure, c("MPORC","MPPETO"))) {
+
+      ### check for NAs in table data and act accordingly
+
+      has.na <- is.na(ai) | is.na(bi) | is.na(ci) | is.na(di)
+
+      if (any(has.na)) {
+
+         not.na <- !has.na
+
+         if (na.act == "na.omit") {
+            ai   <- ai[not.na]
+            bi   <- bi[not.na]
+            ci   <- ci[not.na]
+            di   <- di[not.na]
+            slab <- slab[not.na]
+            warning("Tables with NAs omitted.")
+         }
+
+         if (na.act == "na.fail")
+            stop("Missing values in tables.")
+
+      }
+
+      k <- length(ai)
+
+      ### at least one study left?
+
+      if (k < 1)
+         stop("Processing terminated since k = 0.")
+
+      ### row/group and column/outcome names
+
+      if (missing(rows)) {
+         rows <- c("Time1.Out1", "Time1.Out2")
+      } else {
+         if (length(rows) != 2)
+            stop("Time1 names not of length 2.")
+      }
+
+      if (missing(cols)) {
+         cols <- c("Time2.Out1", "Time2.Out2")
+      } else {
+         if (length(cols) != 2)
+            stop("Time2 names not of length 2.")
+      }
+
+      dat <- array(NA, dim=c(2,2,k), dimnames=list(rows, cols, slab))
+
+      for (i in seq_len(k)) {
          tab.i <- rbind(c(ai[i],bi[i]), c(ci[i],di[i]))
          dat[,,i] <- tab.i
       }
@@ -668,11 +793,11 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, rows, cols) {
 
       ### check for NAs in table data and act accordingly
 
-      x1ix2it1it2i.na <- is.na(x1i) | is.na(x2i) | is.na(t1i) | is.na(t2i)
+      has.na <- is.na(x1i) | is.na(x2i) | is.na(t1i) | is.na(t2i)
 
-      if (any(x1ix2it1it2i.na)) {
+      if (any(has.na)) {
 
-         not.na <- !x1ix2it1it2i.na
+         not.na <- !has.na
 
          if (na.act == "na.omit") {
             x1i  <- x1i[not.na]
@@ -713,7 +838,7 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, rows, cols) {
 
       dat <- array(NA, dim=c(2,2,k), dimnames=list(rows, cols, slab))
 
-      for (i in 1:k) {
+      for (i in seq_len(k)) {
          tab.i <- rbind(c(x1i[i],t1i[i]), c(x2i[i],t2i[i]))
          dat[,,i] <- tab.i
       }
@@ -726,11 +851,11 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, rows, cols) {
 
       ### check for NAs in table data and act accordingly
 
-      m1im2isd1isd2in1in2i.na <- is.na(m1i) | is.na(m2i) | is.na(sd1i) | is.na(sd2i) | is.na(n1i) | is.na(n2i)
+      has.na <- is.na(m1i) | is.na(m2i) | is.na(sd1i) | is.na(sd2i) | is.na(n1i) | is.na(n2i)
 
-      if (any(m1im2isd1isd2in1in2i.na)) {
+      if (any(has.na)) {
 
-         not.na <- !m1im2isd1isd2in1in2i.na
+         not.na <- !has.na
 
          if (na.act == "na.omit") {
             m1i  <- m1i[not.na]
@@ -773,7 +898,7 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, rows, cols) {
 
       dat <- array(NA, dim=c(2,3,k), dimnames=list(rows, cols, slab))
 
-      for (i in 1:k) {
+      for (i in seq_len(k)) {
          tab.i <- rbind(c(m1i[i],sd1i[i],n1i[i]), c(m2i[i],sd2i[i],n2i[i]))
          dat[,,i] <- tab.i
       }
@@ -786,11 +911,11 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, rows, cols) {
 
       ### check for NAs in table data and act accordingly
 
-      rini.na <- is.na(ri) | is.na(ni)
+      has.na <- is.na(ri) | is.na(ni)
 
-      if (any(rini.na)) {
+      if (any(has.na)) {
 
-         not.na <- !rini.na
+         not.na <- !has.na
 
          if (na.act == "na.omit") {
             ri   <- ri[not.na]
@@ -829,7 +954,7 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, rows, cols) {
 
       dat <- array(NA, dim=c(1,2,k), dimnames=list(rows, cols, slab))
 
-      for (i in 1:k) {
+      for (i in seq_len(k)) {
          tab.i <- c(ri[i],ni[i])
          dat[,,i] <- tab.i
       }
@@ -842,11 +967,11 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, rows, cols) {
 
       ### check for NAs in table data and act accordingly
 
-      ximi.na <- is.na(xi) | is.na(mi)
+      has.na <- is.na(xi) | is.na(mi)
 
-      if (any(ximi.na)) {
+      if (any(has.na)) {
 
-         not.na <- !ximi.na
+         not.na <- !has.na
 
          if (na.act == "na.omit") {
             xi   <- xi[not.na]
@@ -885,7 +1010,7 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, rows, cols) {
 
       dat <- array(NA, dim=c(1,2,k), dimnames=list(rows, cols, slab))
 
-      for (i in 1:k) {
+      for (i in seq_len(k)) {
          tab.i <- c(xi[i],mi[i])
          dat[,,i] <- tab.i
       }
@@ -898,11 +1023,11 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, rows, cols) {
 
       ### check for NAs in table data and act accordingly
 
-      xiti.na <- is.na(xi) | is.na(ti)
+      has.na <- is.na(xi) | is.na(ti)
 
-      if (any(xiti.na)) {
+      if (any(has.na)) {
 
-         not.na <- !xiti.na
+         not.na <- !has.na
 
          if (na.act == "na.omit") {
             xi   <- xi[not.na]
@@ -941,7 +1066,7 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, rows, cols) {
 
       dat <- array(NA, dim=c(1,2,k), dimnames=list(rows, cols, slab))
 
-      for (i in 1:k) {
+      for (i in seq_len(k)) {
          tab.i <- c(xi[i],ti[i])
          dat[,,i] <- tab.i
       }
@@ -950,15 +1075,15 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, rows, cols) {
 
    #########################################################################
 
-   if (is.element(measure, c("MN"))) {
+   if (is.element(measure, c("MN","MNLN"))) {
 
       ### check for NAs in table data and act accordingly
 
-      misdini.na <- is.na(mi) | is.na(sdi) | is.na(ni)
+      has.na <- is.na(mi) | is.na(sdi) | is.na(ni)
 
-      if (any(misdini.na)) {
+      if (any(has.na)) {
 
-         not.na <- !misdini.na
+         not.na <- !has.na
 
          if (na.act == "na.omit") {
             mi   <- mi[not.na]
@@ -973,7 +1098,7 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, rows, cols) {
 
       }
 
-      k <- length(mi)
+      k <- length(ni)
 
       ### at least one study left?
 
@@ -998,7 +1123,7 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, rows, cols) {
 
       dat <- array(NA, dim=c(1,3,k), dimnames=list(rows, cols, slab))
 
-      for (i in 1:k) {
+      for (i in seq_len(k)) {
          tab.i <- c(mi[i],sdi[i],ni[i])
          dat[,,i] <- tab.i
       }
@@ -1012,14 +1137,14 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, rows, cols) {
       ### check for NAs in table data and act accordingly
 
       if (is.element(measure, c("MC","SMCC","SMCRH","ROMC"))) {
-         m1im2isdiniri.na <- is.na(m1i) | is.na(m2i) | is.na(sd1i) | is.na(sd2i) | is.na(ni) | is.na(ri)
+         has.na <- is.na(m1i) | is.na(m2i) | is.na(sd1i) | is.na(sd2i) | is.na(ni) | is.na(ri)
       } else {
-         m1im2isdiniri.na <- is.na(m1i) | is.na(m2i) | is.na(sd1i) | is.na(ni) | is.na(ri)
+         has.na <- is.na(m1i) | is.na(m2i) | is.na(sd1i) | is.na(ni) | is.na(ri)
       }
 
-      if (any(m1im2isdiniri.na)) {
+      if (any(has.na)) {
 
-         not.na <- !m1im2isdiniri.na
+         not.na <- !has.na
 
          if (na.act == "na.omit") {
             m1i  <- m1i[not.na]
@@ -1074,7 +1199,7 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, rows, cols) {
 
          dat <- array(NA, dim=c(1,6,k), dimnames=list(rows, cols, slab))
 
-         for (i in 1:k) {
+         for (i in seq_len(k)) {
             tab.i <- c(m1i[i],m2i[i],sd1i[i],sd2i[i],ni[i],ri[i])
             dat[,,i] <- tab.i
          }
@@ -1083,7 +1208,7 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, rows, cols) {
 
          dat <- array(NA, dim=c(1,5,k), dimnames=list(rows, cols, slab))
 
-         for (i in 1:k) {
+         for (i in seq_len(k)) {
             tab.i <- c(m1i[i],m2i[i],sd1i[i],ni[i],ri[i])
             dat[,,i] <- tab.i
          }
@@ -1098,11 +1223,11 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, rows, cols) {
 
       ### check for NAs in table data and act accordingly
 
-      aimini.na <- is.na(ai) | is.na(mi) | is.na(ni)
+      has.na <- is.na(ai) | is.na(mi) | is.na(ni)
 
-      if (any(aimini.na)) {
+      if (any(has.na)) {
 
-         not.na <- !aimini.na
+         not.na <- !has.na
 
          if (na.act == "na.omit") {
             ai   <- ai[not.na]
@@ -1142,7 +1267,7 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, rows, cols) {
 
       dat <- array(NA, dim=c(1,3,k), dimnames=list(rows, cols, slab))
 
-      for (i in 1:k) {
+      for (i in seq_len(k)) {
          tab.i <- c(ai[i],mi[i],ni[i])
          dat[,,i] <- tab.i
       }

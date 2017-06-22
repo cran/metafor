@@ -1,5 +1,3 @@
-# Note: Works with "robust.rma" objects.
-
 predict.rma <- function(object, newmods, intercept, tau2.levels, gamma2.levels, addx=FALSE,
 level, digits, transf, targs, ...) {
 
@@ -7,6 +5,9 @@ level, digits, transf, targs, ...) {
 
    if (!inherits(object, "rma"))
       stop("Argument 'object' must be an object of class \"rma\".")
+
+   if (inherits(object, "rma.ls"))
+      stop("Method not yet implemented for objects of class \"rma.ls\". Sorry!")
 
    na.act <- getOption("na.action")
 
@@ -39,14 +40,14 @@ level, digits, transf, targs, ...) {
    if (missing(targs))
       targs <- NULL
 
-   alpha <- ifelse(level > 1, (100-level)/100, 1-level)
+   level <- ifelse(level > 1, (100-level)/100, ifelse(level > .5, 1-level, level))
 
    #########################################################################
 
    if (is.element(x$test, c("knha","adhoc","t"))) {
-      crit <- qt(alpha/2, df=x$dfs, lower.tail=FALSE)
+      crit <- qt(level/2, df=x$dfs, lower.tail=FALSE)
    } else {
-      crit <- qnorm(alpha/2, lower.tail=FALSE)
+      crit <- qnorm(level/2, lower.tail=FALSE)
    }
 
    if (x$int.only && !is.null(newmods))
@@ -147,6 +148,20 @@ level, digits, transf, targs, ...) {
             k.new <- nrow(newmods)                              #
             X.new <- cbind(newmods)                             #
          }                                                      #
+         ### allow matching of terms by names (note: only possible if all columns in X.new and x$X have colnames)
+         if (!is.null(colnames(X.new)) && all(colnames(X.new) != "") && !is.null(colnames(x$X)) && all(colnames(x$X) != "")) {
+            colnames.mod <- colnames(x$X)
+            if (x$int.incl)
+               colnames.mod <- colnames.mod[-1]
+            pos <- unlist(sapply(colnames(X.new), function(colname) grep(colname, colnames.mod, fixed=TRUE)))
+            if (anyDuplicated(pos))
+               stop("Multiple matches for the same variable name.")
+            if (length(pos) != ifelse(x$int.incl, x$p-1, x$p))
+               stop("Could not find a matching name for all variables in the model.")
+            colnames(X.new) <- colnames.mod[pos]
+            pos <- unlist(sapply(colnames.mod, function(colname) grep(colname, colnames(X.new), fixed=TRUE)))
+            X.new <- X.new[,pos,drop=FALSE]
+         }
       }                                                         #
 
       ### if the user has specified newmods and an intercept was included in the original model, add the intercept to X.new
@@ -177,7 +192,7 @@ level, digits, transf, targs, ...) {
 
          if (is.null(tau2.levels)) {
 
-            warning("Need to specify 'tau2.levels' argument to obtain credibility intervals.")
+            #warning("Need to specify 'tau2.levels' argument to obtain credibility intervals.")
 
          } else {
 
@@ -218,7 +233,7 @@ level, digits, transf, targs, ...) {
 
          if (is.null(gamma2.levels)) {
 
-            warning("Need to specify 'gamma2.levels' argument to obtain credibility intervals.")
+            #warning("Need to specify 'gamma2.levels' argument to obtain credibility intervals.")
 
          } else {
 
@@ -260,7 +275,7 @@ level, digits, transf, targs, ...) {
 
    for (i in seq_len(k.new)) {
       Xi.new   <- X.new[i,,drop=FALSE]
-      pred[i]  <- Xi.new %*% x$b
+      pred[i]  <- Xi.new %*% x$beta
       vpred[i] <- Xi.new %*% tcrossprod(x$vb, Xi.new)
    }
 

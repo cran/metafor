@@ -1,7 +1,7 @@
 rma.peto <- function(ai, bi, ci, di, n1i, n2i,
 data, slab, subset,
 add=1/2, to="only0", drop00=TRUE, ### for add/to/drop00, 1st element for escalc(), 2nd for Peto's method
-level=95, digits=4, verbose=FALSE) {
+level=95, digits=4, verbose=FALSE, ...) {
 
    #########################################################################
 
@@ -38,6 +38,12 @@ level=95, digits=4, verbose=FALSE) {
    if (!is.element(to[2], c("all","only0","if0all","none")))
       stop("Unknown 'to' argument specified.")
 
+   ### get ... argument and check for extra/superfluous arguments
+
+   ddd <- list(...)
+
+   .chkdots(ddd, c("outlist"))
+
    measure <- "PETO" ### set measure here so that it can be added below
 
    #########################################################################
@@ -53,14 +59,14 @@ level=95, digits=4, verbose=FALSE) {
    if (is.null(data)) {
       data <- sys.frame(sys.parent())
    } else {
-      if (!is.data.frame(data)) {
+      if (!is.data.frame(data))
          data <- data.frame(data)
-      }
    }
+
+   mf <- match.call()
 
    ### extract slab and subset values, possibly from the data frame specified via data (arguments not specified are NULL)
 
-   mf <- match.call()
    mf.slab   <- mf[[match("slab",   names(mf))]]
    mf.subset <- mf[[match("subset", names(mf))]]
    slab   <- eval(mf.slab,   data, enclos=sys.frame(sys.parent()))
@@ -130,7 +136,7 @@ level=95, digits=4, verbose=FALSE) {
    ### check if study labels are unique; if not, make them unique
 
    if (anyDuplicated(slab))
-      slab <- make.unique(as.character(slab)) ### make.unique() only works with character vectors
+      slab <- .make.unique(slab)
 
    ### calculate observed effect estimates and sampling variances
 
@@ -163,14 +169,13 @@ level=95, digits=4, verbose=FALSE) {
 
    ### check for NAs in table data and act accordingly
 
-   aibicidi.na <- is.na(ai) | is.na(bi) | is.na(ci) | is.na(di)
+   has.na <- is.na(ai) | is.na(bi) | is.na(ci) | is.na(di)
+   not.na <- !has.na
 
-   if (any(aibicidi.na)) {
+   if (any(has.na)) {
 
       if (verbose)
          message("Handling NAs in table data ...")
-
-      not.na <- !aibicidi.na
 
       if (na.act == "na.omit" || na.act == "na.exclude" || na.act == "na.pass") {
          ai   <- ai[not.na]
@@ -184,8 +189,6 @@ level=95, digits=4, verbose=FALSE) {
       if (na.act == "na.fail")
          stop("Missing values in tables.")
 
-   } else {
-      not.na <- rep(TRUE, k)
    }
 
    ### at least one study left?
@@ -196,13 +199,12 @@ level=95, digits=4, verbose=FALSE) {
    ### check for NAs in yi/vi and act accordingly
 
    yivi.na <- is.na(yi) | is.na(vi)
+   not.na.yivi <- !yivi.na
 
    if (any(yivi.na)) {
 
       if (verbose)
          message("Handling NAs in yi/vi ...")
-
-      not.na.yivi <- !yivi.na
 
       if (na.act == "na.omit" || na.act == "na.exclude" || na.act == "na.pass") {
 
@@ -219,8 +221,6 @@ level=95, digits=4, verbose=FALSE) {
       if (na.act == "na.fail")
          stop("Missing yi/vi values.")
 
-   } else {
-      not.na.yivi <- rep(TRUE, k)
    }
 
    k.yi <- length(yi) ### number of yi/vi pairs that are not NA (needed for QE df and fitstats calculation)
@@ -275,7 +275,7 @@ level=95, digits=4, verbose=FALSE) {
 
    #########################################################################
 
-   alpha <- ifelse(level > 1, (100-level)/100, 1-level)
+   level <- ifelse(level > 1, (100-level)/100, ifelse(level > .5, 1-level, level))
 
    ###### model fitting, test statistics, and confidence intervals
 
@@ -292,14 +292,14 @@ level=95, digits=4, verbose=FALSE) {
    if (sumVi == 0L) ### sumVi = 0 when xt or yt = 0 in *all* tables
       stop("One of the two outcomes never occurred in any of the tables. Peto's method cannot be used.")
 
-   b     <- sum(ai - Ei) / sumVi
+   beta  <- sum(ai - Ei) / sumVi
    se    <- sqrt(1/sumVi)
-   zval  <- b / se
+   zval  <- beta / se
    pval  <- 2*pnorm(abs(zval), lower.tail=FALSE)
-   ci.lb <- b - qnorm(alpha/2, lower.tail=FALSE) * se
-   ci.ub <- b + qnorm(alpha/2, lower.tail=FALSE) * se
+   ci.lb <- beta - qnorm(level/2, lower.tail=FALSE) * se
+   ci.ub <- beta + qnorm(level/2, lower.tail=FALSE) * se
 
-   names(b) <- "intrcpt"
+   names(beta) <- "intrcpt"
    vb <- matrix(se^2, dimnames=list("intrcpt", "intrcpt"))
 
    #########################################################################
@@ -324,7 +324,7 @@ level=95, digits=4, verbose=FALSE) {
    }
 
    wi  <- 1/vi
-   RSS <- sum(wi*(yi-b)^2)
+   RSS <- sum(wi*(yi-beta)^2)
 
    #########################################################################
 
@@ -369,16 +369,28 @@ level=95, digits=4, verbose=FALSE) {
    test      <- "z"
    dfs       <- NA
 
-   res <- list(b=b, se=se, zval=zval, pval=pval, ci.lb=ci.lb, ci.ub=ci.ub, vb=vb,
-               tau2=tau2,
-               k=k, k.f=k.f, k.yi=k.yi, k.pos=k.pos, k.eff=k.eff, p=p, parms=parms,
-               QE=QE, QEp=QEp, I2=I2, H2=H2,
-               int.only=int.only,
-               yi=yi, vi=vi, yi.f=yi.f, vi.f=vi.f, X.f=X.f, ai=ai, bi=bi, ci=ci, di=di, ai.f=ai.f, bi.f=bi.f, ci.f=ci.f, di.f=di.f, ni=ni, ni.f=ni.f,
-               ids=ids, not.na=not.na, not.na.yivi=not.na.yivi, slab=slab, slab.null=slab.null,
-               measure=measure, method=method, weighted=weighted, test=test, dfs=dfs, intercept=intercept, digits=digits, level=level,
-               add=add, to=to, drop00=drop00,
-               fit.stats=fit.stats, call=mf)
+   if (is.null(ddd$outlist)) {
+
+      res <- list(b=beta, beta=beta, se=se, zval=zval, pval=pval, ci.lb=ci.lb, ci.ub=ci.ub, vb=vb,
+                  tau2=tau2,
+                  k=k, k.f=k.f, k.yi=k.yi, k.pos=k.pos, k.eff=k.eff, p=p, parms=parms,
+                  QE=QE, QEp=QEp, I2=I2, H2=H2,
+                  int.only=int.only,
+                  yi=yi, vi=vi, yi.f=yi.f, vi.f=vi.f, X.f=X.f, ai=ai, bi=bi, ci=ci, di=di, ai.f=ai.f, bi.f=bi.f, ci.f=ci.f, di.f=di.f, ni=ni, ni.f=ni.f,
+                  ids=ids, not.na=not.na, not.na.yivi=not.na.yivi, slab=slab, slab.null=slab.null,
+                  measure=measure, method=method, weighted=weighted, test=test, dfs=dfs, intercept=intercept, digits=digits, level=level,
+                  add=add, to=to, drop00=drop00,
+                  fit.stats=fit.stats, call=mf)
+
+   }
+
+   if (!is.null(ddd$outlist)) {
+      if (ddd$outlist == "minimal") {
+         res <- list(b=beta, beta=beta, se=se, zval=zval, pval=pval, ci.lb=ci.lb, ci.ub=ci.ub, vb=vb, digits=digits, k=k, k.pos=k.pos, k.eff=k.eff, p=p, parms=parms, fit.stats=fit.stats, QE=QE, QEp=QEp)
+      } else {
+         res <- eval(parse(text=paste0("list(", ddd$outlist, ")")))
+      }
+   }
 
    class(res) <- c("rma.peto", "rma")
    return(res)

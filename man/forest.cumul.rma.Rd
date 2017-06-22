@@ -9,7 +9,7 @@
        xlab, ilab, ilab.xpos, ilab.pos,
        transf, atransf, targs, rows,
        efac=1, pch=15, psize=1, lty,
-       cex, cex.lab, cex.axis, \dots)
+       cex, cex.lab, cex.axis, annosym, \dots)
 }
 \arguments{
    \item{x}{an object of class \code{"cumul.rma"}.}
@@ -37,8 +37,9 @@
    \item{psize}{optional vector with point sizes for the observed effect sizes or outcomes. Default is 1.}
    \item{lty}{optional character string specifying the line type for the confidence intervals (if unspecified, the function sets this to \code{"solid"} by default).}
    \item{cex}{optional character and symbol expansion factor. If unspecified, the function tries to set this to a sensible value.}
-   \item{cex.lab}{optional expansion factor for the x-axis titel. If unspecified, the function tries to set this to a sensible value.}
+   \item{cex.lab}{optional expansion factor for the x-axis title. If unspecified, the function tries to set this to a sensible value.}
    \item{cex.axis}{optional expansion factor for the x-axis labels. If unspecified, the function tries to set this to a sensible value.}
+   \item{annosym}{optional vector of length 3 to change the left bracket, separation, and right bracket symbols for the annotations.}
    \item{\dots}{other arguments.}
 }
 \details{
@@ -75,7 +76,7 @@
    \code{\link{forest}}, \code{\link{cumul}}
 }
 \examples{
-### calculate log relative risks and corresponding sampling variances
+### calculate log risk ratios and corresponding sampling variances
 dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
 
 ### random-effects model
@@ -85,7 +86,7 @@ x <- cumul(res, order=order(dat$year))
 forest(x, cex=.8)
 forest(x, alim=c(-2,1), cex=.8)
 
-### meta-analysis of the (log) relative risks using the Mantel-Haenszel method
+### meta-analysis of the (log) risk ratios using the Mantel-Haenszel method
 res <- rma.mh(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg,
               slab=paste(author, year, sep=", "))
 x <- cumul(res, order=order(dat$year))

@@ -1,7 +1,3 @@
-# Note: works with "robust.rma" objects, but only type="fixed", not type="obs"
-# (to make that work, would have to save M in the object returned by robust()
-# and that seems unnecessary).
-
 vcov.rma <- function(object, type="fixed", ...) {
 
    if (!inherits(object, "rma"))
@@ -16,8 +12,16 @@ vcov.rma <- function(object, type="fixed", ...) {
 
    #########################################################################
 
-   if (type=="fixed")
-      return(object$vb)
+   if (type=="fixed") {
+
+      out <- object$vb
+
+      if (inherits(object, "rma.ls"))
+         out <- list(location = object$vb, scale = object$vb.alpha)
+
+      return(out)
+
+   }
 
    #########################################################################
 

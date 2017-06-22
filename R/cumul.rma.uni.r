@@ -1,7 +1,13 @@
-cumul.rma.uni <- function(x, order, digits, transf, targs, ...) {
+cumul.rma.uni <- function(x, order, digits, transf, targs, progbar=FALSE, ...) {
 
    if (!inherits(x, "rma.uni"))
       stop("Argument 'x' must be an object of class \"rma.uni\".")
+
+   if (inherits(x, "robust.rma"))
+      stop("Method not yet implemented for objects of class \"robust.rma\". Sorry!")
+
+   if (inherits(x, "rma.ls"))
+      stop("Method not yet implemented for objects of class \"rma.ls\". Sorry!")
 
    na.act <- getOption("na.action")
 
@@ -35,7 +41,7 @@ cumul.rma.uni <- function(x, order, digits, transf, targs, ...) {
    not.na    <- x$not.na[order]
    slab      <- x$slab[order]
 
-   b     <- rep(NA_real_, x$k.f)
+   beta  <- rep(NA_real_, x$k.f)
    se    <- rep(NA_real_, x$k.f)
    zval  <- rep(NA_real_, x$k.f)
    pval  <- rep(NA_real_, x$k.f)
@@ -50,14 +56,23 @@ cumul.rma.uni <- function(x, order, digits, transf, targs, ...) {
    ### note: skipping NA cases
    ### also: it is possible that model fitting fails, so that generates more NAs (these NAs will always be shown in output)
 
-   for (i in seq_len(x$k.f)[not.na]) {
+   if (progbar)
+      pbar <- txtProgressBar(min=0, max=x$k.f, style=3)
+
+   for (i in seq_len(x$k.f)) {
+
+      if (progbar)
+         setTxtProgressBar(pbar, i)
+
+      if (!not.na[i])
+         next
 
       res <- try(suppressWarnings(rma.uni(yi.f, vi.f, weights=weights.f, intercept=TRUE, method=x$method, weighted=x$weighted, test=x$test, tau2=ifelse(x$tau2.fix, x$tau2, NA), control=x$control, subset=seq_len(i))), silent=TRUE)
 
       if (inherits(res, "try-error"))
          next
 
-      b[i]     <- res$b
+      beta[i]  <- res$beta
       se[i]    <- res$se
       zval[i]  <- res$zval
       pval[i]  <- res$pval
@@ -71,6 +86,9 @@ cumul.rma.uni <- function(x, order, digits, transf, targs, ...) {
 
    }
 
+   if (progbar)
+      close(pbar)
+
    ### for first 'not.na' element, I2 and H2 would be NA (since k=1), but set to 0 and 1, respectively
 
    I2[which(not.na)[1]] <- 0
@@ -82,12 +100,12 @@ cumul.rma.uni <- function(x, order, digits, transf, targs, ...) {
 
    if (is.function(transf)) {
       if (is.null(targs)) {
-         b     <- sapply(b, transf)
+         beta  <- sapply(beta, transf)
          se    <- rep(NA,x$k.f)
          ci.lb <- sapply(ci.lb, transf)
          ci.ub <- sapply(ci.ub, transf)
       } else {
-         b     <- sapply(b, transf, targs)
+         beta  <- sapply(beta, transf, targs)
          se    <- rep(NA,x$k.f)
          ci.lb <- sapply(ci.lb, transf, targs)
          ci.ub <- sapply(ci.ub, transf, targs)
@@ -104,12 +122,12 @@ cumul.rma.uni <- function(x, order, digits, transf, targs, ...) {
    #########################################################################
 
    if (na.act == "na.omit") {
-      out <- list(estimate=b[not.na], se=se[not.na], zval=zval[not.na], pvals=pval[not.na], ci.lb=ci.lb[not.na], ci.ub=ci.ub[not.na], QE=QE[not.na], QEp=QEp[not.na], tau2=tau2[not.na], I2=I2[not.na], H2=H2[not.na])
+      out <- list(estimate=beta[not.na], se=se[not.na], zval=zval[not.na], pvals=pval[not.na], ci.lb=ci.lb[not.na], ci.ub=ci.ub[not.na], QE=QE[not.na], QEp=QEp[not.na], tau2=tau2[not.na], I2=I2[not.na], H2=H2[not.na])
       out$slab <- slab[not.na]
    }
 
    if (na.act == "na.exclude" || na.act == "na.pass") {
-      out <- list(estimate=b, se=se, zval=zval, pvals=pval, ci.lb=ci.lb, ci.ub=ci.ub, QE=QE, QEp=QEp, tau2=tau2, I2=I2, H2=H2)
+      out <- list(estimate=beta, se=se, zval=zval, pvals=pval, ci.lb=ci.lb, ci.ub=ci.ub, QE=QE, QEp=QEp, tau2=tau2, I2=I2, H2=H2)
       out$slab <- slab
    }
 

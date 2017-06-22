@@ -4,8 +4,8 @@ add=x$add, to=x$to, transf, targs, pch=21, psize, bg="gray", grid=FALSE, ...) {
    if (!inherits(x, "rma"))
       stop("Argument 'x' must be an object of class \"rma\".")
 
-   if (inherits(x, "robust.rma"))
-      stop("Function not applicable to objects of class \"robust.rma\".")
+   if (inherits(x, "rma.ls"))
+      stop("Method not yet implemented for objects of class \"rma.ls\". Sorry!")
 
    if (!x$int.only)
       stop("L'Abbe plot only applicable for models without moderators.")
@@ -137,11 +137,11 @@ add=x$add, to=x$to, transf, targs, pch=21, psize, bg="gray", grid=FALSE, ...) {
 
    ### check for NAs in yi/vi pairs and filter out
 
-   dat.t.dat.c.na <- apply(is.na(dat.t), 1, any) | apply(is.na(dat.c), 1, any)
+   has.na <- apply(is.na(dat.t), 1, any) | apply(is.na(dat.c), 1, any)
 
-   if (any(dat.t.dat.c.na)) {
+   if (any(has.na)) {
 
-      not.na <- !dat.t.dat.c.na
+      not.na <- !has.na
 
       dat.t <- dat.t[not.na,]
       dat.c <- dat.c[not.na,]
@@ -169,7 +169,7 @@ add=x$add, to=x$to, transf, targs, pch=21, psize, bg="gray", grid=FALSE, ...) {
 
    len <- 1000
 
-   intrcpt <- c(x$b)
+   intrcpt <- c(x$beta)
 
    if (x$measure == "RD")
       c.vals <- seq(ifelse(intrcpt>0, 0, -intrcpt), ifelse(intrcpt>0, 1-intrcpt, 1), length.out=len)

@@ -9,7 +9,7 @@
        xlab, slab, mlab, ilab, ilab.xpos, ilab.pos,
        order, transf, atransf, targs, rows,
        efac=1, pch=15, psize, col, border, lty,
-       cex, cex.lab, cex.axis, \dots)
+       cex, cex.lab, cex.axis, annosym, \dots)
 }
 \arguments{
    \item{x}{an object of class \code{"rma"}.}
@@ -42,11 +42,12 @@
    \item{pch}{plotting symbol to use for the observed effect sizes or outcomes. By default, a filled square is used. See \code{\link{points}} for other options. Can also be a vector of values.}
    \item{psize}{optional vector with point sizes for the observed effect sizes or outcomes. If unspecified, the point sizes are drawn proportional to the precision of the estimates.}
    \item{cex}{optional character and symbol expansion factor. If unspecified, the function tries to set this to a sensible value.}
-   \item{cex.lab}{optional expansion factor for the x-axis titel. If unspecified, the function tries to set this to a sensible value.}
+   \item{cex.lab}{optional expansion factor for the x-axis title. If unspecified, the function tries to set this to a sensible value.}
    \item{cex.axis}{optional expansion factor for the x-axis labels. If unspecified, the function tries to set this to a sensible value.}
    \item{col}{optional character string specifying the name of a color to use for the summary polygon or fitted values. If unspecified, the function sets a default color.}
    \item{border}{optional character string specifying the name of a color to use for the border of the summary polygon or fitted values. If unspecified, the function sets a default color.}
    \item{lty}{optional character string specifying the line type for the confidence intervals (if unspecified, the function sets this to \code{"solid"} by default).}
+   \item{annosym}{optional vector of length 3 to change the left bracket, separation, and right bracket symbols for the annotations.}
    \item{\dots}{other arguments.}
 }
 \details{
@@ -104,11 +105,11 @@
    \code{\link{forest}}, \code{\link{forest.default}}, \code{\link{addpoly}}
 }
 \examples{
-### meta-analysis of the log relative risks using a random-effects model
+### meta-analysis of the log risk ratios using a random-effects model
 res <- rma(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg,
            slab=paste(author, year, sep=", "))
 
-### default forest plot of the log relative risks and summary estimate
+### default forest plot of the log risk ratios and summary estimate
 forest(res)
 
 ### summary estimate in row -1; studies in rows k=13 through 1; horizontal
@@ -154,8 +155,8 @@ forest(res, atransf=exp, at=log(c(.05, .25, 1, 4)), xlim=c(-16,6),
 op <- par(cex=.75, font=2)
 text(c(-9.5,-8,-6,-4.5), 15, c("TB+", "TB-", "TB+", "TB-"))
 text(c(-8.75,-5.25),     16, c("Vaccinated", "Control"))
-text(-16,                15, "Author(s) and Year",     pos=4)
-text(6,                  15, "Relative Risk [95\% CI]", pos=2)
+text(-16,                15, "Author(s) and Year",   pos=4)
+text(6,                  15, "Risk Ratio [95\% CI]", pos=2)
 par(op)
 
 ### mixed-effects model with absolute latitude in the model
@@ -171,7 +172,7 @@ text( 5,   15, "Observed RR [95\% CI]",  pos=2, cex=.8)
 text(-3.5, 15, "Latitude",                     cex=.8)
 par(op)
 
-### meta-analysis of the log relative risks using a random-effects model
+### meta-analysis of the log risk ratios using a random-effects model
 res <- rma(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg,
            slab=paste(author, year, sep=", "))
 
@@ -193,8 +194,8 @@ text(-16, c(18,12,3), c("Systematic Allocation", "Random Allocation",
 par(cex=.75, font=2)
 text(c(-9.5,-8,-6,-4.5), 20, c("TB+", "TB-", "TB+", "TB-"))
 text(c(-8.75,-5.25),     21, c("Vaccinated", "Control"))
-text(-16,                20, "Author(s) and Year",     pos=4)
-text(6,                  20, "Relative Risk [95\% CI]", pos=2)
+text(-16,                20, "Author(s) and Year",   pos=4)
+text(6,                  20, "Risk Ratio [95\% CI]", pos=2)
 par(op)
 
 ### see also the addpoly.rma function for an example where summaries

@@ -28,7 +28,7 @@ lty, lwd, col, level=99.99, refline=0, ...) {
       }
    }
 
-   alpha <- ifelse(level > 1, (100-level)/100, 1-level)
+   level <- ifelse(level > 1, (100-level)/100, ifelse(level > .5, 1-level, level))
 
    #########################################################################
 
@@ -40,9 +40,8 @@ lty, lwd, col, level=99.99, refline=0, ...) {
    if (is.null(data)) {
       data <- sys.frame(sys.parent())
    } else {
-      if (!is.data.frame(data)) {
+      if (!is.data.frame(data))
          data <- data.frame(data)
-      }
    }
 
    ### extract slab, subset, and mods values, possibly from the data frame specified via data (arguments not specified are NULL)
@@ -160,11 +159,10 @@ lty, lwd, col, level=99.99, refline=0, ...) {
 
    ### check for NAs and act accordingly
 
-   aibicidi.na <- is.na(ai) | is.na(bi) | is.na(ci) | is.na(di)
+   has.na <- is.na(ai) | is.na(bi) | is.na(ci) | is.na(di)
+   not.na <- !has.na
 
-   if (any(aibicidi.na)) {
-
-      not.na <- !aibicidi.na
+   if (any(has.na)) {
 
       if (na.act == "na.omit" || na.act == "na.exclude" || na.act == "na.pass") {
          yi   <- yi[not.na]
@@ -186,8 +184,6 @@ lty, lwd, col, level=99.99, refline=0, ...) {
       if (na.act == "na.fail")
          stop("Missing values in studies.")
 
-   } else {
-      not.na <- rep(TRUE, k)
    }
 
    ### at least one study left?
@@ -214,8 +210,8 @@ lty, lwd, col, level=99.99, refline=0, ...) {
 
    ### set x axis limits
 
-   ci.lb <- yi - qnorm(alpha/2, lower.tail=FALSE) * sqrt(vi)
-   ci.ub <- yi + qnorm(alpha/2, lower.tail=FALSE) * sqrt(vi)
+   ci.lb <- yi - qnorm(level/2, lower.tail=FALSE) * sqrt(vi)
+   ci.ub <- yi + qnorm(level/2, lower.tail=FALSE) * sqrt(vi)
 
    if (missing(xlim)) {
       xlim <- c(min(ci.lb, na.rm=TRUE),max(ci.ub, na.rm=TRUE))
@@ -228,8 +224,8 @@ lty, lwd, col, level=99.99, refline=0, ...) {
    lls <- matrix(NA_real_, nrow=k, ncol=xvals)
    out <- matrix(TRUE, nrow=k, ncol=xvals)
 
-   for (i in 1:k) {
-      for (j in 1:xvals) {
+   for (i in seq_len(k)) {
+      for (j in seq_len(xvals)) {
          lls[i,j] <- .dnchgi(logORs[j], ai=ai[i], bi=bi[i], ci=ci[i], di=di[i], random=FALSE, dnchgcalc="dFNCHypergeo", dnchgprec=1e-10)
          if (logORs[j] >= ci.lb[i] & logORs[j] <= ci.ub[i])
             out[i,j] <- FALSE
@@ -239,7 +235,7 @@ lty, lwd, col, level=99.99, refline=0, ...) {
    if (scale) {
       trapezoid <- function(x,y) sum(diff(x)*(y[-1]+y[-length(y)]))/2
       lls.sum <- rep(NA_real_, k)
-      for (i in 1:k) {
+      for (i in seq_len(k)) {
          lls.sum[i] <- trapezoid(logORs[!is.na(lls[i,])], lls[i,!is.na(lls[i,])])
       }
       #lls.sum <- rowSums(lls, na.rm=TRUE)
@@ -258,7 +254,7 @@ lty, lwd, col, level=99.99, refline=0, ...) {
 
    plot(NA, NA, xlim=c(xlim[1], xlim[2]), ylim=ylim, xlab=xlab, ylab=ylab, ...)
 
-   for (i in (1:k)[order(1/vi)]) {
+   for (i in seq_len(k)[order(1/vi)]) {
       lines(logORs, lls[i,], lty=lty[i], lwd=lwd[i], col=col[i], ...)
    }
 

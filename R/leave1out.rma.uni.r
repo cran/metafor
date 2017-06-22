@@ -1,7 +1,13 @@
-leave1out.rma.uni <- function(x, digits, transf, targs, ...) {
+leave1out.rma.uni <- function(x, digits, transf, targs, progbar=FALSE, ...) {
 
    if (!inherits(x, "rma.uni"))
       stop("Argument 'x' must be an object of class \"rma.uni\".")
+
+   if (inherits(x, "robust.rma"))
+      stop("Method not yet implemented for objects of class \"robust.rma\". Sorry!")
+
+   if (inherits(x, "rma.ls"))
+      stop("Method not yet implemented for objects of class \"rma.ls\". Sorry!")
 
    na.act <- getOption("na.action")
 
@@ -25,7 +31,7 @@ leave1out.rma.uni <- function(x, digits, transf, targs, ...) {
 
    #########################################################################
 
-   b     <- rep(NA_real_, x$k.f)
+   beta  <- rep(NA_real_, x$k.f)
    se    <- rep(NA_real_, x$k.f)
    zval  <- rep(NA_real_, x$k.f)
    pval  <- rep(NA_real_, x$k.f)
@@ -40,14 +46,23 @@ leave1out.rma.uni <- function(x, digits, transf, targs, ...) {
    ### note: skipping NA cases
    ### also: it is possible that model fitting fails, so that generates more NAs (these NAs will always be shown in output)
 
-   for (i in seq_len(x$k.f)[x$not.na]) {
+   if (progbar)
+      pbar <- txtProgressBar(min=0, max=x$k.f, style=3)
+
+   for (i in seq_len(x$k.f)) {
+
+      if (progbar)
+         setTxtProgressBar(pbar, i)
+
+      if (!x$not.na[i])
+         next
 
       res <- try(suppressWarnings(rma.uni(x$yi.f, x$vi.f, weights=x$weights.f, intercept=TRUE, method=x$method, weighted=x$weighted, test=x$test, tau2=ifelse(x$tau2.fix, x$tau2, NA), control=x$control, subset=-i)), silent=TRUE)
 
       if (inherits(res, "try-error"))
          next
 
-      b[i]     <- res$b
+      beta[i]  <- res$beta
       se[i]    <- res$se
       zval[i]  <- res$zval
       pval[i]  <- res$pval
@@ -61,18 +76,21 @@ leave1out.rma.uni <- function(x, digits, transf, targs, ...) {
 
    }
 
+   if (progbar)
+      close(pbar)
+
    #########################################################################
 
    ### if requested, apply transformation function
 
    if (is.function(transf)) {
       if (is.null(targs)) {
-         b     <- sapply(b, transf)
+         beta  <- sapply(beta, transf)
          se    <- rep(NA,x$k.f)
          ci.lb <- sapply(ci.lb, transf)
          ci.ub <- sapply(ci.ub, transf)
       } else {
-         b     <- sapply(b, transf, targs)
+         beta  <- sapply(beta, transf, targs)
          se    <- rep(NA,x$k.f)
          ci.lb <- sapply(ci.lb, transf, targs)
          ci.ub <- sapply(ci.ub, transf, targs)
@@ -89,12 +107,12 @@ leave1out.rma.uni <- function(x, digits, transf, targs, ...) {
    #########################################################################
 
    if (na.act == "na.omit") {
-      out <- list(estimate=b[x$not.na], se=se[x$not.na], zval=zval[x$not.na], pval=pval[x$not.na], ci.lb=ci.lb[x$not.na], ci.ub=ci.ub[x$not.na], Q=QE[x$not.na], Qp=QEp[x$not.na], tau2=tau2[x$not.na], I2=I2[x$not.na], H2=H2[x$not.na])
+      out <- list(estimate=beta[x$not.na], se=se[x$not.na], zval=zval[x$not.na], pval=pval[x$not.na], ci.lb=ci.lb[x$not.na], ci.ub=ci.ub[x$not.na], Q=QE[x$not.na], Qp=QEp[x$not.na], tau2=tau2[x$not.na], I2=I2[x$not.na], H2=H2[x$not.na])
       out$slab <- x$slab[x$not.na]
    }
 
    if (na.act == "na.exclude" || na.act == "na.pass") {
-      out <- list(estimate=b, se=se, zval=zval, pval=pval, ci.lb=ci.lb, ci.ub=ci.ub, Q=QE, Qp=QEp, tau2=tau2, I2=I2, H2=H2)
+      out <- list(estimate=beta, se=se, zval=zval, pval=pval, ci.lb=ci.lb, ci.ub=ci.ub, Q=QE, Qp=QEp, tau2=tau2, I2=I2, H2=H2)
       out$slab <- x$slab
    }
 

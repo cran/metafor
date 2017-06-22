@@ -53,7 +53,7 @@ print.rma.mv <- function(x, digits, showfit=FALSE, signif.stars=getOption("show.
          if (length(x$sigma2) == 1) {
             rownames(vc) <- "sigma^2  "
          } else {
-            rownames(vc) <- paste("sigma^2.", 1:length(x$sigma2), sep="")
+            rownames(vc) <- paste("sigma^2.", seq_along(x$sigma2), sep="")
          }
          print(vc, quote=FALSE, right=right, print.gap=2)
          cat("\n")
@@ -92,10 +92,10 @@ print.rma.mv <- function(x, digits, showfit=FALSE, signif.stars=getOption("show.
             if (length(x$tau2) == 1) {
                rownames(vc) <- c("tau^2   ", "rho")
             } else {
-               rownames(vc) <- c(paste("tau^2.", 1:length(x$tau2), "  ", sep=""), "rho")
+               rownames(vc) <- c(paste("tau^2.", seq_along(x$tau2), "  ", sep=""), "rho")
             }
             if (x$struct[1] == "DIAG")
-               vc <- vc[1:length(tau2),,drop=FALSE]
+               vc <- vc[seq_along(tau2),,drop=FALSE]
             print(vc, quote=FALSE, right=right, print.gap=2)
 
          }
@@ -111,7 +111,7 @@ print.rma.mv <- function(x, digits, showfit=FALSE, signif.stars=getOption("show.
             if (length(x$g.levels.k) == 1) {
                rownames(vc) <- c("tau^2")
             } else {
-               rownames(vc) <- paste("tau^2.", 1:length(x$g.levels.k), "  ", sep="")
+               rownames(vc) <- paste("tau^2.", seq_along(x$g.levels.k), "  ", sep="")
             }
             print(vc, quote=FALSE, right=right, print.gap=2)
             cat("\n")
@@ -179,10 +179,10 @@ print.rma.mv <- function(x, digits, showfit=FALSE, signif.stars=getOption("show.
             if (length(x$gamma2) == 1) {
                rownames(vc) <- c("gamma^2 ", "rho")
             } else {
-               rownames(vc) <- c(paste("gamma^2.", 1:length(x$gamma2), "  ", sep=""), "phi")
+               rownames(vc) <- c(paste("gamma^2.", seq_along(x$gamma2), "  ", sep=""), "phi")
             }
             if (x$struct[2] == "DIAG")
-               vc <- vc[1:length(gamma2),,drop=FALSE]
+               vc <- vc[seq_along(gamma2),,drop=FALSE]
             print(vc, quote=FALSE, right=right, print.gap=2)
 
          }
@@ -198,7 +198,7 @@ print.rma.mv <- function(x, digits, showfit=FALSE, signif.stars=getOption("show.
             if (length(x$h.levels.k) == 1) {
                rownames(vc) <- c("gamma^2")
             } else {
-               rownames(vc) <- paste("gamma^2.", 1:length(x$h.levels.k), "  ", sep="")
+               rownames(vc) <- paste("gamma^2.", seq_along(x$h.levels.k), "  ", sep="")
             }
             print(vc, quote=FALSE, right=right, print.gap=2)
             cat("\n")
@@ -246,8 +246,8 @@ print.rma.mv <- function(x, digits, showfit=FALSE, signif.stars=getOption("show.
       }
    }
 
-   if (x$p > 1) {
-      cat("Test of Moderators (coefficient(s) ", paste(x$btt, collapse=","),"): \n", sep="")
+   if (x$p > 1 && !is.na(x$QM)) {
+      cat("Test of Moderators (coefficient(s) ", .format.btt(x$btt),"): \n", sep="")
       if (is.element(x$test, c("t"))) {
          cat("F(df1 = ", x$m, ", df2 = ", x$dfs, ") = ", formatC(x$QM, digits=digits, format="f"), ", p-val ", .pval(x$QMp, digits=digits, showeq=TRUE, sep=" "), "\n\n", sep="")
       } else {
@@ -255,8 +255,8 @@ print.rma.mv <- function(x, digits, showfit=FALSE, signif.stars=getOption("show.
       }
    }
 
-   res.table <- cbind(estimate=c(x$b), se=x$se, zval=x$zval, pval=x$pval, ci.lb=x$ci.lb, ci.ub=x$ci.ub)
-   rownames(res.table) <- rownames(x$b)
+   res.table <- cbind(estimate=c(x$beta), se=x$se, zval=x$zval, pval=x$pval, ci.lb=x$ci.lb, ci.ub=x$ci.ub)
+   rownames(res.table) <- rownames(x$beta)
    if (is.element(x$test, c("t")))
       colnames(res.table)[3] <- "tval"
    signif <- symnum(x$pval, corr=FALSE, na=FALSE, cutpoints=c(0, 0.001, 0.01, 0.05, 0.1, 1), symbols = c("***", "**", "*", ".", " "))
@@ -273,7 +273,8 @@ print.rma.mv <- function(x, digits, showfit=FALSE, signif.stars=getOption("show.
 
    cat("Model Results:\n\n")
    if (x$int.only) {
-      print(res.table, quote=FALSE, right=TRUE)
+      .print.out(res.table)
+      #print(res.table, quote=FALSE, right=TRUE)
    } else {
       print(res.table, quote=FALSE, right=TRUE, print.gap=2)
    }

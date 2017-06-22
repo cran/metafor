@@ -12,19 +12,20 @@ funnel(x, \dots)
        steps=5, at, atransf, targs, digits, level=x$level,
        addtau2=FALSE, type="rstandard",
        back="lightgray", shade="white", hlines="white",
-       refline, pch=19, pch.fill=21, ci.res=1000, \dots)
+       refline, pch=19, pch.fill=21, col, bg, ci.res=1000, \dots)
 
-\method{funnel}{default}(x, vi, sei, ni, yaxis="sei",
+\method{funnel}{default}(x, vi, sei, ni, subset, yaxis="sei",
        xlim, ylim, xlab, ylab,
        steps=5, at, atransf, targs, digits, level=95,
        back="lightgray", shade="white", hlines="white",
-       refline=0, pch=19, pch.fill=21, ci.res=1000, \dots)
+       refline=0, pch=19, pch.fill=21, col, bg, ci.res=1000, \dots)
 }
 \arguments{
    \item{x}{an object of class \code{"rma"} or a vector with the observed effect sizes or outcomes.}
    \item{vi}{vector with the corresponding sampling variances.}
    \item{sei}{vector with the corresponding standard errors.}
    \item{ni}{vector with the corresponding sample sizes.}
+   \item{subset}{optional vector indicating the subset of studies that should be included in the plot. This can be a logical vector of the same length as \code{x} or a numeric vector indicating the indices of the observations to include. Only relevant when passing a vector via \code{x}.}
    \item{yaxis}{either \code{"sei"}, \code{"vi"}, \code{"seinv"}, \code{"vinv"}, \code{"ni"}, \code{"ninv"}, \code{"sqrtni"}, \code{"sqrtninv"}, \code{"lni"}, or \code{"wi"} to indicate what values should be placed on the y-axis. See \sQuote{Details}.}
    \item{xlim}{x-axis limits. If unspecified, the function tries to set the x-axis limits to some sensible values.}
    \item{ylim}{y-axis limits. If unspecified, the function tries to set the y-axis limits to some sensible values.}
@@ -44,6 +45,8 @@ funnel(x, \dots)
    \item{refline}{value at which to draw the vertical reference line and, if drawn, where the pseudo confidence interval should be centered. If unspecified, the reference line is drawn at the fixed- or random-effects model estimate when the model does not include moderators and at zero when moderators are included (and therefore residuals are plotted) or when directly plotting observed effect sizes or outcomes.}
    \item{pch}{plotting symbol to use for the observed effect sizes or outcomes. By default, a solid circle is used. Can also be a vector of values. See \code{\link{points}} for other options.}
    \item{pch.fill}{plotting symbol to use for the effect sizes or outcomes filled in by the trim and fill method. By default, a circle is used. Only relevant when plotting an object created by the \code{\link{trimfill}} function.}
+   \item{col}{optional character string specifying the name of a color to use for the points.}
+   \item{bg}{optional character string specifying the name of a background color for open plot symbols.}
    \item{ci.res}{integer specifying the number of y-axis values at which to calculate the bounds of the pseudo confidence interval. The default is \code{1000}, which usually provides a sufficient resolution for the plotting.}
    \item{\dots}{other arguments.}
 }
@@ -61,8 +64,8 @@ funnel(x, \dots)
    \item \code{yaxis="vinv"} for the inverse of the sampling variance,
    \item \code{yaxis="ni"} for the sample size,
    \item \code{yaxis="ninv"} for the inverse of the sample size,
-   \item \code{yaxis="sqrtni"} for the square-root sample size,
-   \item \code{yaxis="sqrtninv"} for the inverse of the square-root sample size,
+   \item \code{yaxis="sqrtni"} for the square root sample size,
+   \item \code{yaxis="sqrtninv"} for the inverse of the square root sample size,
    \item \code{yaxis="lni"} for the log of the sample size,
    \item \code{yaxis="wi"} for the weights.
    } However, only when \code{yaxis="sei"} (the default) will the pseudo confidence region have the expected (upside-down) funnel shape with straight lines. Also, when placing (a function of) the sample size on the y-axis or the weights, then the pseudo confidence region cannot be drawn. See Sterne and Egger (2001) for more details on the choice of the y-axis.
@@ -106,7 +109,7 @@ funnel(x, \dots)
 ### load BCG vaccine data
 dat <- get(data(dat.bcg))
 
-### calculate log relative risks and corresponding sampling variances
+### calculate log risk ratios and corresponding sampling variances
 dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat)
 
 ### random-effects model
@@ -115,15 +118,15 @@ res <- rma(yi, vi, data=dat)
 ### standard funnel plot
 funnel(res)
 
-### show relative risk values on x-axis (log scale)
+### show risk ratio values on x-axis (log scale)
 funnel(res, atransf=exp)
 
-### passing log relative risks and sampling variances directly to the function
+### passing log risk ratios and sampling variances directly to the function
 ### note: essentially the same plot, except that reference line is centered at zero
 funnel(dat$yi, dat$vi)
 funnel(res, refline=0)
 
-### funnel plot with relative risk values on the x-axis
+### funnel plot with risk ratio values on the x-axis
 funnel(res, atransf=exp, at=log(c(.12, .25, .5, 1, 2)))
 
 ### contour-enhanced funnel plot centered at 0 (see Peters et al., 2008)

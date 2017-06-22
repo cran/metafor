@@ -9,7 +9,7 @@
        xlab, slab, ilab, ilab.xpos, ilab.pos,
        subset, transf, atransf, targs, rows,
        efac=1, pch=15, psize, col, lty,
-       cex, cex.lab, cex.axis, \dots)
+       cex, cex.lab, cex.axis, annosym, \dots)
 }
 \arguments{
    \item{x}{vector of length \eqn{k} with the observed effect sizes or outcomes.}
@@ -45,8 +45,9 @@
    \item{col}{optional character string specifying the name of a color to use for plotting ("black" is used by default if not specified). Can also be a vector of color names.}
    \item{lty}{optional character string specifying the line type for the confidence intervals (if unspecified, the function sets this to \code{"solid"} by default).}
    \item{cex}{optional character and symbol expansion factor. If unspecified, the function tries to set this to a sensible value.}
-   \item{cex.lab}{optional expansion factor for the x-axis titel. If unspecified, the function tries to set this to a sensible value.}
+   \item{cex.lab}{optional expansion factor for the x-axis title. If unspecified, the function tries to set this to a sensible value.}
    \item{cex.axis}{optional expansion factor for the x-axis labels. If unspecified, the function tries to set this to a sensible value.}
+   \item{annosym}{optional vector of length 3 to change the left bracket, separation, and right bracket symbols for the annotations.}
    \item{\dots}{other arguments.}
 }
 \details{
@@ -85,21 +86,21 @@
    \code{\link{forest}}, \code{\link{forest.rma}}, \code{\link{addpoly}}
 }
 \examples{
-### calculate log relative risks and corresponding sampling variances
+### calculate log risk ratios and corresponding sampling variances
 dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
 
-### default forest plot of the observed log relative risks
+### default forest plot of the observed log risk ratios
 forest(dat$yi, dat$vi)
 
-### forest plot of the observed relative risks
+### forest plot of the observed risk ratios
 forest(dat$yi, dat$vi, slab=paste(dat$author, dat$year, sep=", "), transf=exp,
        alim=c(0,2), steps=5, xlim=c(-2.5,4), refline=1, cex=.9)
 
-### forest plot of the observed relative risks
+### forest plot of the observed risk ratios
 forest(dat$yi, dat$vi, slab=paste(dat$author, dat$year, sep=", "), atransf=exp,
        at=log(c(.05,.25,1,4,20)), xlim=c(-10,8), cex=.9)
 
-### forest plot of the observed relative risks with studies ordered by the RRs
+### forest plot of the observed risk ratios with studies ordered by the RRs
 forest(dat$yi, dat$vi, slab=paste(dat$author, dat$year, sep=", "), atransf=exp,
        at=log(c(.05,.25,1,4,20)), xlim=c(-10,8), cex=.9, subset=order(dat$yi))
 

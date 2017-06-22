@@ -16,7 +16,7 @@ profile.rma.mv <- function(fitted, sigma2, tau2, rho, gamma2, phi, xlim, ylim, s
 
    if (missing(sigma2) && missing(tau2) && missing(rho) && missing(gamma2) && missing(phi)) {
 
-      cl <- match.call()
+      mc <- match.call()
 
       ### total number of non-fixed components
 
@@ -28,7 +28,7 @@ profile.rma.mv <- function(fitted, sigma2, tau2, rho, gamma2, phi, xlim, ylim, s
       if (plot) {
          if (dev.cur() == 1) {
             par(mfrow=c(comps, 1))
-            on.exit(par(mfrow=c(1,1)))
+            #on.exit(par(mfrow=c(1,1)))
          }
       }
 
@@ -36,64 +36,64 @@ profile.rma.mv <- function(fitted, sigma2, tau2, rho, gamma2, phi, xlim, ylim, s
       j <- 0
 
       if (x$withS && any(!x$vc.fix$sigma2)) {
-         for (pos in (1:x$sigma2s)[!x$vc.fix$sigma2]) {
+         for (pos in seq_len(x$sigma2s)[!x$vc.fix$sigma2]) {
             j <- j + 1
-            cl.vc <- cl
-            cl.vc$sigma2 <- pos
-            cl.vc$fitted <- quote(x)
+            mc.vc <- mc
+            mc.vc$sigma2 <- pos
+            mc.vc$fitted <- quote(x)
             if (progbar)
                cat("Profiling sigma2 =", pos, "\n")
-            sav[[j]] <- eval(cl.vc)
+            sav[[j]] <- eval(mc.vc)
             #sav[[j]] <- profile.rma.mv(x, sigma2=pos, xlim=xlim, ylim=ylim, steps=steps, startmethod=startmethod, progbar=progbar, parallel=parallel, ncpus=ncpus, cl=cl, plot=plot, pch=pch, ...)
          }
       }
 
       if (x$withG) {
          if (any(!x$vc.fix$tau2)) {
-            for (pos in (1:x$tau2s)[!x$vc.fix$tau2]) {
+            for (pos in seq_len(x$tau2s)[!x$vc.fix$tau2]) {
                j <- j + 1
-               cl.vc <- cl
-               cl.vc$tau2 <- pos
-               cl.vc$fitted <- quote(x)
+               mc.vc <- mc
+               mc.vc$tau2 <- pos
+               mc.vc$fitted <- quote(x)
                if (progbar)
                   cat("Profiling tau2 =", pos, "\n")
-               sav[[j]] <- eval(cl.vc)
+               sav[[j]] <- eval(mc.vc)
             }
          }
          if (any(!x$vc.fix$rho)) {
-            for (pos in (1:x$rhos)[!x$vc.fix$rho]) {
+            for (pos in seq_len(x$rhos)[!x$vc.fix$rho]) {
                j <- j + 1
-               cl.vc <- cl
-               cl.vc$rho <- pos
-               cl.vc$fitted <- quote(x)
+               mc.vc <- mc
+               mc.vc$rho <- pos
+               mc.vc$fitted <- quote(x)
                if (progbar)
                   cat("Profiling rho =", pos, "\n")
-               sav[[j]] <- eval(cl.vc)
+               sav[[j]] <- eval(mc.vc)
             }
          }
       }
 
       if (x$withH) {
          if (any(!x$vc.fix$gamma2)) {
-            for (pos in (1:x$gamma2s)[!x$vc.fix$gamma2]) {
+            for (pos in seq_len(x$gamma2s)[!x$vc.fix$gamma2]) {
                j <- j + 1
-               cl.vc <- cl
-               cl.vc$gamma2 <- pos
-               cl.vc$fitted <- quote(x)
+               mc.vc <- mc
+               mc.vc$gamma2 <- pos
+               mc.vc$fitted <- quote(x)
                if (progbar)
                   cat("Profiling gamma2 =", pos, "\n")
-               sav[[j]] <- eval(cl.vc)
+               sav[[j]] <- eval(mc.vc)
             }
          }
          if (any(!x$vc.fix$phi)) {
-            for (pos in (1:x$phis)[!x$vc.fix$phi]) {
+            for (pos in seq_len(x$phis)[!x$vc.fix$phi]) {
                j <- j + 1
-               cl.vc <- cl
-               cl.vc$phi <- pos
-               cl.vc$fitted <- quote(x)
+               mc.vc <- mc
+               mc.vc$phi <- pos
+               mc.vc$fitted <- quote(x)
                if (progbar)
                   cat("Profiling phi =", pos, "\n")
-               sav[[j]] <- eval(cl.vc)
+               sav[[j]] <- eval(mc.vc)
             }
          }
       }
@@ -303,7 +303,7 @@ profile.rma.mv <- function(fitted, sigma2, tau2, rho, gamma2, phi, xlim, ylim, s
    if (parallel=="no") {
 
       lls   <- rep(NA_real_, length(vcs))
-      b     <- matrix(NA_real_, nrow=length(vcs), ncol=x$p)
+      beta  <- matrix(NA_real_, nrow=length(vcs), ncol=x$p)
       ci.lb <- matrix(NA_real_, nrow=length(vcs), ncol=x$p)
       ci.ub <- matrix(NA_real_, nrow=length(vcs), ncol=x$p)
 
@@ -318,7 +318,7 @@ profile.rma.mv <- function(fitted, sigma2, tau2, rho, gamma2, phi, xlim, ylim, s
       gamma2.arg <- ifelse(x$vc.fix$gamma2, x$gamma2, NA)
       phi.arg    <- ifelse(x$vc.fix$phi, x$phi, NA)
 
-      for (i in 1:length(vcs)) {
+      for (i in seq_along(vcs)) {
 
          if (comp == "sigma2")
             sigma2.arg[sigma2] <- vcs[i]
@@ -394,7 +394,7 @@ profile.rma.mv <- function(fitted, sigma2, tau2, rho, gamma2, phi, xlim, ylim, s
             next
 
          lls[i] <- c(logLik(res))
-         b[i,] <- c(res$b)
+         beta[i,]  <- c(res$beta)
          ci.lb[i,] <- c(res$ci.lb)
          ci.ub[i,] <- c(res$ci.ub)
 
@@ -422,6 +422,9 @@ profile.rma.mv <- function(fitted, sigma2, tau2, rho, gamma2, phi, xlim, ylim, s
          if (is.null(cl)) {
             cl <- parallel::makePSOCKcluster(ncpus)
             res <- parallel::parLapply(cl, vcs, .profile.rma.mv, obj=x, comp=comp, sigma2.pos=sigma2.pos, tau2.pos=tau2.pos, rho.pos=rho.pos, gamma2.pos=gamma2.pos, phi.pos=phi.pos, parallel=parallel, profile=TRUE)
+            #res <- parallel::parLapplyLB(cl, vcs, .profile.rma.mv, obj=x, comp=comp, sigma2.pos=sigma2.pos, tau2.pos=tau2.pos, rho.pos=rho.pos, gamma2.pos=gamma2.pos, phi.pos=phi.pos, parallel=parallel, profile=TRUE)
+            #res <- parallel::clusterApply(cl, vcs, .profile.rma.mv, obj=x, comp=comp, sigma2.pos=sigma2.pos, tau2.pos=tau2.pos, rho.pos=rho.pos, gamma2.pos=gamma2.pos, phi.pos=phi.pos, parallel=parallel, profile=TRUE)
+            #res <- parallel::clusterApplyLB(cl, vcs, .profile.rma.mv, obj=x, comp=comp, sigma2.pos=sigma2.pos, tau2.pos=tau2.pos, rho.pos=rho.pos, gamma2.pos=gamma2.pos, phi.pos=phi.pos, parallel=parallel, profile=TRUE)
             parallel::stopCluster(cl)
          } else {
             res <- parallel::parLapply(cl, vcs, .profile.rma.mv, obj=x, comp=comp, sigma2.pos=sigma2.pos, tau2.pos=tau2.pos, rho.pos=rho.pos, gamma2.pos=gamma2.pos, phi.pos=phi.pos, parallel=parallel, profile=TRUE)
@@ -429,7 +432,7 @@ profile.rma.mv <- function(fitted, sigma2, tau2, rho, gamma2, phi, xlim, ylim, s
       }
 
       lls <- sapply(res, function(z) z$ll)
-      b <- do.call("rbind", lapply(res, function(z) t(z$b)))
+      beta  <- do.call("rbind", lapply(res, function(z) t(z$beta)))
       ci.lb <- do.call("rbind", lapply(res, function(z) t(z$ci.lb)))
       ci.ub <- do.call("rbind", lapply(res, function(z) t(z$ci.ub)))
 
@@ -437,12 +440,12 @@ profile.rma.mv <- function(fitted, sigma2, tau2, rho, gamma2, phi, xlim, ylim, s
 
    #########################################################################
 
-   b <- data.frame(b)
+   beta  <- data.frame(beta)
    ci.lb <- data.frame(ci.lb)
    ci.ub <- data.frame(ci.ub)
-   names(b) <- rownames(x$b)
-   names(ci.lb) <- rownames(x$b)
-   names(ci.ub) <- rownames(x$b)
+   names(beta)  <- rownames(x$beta)
+   names(ci.lb) <- rownames(x$beta)
+   names(ci.ub) <- rownames(x$beta)
 
    if (missing(ylim)) {
 
@@ -505,7 +508,7 @@ profile.rma.mv <- function(fitted, sigma2, tau2, rho, gamma2, phi, xlim, ylim, s
       }
    }
 
-   sav <- list(vc=vcs, ll=lls, b=b, ci.lb=ci.lb, ci.ub=ci.ub, comps=1, ylim=ylim, method=x$method, vc=vc, maxll=logLik(x), xlab=xlab, title=title)
+   sav <- list(vc=vcs, ll=lls, beta=beta, ci.lb=ci.lb, ci.ub=ci.ub, comps=1, ylim=ylim, method=x$method, vc=vc, maxll=logLik(x), xlab=xlab, title=title)
    names(sav)[1] <- switch(comp, sigma2="sigma2", tau2="tau2", rho="rho", gamma2="gamma2", phi="phi")
    class(sav) <- "profile.rma"
 

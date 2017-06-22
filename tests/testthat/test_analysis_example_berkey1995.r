@@ -7,7 +7,7 @@ context("Checking analysis example: berkey1995")
 ### load BCG dataset
 data(dat.bcg, package="metafor")
 
-### calculate log relative risks and corresponding sampling variances
+### calculate log ratio ratios and corresponding sampling variances
 dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
 
 ### calculate "smoothed" sampling variances
@@ -35,6 +35,7 @@ test_that("results are correct for the mixed-effects meta-regression model.", {
 
    ### fit mixed-effects model with absolute latitude as moderator
    res.ME <- rma(yi, vi, mods=~I(ablat-33.46), data=dat, method="EB")
+   out <- capture.output(print(res.ME))
 
    ### compare with results on page 408
    expect_equivalent(round(coef(res.ME),4), c(-0.6303, -0.0268)) ### -0.6304 in article
@@ -42,7 +43,7 @@ test_that("results are correct for the mixed-effects meta-regression model.", {
    expect_equivalent(round(res.ME$tau2,3), 0.157)
    expect_equivalent(round(anova(res.RE, res.ME)$R2,0), 41)
 
-   ### predicted average relative risks
+   ### predicted average risk ratios
    tmp <- predict(res.ME, newmods=c(33.46,42)-33.46, transf=exp, digits=2)
 
    ### compare with results on page 408
@@ -59,7 +60,7 @@ test_that("results are correct for the fixed-effects meta-regression model.", {
    expect_equivalent(round(coef(res.FE),4), c(-0.5949, -0.0282)) ### -0.5950 in article
    expect_equivalent(round(res.FE$se,4), c(0.0696, 0.0040)) ### 0.0039 in article
 
-   ### predicted relative risks based on the fixed-effects model
+   ### predicted risk ratios based on the fixed-effects model
    tmp <- predict(res.FE, newmods=c(33.46,42)-33.46, transf=exp, digits=2)
 
    ### compare with results on page 408

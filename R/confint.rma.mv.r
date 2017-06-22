@@ -23,9 +23,9 @@ confint.rma.mv <- function(object, parm, level, fixed=FALSE, sigma2, tau2, rho, 
    if (missing(control))
       control <- list()
 
-   alpha <- ifelse(level > 1, (100-level)/100, 1-level)
+   level <- ifelse(level > 1, (100-level)/100, ifelse(level > .5, 1-level, level))
 
-   ### check if user has specified one of the sigma2, tau2, rho, gamma2, or phi argument
+   ### check if user has specified one of the sigma2, tau2, rho, gamma2, or phi arguments
 
    random <- !all(missing(sigma2), missing(tau2), missing(rho), missing(gamma2), missing(phi))
 
@@ -48,7 +48,7 @@ confint.rma.mv <- function(object, parm, level, fixed=FALSE, sigma2, tau2, rho, 
       j <- 0
 
       if (x$withS && any(!x$vc.fix$sigma2)) {
-         for (pos in (1:x$sigma2s)[!x$vc.fix$sigma2]) {
+         for (pos in seq_len(x$sigma2s)[!x$vc.fix$sigma2]) {
             j <- j + 1
             cl.vc <- cl
             cl.vc$sigma2 <- pos
@@ -61,7 +61,7 @@ confint.rma.mv <- function(object, parm, level, fixed=FALSE, sigma2, tau2, rho, 
 
       if (x$withG) {
          if (any(!x$vc.fix$tau2)) {
-            for (pos in (1:x$tau2s)[!x$vc.fix$tau2]) {
+            for (pos in seq_len(x$tau2s)[!x$vc.fix$tau2]) {
                j <- j + 1
                cl.vc <- cl
                cl.vc$tau2 <- pos
@@ -72,7 +72,7 @@ confint.rma.mv <- function(object, parm, level, fixed=FALSE, sigma2, tau2, rho, 
             }
          }
          if (any(!x$vc.fix$rho)) {
-            for (pos in (1:x$rhos)[!x$vc.fix$rho]) {
+            for (pos in seq_len(x$rhos)[!x$vc.fix$rho]) {
                j <- j + 1
                cl.vc <- cl
                cl.vc$rho <- pos
@@ -86,7 +86,7 @@ confint.rma.mv <- function(object, parm, level, fixed=FALSE, sigma2, tau2, rho, 
 
       if (x$withH) {
          if (any(!x$vc.fix$gamma2)) {
-            for (pos in (1:x$gamma2s)[!x$vc.fix$gamma2]) {
+            for (pos in seq_len(x$gamma2s)[!x$vc.fix$gamma2]) {
                j <- j + 1
                cl.vc <- cl
                cl.vc$gamma2 <- pos
@@ -97,7 +97,7 @@ confint.rma.mv <- function(object, parm, level, fixed=FALSE, sigma2, tau2, rho, 
             }
          }
          if (any(!x$vc.fix$phi)) {
-            for (pos in (1:x$phis)[!x$vc.fix$phi]) {
+            for (pos in seq_len(x$phis)[!x$vc.fix$phi]) {
                j <- j + 1
                cl.vc <- cl
                cl.vc$phi <- pos
@@ -320,7 +320,7 @@ confint.rma.mv <- function(object, parm, level, fixed=FALSE, sigma2, tau2, rho, 
          if (con$vc.max < vc)
             stop("Upper bound of interval to be searched must be >= estimated value of component.")
 
-         objective <- qchisq(1-alpha, df=1)
+         objective <- qchisq(1-level, df=1)
 
          ###################################################################
 
@@ -332,7 +332,7 @@ confint.rma.mv <- function(object, parm, level, fixed=FALSE, sigma2, tau2, rho, 
          epdiff <- seq(0, abs(con$vc.min - vc), length=con$eptries+1) ### e.g., if vc.min=0, vc=.5, and eptries=10, then get 0, .05, .10, ..., .50
          epdiff <- epdiff[-(con$eptries+1)]                           ### this then strips the last entry (.50), so we get 0, .05, .10, ..., .45
 
-         for (i in 1:con$eptries) {
+         for (i in seq_len(con$eptries)) {
 
             con$vc.min <- con$vc.min + epdiff[i]
 
@@ -382,7 +382,7 @@ confint.rma.mv <- function(object, parm, level, fixed=FALSE, sigma2, tau2, rho, 
          epdiff <- seq(0, abs(con$vc.max - vc), length=con$eptries+1) ### e.g., if vc.max=1, vc=.5, and eptries=10, then get 0, .05, .10, ..., .50
          epdiff <- epdiff[-(con$eptries+1)]                           ### this then strips the last entry (.50), so we get 0, .05, .10, ..., .45
 
-         for (i in 1:con$eptries) {
+         for (i in seq_len(con$eptries)) {
 
             con$vc.max <- con$vc.max - epdiff[i]
 
@@ -490,29 +490,29 @@ confint.rma.mv <- function(object, parm, level, fixed=FALSE, sigma2, tau2, rho, 
    if (fixed) {
 
       if (is.element(x$test, c("t"))) {
-         crit <- qt(alpha/2, df=x$dfs, lower.tail=FALSE)
+         crit <- qt(level/2, df=x$dfs, lower.tail=FALSE)
       } else {
-         crit <- qnorm(alpha/2, lower.tail=FALSE)
+         crit <- qnorm(level/2, lower.tail=FALSE)
       }
 
-      b <- c(x$b)
-      ci.lb <- c(x$b - crit * x$se)
-      ci.ub <- c(x$b + crit * x$se)
+      beta  <- c(x$beta)
+      ci.lb <- c(beta - crit * x$se)
+      ci.ub <- c(beta + crit * x$se)
 
       if (is.function(transf)) {
          if (is.null(targs)) {
-            b     <- sapply(b, transf)
+            beta  <- sapply(beta, transf)
             ci.lb <- sapply(ci.lb, transf)
             ci.ub <- sapply(ci.ub, transf)
          } else {
-            b     <- sapply(b, transf, targs)
+            beta  <- sapply(beta, transf, targs)
             ci.lb <- sapply(ci.lb, transf, targs)
             ci.ub <- sapply(ci.ub, transf, targs)
          }
       }
 
-      res.fixed <- cbind(estimate=b, ci.lb=ci.lb, ci.ub=ci.ub)
-      rownames(res.fixed) <- rownames(x$b)
+      res.fixed <- cbind(estimate=beta, ci.lb=ci.lb, ci.ub=ci.ub)
+      rownames(res.fixed) <- rownames(x$beta)
 
    }
 
