@@ -1,4 +1,4 @@
-\name{confint.rma.uni}
+\name{confint.rma}
 \alias{confint.rma.uni}
 \alias{confint.rma.mh}
 \alias{confint.rma.peto}
@@ -23,7 +23,7 @@
 }
 \arguments{
    \item{object}{an object of class \code{"rma.uni"}, \code{"rma.mh"}, \code{"rma.peto"}, or \code{"rma.mv"}. The method is not yet implemented for objects of class \code{"rma.glmm"}.}
-   \item{parm}{this argument is here for compatability with the generic function \code{\link{confint}}, but is (currently) ignored.}
+   \item{parm}{this argument is here for compatibility with the generic function \code{\link{confint}}, but is (currently) ignored.}
    \item{fixed}{logical indicating whether confidence intervals for the model coefficients should be returned (the default is \code{FALSE}).}
    \item{random}{logical indicating whether a confidence interval for the amount of (residual) heterogeneity should be returned (the default is \code{TRUE}) (only relevant for \code{"rma.uni"} objects).}
    \item{sigma2}{integer specifying for which \if{latex}{\eqn{\sigma^2}}\if{html}{\eqn{\sigma²}}\if{text}{\eqn{\sigma^2}} value a confidence interval should be obtained (only relevant for \code{"rma.mv"} objects).}
@@ -36,7 +36,7 @@
    \item{transf}{optional argument specifying the name of a function that should be used to transform the model coefficients and interval bounds (e.g., \code{transf=exp}; see also \link{transf}). If unspecified, no transformation is used.}
    \item{targs}{optional arguments needed by the function specified under \code{transf}.}
    \item{verbose}{logical indicating whether output should be generated on the progress of the iterative algorithms used to obtain the confidence intervals (the default is \code{FALSE}). See \sQuote{Note}.}
-   \item{control}{list of control values for the iterative algorithm. If unspecified, default values are defined inside the function. See \sQuote{Note}.}
+   \item{control}{list of control values for the iterative algorithms. If unspecified, default values are defined inside the function. See \sQuote{Note}.}
    \item{\dots}{other arguments.}
 }
 \details{
@@ -46,9 +46,9 @@
 
    Usually, the estimate of \if{latex}{\eqn{\tau^2}}\if{html}{\eqn{\tau²}}\if{text}{\eqn{\tau^2}} from the random/mixed-effects model will fall within the confidence interval provided by the Q-profile method. However, this is not guaranteed. Depending on the method used to estimate \if{latex}{\eqn{\tau^2}}\if{html}{\eqn{\tau²}}\if{text}{\eqn{\tau^2}} and the width of the confidence interval, it can happen that the confidence interval does not actually contain the estimate (trying to explain this to reviewers can be tricky). However, using the empirical Bayes or Paule-Mandel estimator of \if{latex}{\eqn{\tau^2}}\if{html}{\eqn{\tau²}}\if{text}{\eqn{\tau^2}} when fitting the model (i.e., using \code{method="EB"} or \code{method="PM"}) guarantees that the estimate of \if{latex}{\eqn{\tau^2}}\if{html}{\eqn{\tau²}}\if{text}{\eqn{\tau^2}} falls within the confidence interval. When \code{method="GENQ"} was used to fit the model, the corresponding CI obtained via the generalized Q-statistic method is also guaranteed to contain the estimate \if{latex}{\eqn{\tau^2}}\if{html}{\eqn{\tau²}}\if{text}{\eqn{\tau^2}}.
 
-   For objects of class \code{"rma.mv"} obtained with the \code{\link{rma.mv}} function, confidence intervals are obtained by default for all (non-fixed) variance and correlation components of the model. Alternatively, one can use the \code{sigma2}, \code{tau2}, \code{rho}, \code{gamma2}, or \code{phi} arguments to specify for which variance/correlation parameter a confidence interval should be obtained. Only one of these arguments can be used at a time. A single integer is used to specify the number of the parameter. The function then provides a profile likelihood confidence interval for the specified parameter. It is a good idea to examine the corresponding profile likelihood plot (via the \code{\link{profile.rma.mv}} function) to make sure that the bounds obtained are sensible.
+   For objects of class \code{"rma.mv"} obtained with the \code{\link{rma.mv}} function, profile likelihood confidence intervals are obtained by default for all (non-fixed) variance and correlation components of the model. Alternatively, one can use the \code{sigma2}, \code{tau2}, \code{rho}, \code{gamma2}, or \code{phi} arguments to specify for which variance/correlation parameter a confidence interval should be obtained. Only one of these arguments can be used at a time. A single integer is used to specify the number of the parameter. The function then provides a profile likelihood confidence interval for the specified parameter. It is a good idea to examine the corresponding profile likelihood plot (via the \code{\link{profile.rma.mv}} function) to make sure that the bounds obtained are sensible.
 
-   The methods used to find a confidence interval for a variance/correlation component are iterative and require the use of the \code{\link{uniroot}} function. By default, the desired accuracy is set equal to \code{.Machine$double.eps^0.25} and the maximum number of iterations to \code{1000}. The desired accuracy (\code{tol}) and maximum number of iterations (\code{maxiter}) can be adjusted with \code{control=list(tol=value, maxiter=value)}, but the defaults should be adequate for most purposes. If \code{verbose=TRUE}, output is generated on the progress of the iterative algorithm. This is especially useful when model fitting is slow, in which case finding the confidence interval bounds can also take considerable amounts of time.
+   The methods used to find a confidence interval for a variance/correlation component are iterative and require the use of the \code{\link{uniroot}} function. By default, the desired accuracy (\code{tol}) is set equal to \code{.Machine$double.eps^0.25} and the maximum number of iterations (\code{maxiter}) to \code{1000}. These values can be adjusted with \code{control=list(tol=value, maxiter=value)}, but the defaults should be adequate for most purposes. If \code{verbose=TRUE}, output is generated on the progress of the iterative algorithm. This is especially useful when model fitting is slow, in which case finding the confidence interval bounds can also take considerable amounts of time.
 
    More problematic when using the \code{\link{uniroot}} function is setting appropriate end points of the interval to be searched for the confidence interval bounds. The function tries to set some sensible defaults for the end points, but it may happen that the function is only able to determine that a bound is below/above a certain limit (this is indicated in the output accordingly with \code{<} or \code{>} signs). It can also happen that the model cannot be fitted or does not converge especially at the extremes of the interval to be searched. This will result in missing (\code{NA}) bounds and corresponding warnings. It may then be necessary to adjust the end points manually (see \sQuote{Note}).
 
@@ -60,7 +60,9 @@
    \item{ci.lb}{lower bound of the confidence interval.}
    \item{ci.ub}{upper bound of the confidence interval.}
 
-   The results are formated and printed with the \code{\link{print.confint.rma}} function.
+   When obtaining CIs for all variance and correlation components of \code{"rma.mv"} models, the object is a list of class \code{"list.confint.rma"}, where each element is a \code{"confint.rma"} object as described above.
+
+   The results are formatted and printed with the \code{\link{print.confint.rma}} and \code{\link{print.list.confint.rma}} functions.
 }
 \note{
    For objects of class \code{"rma.uni"} with \code{random=TRUE}, the function provides a confidence interval for \if{latex}{\eqn{\tau^2}}\if{html}{\eqn{\tau²}}\if{text}{\eqn{\tau^2}}. The upper end point of the interval to be searched for the confidence interval bounds is set to 100 (which should be large enough for most cases). The upper end point can be adjusted with \code{control=list(tau2.max=value)}. One can also adjust the lower end point of the interval to be searched with \code{control=list(tau2.min=value)} (the default is to take that value from the object, which is 0 by default). You should only play around with this value if you know what you are doing.
@@ -70,9 +72,7 @@
    The Q-profile and generalized Q-statistic methods are both exact under the assumptions of the random- and mixed-effects models (i.e., normally distributed observed and true outcomes and known sampling variances). In practice, these assumptions are usually only approximately true, turning confidence intervals for \if{latex}{\eqn{\tau^2}}\if{html}{\eqn{\tau²}}\if{text}{\eqn{\tau^2}} also into approximations. Profile likelihood confidence intervals are not exact by construction and rely on the asymptotic behavior of the likelihood ratio statistic, so they may be inaccurate in small samples.
 }
 \author{
-   Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr
-   package website: \url{http://www.metafor-project.org/} \cr
-   author homepage: \url{http://www.wvbauer.com/}
+   Wolfgang Viechtbauer \email{wvb@metafor-project.org} \url{http://www.metafor-project.org/}
 }
 \references{
    Hartung, J., & Knapp, G. (2005). On confidence intervals for the among-group variance in the one-way random effects model with unequal error variances. \emph{Journal of Statistical Planning and Inference}, \bold{127}, 157--177.

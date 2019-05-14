@@ -2,8 +2,10 @@ qqnorm.rma.uni <- function(y, type="rstandard", pch=19, envelope=TRUE,
 level=y$level, bonferroni=FALSE, reps=1000, smooth=TRUE, bass=0,
 label=FALSE, offset=0.3, pos=13, lty, ...) {
 
+   mstyle <- .get.mstyle("crayon" %in% .packages())
+
    if (!inherits(y, "rma.uni"))
-      stop("Argument 'y' must be an object of class \"rma.uni\".")
+      stop(mstyle$stop("Argument 'y' must be an object of class \"rma.uni\"."))
 
    na.act <- getOption("na.action")
 
@@ -12,7 +14,7 @@ label=FALSE, offset=0.3, pos=13, lty, ...) {
    type <- match.arg(type, c("rstandard", "rstudent"))
 
    if (x$k == 1)
-      stop("Stopped because k = 1.")
+      stop(mstyle$stop("Stopped because k = 1."))
 
    draw.envelope <- envelope
 
@@ -22,7 +24,7 @@ label=FALSE, offset=0.3, pos=13, lty, ...) {
    }
 
    if (length(label) != 1)
-      stop("Argument 'label' should be of length 1.")
+      stop(mstyle$stop("Argument 'label' should be of length 1."))
 
    if (missing(lty)) {
       lty <- c("solid", "dotted") ### 1st value = diagonal line, 2nd value = pseudo confidence envelope
@@ -30,6 +32,12 @@ label=FALSE, offset=0.3, pos=13, lty, ...) {
       if (length(lty) == 1L)
          lty <- c(lty, lty)
    }
+
+   ddd <- list(...)
+
+   lqqnorm <- function(..., seed) { qqnorm(...) }
+   labline <- function(..., seed) { abline(...) }
+   llines  <- function(..., seed) { lines(...) }
 
    #########################################################################
 
@@ -49,8 +57,8 @@ label=FALSE, offset=0.3, pos=13, lty, ...) {
       slab   <- slab[ord]
    }
 
-   sav <- qqnorm(zi, pch=pch, bty="l", ...)
-   abline(a=0, b=1, lty=lty[1], ...)
+   sav <- lqqnorm(zi, pch=pch, bty="l", ...)
+   labline(a=0, b=1, lty=lty[1], ...)
    #qqline(zi, ...)
    #abline(h=0, lty="dotted", ...)
    #abline(v=0, lty="dotted", ...)
@@ -61,7 +69,10 @@ label=FALSE, offset=0.3, pos=13, lty, ...) {
 
    if (envelope) {
 
-      level <- ifelse(level > 1, (100-level)/100, ifelse(level > .5, 1-level, level))
+      level <- ifelse(level == 0, 1, ifelse(level >= 1, (100-level)/100, ifelse(level > .5, 1-level, level)))
+
+      if (!is.null(ddd$seed))
+         set.seed(ddd$seed)
 
       dat <- matrix(rnorm(x$k*reps), nrow=x$k, ncol=reps)
 
@@ -84,14 +95,14 @@ label=FALSE, offset=0.3, pos=13, lty, ...) {
       if (smooth)
          temp.lb <- supsmu(temp.lb$x, temp.lb$y, bass=bass)
       if (draw.envelope)
-         lines(temp.lb$x, temp.lb$y, lty=lty[2], ...)
-         #lines(temp.lb$x, temp.lb$y, lty="12", lwd=1.5, ...)
+         llines(temp.lb$x, temp.lb$y, lty=lty[2], ...)
+         #llines(temp.lb$x, temp.lb$y, lty="12", lwd=1.5, ...)
       temp.ub <- qqnorm(ub, plot.it=FALSE)
       if (smooth)
          temp.ub <- supsmu(temp.ub$x, temp.ub$y, bass=bass)
       if (draw.envelope)
-         lines(temp.ub$x, temp.ub$y, lty=lty[2], ...)
-         #lines(temp.ub$x, temp.ub$y, lty="12", lwd=1.5, , ...)
+         llines(temp.ub$x, temp.ub$y, lty=lty[2], ...)
+         #llines(temp.ub$x, temp.ub$y, lty="12", lwd=1.5, , ...)
 
    }
 
@@ -99,10 +110,10 @@ label=FALSE, offset=0.3, pos=13, lty, ...) {
 
    ### labeling of points
 
-   if ((is.character(label) && label=="none") || (is.logical(label) && !label))
+   if ((is.character(label) && label=="none") || .isFALSE(label))
       return(invisible(sav))
 
-   if ((is.character(label) && label=="all") || (is.logical(label) && label))
+   if ((is.character(label) && label=="all") || .isTRUE(label))
       label <- x$k
 
    if (is.numeric(label)) {
@@ -110,7 +121,7 @@ label=FALSE, offset=0.3, pos=13, lty, ...) {
       label <- round(label)
 
       if (label < 1 | label > x$k)
-         stop("Out of range value for 'label' argument.")
+         stop(mstyle$stop("Out of range value for 'label' argument."))
 
       pos.x <- sav$x[ord]
       pos.y <- sav$y[ord]

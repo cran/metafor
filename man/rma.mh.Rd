@@ -6,7 +6,7 @@
 rma.mh(ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
        measure="OR", data, slab, subset,
        add=1/2, to="only0", drop00=TRUE,
-       correct=TRUE, level=95, digits=4, verbose=FALSE, \dots)
+       correct=TRUE, level=95, digits, verbose=FALSE, \dots)
 }
 \arguments{
    \item{ai}{vector to specify the \eqn{2 \times 2}{2x2} table frequencies (upper left cell). See below and the documentation of the \code{\link{escalc}} function for more details.}
@@ -28,7 +28,7 @@ rma.mh(ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
    \item{drop00}{logical indicating whether studies with no cases/events (or only cases) in both groups should be dropped when calculating the observed outcomes (the outcomes for such studies are set to \code{NA}). Can also be a vector of two logicals, where the first applies to the calculation of the observed outcomes and the second when applying the Mantel-Haenszel method. See below and the documentation of the \code{\link{escalc}} function for more details.}
    \item{correct}{logical indicating whether to apply a continuity correction when computing the Cochran-Mantel-Haenszel test statistic.}
    \item{level}{numerical value between 0 and 100 specifying the confidence interval level (the default is 95).}
-   \item{digits}{integer specifying the number of decimal places to which the printed results should be rounded (the default is 4).}
+   \item{digits}{integer specifying the number of decimal places to which the printed results should be rounded (if unspecified, the default is 4).}
    \item{verbose}{logical indicating whether output should be generated on the progress of the model fitting (the default is \code{FALSE}).}
    \item{\dots}{additional arguments.}
 }
@@ -82,21 +82,20 @@ rma.mh(ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
    \item{yi, vi}{the vector of outcomes and corresponding sampling variances.}
    \item{fit.stats}{a list with the log-likelihood, deviance, AIC, BIC, and AICc values under the unrestricted and restricted likelihood.}
    \item{\dots}{some additional elements/values.}
-
-   The results of the fitted model are formated and printed with the \code{\link{print.rma.mh}} function. If fit statistics should also be given, use \code{\link{summary.rma}} (or use the \code{\link{fitstats.rma}} function to extract them).
+}
+\section{Methods}{
+   The results of the fitted model are formatted and printed with the \code{\link{print.rma.mh}} function. If fit statistics should also be given, use \code{\link{summary.rma}} (or use the \code{\link{fitstats.rma}} function to extract them).
 
    The \code{\link{residuals.rma}}, \code{\link{rstandard.rma.mh}}, and \code{\link{rstudent.rma.mh}} functions extract raw and standardized residuals. Leave-one-out diagnostics can be obtained with \code{\link{leave1out.rma.mh}}.
 
-   Forest, funnel, radial, L'Abbé, and Baujat plots can be obtained with \code{\link{forest.rma}}, \code{\link{funnel.rma}}, \code{\link{radial.rma}}, \code{\link{labbe.rma}}, and \code{\link{baujat}}. The \code{\link{qqnorm.rma.mh}} function provides normal QQ plots of the standardized residuals. One can also just call \code{\link{plot.rma.mh}} on the fitted model object to obtain various plots at once.
+   Forest, funnel, radial, \enc{L'Abbé}{L'Abbe}, and Baujat plots can be obtained with \code{\link{forest.rma}}, \code{\link{funnel.rma}}, \code{\link{radial.rma}}, \code{\link{labbe.rma}}, and \code{\link{baujat}}. The \code{\link{qqnorm.rma.mh}} function provides normal QQ plots of the standardized residuals. One can also just call \code{\link{plot.rma.mh}} on the fitted model object to obtain various plots at once.
 
-   A cumulative meta-analysis (i.e., adding one obervation at a time) can be obtained with \code{\link{cumul.rma.mh}}.
+   A cumulative meta-analysis (i.e., adding one observation at a time) can be obtained with \code{\link{cumul.rma.mh}}.
 
    Other extractor functions include \code{\link{coef.rma}}, \code{\link{vcov.rma}}, \code{\link{logLik.rma}}, \code{\link{deviance.rma}}, \code{\link{AIC.rma}}, and \code{\link{BIC.rma}}.
 }
 \author{
-   Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr
-   package website: \url{http://www.metafor-project.org/} \cr
-   author homepage: \url{http://www.wvbauer.com/}
+   Wolfgang Viechtbauer \email{wvb@metafor-project.org} \url{http://www.metafor-project.org/}
 }
 \references{
    Cochran, W. G. (1954). Some methods for strengthening the common \eqn{\chi^2} tests. \emph{Biometrics}, \bold{10}, 417--451.

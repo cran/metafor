@@ -33,8 +33,9 @@
    Fine, H. A., Dear, K. B., Loeffler, J. S., Black, P. M., & Canellos, G. P. (1993). Meta-analysis of radiation therapy with and without adjuvant chemotherapy for malignant gliomas in adults. \emph{Cancer}, \bold{71}, 2585--2597.
 }
 \examples{
-### load data
-dat <- get(data(dat.fine1993))
+### copy data into 'dat' and examine data
+dat <- dat.fine1993
+dat
 
 ### calculate log(ORs) and sampling variances for each time point
 dat <- escalc(measure="OR", ai=e1i, n1i=nei, ci=c1i, n2i=nci, data=dat, var.names=c("y1i","v1i"))
@@ -51,15 +52,15 @@ dat$v24i <- with(dat, nei / (e2i * (nei - e4i)) + nci / (c2i * (nci - c4i)))
 dat$v34i <- with(dat, nei / (e3i * (nei - e4i)) + nci / (c3i * (nci - c4i)))
 
 ### create dataset in long format
-dat.long <- data.frame(study=rep(1:nrow(dat), each=4), time=1:4, 
+dat.long <- data.frame(study=rep(1:nrow(dat), each=4), time=1:4,
                        yi=c(t(dat[,c("y1i","y2i","y3i","y4i")])),
                        vi=c(t(dat[,c("v1i","v2i","v3i","v4i")])))
 
 ### var-cov matrices of the sudies
-V <- lapply(split(dat, dat$study), 
-            function(x) matrix(c( x$v1i, x$v12i, x$v13i, x$v14i, 
-                                 x$v12i,  x$v2i, x$v23i, x$v24i, 
-                                 x$v13i, x$v23i,  x$v3i, x$v34i, 
+V <- lapply(split(dat, dat$study),
+            function(x) matrix(c( x$v1i, x$v12i, x$v13i, x$v14i,
+                                 x$v12i,  x$v2i, x$v23i, x$v24i,
+                                 x$v13i, x$v23i,  x$v3i, x$v34i,
                                  x$v14i, x$v24i, x$v34i,  x$v4i), nrow=4, ncol=4, byrow=TRUE))
 
 ### remove rows for the missing time points in study 17

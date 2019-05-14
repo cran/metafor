@@ -1,15 +1,20 @@
 robust.rma.uni <- function(x, cluster, adjust=TRUE, digits, ...) {
 
+   mstyle <- .get.mstyle("crayon" %in% .packages())
+
    if (!inherits(x, "rma.uni"))
-      stop("Argument 'x' must be an object of class \"rma.uni\".")
+      stop(mstyle$stop("Argument 'x' must be an object of class \"rma.uni\"."))
 
    if (missing(cluster))
-      stop("Need to specify 'cluster' variable.")
+      stop(mstyle$stop("Need to specify 'cluster' variable."))
 
-   if (missing(digits))
-      digits <- x$digits
+   if (missing(digits)) {
+      digits <- .get.digits(xdigits=x$digits, dmiss=TRUE)
+   } else {
+      digits <- .get.digits(digits=digits, xdigits=x$digits, dmiss=FALSE)
+   }
 
-   level <- ifelse(x$level > 1, (100-x$level)/100, ifelse(x$level > .5, 1-x$level, x$level))
+   level <- ifelse(x$level == 0, 1, ifelse(x$level >= 1, (100-x$level)/100, ifelse(x$level > .5, 1-x$level, x$level)))
 
    #########################################################################
 
@@ -25,10 +30,10 @@ robust.rma.uni <- function(x, cluster, adjust=TRUE, digits, ...) {
    ### checks on cluster variable
 
    if (anyNA(cluster))
-      stop("No missing values allowed in 'cluster' variable.")
+      stop(mstyle$stop("No missing values allowed in 'cluster' variable."))
 
    if (length(cluster) != x$k)
-      stop("Length of variable specified via 'cluster' does not match length of data.")
+      stop(mstyle$stop("Length of variable specified via 'cluster' does not match length of data."))
 
    ### number of clusters
 
@@ -42,7 +47,7 @@ robust.rma.uni <- function(x, cluster, adjust=TRUE, digits, ...) {
    ### check if dfs are positive (note: this also handles the case where there is a single cluster)
 
    if (dfs <= 0)
-      stop(paste0("Number of clusters (", n, ") must be larger than the number of fixed effects (", x$p, ")."))
+      stop(mstyle$stop(paste0("Number of clusters (", n, ") must be larger than the number of fixed effects (", x$p, ").")))
 
    ### note: since we use split() below and then put things back together into a block-diagonal matrix,
    ### we have to make sure everything is properly ordered by the cluster variable; otherwise, the 'meat'
@@ -103,7 +108,7 @@ robust.rma.uni <- function(x, cluster, adjust=TRUE, digits, ...) {
 
    ### suggested in Hedges, Tipton, & Johnson (2010) -- analogous to HC1 adjustment
 
-   if (is.logical(adjust) && adjust)
+   if (.isTRUE(adjust))
       vb <- (n / dfs) * vb
 
    ### what Stata does
@@ -130,7 +135,7 @@ robust.rma.uni <- function(x, cluster, adjust=TRUE, digits, ...) {
    if (inherits(QM, "try-error"))
       QM <- NA
 
-   QM <- QM / x$m ### careful: m is the number of coefficients in btt, not the number of unique clusters
+   QM <- QM / x$m ### note: m is the number of coefficients in btt, not the number of unique clusters
    QMp <- pf(QM, df1=x$m, df2=dfs, lower.tail=FALSE)
 
    #########################################################################

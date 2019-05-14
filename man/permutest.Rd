@@ -9,7 +9,7 @@
 permutest(x, \dots)
 
 \method{permutest}{rma.uni}(x, exact=FALSE, iter=1000, permci=FALSE,
-          progbar=TRUE, retpermdist=FALSE, digits, tol, control, \dots)
+          progbar=TRUE, retpermdist=FALSE, digits, control, \dots)
 }
 \arguments{
    \item{x}{an object of class \code{"rma.uni"}.}
@@ -19,14 +19,13 @@ permutest(x, \dots)
    \item{progbar}{logical indicating whether a progress bar should be shown (the default is \code{TRUE}).}
    \item{retpermdist}{logical indicating whether the permutation distributions of the test statistics should be returned (the default is \code{FALSE}).}
    \item{digits}{integer specifying the number of decimal places to which the printed results should be rounded (if unspecified, the default is to take the value from the object).}
-   \item{tol}{numerical tolerance used when making \code{>=} or \code{<=} comparisons between an observed test statistic and the test statistic under the permuted data. Defaults to \code{.Machine$double.eps^0.5} if unspecified. See \sQuote{Note}.}
-   \item{control}{list of control values for \code{uniroot} (i.e., \code{tol} and \code{maxiter}). Only relevant when \code{permci=TRUE}. See \sQuote{Note}.}
+   \item{control}{list of control values for numerical comparisons (\code{comptol}) and for \code{uniroot} (i.e., \code{tol} and \code{maxiter}). The latter is only relevant when \code{permci=TRUE}. See \sQuote{Note}.}
    \item{\dots}{other arguments.}
 }
 \details{
    For models without moderators, the permutation test is carried out by permuting the signs of the observed effect sizes or outcomes. The (two-sided) p-value of the permutation test is then equal to the proportion of times that the absolute value of the test statistic under the permuted data is as extreme or more extreme than under the actually observed data. See Follmann and Proschan (1999) for more details.
 
-   For models with moderators, the permutation test is carried out by permuting the rows of the model matrix (i.e., \eqn{\mathbf{X}}{X}). The (two-sided) p-value for a particular model coefficient is then equal to the proportion of times that the absolute value of the test statistic for the coefficient under the permuted data is as extreme or more extreme than under the actually observed data. Similarly, for the omnibus test, the p-value is the proportion of times that the test statistic for the omnibus test is as extreme or more extreme than the actually observed one. See Higgins and Thompson (2004) and Viechtbauer et al. (2015) for more details.
+   For models with moderators, the permutation test is carried out by permuting the rows of the model matrix (i.e., \eqn{X}). The (two-sided) p-value for a particular model coefficient is then equal to the proportion of times that the absolute value of the test statistic for the coefficient under the permuted data is as extreme or more extreme than under the actually observed data. Similarly, for the omnibus test, the p-value is the proportion of times that the test statistic for the omnibus test is as extreme or more extreme than the actually observed one. See Higgins and Thompson (2004) and Viechtbauer et al. (2015) for more details.
 
    If \code{exact=TRUE}, the function will try to carry out an exact permutation test. An exact permutation test requires fitting the model to each possible permutation once. However, the number of possible permutations increases rapidly with the number of outcomes/studies (i.e., \eqn{k}). For models without moderators, there are \eqn{2^k} possible permutations of the signs. Therefore, for \eqn{k=5}, there are 32 possible permutations, for \eqn{k=10}, there are already 1024, and for \eqn{k=20}, there are over one million permutations of the signs.
 
@@ -51,21 +50,19 @@ permutest(x, \dots)
    \item{ci.ub}{upper bound of the confidence intervals for the coefficients (permutation-based when \code{permci=TRUE}).}
    \item{\dots}{some additional elements/values are passed on.}
 
-   The results are formated and printed with the \code{\link{print.permutest.rma.uni}} function. One can also use \code{\link{coef.permutest.rma.uni}} to obtain the table with the model coefficients, corresponding standard errors, test statistics, p-values, and confidence interval bounds.
+   The results are formatted and printed with the \code{\link{print.permutest.rma.uni}} function. One can also use \code{\link{coef.permutest.rma.uni}} to obtain the table with the model coefficients, corresponding standard errors, test statistics, p-values, and confidence interval bounds.
 }
 \note{
    It is important to note that the p-values obtained with permutation tests cannot reach conventional levels of statistical significance (i.e., \eqn{p \le .05}) when \eqn{k} is very small. In particular, for models without moderators, the smallest possible (two-sided) p-value is .0625 when \eqn{k=5} and .03125 when \eqn{k=6}. Therefore, the permutation test is only able to reject the null hypothesis at \eqn{\alpha=.05} when \eqn{k} is at least equal to 6. For models with moderators, the smallest possible (two-sided) p-value for a particular model coefficient is .0833 when \eqn{k=4} and .0167 when \eqn{k=5} (assuming that each row in the model matrix is unique). Therefore, the permutation test is only able to reject the null hypothesis at \eqn{\alpha=.05} when \eqn{k} is at least equal to 5. Consequently, permutation-based CIs can also only be obtained when \eqn{k} is sufficiently large.
 
    When the number of permutations required for the exact test is so large as to be essentially indistinguishable from infinity (e.g., \code{factorial(200)}), the function will terminate with an error.
 
-   Determining whether a test statistic under the permuted data is as extreme or more extreme than under the actually observed data requires making \code{>=} or \code{<=} comparisons. To avoid problems due to the finite precision with which computers generally represent numbers, the function uses a numerical tolerance (argument \code{tol}) when making such comparisons (e.g., instead of \code{sqrt(3)^2 - 3 >= 0}, which may evaluate to \code{FALSE}, we can use \code{sqrt(3)^2 - 3 >= 0 - .Machine$double.eps^0.5}, which should evaluate to \code{TRUE}).
+   Determining whether a test statistic under the permuted data is as extreme or more extreme than under the actually observed data requires making \code{>=} or \code{<=} comparisons. To avoid problems due to the finite precision with which computers generally represent numbers, the function uses a numerical tolerance (control argument \code{comptol}, which is set by default equal to \code{.Machine$double.eps^0.5}) when making such comparisons (e.g., instead of \code{sqrt(3)^2 - 3 >= 0}, which may evaluate to \code{FALSE}, we can use \code{sqrt(3)^2 - 3 >= 0 - .Machine$double.eps^0.5}, which should evaluate to \code{TRUE}).
 
    When obtaining permutation-based CIs, the function makes use of \code{\link{uniroot}}. By default, the desired accuracy is set equal to \code{.Machine$double.eps^0.25} and the maximum number of iterations to \code{100}. The desired accuracy and the maximum number of iterations can be adjusted with the \code{control} argument (i.e., \code{control=list(tol=value, maxiter=value)}).
 }
 \author{
-   Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr
-   package website: \url{http://www.metafor-project.org/} \cr
-   author homepage: \url{http://www.wvbauer.com/}
+   Wolfgang Viechtbauer \email{wvb@metafor-project.org} \url{http://www.metafor-project.org/}
 }
 \references{
    Follmann, D. A., & Proschan, M. A. (1999). Valid inference in random effects meta-analysis. \emph{Biometrics}, \bold{55}, 732--737.
@@ -76,7 +73,7 @@ permutest(x, \dots)
 
    Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \url{http://www.jstatsoft.org/v36/i03/}.
 
-   Viechtbauer, W., López-López, J. A., Sánchez-Meca, J., & Marín-Martínez, F. (2015). A comparison of procedures to test for moderators in mixed-effects meta-regression models. \emph{Psychological Methods}, \bold{20}, 360--374.
+   Viechtbauer, W., \enc{López-López}{Lopez-Lopez}, J. A., \enc{Sánchez-Meca}{Sanchez-Meca}, J., & \enc{Marín-Martínez}{Marin-Martinez}, F. (2015). A comparison of procedures to test for moderators in mixed-effects meta-regression models. \emph{Psychological Methods}, \bold{20}, 360--374.
 }
 \seealso{
    \code{\link{rma.uni}}, \code{\link{print.permutest.rma.uni}}

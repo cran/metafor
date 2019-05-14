@@ -2,13 +2,13 @@
 \alias{labbe}
 \alias{labbe.rma}
 \title{L'Abbe Plots for 'rma' Objects}
-\description{Function to create L'Abbé plots for objects of class \code{"rma"}.}
+\description{Function to create \enc{L'Abbé}{L'Abbe} plots for objects of class \code{"rma"}.}
 \usage{
 labbe(x, \dots)
 
 \method{labbe}{rma}(x, xlim, ylim, xlab, ylab,
       add=x$add, to=x$to, transf, targs,
-      pch=21, psize, bg="gray", grid=FALSE, \dots)
+      pch=21, psize, bg="gray", grid=FALSE, lty, \dots)
 }
 \arguments{
    \item{x}{an object of class \code{"rma"}. See \sQuote{Details}.}
@@ -21,9 +21,10 @@ labbe(x, \dots)
    \item{transf}{optional argument specifying the name of a function that should be used to transform the outcomes (e.g., \code{transf=exp}; see also \link{transf}). If unspecified, no transformation is used.}
    \item{targs}{optional arguments needed by the function specified under \code{transf}.}
    \item{pch}{plotting symbol to use for the outcomes. By default, a filled circle is used. Can also be a vector of values. See \code{\link{points}} for other options.}
-   \item{psize}{optional vector with point sizes for the outcomes. If unspecified, the point sizes are drawn proportional to the precision of the estimates.}
+   \item{psize}{optional vector with point sizes for the outcomes. If unspecified, the point sizes are an inverse function of the precision of the estimates.}
    \item{bg}{color to use for filling the plotting symbol (the default is \code{"gray"}). Can also be a vector of values. Set to \code{NA} to make the plotting symbols transparent.}
    \item{grid}{logical indicating whether a grid should be added to the plot.}
+   \item{lty}{optional character vector specifying the line type for the diagonal reference line of no effect and the line that indicates the estimated effect based on the fitted model (if unspecified, the function sets this to \code{c("solid", "dashed")} by default; use \code{"blank"} to suppress a line).}
    \item{\dots}{other arguments.}
 }
 \details{
@@ -33,15 +34,20 @@ labbe(x, \dots)
 
    As described under the documentation for the \code{\link{escalc}} function, zero cells can lead to problems when calculating particular outcomes. Adding a small constant to the cells of the \eqn{2 \times 2}{2x2} tables is a common solution to this problem. By default, the functions adopts the same method for handling zero cells as was done when fitting the model.
 
-   The size of the points is drawn proportional to the precision (inverse standard error) of the outcomes. The solid line corresponds to identical outcomes in the two groups (i.e., the absence of a difference between the two groups). The dashed line indicates the estimated effect based on the fitted model.
+   By default (i.e., if \code{psize} is not specified), the size of the points is an inverse function of the precision (inverse standard errors) of the outcomes. The solid line corresponds to identical outcomes in the two groups (i.e., the absence of a difference between the two groups). The dashed line indicates the estimated effect based on the fitted model.
+}
+\value{
+   A data frame with components:
+   \item{x}{the x coordinates of the points that were plotted.}
+   \item{y}{the y coordinates of the points that were plotted.}
+   \item{psize}{the point sizes.}
+   Note that the data frame is returned invisibly.
 }
 \author{
-   Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr
-   package website: \url{http://www.metafor-project.org/} \cr
-   author homepage: \url{http://www.wvbauer.com/}
+   Wolfgang Viechtbauer \email{wvb@metafor-project.org} \url{http://www.metafor-project.org/}
 }
 \references{
-   L'Abbé, K. A., Detsky, A. S., & O'Rourke, K. (1987). Meta-analysis in clinical research. \emph{Annals of Internal Medicine}, \bold{107}, 224--233.
+   \enc{L'Abbé}{L'Abbe}, K. A., Detsky, A. S., & O'Rourke, K. (1987). Meta-analysis in clinical research. \emph{Annals of Internal Medicine}, \bold{107}, 224--233.
 
    Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \url{http://www.jstatsoft.org/v36/i03/}.
 }

@@ -2,7 +2,11 @@
 
 context("Checking misc: funnel() functions")
 
+source("tolerances.r") # read in tolerances
+
 test_that("funnel() works correctly.", {
+
+   expect_equivalent(TRUE, TRUE) # avoid 'Empty test' message
 
    skip_on_cran()
 

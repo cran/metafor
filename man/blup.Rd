@@ -3,7 +3,7 @@
 \alias{blup.rma.uni}
 \title{Best Linear Unbiased Predictions for 'rma.uni' Objects}
 \description{
-   The function calculates best linear unbiased predictions (BLUPs) of the true outcomes by combining the fitted values based on the fixed effects and the estimated contributions of the random effects for objects of class \code{"rma.uni"}. Corresponding standard errors and prediction interval bounds are also provided.
+   The function calculates best linear unbiased predictions (BLUPs) of the study-specific true outcomes by combining the fitted values based on the fixed effects and the estimated contributions of the random effects for objects of class \code{"rma.uni"}. Corresponding standard errors and prediction interval bounds are also provided.
 }
 \usage{
 blup(x, \dots)
@@ -26,12 +26,14 @@ blup(x, \dots)
    \item{pi.ub}{upper bound of the prediction intervals.}
    \item{\dots}{some additional elements/values.}
 
-   The \code{"list.rma"} object is formated and printed with \code{\link{print.list.rma}}.
+   The \code{"list.rma"} object is formatted and printed with \code{\link{print.list.rma}}.
 }
 \note{
    For best linear unbiased predictions of only the random effects, see \code{\link{ranef}}.
 
    For predicted/fitted values that are based only on the fixed effects of the model, see \code{\link{fitted.rma}} and \code{\link{predict.rma}}.
+
+   For conditional residuals (the deviations of the observed outcomes from the BLUPs), see \code{rstandard.rma.uni} with \code{type="conditional"}.
 
    Fixed-effects models (with or without moderators) do not contain random study effects. The BLUPs for these models will therefore be equal to the usual fitted values, that is, those obtained with \code{\link{fitted.rma}} and \code{\link{predict.rma}}.
 
@@ -42,9 +44,7 @@ blup(x, \dots)
    To be precise, it should be noted that the function actually calculates empirical BLUPs (eBLUPs), since the predicted values are a function of the estimated value of \if{latex}{\eqn{\tau^2}}\if{html}{\eqn{\tau²}}\if{text}{\eqn{\tau^2}}.
 }
 \author{
-   Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr
-   package website: \url{http://www.metafor-project.org/} \cr
-   author homepage: \url{http://www.wvbauer.com/}
+   Wolfgang Viechtbauer \email{wvb@metafor-project.org} \url{http://www.metafor-project.org/}
 }
 \references{
    Kackar, R. N., & Harville, D. A. (1981). Unbiasedness of two-stage estimation and prediction procedures for mixed linear models. Communications in Statistics, Theory and Methods, \bold{10}, 1249--1261.

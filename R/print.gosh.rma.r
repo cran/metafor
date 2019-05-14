@@ -1,15 +1,21 @@
-print.gosh.rma <- function(x, digits, ...) {
+print.gosh.rma <- function(x, digits=x$digits, ...) {
+
+   mstyle <- .get.mstyle("crayon" %in% .packages())
 
    if (!inherits(x, "gosh.rma"))
-      stop("Argument 'x' must be an object of class \"gosh.rma\".")
+      stop(mstyle$stop("Argument 'x' must be an object of class \"gosh.rma\"."))
 
-   if (missing(digits))
-      digits <- x$digits
+   digits <- .get.digits(digits=digits, xdigits=x$digits, dmiss=FALSE)
 
+   if (!exists(".rmspace"))
+      cat("\n")
+
+   cat(mstyle$text("Model fits attempted: "))
+   cat(mstyle$result(length(x$fit)))
    cat("\n")
-
-   cat("Model fits attempted:", formatC(length(x$fit), format="f", digits=0), "\n")
-   cat("Model fits succeeded:", formatC(sum(x$fit), format="f", digits=0), "\n\n")
+   cat(mstyle$text("Model fits succeeded: "))
+   cat(mstyle$result(sum(x$fit)))
+   cat("\n\n")
 
    res.table <- matrix(NA, nrow=ncol(x$res), ncol=6)
 
@@ -20,7 +26,7 @@ print.gosh.rma <- function(x, digits, ...) {
    res.table[,5] <- apply(x$res, 2, quantile, .75, na.rm=TRUE)
    res.table[,6] <- apply(x$res, 2, max, na.rm=TRUE)
 
-   res.table <- formatC(res.table, format="f", digits=digits)
+   res.table <- .fcf(res.table, digits[["est"]])
 
    colnames(res.table) <- c("mean", "min", "Q1", "median", "Q3", "max")
    rownames(res.table) <- colnames(x$res)
@@ -38,9 +44,11 @@ print.gosh.rma <- function(x, digits, ...) {
    if (x$method == "FE")
       res.table <- res.table[-5,]
 
-   print(res.table, quote=FALSE, right=TRUE)
+   tmp <- capture.output(print(res.table, quote=FALSE, right=TRUE))
+   .print.table(tmp, mstyle)
 
-   cat("\n")
+   if (!exists(".rmspace"))
+      cat("\n")
 
    invisible()
 

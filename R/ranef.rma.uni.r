@@ -1,20 +1,25 @@
 ranef.rma.uni <- function(object, level, digits, transf, targs, ...) {
 
+   mstyle <- .get.mstyle("crayon" %in% .packages())
+
    x <- object
 
    if (!inherits(x, "rma.uni"))
-      stop("Argument 'x' must be an object of class \"rma.uni\".")
+      stop(mstyle$stop("Argument 'x' must be an object of class \"rma.uni\"."))
 
    na.act <- getOption("na.action")
 
    if (!is.element(na.act, c("na.omit", "na.exclude", "na.fail", "na.pass")))
-      stop("Unknown 'na.action' specified under options().")
+      stop(mstyle$stop("Unknown 'na.action' specified under options()."))
 
    if (missing(level))
       level <- x$level
 
-   if (missing(digits))
-      digits <- x$digits
+   if (missing(digits)) {
+      digits <- .get.digits(xdigits=x$digits, dmiss=TRUE)
+   } else {
+      digits <- .get.digits(digits=digits, xdigits=x$digits, dmiss=FALSE)
+   }
 
    if (missing(transf))
       transf <- FALSE
@@ -22,7 +27,7 @@ ranef.rma.uni <- function(object, level, digits, transf, targs, ...) {
    if (missing(targs))
       targs <- NULL
 
-   level <- ifelse(level > 1, (100-level)/100, ifelse(level > .5, 1-level, level))
+   level <- ifelse(level == 0, 1, ifelse(level >= 1, (100-level)/100, ifelse(level > .5, 1-level, level)))
 
    if (is.element(x$test, c("knha","adhoc","t"))) {
       crit <- qt(level/2, df=x$dfs, lower.tail=FALSE)
@@ -33,7 +38,7 @@ ranef.rma.uni <- function(object, level, digits, transf, targs, ...) {
    ### TODO: check computations for user-defined weights
 
    if (!is.null(x$weights) || !x$weighted)
-      stop("Extraction of random effects for models with non-standard weights not currently implemented.")
+      stop(mstyle$stop("Extraction of random effects not available for models with non-standard weights."))
 
    #########################################################################
 
@@ -43,7 +48,7 @@ ranef.rma.uni <- function(object, level, digits, transf, targs, ...) {
    ### see Appendix in: Raudenbush, S. W., & Bryk, A. S. (1985). Empirical
    ### Bayes meta-analysis. Journal of Educational Statistics, 10(2), 75-98
 
-   li <- x$tau2 / (x$tau2 + x$vi.f)
+   li <- x$tau2.f / (x$tau2.f + x$vi.f)
 
    for (i in seq_len(x$k.f)[x$not.na]) { ### note: skipping NA cases
       Xi <- matrix(x$X.f[i,], nrow=1)
@@ -98,7 +103,7 @@ ranef.rma.uni <- function(object, level, digits, transf, targs, ...) {
    }
 
    if (na.act == "na.fail" && any(!x$not.na))
-      stop("Missing values in results.")
+      stop(mstyle$stop("Missing values in results."))
 
    #########################################################################
 

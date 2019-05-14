@@ -1,17 +1,23 @@
-profile.rma.uni <- function(fitted, xlim, ylim, steps=20, progbar=TRUE, parallel="no", ncpus=1, cl=NULL, plot=TRUE, pch=19, ...) {
+profile.rma.uni <- function(fitted,
+   xlim, ylim, steps=20, progbar=TRUE, parallel="no", ncpus=1, cl=NULL, plot=TRUE, pch=19, cline=FALSE, ...) {
+
+   mstyle <- .get.mstyle("crayon" %in% .packages())
 
    if (!inherits(fitted, "rma.uni"))
-      stop("Argument 'fitted' must be an object of class \"rma.uni\".")
+      stop(mstyle$stop("Argument 'fitted' must be an object of class \"rma.uni\"."))
 
    if (inherits(fitted, "rma.ls"))
-      stop("Method not yet implemented for objects of class \"rma.ls\". Sorry!")
+      stop(mstyle$stop("Method not available for objects of class \"rma.ls\"."))
 
    if (steps < 2)
-      stop("Argument 'steps' must be >= 2.")
+      stop(mstyle$stop("Argument 'steps' must be >= 2."))
 
    x <- fitted
 
    parallel <- match.arg(parallel, c("no", "snow", "multicore"))
+
+   if (parallel == "no" && ncpus > 1)
+      parallel <- "snow"
 
    #########################################################################
 
@@ -40,7 +46,7 @@ profile.rma.uni <- function(fitted, xlim, ylim, steps=20, progbar=TRUE, parallel
 
          ### if the profile method fails, try a Wald-type CI for tau^2
 
-         vc.lb <- max(0, x$tau2 - 1.96 * x$se.tau2)
+         vc.lb <- max( 0, x$tau2 - 1.96 * x$se.tau2)
          vc.ub <- max(.1, x$tau2 + 1.96 * x$se.tau2)
 
       }
@@ -59,14 +65,14 @@ profile.rma.uni <- function(fitted, xlim, ylim, steps=20, progbar=TRUE, parallel
       ### if all of that fails, throw an error
 
       if (is.na(vc.lb) || is.na(vc.ub))
-         stop("Cannot set 'xlim' automatically. Please set this argument manually.")
+         stop(mstyle$stop("Cannot set 'xlim' automatically. Please set this argument manually."))
 
       xlim <- c(vc.lb, vc.ub)
 
    } else {
 
       if (length(xlim) != 2L)
-         stop("Argument 'xlim' should be a vector of length 2.")
+         stop(mstyle$stop("Argument 'xlim' should be a vector of length 2."))
 
       xlim <- sort(xlim)
 
@@ -75,7 +81,7 @@ profile.rma.uni <- function(fitted, xlim, ylim, steps=20, progbar=TRUE, parallel
    vcs <- seq(xlim[1], xlim[2], length=steps)
 
    if (length(vcs) <= 1)
-      stop("Cannot set 'xlim' automatically. Please set this argument manually.")
+      stop(mstyle$stop("Cannot set 'xlim' automatically. Please set this argument manually."))
 
    if (parallel=="no") {
 
@@ -112,12 +118,12 @@ profile.rma.uni <- function(fitted, xlim, ylim, steps=20, progbar=TRUE, parallel
    if (parallel=="snow" || parallel == "multicore") {
 
       if (!requireNamespace("parallel", quietly=TRUE))
-         stop("Please install the 'parallel' package for parallel processing.")
+         stop(mstyle$stop("Please install the 'parallel' package for parallel processing."))
 
       ncpus <- as.integer(ncpus)
 
       if (ncpus < 1)
-         stop("Argument 'ncpus' must be >= 1.")
+         stop(mstyle$stop("Argument 'ncpus' must be >= 1."))
 
       if (parallel == "multicore")
          res <- parallel::mclapply(vcs, .profile.rma.uni, obj=x, mc.cores=ncpus, parallel=parallel, profile=TRUE)
@@ -125,24 +131,20 @@ profile.rma.uni <- function(fitted, xlim, ylim, steps=20, progbar=TRUE, parallel
       if (parallel == "snow") {
          if (is.null(cl)) {
             cl <- parallel::makePSOCKcluster(ncpus)
-            res <- parallel::parLapply(cl, vcs, .profile.rma.uni, obj=x, parallel=parallel, profile=TRUE)
-            #res <- parallel::parLapplyLB(cl, vcs, .profile.rma.uni, obj=x, parallel=parallel, profile=TRUE)
-            #res <- parallel::clusterApply(cl, vcs, .profile.rma.uni, obj=x, parallel=parallel, profile=TRUE)
-            #res <- parallel::clusterApplyLB(cl, vcs, .profile.rma.uni, obj=x, parallel=parallel, profile=TRUE)
-            #res <- parallel::clusterMap(cl, .profile.rma.uni, vcs, MoreArgs=list(obj=x, parallel=parallel, profile=TRUE))
-            #res <- parallel::clusterMap(cl, .profile.rma.uni, vcs, MoreArgs=list(obj=x, parallel=parallel, profile=TRUE), .scheduling = "dynamic")
-            parallel::stopCluster(cl)
-         } else {
-            res <- parallel::parLapply(cl, vcs, .profile.rma.uni, obj=x, parallel=parallel, profile=TRUE)
+            on.exit(parallel::stopCluster(cl))
          }
+         #res <- parallel::parLapplyLB(cl, vcs, .profile.rma.uni, obj=x, parallel=parallel, profile=TRUE)
+         #res <- parallel::clusterApply(cl, vcs, .profile.rma.uni, obj=x, parallel=parallel, profile=TRUE)
+         #res <- parallel::clusterApplyLB(cl, vcs, .profile.rma.uni, obj=x, parallel=parallel, profile=TRUE)
+         #res <- parallel::clusterMap(cl, .profile.rma.uni, vcs, MoreArgs=list(obj=x, parallel=parallel, profile=TRUE))
+         #res <- parallel::clusterMap(cl, .profile.rma.uni, vcs, MoreArgs=list(obj=x, parallel=parallel, profile=TRUE), .scheduling = "dynamic")
+         res <- parallel::parLapply(cl, vcs, .profile.rma.uni, obj=x, parallel=parallel, profile=TRUE)
       }
 
-      return(res)
-      
-      lls <- sapply(res, function(z) z$ll)
-      beta  <- do.call("rbind", lapply(res, function(z) t(z$beta)))
-      ci.lb <- do.call("rbind", lapply(res, function(z) t(z$ci.lb)))
-      ci.ub <- do.call("rbind", lapply(res, function(z) t(z$ci.ub)))
+      lls <- sapply(res, function(x) x$ll)
+      beta  <- do.call("rbind", lapply(res, function(x) t(x$beta)))
+      ci.lb <- do.call("rbind", lapply(res, function(x) t(x$ci.lb)))
+      ci.ub <- do.call("rbind", lapply(res, function(x) t(x$ci.ub)))
 
    }
 
@@ -164,7 +166,7 @@ profile.rma.uni <- function(fitted, xlim, ylim, steps=20, progbar=TRUE, parallel
    } else {
 
       if (length(ylim) != 2L)
-         stop("Argument 'ylim' should be a vector of length 2.")
+         stop(mstyle$stop("Argument 'ylim' should be a vector of length 2."))
 
       ylim <- sort(ylim)
 
@@ -173,13 +175,13 @@ profile.rma.uni <- function(fitted, xlim, ylim, steps=20, progbar=TRUE, parallel
    xlab <- expression(paste(tau^2, " Value"))
    title <- expression(paste("Profile Plot for ", tau^2))
 
-   sav <- list(tau2=vcs, ll=lls, beta=beta, ci.lb=ci.lb, ci.ub=ci.ub, comps=1, ylim=ylim, method=x$method, vc=x$tau2, maxll=logLik(x), xlab=xlab, title=title)
+   sav <- list(tau2=vcs, ll=lls, beta=beta, ci.lb=ci.lb, ci.ub=ci.ub, comps=1, xlim=xlim, ylim=ylim, method=x$method, vc=x$tau2, maxll=logLik(x), xlab=xlab, title=title)
    class(sav) <- "profile.rma"
 
    #########################################################################
 
    if (plot)
-      plot(sav, pch=pch, ...)
+      plot(sav, pch=pch, cline=cline, ...)
 
    #########################################################################
 

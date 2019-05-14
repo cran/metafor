@@ -15,7 +15,7 @@
 \bold{ethnicity}   \tab \code{character} \tab dominant ethnicity of the patients in the standard care group \cr
 \bold{patients}    \tab \code{character} \tab inclusion of patients continuing or starting (a new) treatment \cr
 \bold{select}      \tab \code{character} \tab baseline selection of patients with adherence problems or no selection \cr
-\bold{sens}        \tab \code{character} \tab sensitivity of viral load assessments (<400 vs. >=400 copies/ml).
+\bold{sens}        \tab \code{character} \tab sensitivity of viral load assessments (<400 vs. >=400 copies/ml)
 }
 }
 \details{
@@ -25,11 +25,12 @@
    de Bruin, M., Viechtbauer, W., Hospers, H. J., Schaalma, H. P., & Kok, G. (2009). Standard care quality determines treatment outcomes in control groups of HAART-adherence intervention studies: Implications for the interpretation and comparison of intervention effects. \emph{Health Psychology}, \bold{28}, 668--674.
 }
 \examples{
-### load data
-dat <- get(data(dat.debruin2009))
+### copy data into 'dat'
+dat <- dat.debruin2009
 
 ### calculate proportions and corresponding sampling variances
 dat <- escalc(measure="PR", xi=xi, ni=ni, data=dat)
+dat
 
 ### random-effects model
 res <- rma(yi, vi, data=dat)

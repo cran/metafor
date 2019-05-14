@@ -6,6 +6,8 @@ context("Checking plots example: funnel plot with trim and fill")
 
 test_that("plot can be drawn.", {
 
+   expect_equivalent(TRUE, TRUE) # avoid 'Empty test' message
+
    skip_on_cran()
 
    opar <- par(no.readonly=TRUE)
@@ -23,7 +25,7 @@ test_that("plot can be drawn.", {
    taf <- trimfill(res)
 
    ### draw funnel plot with missing studies filled in
-   funnel(taf)
+   funnel(taf, legend=TRUE)
 
    par(opar)
 

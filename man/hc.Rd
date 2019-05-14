@@ -8,7 +8,7 @@
 \usage{
 hc(object, \dots)
 
-\method{hc}{rma.uni}(object, digits, transf, targs, control, \ldots)
+\method{hc}{rma.uni}(object, digits, transf, targs, control, \dots)
 }
 \arguments{
    \item{object}{an object of class \code{"rma.uni"}.}
@@ -33,7 +33,7 @@ hc(object, \dots)
    \item{ci.ub}{upper bound of the confidence intervals for the average true effect.}
    \item{\dots}{some additional elements/values.}
 
-   The results are formated and printed with the \code{\link{print.hc.rma.uni}} function.
+   The results are formatted and printed with the \code{\link{print.hc.rma.uni}} function.
 }
 \note{
    The method makes use of the \code{\link{uniroot}} function. By default, the desired accuracy is set equal to \code{.Machine$double.eps^0.25} and the maximum number of iterations to \code{1000}. The desired accuracy (\code{tol}) and the maximum number of iterations (\code{maxiter}) can be adjusted with the \code{control} argument (i.e., \code{control=list(tol=value, maxiter=value)}).

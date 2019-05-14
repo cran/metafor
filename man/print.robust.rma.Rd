@@ -5,12 +5,12 @@
    Print method for objects of class \code{"robust.rma"}.
 }
 \usage{
-\method{print}{robust.rma}(x, digits, signif.stars=getOption("show.signif.stars"),
+\method{print}{robust.rma}(x, digits=x$digits, signif.stars=getOption("show.signif.stars"),
       signif.legend=signif.stars, \dots)
 }
 \arguments{
    \item{x}{an object of class \code{"robust.rma"}.}
-   \item{digits}{integer specifying the number of decimal places to which the printed results should be rounded (if unspecified, the default is to take the value from the object).}
+   \item{digits}{integer specifying the number of decimal places to which the printed results should be rounded (the default is to take the value from the object).}
    \item{signif.stars}{logical indicating whether p-values should be encoded visually with \sQuote{significance stars}. Defaults to the \code{show.signif.stars} slot of \code{\link{options}}.}
    \item{signif.legend}{logical indicating whether the legend for the \sQuote{significance stars} should be printed. Defaults to the value for \code{signif.stars}.}
    \item{\dots}{other arguments.}
@@ -24,12 +24,10 @@
    }
 }
 \value{
-   The \code{print} functions do not return an object.
+   The function does not return an object.
 }
 \author{
-   Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr
-   package website: \url{http://www.metafor-project.org/} \cr
-   author homepage: \url{http://www.wvbauer.com/}
+   Wolfgang Viechtbauer \email{wvb@metafor-project.org} \url{http://www.metafor-project.org/}
 }
 \references{
    Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \url{http://www.jstatsoft.org/v36/i03/}.

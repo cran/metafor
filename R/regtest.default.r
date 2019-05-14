@@ -2,16 +2,23 @@ regtest.default <- function(x, vi, sei, ni, subset, model="rma", predictor="sei"
 
    #########################################################################
 
+   mstyle <- .get.mstyle("crayon" %in% .packages())
+
    na.act <- getOption("na.action")
 
    if (!is.element(na.act, c("na.omit", "na.exclude", "na.fail", "na.pass")))
-      stop("Unknown 'na.action' specified under options().")
+      stop(mstyle$stop("Unknown 'na.action' specified under options()."))
 
    if (missing(subset))
       subset <- NULL
 
-   if (missing(digits))
-      digits <- 4
+   ### set defaults for digits
+
+   if (missing(digits)) {
+      digits <- .set.digits(dmiss=TRUE)
+   } else {
+      digits <- .set.digits(digits, dmiss=FALSE)
+   }
 
    if (missing(ni))
       ni <- NULL
@@ -35,7 +42,7 @@ regtest.default <- function(x, vi, sei, ni, subset, model="rma", predictor="sei"
    }
 
    if (is.null(vi))
-      stop("Need to specify 'vi' or 'sei' argument.")
+      stop(mstyle$stop("Need to specify 'vi' or 'sei' argument."))
 
    yi <- x
 
@@ -76,12 +83,12 @@ regtest.default <- function(x, vi, sei, ni, subset, model="rma", predictor="sei"
          yi <- yi[not.na]
          vi <- vi[not.na]
          ni <- ni[not.na]
-         warning("Studies with NAs omitted from test.")
+         warning(mstyle$warning("Studies with NAs omitted from test."))
 
       }
 
       if (na.act == "na.fail")
-         stop("Missing values in data.")
+         stop(mstyle$stop("Missing values in data."))
 
    }
 
@@ -96,7 +103,7 @@ regtest.default <- function(x, vi, sei, ni, subset, model="rma", predictor="sei"
    if (is.element(predictor, c("ni", "ninv", "sqrtni", "sqrtninv"))) {
 
       if (is.null(ni)) {
-         stop("Sample size information need to be specified via 'ni' argument.")
+         stop(mstyle$stop("Sample size information need to be specified via 'ni' argument."))
 
       } else {
 
@@ -118,7 +125,7 @@ regtest.default <- function(x, vi, sei, ni, subset, model="rma", predictor="sei"
    tmp <- lm(yi ~ X - 1)
    coef.na <- is.na(coef(tmp))
    if (any(coef.na))
-      stop("Model matrix not of full. Cannot fit model.")
+      stop(mstyle$stop("Model matrix not of full. Cannot fit model."))
 
    if (model == "rma") {
 
@@ -129,8 +136,8 @@ regtest.default <- function(x, vi, sei, ni, subset, model="rma", predictor="sei"
 
    } else {
 
-      fit <- lm(yi ~ X - 1, weights=1/vi)
-
+      yi   <- c(yi) ### to remove attributes
+      fit  <- lm(yi ~ X - 1, weights=1/vi)
       fit  <- summary(fit)
       zval <- coef(fit)[2,3]
       pval <- coef(fit)[2,4]

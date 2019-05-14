@@ -1,7 +1,7 @@
 \name{dat.egger2001}
 \docType{data}
 \alias{dat.egger2001}
-\title{Studies on the Effectiveness of Intravenous Magnesium in Acute Myocardial Infarction.}
+\title{Studies on the Effectiveness of Intravenous Magnesium in Acute Myocardial Infarction}
 \description{Results from 16 trials examining the effectiveness of intravenous magnesium in the prevention of death following acute myocardial infarction.}
 \usage{
 dat.egger2001
@@ -14,7 +14,7 @@ dat.egger2001
 \bold{ai}    \tab \code{numeric}   \tab number of deaths in the magnesium group \cr
 \bold{n1i}   \tab \code{numeric}   \tab number of patients in the magnesium group \cr
 \bold{ci}    \tab \code{numeric}   \tab number of deaths in the control group \cr
-\bold{n2i}   \tab \code{numeric}   \tab number of patients in the control group \cr
+\bold{n2i}   \tab \code{numeric}   \tab number of patients in the control group
 }
 }
 \details{
@@ -42,8 +42,9 @@ dat.egger2001
    \code{\link{dat.li2007}}
 }
 \examples{
-### load data
-dat <- get(data(dat.egger2001))
+### copy data into 'dat' and examine data
+dat <- dat.egger2001
+dat
 
 ### meta-analysis of trials 1-7 using Peto's method (as in Teo et al., 1991)
 res <- rma.peto(ai=ai, n1i=n1i, ci=ci, n2i=n2i, data=dat, subset=1:7)

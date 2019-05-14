@@ -1,46 +1,55 @@
 print.rma.glmm <- function(x, digits, showfit=FALSE, signif.stars=getOption("show.signif.stars"), signif.legend=signif.stars, ...) {
 
+   mstyle <- .get.mstyle("crayon" %in% .packages())
+
    if (!inherits(x, "rma.glmm"))
-      stop("Argument 'x' must be an object of class \"rma.glmm\".")
+      stop(mstyle$stop("Argument 'x' must be an object of class \"rma.glmm\"."))
 
-   if (missing(digits))
-      digits <- x$digits
+   if (missing(digits)) {
+      digits <- .get.digits(xdigits=x$digits, dmiss=TRUE)
+   } else {
+      digits <- .get.digits(digits=digits, xdigits=x$digits, dmiss=FALSE)
+   }
 
-   cat("\n")
+   if (!exists(".rmspace"))
+      cat("\n")
 
    if (x$method == "FE") {
       if (x$int.only) {
-         cat("Fixed-Effects Model (k = ", x$k, ")", sep="")
+         cat(mstyle$section("Fixed-Effects Model"))
       } else {
-         cat("Fixed-Effects with Moderators Model (k = ", x$k, ")", sep="")
+         cat(mstyle$section("Fixed-Effects with Moderators Model"))
       }
+      cat(mstyle$section(paste0(" (k = ", x$k, ")")))
    } else {
       if (x$int.only) {
-         cat("Random-Effects Model (k = ", x$k, "; ", sep="")
+         cat(mstyle$section("Random-Effects Model"))
       } else {
-         cat("Mixed-Effects Model (k = ", x$k, "; ", sep="")
+         cat(mstyle$section("Mixed-Effects Model"))
       }
-      cat("tau^2 estimator: ", x$method, ")", sep="")
+      cat(mstyle$section(paste0(" (k = ", x$k, "; ")))
+      cat(mstyle$section(paste0("tau^2 estimator: ", x$method, ")")))
    }
 
    if (is.element(x$measure, c("OR","IRR"))) {
       cat("\n")
       if (x$model == "UM.FS")
-         cat("Model Type: Unconditional Model with Fixed Study Effects")
+         cat(mstyle$section("Model Type: Unconditional Model with Fixed Study Effects"))
       if (x$model == "UM.RS")
-         cat("Model Type: Unconditional Model with Random Study Effects")
+         cat(mstyle$section("Model Type: Unconditional Model with Random Study Effects"))
       if (x$model == "CM.AL")
-         cat("Model Type: Conditional Model with Approximate Likelihood")
+         cat(mstyle$section("Model Type: Conditional Model with Approximate Likelihood"))
       if (x$model == "CM.EL")
-         cat("Model Type: Conditional Model with Exact Likelihood")
+         cat(mstyle$section("Model Type: Conditional Model with Exact Likelihood"))
    }
 
    if (showfit) {
       cat("\n")
-      fs <- c(formatC(round(x$fit.stats$ML, digits=digits), digits=digits, format="f")) ### formatC(round()) - see comment below
+      fs <- .fcf(x$fit.stats$ML, digits[["fit"]])
       names(fs) <- c("logLik", "deviance", "AIC", "BIC", "AICc")
       cat("\n")
-      print(fs, quote=FALSE, print.gap=2)
+      tmp <- capture.output(print(fs, quote=FALSE, print.gap=2))
+      .print.table(tmp, mstyle)
       cat("\n")
    } else {
       cat("\n\n")
@@ -48,27 +57,45 @@ print.rma.glmm <- function(x, digits, showfit=FALSE, signif.stars=getOption("sho
 
    if (x$method != "FE") {
       if (x$int.only) {
-         cat("tau^2 (estimated amount of total heterogeneity): ", formatC(x$tau2, digits=ifelse(abs(x$tau2) <= .Machine$double.eps*10,0,digits), format="f"), ifelse(is.na(x$se.tau2), "", paste0(" (SE = " , formatC(x$se.tau2, digits=digits, format="f"), ")") ), "\n", sep = "")
-         cat("tau (square root of estimated tau^2 value):      ", ifelse(x$tau2>=0, formatC(sqrt(x$tau2), digits=ifelse(x$tau2 <= .Machine$double.eps*10,0,digits), format="f"), NA), "\n", sep = "")
-         cat("I^2 (total heterogeneity / total variability):   ", ifelse(is.na(x$I2), NA, formatC(x$I2, digits=2, format="f")), "%", "\n", sep = "")
-         cat("H^2 (total variability / sampling variability):  ", ifelse(is.na(x$H2), NA, formatC(x$H2, digits=2, format="f")), sep = "")
+         cat(mstyle$text("tau^2 (estimated amount of total heterogeneity): "))
+         cat(mstyle$result(paste0(.fcf(x$tau2, ifelse(abs(x$tau2) <= .Machine$double.eps*10,0,digits[["var"]])), ifelse(is.na(x$se.tau2), "", paste0(" (SE = " , .fcf(x$se.tau2, digits[["sevar"]]), ")")))))
+         cat("\n")
+         cat(mstyle$text("tau (square root of estimated tau^2 value):      "))
+         cat(mstyle$result(paste0(ifelse(x$tau2>=0, .fcf(sqrt(x$tau2), ifelse(x$tau2 <= .Machine$double.eps*10,0,digits[["var"]])), NA))))
+         cat("\n")
+         cat(mstyle$text("I^2 (total heterogeneity / total variability):   "))
+         cat(mstyle$result(paste0(ifelse(is.na(x$I2), NA, .fcf(x$I2, digits[["het"]])), "%")))
+         cat("\n")
+         cat(mstyle$text("H^2 (total variability / sampling variability):  "))
+         cat(mstyle$result(paste0(ifelse(is.na(x$H2), NA, .fcf(x$H2, digits[["het"]])))))
       } else {
-         cat("tau^2 (estimated amount of residual heterogeneity):     ", formatC(x$tau2, digits=ifelse(abs(x$tau2) <= .Machine$double.eps*10,0,digits), format="f"), ifelse(is.na(x$se.tau2), "", paste0(" (SE = " , formatC(x$se.tau2, digits=digits, format="f"), ")") ), "\n", sep = "")
-         cat("tau (square root of estimated tau^2 value):             ", ifelse(x$tau2>=0, formatC(sqrt(x$tau2), digits=ifelse(x$tau2 <= .Machine$double.eps*10,0,digits), format="f"), NA), "\n", sep="")
-         cat("I^2 (residual heterogeneity / unaccounted variability): ", ifelse(is.na(x$I2), NA, formatC(x$I2, digits=2, format="f")), "%", "\n", sep = "")
-         cat("H^2 (unaccounted variability / sampling variability):   ", ifelse(is.na(x$H2), NA, formatC(x$H2, digits=2, format="f")), sep = "")
+         cat(mstyle$text("tau^2 (estimated amount of residual heterogeneity):     "))
+         cat(mstyle$result(paste0(.fcf(x$tau2, ifelse(abs(x$tau2) <= .Machine$double.eps*10,0,digits[["var"]])), ifelse(is.na(x$se.tau2), "", paste0(" (SE = " , .fcf(x$se.tau2, digits[["sevar"]]), ")")))))
+         cat("\n")
+         cat(mstyle$text("tau (square root of estimated tau^2 value):             "))
+         cat(mstyle$result(paste0(ifelse(x$tau2>=0, .fcf(sqrt(x$tau2), ifelse(x$tau2 <= .Machine$double.eps*10,0,digits[["var"]])), NA))))
+         cat("\n")
+         cat(mstyle$text("I^2 (residual heterogeneity / unaccounted variability): "))
+         cat(mstyle$result(paste0(ifelse(is.na(x$I2), NA, .fcf(x$I2, digits[["het"]])), "%")))
+         cat("\n")
+         cat(mstyle$text("H^2 (unaccounted variability / sampling variability):   "))
+         cat(mstyle$result(paste0(ifelse(is.na(x$H2), NA, .fcf(x$H2, digits[["het"]])))))
       }
       cat("\n\n")
    }
 
    if (!is.na(x$sigma2)) {
-      cat("sigma^2 (estimated amount of study level variability): ", formatC(x$sigma2, digits=ifelse(abs(x$sigma2) <= .Machine$double.eps*10,0,digits), format="f"), "\n", sep = "")
-      cat("sigma (square root of estimated sigma^2 value):        ", ifelse(x$sigma2>=0, formatC(sqrt(x$sigma2), digits=ifelse(x$sigma2 <= .Machine$double.eps*10,0,digits), format="f"), NA), "\n\n", sep = "")
+      cat(mstyle$text("sigma^2 (estimated amount of study level variability): "))
+      cat(mstyle$result(paste0(.fcf(x$sigma2, ifelse(abs(x$sigma2) <= .Machine$double.eps*10,0,digits[["var"]])))))
+      cat("\n")
+      cat(mstyle$text("sigma (square root of estimated sigma^2 value):        "))
+      cat(mstyle$result(paste0(ifelse(x$sigma2>=0, .fcf(sqrt(x$sigma2), ifelse(x$sigma2 <= .Machine$double.eps*10,0,digits[["var"]])), NA))))
+      cat("\n\n")
    }
 
    if (!is.na(x$QE.Wld) || !is.na(x$QE.LRT)) {
-      QE.Wld <- formatC(round(x$QE.Wld, digits=digits), digits=digits, format="f") ### formatC(round()) seems a bit redundant, but had problem with a "true" 0
-      QE.LRT <- formatC(round(x$QE.LRT, digits=digits), digits=digits, format="f") ### (that even tested as TRUE with == 0) show up as -0.0000 (not sure why)
+      QE.Wld <- .fcf(x$QE.Wld, digits[["test"]])
+      QE.LRT <- .fcf(x$QE.LRT, digits[["test"]])
 
       if (nchar(QE.Wld) > nchar(QE.LRT))
          QE.LRT <- paste0(paste(rep(" ", nchar(QE.Wld) - nchar(QE.LRT)), collapse=""), QE.LRT)
@@ -76,52 +103,58 @@ print.rma.glmm <- function(x, digits, showfit=FALSE, signif.stars=getOption("sho
          QE.Wld <- paste0(paste(rep(" ", nchar(QE.LRT) - nchar(QE.Wld)), collapse=""), QE.Wld)
 
       if (x$int.only) {
-         cat("Tests for Heterogeneity: \n")
-         cat("Wld(df = ", x$QE.df, ") = ", QE.Wld, ", p-val ", .pval(x$QEp.Wld, digits=digits, showeq=TRUE, sep=" "), "\n", sep="")
-         cat("LRT(df = ", x$QE.df, ") = ", QE.LRT, ", p-val ", .pval(x$QEp.LRT, digits=digits, showeq=TRUE, sep=" "), "\n\n", sep="")
+         cat(mstyle$section("Tests for Heterogeneity:"))
       } else {
-         cat("Tests for Residual Heterogeneity: \n")
-         cat("Wld(df = ", x$QE.df, ") = ", QE.Wld, ", p-val ", .pval(x$QEp.Wld, digits=digits, showeq=TRUE, sep=" "), "\n", sep="")
-         cat("LRT(df = ", x$QE.df, ") = ", QE.LRT, ", p-val ", .pval(x$QEp.LRT, digits=digits, showeq=TRUE, sep=" "), "\n\n", sep="")
+         cat(mstyle$section("Tests for Residual Heterogeneity:"))
       }
+      cat("\n")
+      cat(mstyle$result(paste0("Wld(df = ", x$QE.df, ") = ", QE.Wld, ", p-val ", .pval(x$QEp.Wld, digits=digits[["pval"]], showeq=TRUE, sep=" "))))
+      cat("\n")
+      cat(mstyle$result(paste0("LRT(df = ", x$QE.df, ") = ", QE.LRT, ", p-val ", .pval(x$QEp.LRT, digits=digits[["pval"]], showeq=TRUE, sep=" "))))
+      cat("\n\n")
    }
 
    if (x$p > 1 && !is.na(x$QM)) {
-      cat("Test of Moderators (coefficient(s) ", .format.btt(x$btt),"): \n", sep="")
+      cat(mstyle$section(paste0("Test of Moderators (coefficient", ifelse(x$m == 1, " ", "s "), .format.btt(x$btt),"):")))
+      cat("\n")
       if (is.element(x$test, c("t"))) {
-         cat("F(df1 = ", x$m, ", df2 = ", x$dfs, ") = ", formatC(x$QM, digits=digits, format="f"), ", p-val ", .pval(x$QMp, digits=digits, showeq=TRUE, sep=" "), "\n\n", sep="")
+         cat(mstyle$result(paste0("F(df1 = ", x$m, ", df2 = ", x$dfs, ") = ", .fcf(x$QM, digits[["test"]]), ", p-val ", .pval(x$QMp, digits=digits[["pval"]], showeq=TRUE, sep=" "))))
       } else {
-         cat("QM(df = ", x$m, ") = ", formatC(x$QM, digits=digits, format="f"), ", p-val ", .pval(x$QMp, digits=digits, showeq=TRUE, sep=" "), "\n\n", sep="")
+         cat(mstyle$result(paste0("QM(df = ", x$m, ") = ", .fcf(x$QM, digits[["test"]]), ", p-val ", .pval(x$QMp, digits=digits[["pval"]], showeq=TRUE, sep=" "))))
       }
+      cat("\n\n")
    }
 
-   res.table <- cbind(estimate=c(x$beta), se=x$se, zval=x$zval, pval=x$pval, ci.lb=x$ci.lb, ci.ub=x$ci.ub)
+   res.table <- cbind(estimate=.fcf(c(x$beta), digits[["est"]]), se=.fcf(x$se, digits[["se"]]), zval=.fcf(x$zval, digits[["test"]]), pval=.pval(x$pval, digits[["pval"]]), ci.lb=.fcf(x$ci.lb, digits[["ci"]]), ci.ub=.fcf(x$ci.ub, digits[["ci"]]))
    rownames(res.table) <- rownames(x$beta)
    if (is.element(x$test, c("t")))
       colnames(res.table)[3] <- "tval"
    signif <- symnum(x$pval, corr=FALSE, na=FALSE, cutpoints=c(0, 0.001, 0.01, 0.05, 0.1, 1), symbols = c("***", "**", "*", ".", " "))
    if (signif.stars) {
-      res.table <- cbind(formatC(res.table, digits=digits, format="f"), signif)
+      res.table <- cbind(res.table, signif)
       colnames(res.table)[7] <- ""
-   } else {
-      res.table <- formatC(res.table, digits=digits, format="f")
    }
-   res.table[,4] <- .pval(x$pval, digits=digits)
 
    if (x$int.only)
       res.table <- res.table[1,]
 
-   cat("Model Results:")
+   cat(mstyle$section("Model Results:"))
    cat("\n\n")
    if (x$int.only) {
-      .print.out(res.table)
-      #print(res.table, quote=FALSE, right=TRUE)
+      tmp <- capture.output(.print.vector(res.table))
    } else {
-      print(res.table, quote=FALSE, right=TRUE, print.gap=2)
+      tmp <- capture.output(print(res.table, quote=FALSE, right=TRUE, print.gap=2))
    }
-   cat("\n")
-   if (signif.legend)
-      cat("---\nSignif. codes: ", attr(signif, "legend"), "\n\n")
+   .print.table(tmp, mstyle)
+
+   if (signif.legend) {
+      cat("\n")
+      cat(mstyle$legend("---\nSignif. codes: "), mstyle$legend(attr(signif, "legend")))
+      cat("\n")
+   }
+
+   if (!exists(".rmspace"))
+      cat("\n")
 
    invisible()
 

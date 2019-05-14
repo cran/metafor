@@ -30,8 +30,8 @@
    John, O. P., & Srivastava, S. (1999). The Big Five Trait taxonomy: History, measurement, and theoretical perspectives. In L. A. Pervin & O. P. John (Eds.), \emph{Handbook of personality: Theory and research} (2nd ed., pp. 102-138). New York: Guilford Press.
 }
 \examples{
-### load data
-dat <- get(data(dat.molloy2014))
+### copy data into 'dat'
+dat <- dat.molloy2014
 
 ### calculate r-to-z transformed correlations and corresponding sampling variances
 dat <- escalc(measure="ZCOR", ri=ri, ni=ni, data=dat, slab=paste(authors, year, sep=", "))
@@ -45,7 +45,7 @@ res
 predict(res, digits=3, transf=transf.ztor)
 
 ### forest plot
-forest(res, addcred=TRUE, xlim=c(-1.6,1.6), atransf=transf.ztor, 
+forest(res, addcred=TRUE, xlim=c(-1.6,1.6), atransf=transf.ztor,
        at=transf.rtoz(c(-.4,-.2,0,.2,.4,.6)), digits=c(2,1), cex=.8)
 text(-1.6, 18, "Author(s), Year", pos=4, cex=.8)
 text( 1.6, 18, "Correlation [95\% CI]", pos=2, cex=.8)

@@ -6,6 +6,8 @@ context("Checking plots example: Baujat plot")
 
 test_that("plot can be drawn.", {
 
+   expect_equivalent(TRUE, TRUE) # avoid 'Empty test' message
+
    skip_on_cran()
 
    opar <- par(no.readonly=TRUE)
@@ -14,7 +16,7 @@ test_that("plot can be drawn.", {
    par(mar=c(5,4,2,2))
 
    ### load data from Pignon et al. (2000)
-   dat <- get(data(dat.pignon2000, package="metafor"))
+   dat <- dat.pignon2000
 
    ### compute estimated log hazard ratios and sampling variances
    dat$yi <- with(dat, OmE/V)

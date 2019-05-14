@@ -2,10 +2,14 @@
 
 context("Checking misc: .setlab() function")
 
+source("tolerances.r") # read in tolerances
+
 yi <- c(-.3, -.1, 0, .2, .2)
 vi <- rep(.02, length(yi))
 
 test_that(".setlab() works correctly together with forest().", {
+
+   expect_equivalent(TRUE, TRUE) # avoid 'Empty test' message
 
    opar <- par(no.readonly=TRUE)
 
@@ -59,6 +63,16 @@ test_that(".setlab() works correctly together with forest().", {
    forest(dat$yi, dat$vi, xlim=xlim, cex.lab=cex.lab)
 
    dat <- escalc(measure="ROM", yi=yi, vi=vi)
+   forest(dat$yi, dat$vi, xlim=xlim, cex.lab=cex.lab)
+   forest(dat$yi, dat$vi, xlim=xlim, cex.lab=cex.lab, transf=exp)
+   forest(dat$yi, dat$vi, xlim=xlim, cex.lab=cex.lab, atransf=exp)
+
+   dat <- escalc(measure="CVR", yi=yi, vi=vi)
+   forest(dat$yi, dat$vi, xlim=xlim, cex.lab=cex.lab)
+   forest(dat$yi, dat$vi, xlim=xlim, cex.lab=cex.lab, transf=exp)
+   forest(dat$yi, dat$vi, xlim=xlim, cex.lab=cex.lab, atransf=exp)
+
+   dat <- escalc(measure="VR", yi=yi, vi=vi)
    forest(dat$yi, dat$vi, xlim=xlim, cex.lab=cex.lab)
    forest(dat$yi, dat$vi, xlim=xlim, cex.lab=cex.lab, transf=exp)
    forest(dat$yi, dat$vi, xlim=xlim, cex.lab=cex.lab, atransf=exp)
@@ -118,6 +132,21 @@ test_that(".setlab() works correctly together with forest().", {
    dat <- escalc(measure="MN", yi=yi, vi=vi)
    forest(dat$yi, dat$vi, xlim=xlim, cex.lab=cex.lab)
 
+   dat <- escalc(measure="MNLN", yi=yi, vi=vi)
+   forest(dat$yi, dat$vi, xlim=xlim, cex.lab=cex.lab)
+   forest(dat$yi, dat$vi, xlim=xlim, cex.lab=cex.lab, transf=exp)
+   forest(dat$yi, dat$vi, xlim=xlim, cex.lab=cex.lab, atransf=exp)
+
+   dat <- escalc(measure="CVLN", yi=yi, vi=vi)
+   forest(dat$yi, dat$vi, xlim=xlim, cex.lab=cex.lab)
+   forest(dat$yi, dat$vi, xlim=xlim, cex.lab=cex.lab, transf=exp)
+   forest(dat$yi, dat$vi, xlim=xlim, cex.lab=cex.lab, atransf=exp)
+
+   dat <- escalc(measure="SDLN", yi=yi, vi=vi)
+   forest(dat$yi, dat$vi, xlim=xlim, cex.lab=cex.lab)
+   forest(dat$yi, dat$vi, xlim=xlim, cex.lab=cex.lab, transf=exp)
+   forest(dat$yi, dat$vi, xlim=xlim, cex.lab=cex.lab, atransf=exp)
+
    dat <- escalc(measure="MC", yi=yi, vi=vi)
    forest(dat$yi, dat$vi, xlim=xlim, cex.lab=cex.lab)
 
@@ -141,6 +170,17 @@ test_that(".setlab() works correctly together with forest().", {
    forest(dat$yi, dat$vi, xlim=xlim, cex.lab=cex.lab)
    forest(dat$yi, dat$vi, xlim=xlim, cex.lab=cex.lab, transf=transf.iahw)
    forest(dat$yi, dat$vi, xlim=xlim, cex.lab=cex.lab, atransf=transf.iahw)
+
+   dat <- escalc(measure="PCOR", yi=yi, vi=vi)
+   forest(dat$yi, dat$vi, xlim=xlim, cex.lab=cex.lab)
+
+   dat <- escalc(measure="ZPCOR", yi=yi, vi=vi)
+   forest(dat$yi, dat$vi, xlim=xlim, cex.lab=cex.lab)
+   forest(dat$yi, dat$vi, xlim=xlim, cex.lab=cex.lab, transf=transf.ztor)
+   forest(dat$yi, dat$vi, xlim=xlim, cex.lab=cex.lab, atransf=transf.ztor)
+
+   dat <- escalc(measure="SPCOR", yi=yi, vi=vi)
+   forest(dat$yi, dat$vi, xlim=xlim, cex.lab=cex.lab)
 
    par(opar)
 

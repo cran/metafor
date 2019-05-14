@@ -1,14 +1,16 @@
 funnel.default <- function(x, vi, sei, ni, subset, yaxis="sei", xlim, ylim, xlab, ylab,
 steps=5, at, atransf, targs, digits, level=95,
 back="lightgray", shade="white", hlines="white",
-refline=0, pch=19, pch.fill=21, col, bg, ci.res=1000, ...) {
+refline=0, pch=19, col, bg, legend=FALSE, ci.res=1000, ...) {
 
    #########################################################################
+
+   mstyle <- .get.mstyle("crayon" %in% .packages())
 
    na.act <- getOption("na.action")
 
    if (!is.element(na.act, c("na.omit", "na.exclude", "na.fail", "na.pass")))
-      stop("Unknown 'na.action' specified under options().")
+      stop(mstyle$stop("Unknown 'na.action' specified under options()."))
 
    if (missing(subset))
       subset <- NULL
@@ -22,7 +24,9 @@ refline=0, pch=19, pch.fill=21, col, bg, ci.res=1000, ...) {
 
    yi <- x
 
-   ### check if sample size information is available if plotting (some function of) sample sizes
+   k <- length(yi)
+
+   ### check if sample size information is available if plotting (some function of) of the sample sizes on the y-axis
 
    if (missing(ni))
       ni <- NULL
@@ -30,10 +34,10 @@ refline=0, pch=19, pch.fill=21, col, bg, ci.res=1000, ...) {
    if (is.element(yaxis, c("ni", "ninv", "sqrtni", "sqrtninv", "lni"))) {
       if (is.null(ni) && !is.null(attr(yi, "ni")))
          ni <- attr(yi, "ni")
-      if (!is.null(ni) && length(ni) != length(yi))
-         ni <- NULL
+      if (!is.null(ni) && length(ni) != k)
+         stop(mstyle$stop("Sample size information not of same length as data."))
       if (is.null(ni))
-         stop("No sample size information available.")
+         stop(mstyle$stop("No sample size information available."))
    }
 
    ### check if sampling variances and/or standard errors are available
@@ -53,8 +57,12 @@ refline=0, pch=19, pch.fill=21, col, bg, ci.res=1000, ...) {
          sei <- sqrt(vi)
    }
 
-   if (is.element(yaxis, c("sei", "vi", "seinv", "vinv", "wi")) && is.null(vi))
-      stop("Need to specify 'vi' or 'sei' argument.")
+   if (is.element(yaxis, c("sei", "vi", "seinv", "vinv", "wi"))) {
+      if (is.null(vi))
+         stop(mstyle$stop("Need to specify 'vi' or 'sei' argument."))
+      if (length(vi) != k)
+         stop(mstyle$stop("Length of 'yi' and 'vi' (or 'sei') is not the same."))
+   }
 
    ### set negative variances and/or standard errors to 0
 
@@ -67,7 +75,7 @@ refline=0, pch=19, pch.fill=21, col, bg, ci.res=1000, ...) {
 
    slab <- attr(yi, "slab")
 
-   if (is.null(slab) || length(slab) != length(yi))
+   if (is.null(slab) || length(slab) != k)
       slab <- seq_along(yi)
 
    ### set y-axis label if not specified
@@ -131,17 +139,36 @@ refline=0, pch=19, pch.fill=21, col, bg, ci.res=1000, ...) {
 
    ### note: digits can also be a list (e.g., digits=list(2L,3))
 
+   if (length(pch) == 1L) {
+      pch.vec <- FALSE
+      pch <- rep(pch, k)
+   } else {
+      pch.vec <- TRUE
+   }
+   if (length(pch) != k)
+      stop(mstyle$stop("Number of outcomes does not correspond to the length of the 'pch' argument."))
+
    if (missing(col))
       col <- "black"
-
-   if (length(col) == 1L)
-      col <- c(col, col)
+   if (length(col) == 1L) {
+      col.vec <- FALSE
+      col <- rep(col, k)
+   } else {
+      col.vec <- TRUE
+   }
+   if (length(col) != k)
+      stop(mstyle$stop("Number of outcomes does not correspond to the length of the 'col' argument."))
 
    if (missing(bg))
       bg <- "white"
-
-   if (length(bg) == 1L)
-      bg <- c(bg, bg)
+   if (length(bg) == 1L) {
+      bg.vec <- FALSE
+      bg <- rep(bg, k)
+   } else {
+      bg.vec <- TRUE
+   }
+   if (length(bg) != k)
+      stop(mstyle$stop("Number of outcomes does not correspond to the length of the 'bg' argument."))
 
    #########################################################################
 
@@ -153,6 +180,9 @@ refline=0, pch=19, pch.fill=21, col, bg, ci.res=1000, ...) {
       sei  <- sei[subset]
       ni   <- ni[subset]
       slab <- slab[subset]
+      pch  <- pch[subset]
+      col  <- col[subset]
+      bg   <- bg[subset]
    }
 
    ### check for NAs and act accordingly
@@ -170,11 +200,14 @@ refline=0, pch=19, pch.fill=21, col, bg, ci.res=1000, ...) {
          sei  <- sei[not.na]
          ni   <- ni[not.na]
          slab <- slab[not.na]
+         pch  <- pch[not.na]
+         col  <- col[not.na]
+         bg   <- bg[not.na]
 
       }
 
       if (na.act == "na.fail")
-         stop("Missing values in data.")
+         stop(mstyle$stop("Missing values in data."))
 
    }
 
@@ -184,11 +217,13 @@ refline=0, pch=19, pch.fill=21, col, bg, ci.res=1000, ...) {
    ### at least two studies left?
 
    if (length(yi) < 2)
-      stop("Plotting terminated since k < 2.")
+      stop(mstyle$stop("Plotting terminated since k < 2."))
 
    ### get weights
 
    if (yaxis == "wi") {
+      if (any(vi <= 0))
+         stop(mstyle$stop("Cannot plot weights with non-positive sampling variances."))
       weights <- 1/vi
       weights <- weights / sum(weights) * 100
    }
@@ -226,7 +261,7 @@ refline=0, pch=19, pch.fill=21, col, bg, ci.res=1000, ...) {
       ### infinite y-axis limits can happen with "seinv" and "vinv" when one or more sampling variances are 0
 
       if (any(is.infinite(ylim)))
-         stop("Setting 'ylim' automatically not possible (must set y-axis limits manually).")
+         stop(mstyle$stop("Setting 'ylim' automatically not possible (must set y-axis limits manually)."))
 
    } else {
 
@@ -242,17 +277,17 @@ refline=0, pch=19, pch.fill=21, col, bg, ci.res=1000, ...) {
 
       if (is.element(yaxis, c("sei", "vi", "ni", "ninv", "sqrtni", "sqrtninv", "lni"))) {
          if (ylim[1] < 0 || ylim[2] < 0)
-            stop("Both limits for the y axis must be >= 0.")
+            stop(mstyle$stop("Both limits for the y axis must be >= 0."))
       }
 
       if (is.element(yaxis, c("seinv", "vinv"))) {
          if (ylim[1] <= 0 || ylim[2] <= 0)
-            stop("Both limits for the y axis must be > 0.")
+            stop(mstyle$stop("Both limits for the y axis must be > 0."))
       }
 
       if (is.element(yaxis, c("wi"))) {
          if (ylim[1] < 0 || ylim[2] < 0)
-            stop("Both limits for the y axis must be >= 0.")
+            stop(mstyle$stop("Both limits for the y axis must be >= 0."))
       }
 
    }
@@ -263,8 +298,9 @@ refline=0, pch=19, pch.fill=21, col, bg, ci.res=1000, ...) {
 
    if (is.element(yaxis, c("sei", "vi", "seinv", "vinv"))) {
 
-      level     <- ifelse(level > 1, (100-level)/100, ifelse(level > .5, 1-level, level)) ### note: there may be multiple level values
-      level.min <- min(level)                                                             ### note: smallest level is the widest CI
+      level     <- ifelse(level == 0, 1, ifelse(level >= 1, (100-level)/100, ifelse(level > .5, 1-level, level)))
+      #level    <- ifelse(level >= 1, (100-level)/100, ifelse(level > .5, 1-level, level)) ### note: there may be multiple level values
+      level.min <- min(level)                                                              ### note: smallest level is the widest CI
       lvals     <- length(level)
 
       ### calculate the CI bounds at the bottom of the figure (for the widest CI if there are multiple)
@@ -440,7 +476,7 @@ refline=0, pch=19, pch.fill=21, col, bg, ci.res=1000, ...) {
    if (yaxis == "wi")
       yaxis.vals <- weights
 
-   points(xaxis.vals, yaxis.vals, pch=pch, col=col[1], bg=bg[1], ...)
+   points(xaxis.vals, yaxis.vals, pch=pch, col=col, bg=bg, ...)
 
    #########################################################################
 
@@ -474,6 +510,63 @@ refline=0, pch=19, pch.fill=21, col, bg, ci.res=1000, ...) {
    ### add x-axis
 
    axis(side=1, at=at, labels=at.lab, ...)
+
+   ############################################################################
+
+   ### add legend (if requested)
+
+   if (is.logical(legend) && isTRUE(legend))
+      lpos <- "topright"
+
+   if (is.character(legend)) {
+      lpos <- legend
+      legend <- TRUE
+   }
+
+   if (legend && !is.element(yaxis, c("sei", "vi", "seinv", "vinv"))) {
+      legend <- FALSE
+      warning(mstyle$warning("Argument 'legend' only applicable if 'yaxis' is 'sei', 'vi', 'seinv', or 'vinv'."))
+   }
+
+   if (legend) {
+
+      level <- c(level, 0)
+      lvals <- length(level)
+
+      add.studies <- !pch.vec && !col.vec && !bg.vec # only add 'Studies' to legend if pch, col, and bg were not vectors to begin with
+
+      scipen <- options(scipen=100)
+      lchars <- max(nchar(level))-2
+      options(scipen=scipen$scipen)
+
+      ltext <- sapply(1:lvals, function(i) {
+         if (i == 1)
+            return(as.expression(bquote(paste(.(pval1) < p, phantom() <= .(pval2)), list(pval1=.fcf(level[i], lchars), pval2=.fcf(1, lchars)))))
+            #return(as.expression(bquote(p > .(pval), list(pval=.fcf(level[i], lchars)))))
+         if (i > 1 && i < lvals)
+            return(as.expression(bquote(paste(.(pval1) < p, phantom() <= .(pval2)), list(pval1=.fcf(level[i], lchars), pval2=.fcf(level[i-1], lchars)))))
+         if (i == lvals)
+            return(as.expression(bquote(paste(.(pval1) < p, phantom() <= .(pval2)), list(pval1=.fcf(0, lchars), pval2=.fcf(level[i-1], lchars)))))
+      })
+
+      pch.l  <- rep(22, lvals)
+      col.l  <- rep("black", lvals)
+      pt.cex <- rep(2, lvals)
+      pt.bg  <- c(shade, back)
+
+      if (add.studies) {
+         ltext  <- c(ltext, expression(plain(Studies)))
+         pch.l  <- c(pch.l, pch[1])
+         col.l  <- c(col.l, col[1])
+         pt.cex <- c(pt.cex, 1)
+         pt.bg  <- c(pt.bg, bg[1])
+      }
+
+      legend(lpos, inset=.01, bg="white", pch=pch.l, col=col.l, pt.cex=pt.cex, pt.bg=pt.bg, legend=ltext)
+
+   }
+
+   ############################################################################
 
    ### prepare data frame to return
 

@@ -32,8 +32,9 @@
    van Houwelingen, H. C., Zwinderman, K. H., & Stijnen, T. (1993). A bivariate approach to meta-analysis. \emph{Statistics in Medicine}, \bold{12}, 2273--2284.
 }
 \examples{
-### load data
-dat <- get(data(dat.collins1985a))
+### copy data into 'dat' and examine data
+dat <- dat.collins1985a
+dat
 
 ### meta-analysis of log ORs using Peto's method (outcome: persistent or recurrent bleedings)
 res <- rma.peto(ai=b.xti, n1i=nti, ci=b.xci, n2i=nci, data=dat)
@@ -46,7 +47,7 @@ res <- rma.glmm(measure="OR", ai=b.xti, n1i=nti, ci=b.xci, n2i=nci, data=dat,
 summary(res)
 predict(res, transf=exp, digits=2)
 
-### plot the log-likelihoods of the odds ratios
+### plot the likelihoods of the odds ratios
 llplot(measure="OR", ai=b.xti, n1i=nti, ci=b.xci, n2i=nci, data=dat,
        lwd=1, refline=NA, xlim=c(-4,4), drop00=FALSE)
 

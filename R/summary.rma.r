@@ -1,10 +1,15 @@
 summary.rma <- function(object, digits, showfit=TRUE, ...) {
 
-   if (!inherits(object, "rma"))
-      stop("Argument 'object' must be an object of class \"rma\".")
+   mstyle <- .get.mstyle("crayon" %in% .packages())
 
-   if (missing(digits))
-      digits <- object$digits
+   if (!inherits(object, "rma"))
+      stop(mstyle$stop("Argument 'object' must be an object of class \"rma\"."))
+
+   if (missing(digits)) {
+      digits <- .get.digits(xdigits=object$digits, dmiss=TRUE)
+   } else {
+      digits <- .get.digits(digits=digits, xdigits=object$digits, dmiss=FALSE)
+   }
 
    object$digits <- digits
 

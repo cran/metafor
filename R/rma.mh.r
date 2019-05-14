@@ -1,56 +1,78 @@
 rma.mh   <- function(ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, measure="OR",
 data, slab, subset,
 add=1/2, to="only0", drop00=TRUE, ### for add/to/drop00, 1st element for escalc(), 2nd for MH method
-correct=TRUE, level=95, digits=4, verbose=FALSE, ...) {
+correct=TRUE, level=95, digits, verbose=FALSE, ...) {
 
    #########################################################################
 
    ###### setup
 
+   withcrayon <- "crayon" %in% .packages()
+   mstyle <- .get.mstyle(withcrayon)
+
    ### check argument specifications
 
    if (!is.element(measure, c("OR","RR","RD","IRR","IRD")))
-      stop("Mantel-Haenszel method can only be used with measures OR, RR, RD, IRR, and IRD.")
+      stop(mstyle$stop("Mantel-Haenszel method can only be used with measures OR, RR, RD, IRR, and IRD."))
 
    if (length(add) == 1)
       add <- c(add, 0)
 
    if (length(add) != 2)
-      stop("Argument 'add' should specify one or two values (see 'help(rma.mh)').")
+      stop(mstyle$stop("Argument 'add' should specify one or two values (see 'help(rma.mh)')."))
 
    if (length(to) == 1)
       to <- c(to, "none")
 
    if (length(to) != 2)
-      stop("Argument 'to' should specify one or two values (see 'help(rma.mh)').")
+      stop(mstyle$stop("Argument 'to' should specify one or two values (see 'help(rma.mh)')."))
 
    if (length(drop00) == 1)
       drop00 <- c(drop00, FALSE)
 
    if (length(drop00) != 2)
-      stop("Argument 'drop00' should specify one or two values (see 'help(rma.mh)').")
+      stop(mstyle$stop("Argument 'drop00' should specify one or two values (see 'help(rma.mh)')."))
 
    na.act <- getOption("na.action")
 
    if (!is.element(na.act, c("na.omit", "na.exclude", "na.fail", "na.pass")))
-      stop("Unknown 'na.action' specified under options().")
+      stop(mstyle$stop("Unknown 'na.action' specified under options()."))
 
    if (!is.element(to[1], c("all","only0","if0all","none")))
-      stop("Unknown 'to' argument specified.")
+      stop(mstyle$stop("Unknown 'to' argument specified."))
 
    if (!is.element(to[2], c("all","only0","if0all","none")))
-      stop("Unknown 'to' argument specified.")
+      stop(mstyle$stop("Unknown 'to' argument specified."))
 
    ### get ... argument and check for extra/superfluous arguments
 
    ddd <- list(...)
 
-   .chkdots(ddd, c("outlist"))
+   .chkdots(ddd, c("outlist", "onlyo1", "addyi", "addvi", "time"))
+
+   ### handle 'time' argument from ...
+
+   if (.isTRUE(ddd$time))
+      time.start <- proc.time()
+
+   ### set defaults or get onlyo1, addyi, and addvi arguments
+
+   onlyo1 <- ifelse(is.null(ddd$onlyo1), FALSE, ddd$onlyo1)
+   addyi  <- ifelse(is.null(ddd$addyi),  TRUE,  ddd$addyi)
+   addvi  <- ifelse(is.null(ddd$addvi),  TRUE,  ddd$addvi)
+
+   ### set defaults for digits
+
+   if (missing(digits)) {
+      digits <- .set.digits(dmiss=TRUE)
+   } else {
+      digits <- .set.digits(digits, dmiss=FALSE)
+   }
 
    #########################################################################
 
    if (verbose)
-      message("Extracting data and computing yi/vi values ...")
+      message(mstyle$message("\nExtracting data and computing yi/vi values ..."))
 
    ### check if data argument has been specified
 
@@ -87,23 +109,25 @@ correct=TRUE, level=95, digits=4, verbose=FALSE, ...) {
       mf.di  <- mf[[match("di",  names(mf))]]
       mf.n1i <- mf[[match("n1i", names(mf))]]
       mf.n2i <- mf[[match("n2i", names(mf))]]
-      ai     <- eval(mf.ai,  data, enclos=sys.frame(sys.parent()))
-      bi     <- eval(mf.bi,  data, enclos=sys.frame(sys.parent()))
-      ci     <- eval(mf.ci,  data, enclos=sys.frame(sys.parent()))
-      di     <- eval(mf.di,  data, enclos=sys.frame(sys.parent()))
-      n1i    <- eval(mf.n1i, data, enclos=sys.frame(sys.parent()))
-      n2i    <- eval(mf.n2i, data, enclos=sys.frame(sys.parent()))
+      ai  <- eval(mf.ai,  data, enclos=sys.frame(sys.parent()))
+      bi  <- eval(mf.bi,  data, enclos=sys.frame(sys.parent()))
+      ci  <- eval(mf.ci,  data, enclos=sys.frame(sys.parent()))
+      di  <- eval(mf.di,  data, enclos=sys.frame(sys.parent()))
+      n1i <- eval(mf.n1i, data, enclos=sys.frame(sys.parent()))
+      n2i <- eval(mf.n2i, data, enclos=sys.frame(sys.parent()))
       if (is.null(bi)) bi <- n1i - ai
       if (is.null(di)) di <- n2i - ci
-      ni     <- ai + bi + ci + di
+      ni <- ai + bi + ci + di
 
-      k   <- length(ai)
+      k <- length(ai) ### number of outcomes before subsetting
+      k.all <- k
+
       ids <- seq_len(k)
 
       ### generate study labels if none are specified
 
       if (verbose)
-         message("Generating/extracting study labels ...")
+         message(mstyle$message("Generating/extracting study labels ..."))
 
       if (is.null(slab)) {
 
@@ -113,10 +137,10 @@ correct=TRUE, level=95, digits=4, verbose=FALSE, ...) {
       } else {
 
          if (anyNA(slab))
-            stop("NAs in study labels.")
+            stop(mstyle$stop("NAs in study labels."))
 
          if (length(slab) != k)
-            stop("Study labels not of same length as data.")
+            stop(mstyle$stop("Study labels not of same length as data."))
 
          slab.null <- FALSE
 
@@ -127,7 +151,7 @@ correct=TRUE, level=95, digits=4, verbose=FALSE, ...) {
       if (!is.null(subset)) {
 
          if (verbose)
-            message("Subsetting ...")
+            message(mstyle$message("Subsetting ..."))
 
          ai   <- ai[subset]
          bi   <- bi[subset]
@@ -147,7 +171,7 @@ correct=TRUE, level=95, digits=4, verbose=FALSE, ...) {
 
       ### calculate observed effect estimates and sampling variances
 
-      dat <- escalc(measure=measure, ai=ai, bi=bi, ci=ci, di=di, add=add[1], to=to[1], drop00=drop00[1])
+      dat <- escalc(measure=measure, ai=ai, bi=bi, ci=ci, di=di, add=add[1], to=to[1], drop00=drop00[1], onlyo1=onlyo1, addyi=addyi, addvi=addvi)
       yi  <- dat$yi ### one or more yi/vi pairs may be NA/NA
       vi  <- dat$vi ### one or more yi/vi pairs may be NA/NA
 
@@ -182,7 +206,7 @@ correct=TRUE, level=95, digits=4, verbose=FALSE, ...) {
       if (any(has.na)) {
 
          if (verbose)
-            message("Handling NAs in table data ...")
+            message(mstyle$message("Handling NAs in table data ..."))
 
          if (na.act == "na.omit" || na.act == "na.exclude" || na.act == "na.pass") {
             ai <- ai[not.na]
@@ -190,18 +214,18 @@ correct=TRUE, level=95, digits=4, verbose=FALSE, ...) {
             ci <- ci[not.na]
             di <- di[not.na]
             k  <- length(ai)
-            warning("Tables with NAs omitted from model fitting.")
+            warning(mstyle$warning("Tables with NAs omitted from model fitting."))
          }
 
          if (na.act == "na.fail")
-            stop("Missing values in tables.")
+            stop(mstyle$stop("Missing values in tables."))
 
       }
 
       ### at least one study left?
 
       if (k < 1)
-         stop("Processing terminated since k = 0.")
+         stop(mstyle$stop("Processing terminated since k = 0."))
 
       ### check for NAs in yi/vi and act accordingly
 
@@ -211,14 +235,14 @@ correct=TRUE, level=95, digits=4, verbose=FALSE, ...) {
       if (any(yivi.na)) {
 
          if (verbose)
-            message("Handling NAs in yi/vi ...")
+            message(mstyle$message("Handling NAs in yi/vi ..."))
 
          if (na.act == "na.omit" || na.act == "na.exclude" || na.act == "na.pass") {
 
             yi <- yi[not.na.yivi]
             vi <- vi[not.na.yivi]
             ni <- ni[not.na.yivi]
-            warning("Some yi/vi values are NA.")
+            warning(mstyle$warning("Some yi/vi values are NA."))
 
             attr(yi, "measure") <- measure ### add measure attribute back
             attr(yi, "ni")      <- ni      ### add ni attribute back
@@ -226,7 +250,7 @@ correct=TRUE, level=95, digits=4, verbose=FALSE, ...) {
          }
 
          if (na.act == "na.fail")
-            stop("Missing yi/vi values.")
+            stop(mstyle$stop("Missing yi/vi values."))
 
       }
 
@@ -294,19 +318,21 @@ correct=TRUE, level=95, digits=4, verbose=FALSE, ...) {
       mf.x2i <- mf[[match("x2i", names(mf))]]
       mf.t1i <- mf[[match("t1i", names(mf))]]
       mf.t2i <- mf[[match("t2i", names(mf))]]
-      x1i    <- eval(mf.x1i, data, enclos=sys.frame(sys.parent()))
-      x2i    <- eval(mf.x2i, data, enclos=sys.frame(sys.parent()))
-      t1i    <- eval(mf.t1i, data, enclos=sys.frame(sys.parent()))
-      t2i    <- eval(mf.t2i, data, enclos=sys.frame(sys.parent()))
-      ni     <- t1i + t2i
+      x1i <- eval(mf.x1i, data, enclos=sys.frame(sys.parent()))
+      x2i <- eval(mf.x2i, data, enclos=sys.frame(sys.parent()))
+      t1i <- eval(mf.t1i, data, enclos=sys.frame(sys.parent()))
+      t2i <- eval(mf.t2i, data, enclos=sys.frame(sys.parent()))
+      ni  <- t1i + t2i
 
-      k   <- length(x1i)
+      k <- length(x1i) ### number of outcomes before subsetting
+      k.all <- k
+
       ids <- seq_len(k)
 
       ### generate study labels if none are specified
 
       if (verbose)
-         message("Generating/extracting study labels ...")
+         message(mstyle$message("Generating/extracting study labels ..."))
 
       if (is.null(slab)) {
 
@@ -316,10 +342,10 @@ correct=TRUE, level=95, digits=4, verbose=FALSE, ...) {
       } else {
 
          if (anyNA(slab))
-            stop("NAs in study labels.")
+            stop(mstyle$stop("NAs in study labels."))
 
          if (length(slab) != k)
-            stop("Study labels not of same length as data.")
+            stop(mstyle$stop("Study labels not of same length as data."))
 
          slab.null <- FALSE
 
@@ -330,7 +356,7 @@ correct=TRUE, level=95, digits=4, verbose=FALSE, ...) {
       if (!is.null(subset)) {
 
          if (verbose)
-            message("Subsetting ...")
+            message(mstyle$message("Subsetting ..."))
 
          x1i  <- x1i[subset]
          x2i  <- x2i[subset]
@@ -350,7 +376,7 @@ correct=TRUE, level=95, digits=4, verbose=FALSE, ...) {
 
       ### calculate observed effect estimates and sampling variances
 
-      dat <- escalc(measure=measure, x1i=x1i, x2i=x2i, t1i=t1i, t2i=t2i, add=add[1], to=to[1], drop00=drop00[1])
+      dat <- escalc(measure=measure, x1i=x1i, x2i=x2i, t1i=t1i, t2i=t2i, add=add[1], to=to[1], drop00=drop00[1], onlyo1=onlyo1, addyi=addyi, addvi=addvi)
       yi  <- dat$yi ### one or more yi/vi pairs may be NA/NA
       vi  <- dat$vi ### one or more yi/vi pairs may be NA/NA
 
@@ -383,7 +409,7 @@ correct=TRUE, level=95, digits=4, verbose=FALSE, ...) {
       if (any(has.na)) {
 
          if (verbose)
-            message("Handling NAs in table data ...")
+            message(mstyle$message("Handling NAs in table data ..."))
 
          if (na.act == "na.omit" || na.act == "na.exclude" || na.act == "na.pass") {
             x1i  <- x1i[not.na]
@@ -391,18 +417,18 @@ correct=TRUE, level=95, digits=4, verbose=FALSE, ...) {
             t1i  <- t1i[not.na]
             t2i  <- t2i[not.na]
             k    <- length(x1i)
-            warning("Tables with NAs omitted from model fitting.")
+            warning(mstyle$warning("Tables with NAs omitted from model fitting."))
          }
 
          if (na.act == "na.fail")
-            stop("Missing values in tables.")
+            stop(mstyle$stop("Missing values in tables."))
 
       }
 
       ### at least one study left?
 
       if (k < 1)
-         stop("Processing terminated since k = 0.")
+         stop(mstyle$stop("Processing terminated since k = 0."))
 
       ### check for NAs in yi/vi and act accordingly
 
@@ -412,14 +438,14 @@ correct=TRUE, level=95, digits=4, verbose=FALSE, ...) {
       if (any(yivi.na)) {
 
          if (verbose)
-            message("Handling NAs in yi/vi ...")
+            message(mstyle$message("Handling NAs in yi/vi ..."))
 
          if (na.act == "na.omit" || na.act == "na.exclude" || na.act == "na.pass") {
 
             yi <- yi[not.na.yivi]
             vi <- vi[not.na.yivi]
             ni <- ni[not.na.yivi]
-            warning("Some yi/vi values are NA.")
+            warning(mstyle$warning("Some yi/vi values are NA."))
 
             attr(yi, "measure") <- measure ### add measure attribute back
             attr(yi, "ni")      <- ni      ### add ni attribute back
@@ -427,7 +453,7 @@ correct=TRUE, level=95, digits=4, verbose=FALSE, ...) {
          }
 
          if (na.act == "na.fail")
-            stop("Missing yi/vi values.")
+            stop(mstyle$stop("Missing yi/vi values."))
 
       }
 
@@ -477,14 +503,14 @@ correct=TRUE, level=95, digits=4, verbose=FALSE, ...) {
 
    #########################################################################
 
-   level <- ifelse(level > 1, (100-level)/100, ifelse(level > .5, 1-level, level))
+   level <- ifelse(level == 0, 1, ifelse(level >= 1, (100-level)/100, ifelse(level > .5, 1-level, level)))
 
    CO <- COp <- MH <- MHp <- BD <- BDp <- TA <- TAp <- k.pos <- NA
 
    ###### model fitting, test statistics, and confidence intervals
 
    if (verbose)
-      message("Model fitting ...")
+      message(mstyle$message("Model fitting ..."))
 
    if (measure == "OR") {
 
@@ -527,7 +553,7 @@ correct=TRUE, level=95, digits=4, verbose=FALSE, ...) {
          MH  <- NA
          MHp <- NA
       } else {
-         CO  <- sum(ai - (n1i/Ni)*xt)^2 / sum((n1i/Ni)*(n2i/Ni)*(xt*(yt/Ni)))
+         CO  <- (abs(sum(ai - (n1i/Ni)*xt)) - ifelse(correct, 0.5, 0))^2 / sum((n1i/Ni)*(n2i/Ni)*(xt*(yt/Ni)))
          COp <- pchisq(CO, df=1, lower.tail=FALSE)
          MH  <- (abs(sum(ai - (n1i/Ni)*xt)) - ifelse(correct, 0.5, 0))^2 / sum((n1i/Ni)*(n2i/Ni)*(xt*(yt/(Ni-1))))
          MHp <- pchisq(MH, df=1, lower.tail=FALSE)
@@ -669,7 +695,7 @@ correct=TRUE, level=95, digits=4, verbose=FALSE, ...) {
    ### heterogeneity test (inverse variance method)
 
    if (verbose)
-      message("Heterogeneity testing ...")
+      message(mstyle$message("Heterogeneity testing ..."))
 
    wi <- 1/vi
 
@@ -690,7 +716,7 @@ correct=TRUE, level=95, digits=4, verbose=FALSE, ...) {
    ###### fit statistics
 
    if (verbose)
-      message("Computing fit statistics and log likelihood ...")
+      message(mstyle$message("Computing fit statistics and log likelihood ..."))
 
    if (k.yi >= 1) {
 
@@ -719,7 +745,7 @@ correct=TRUE, level=95, digits=4, verbose=FALSE, ...) {
    ###### prepare output
 
    if (verbose)
-      message("Preparing output ...")
+      message(mstyle$message("Preparing output ..."))
 
    parms     <- 1
    p         <- 1
@@ -739,18 +765,27 @@ correct=TRUE, level=95, digits=4, verbose=FALSE, ...) {
 
       res <- list(b=beta, beta=beta, se=se, zval=zval, pval=pval, ci.lb=ci.lb, ci.ub=ci.ub, vb=vb,
                   tau2=tau2,
-                  k=k, k.f=k.f, k.yi=k.yi, k.pos=k.pos, k.eff=k.eff, p=p, parms=parms,
+                  k=k, k.f=k.f, k.yi=k.yi, k.pos=k.pos, k.eff=k.eff, k.all=k.all, p=p, parms=parms,
                   QE=QE, QEp=QEp, CO=CO, COp=COp, MH=MH, MHp=MHp, BD=BD, BDp=BDp, TA=TA, TAp=TAp, I2=I2, H2=H2,
                   int.only=int.only,
                   yi=yi, vi=vi, yi.f=yi.f, vi.f=vi.f, X.f=X.f,
                   ai=ai, bi=bi, ci=ci, di=di, ai.f=ai.f, bi.f=bi.f, ci.f=ci.f, di.f=di.f,
                   x1i=x1i, x2i=x2i, t1i=t1i, t2i=t2i, x1i.f=x1i.f, x2i.f=x2i.f, t1i.f=t1i.f, t2i.f=t2i.f, ni=ni, ni.f=ni.f,
-                  ids=ids, not.na=not.na, not.na.yivi=not.na.yivi, slab=slab, slab.null=slab.null,
+                  ids=ids, not.na=not.na, subset=subset, not.na.yivi=not.na.yivi, slab=slab, slab.null=slab.null,
                   measure=measure, method=method, weighted=weighted, test=test, dfs=dfs, intercept=intercept, digits=digits, level=level,
                   add=add, to=to, drop00=drop00, correct=correct,
-                  fit.stats=fit.stats, version=packageVersion("metafor"), call=mf)
+                  fit.stats=fit.stats, formula.yi=NULL, formula.mods=NULL, version=packageVersion("metafor"), call=mf)
 
    }
+
+   if (.isTRUE(ddd$time)) {
+      time.end <- proc.time()
+      res$time <- unname(time.end - time.start)[3]
+      .print.time(res$time)
+   }
+
+   if (verbose || .isTRUE(ddd$time))
+      cat("\n")
 
    if (!is.null(ddd$outlist)) {
       if (ddd$outlist == "minimal") {

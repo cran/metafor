@@ -1,29 +1,38 @@
 gosh.rma <- function(x, subsets, progbar=TRUE, parallel="no", ncpus=1, cl=NULL, ...) {
 
+   mstyle <- .get.mstyle("crayon" %in% .packages())
+
    if (!inherits(x, "rma"))
-      stop("Argument 'x' must be an object of class \"rma\".")
+      stop(mstyle$stop("Argument 'x' must be an object of class \"rma\"."))
 
    if (inherits(x, "rma.glmm"))
-      stop("Method not yet implemented for objects of class \"rma.glmm\". Sorry!")
+      stop(mstyle$stop("Method not available for objects of class \"rma.glmm\"."))
 
    if (inherits(x, "rma.mv"))
-      stop("Method not yet implemented for objects of class \"rma.mv\". Sorry!")
+      stop(mstyle$stop("Method not available for objects of class \"rma.mv\"."))
 
    if (inherits(x, "robust.rma"))
-      stop("Method not yet implemented for objects of class \"robust.rma\". Sorry!")
+      stop(mstyle$stop("Method not available for objects of class \"robust.rma\"."))
 
    if (inherits(x, "rma.ls"))
-      stop("Method not yet implemented for objects of class \"rma.ls\". Sorry!")
+      stop(mstyle$stop("Method not available for objects of class \"rma.ls\"."))
 
    na.act <- getOption("na.action")
 
    if (!is.element(na.act, c("na.omit", "na.exclude", "na.fail", "na.pass")))
-      stop("Unknown 'na.action' specified under options().")
+      stop(mstyle$stop("Unknown 'na.action' specified under options()."))
 
    if (x$k == 1)
-      stop("Stopped because k = 1.")
+      stop(mstyle$stop("Stopped because k = 1."))
 
    parallel <- match.arg(parallel, c("no", "snow", "multicore"))
+
+   if (parallel == "no" && ncpus > 1)
+      parallel <- "snow"
+
+   ddd <- list(...)
+
+   .chkdots(ddd, c("seed"))
 
    ### total number of possible subsets
 
@@ -51,10 +60,10 @@ gosh.rma <- function(x, subsets, progbar=TRUE, parallel="no", ncpus=1, cl=NULL, 
    }
 
    if (N.tot == Inf)
-      stop("Too many iterations required for all combinations.\n")
+      stop(mstyle$stop("Too many iterations required for all combinations."))
 
    if (progbar)
-      cat("Fitting ", N.tot, " models (based on ", ifelse(exact, "all possible", "random"), " subsets).\n", sep="")
+      message(paste0("Fitting ", N.tot, " models (based on ", ifelse(exact, "all possible", "random"), " subsets)."))
 
    #########################################################################
 
@@ -70,6 +79,9 @@ gosh.rma <- function(x, subsets, progbar=TRUE, parallel="no", ncpus=1, cl=NULL, 
       #incl <- t(do.call(cbind, incl))
 
    } else {
+
+      if (!is.null(ddd$seed))
+         set.seed(ddd$seed)
 
       j <- sample(x$p:x$k, N.tot, replace=TRUE, prob=dbinom(x$p:x$k, x$k, 0.5))
       incl <- t(sapply(j, function(m) seq_len(x$k) %in% sample(x$k, m)))
@@ -95,12 +107,12 @@ gosh.rma <- function(x, subsets, progbar=TRUE, parallel="no", ncpus=1, cl=NULL, 
       beta <- try(matrix(NA_real_, nrow=N.tot, ncol=x$p), silent=TRUE)
 
       if (inherits(beta, "try-error"))
-         stop("Number of models requested too large.")
+         stop(mstyle$stop("Number of models requested too large."))
 
       het <- try(matrix(NA_real_, nrow=N.tot, ncol=5), silent=TRUE)
 
       if (inherits(het, "try-error"))
-         stop("Number of models requested too large.")
+         stop(mstyle$stop("Number of models requested too large."))
 
       if (progbar)
          pbar <- txtProgressBar(min=0, max=N.tot, style=3)
@@ -137,13 +149,12 @@ gosh.rma <- function(x, subsets, progbar=TRUE, parallel="no", ncpus=1, cl=NULL, 
          if (any(res$coef.na))
             next
 
-         beta[j,] <- c(res$beta)
-
-         het[j,1] <- res$k
-         het[j,2] <- res$QE
-         het[j,3] <- res$I2
-         het[j,4] <- res$H2
-         het[j,5] <- res$tau2
+         beta[j,]  <- c(res$beta)
+         het[j, 1] <- res$k
+         het[j, 2] <- res$QE
+         het[j, 3] <- res$I2
+         het[j, 4] <- res$H2
+         het[j, 5] <- res$tau2
 
       }
 
@@ -155,12 +166,12 @@ gosh.rma <- function(x, subsets, progbar=TRUE, parallel="no", ncpus=1, cl=NULL, 
    if (parallel=="snow" || parallel == "multicore") {
 
       if (!requireNamespace("parallel", quietly=TRUE))
-         stop("Please install the 'parallel' package for parallel processing.")
+         stop(mstyle$stop("Please install the 'parallel' package for parallel processing."))
 
       ncpus <- as.integer(ncpus)
 
       if (ncpus < 1)
-         stop("Argument 'ncpus' must be >= 1.")
+         stop(mstyle$stop("Argument 'ncpus' must be >= 1."))
 
       if (parallel == "multicore") {
 
@@ -179,9 +190,7 @@ gosh.rma <- function(x, subsets, progbar=TRUE, parallel="no", ncpus=1, cl=NULL, 
 
          if (is.null(cl)) {
             cl <- parallel::makePSOCKcluster(ncpus)
-            clnew <- TRUE
-         } else {
-            clnew <- FALSE
+            on.exit(parallel::stopCluster(cl))
          }
 
          if (inherits(x, "rma.uni"))
@@ -193,13 +202,10 @@ gosh.rma <- function(x, subsets, progbar=TRUE, parallel="no", ncpus=1, cl=NULL, 
          if (inherits(x, "rma.peto"))
             res <- parallel::parLapply(cl, seq_len(N.tot), .profile.rma.peto, obj=x, parallel=parallel, subset=TRUE, sel=incl)
 
-         if (clnew)
-            parallel::stopCluster(cl)
-
       }
 
-      beta <- do.call("rbind", lapply(res, function(z) t(z$beta)))
-      het  <- do.call("rbind", lapply(res, function(z) z$het))
+      beta <- do.call("rbind", lapply(res, function(x) t(x$beta)))
+      het  <- do.call("rbind", lapply(res, function(x) x$het))
 
    }
 

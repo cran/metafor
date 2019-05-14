@@ -1,18 +1,20 @@
-trimfill.rma.uni <- function(x, side, estimator="L0", maxiter=100, verbose=FALSE, ...) {
+trimfill.rma.uni <- function(x, side, estimator="L0", maxiter=100, verbose=FALSE, ilim, ...) {
 
    #########################################################################
 
+   mstyle <- .get.mstyle("crayon" %in% .packages())
+
    if (!inherits(x, "rma.uni"))
-      stop("Argument 'x' must be an object of class \"rma.uni\".")
+      stop(mstyle$stop("Argument 'x' must be an object of class \"rma.uni\"."))
 
    if (inherits(x, "robust.rma"))
-      stop("Method not yet implemented for objects of class \"robust.rma\". Sorry!")
+      stop(mstyle$stop("Method not available for objects of class \"robust.rma\"."))
 
    if (inherits(x, "rma.ls"))
-      stop("Method not yet implemented for objects of class \"rma.ls\". Sorry!")
+      stop(mstyle$stop("Method not available for objects of class \"rma.ls\"."))
 
    if (!x$int.only)
-      stop("Trim-and-fill method only applicable for models without moderators.")
+      stop(mstyle$stop("Trim-and-fill method only applicable for models without moderators."))
 
    if (missing(side))
       side <- NULL
@@ -20,19 +22,19 @@ trimfill.rma.uni <- function(x, side, estimator="L0", maxiter=100, verbose=FALSE
    estimator <- match.arg(estimator, c("L0", "R0", "Q0"))
 
    if (x$k == 1)
-      stop("Stopped because k = 1.")
+      stop(mstyle$stop("Stopped because k = 1."))
 
    #########################################################################
 
    yi <- x$yi
    vi <- x$vi
-   weights <- x$weights
+   wi <- x$weights
    ni <- x$ni
 
    ### determine side (if none is specified)
 
    if (is.null(side)) {
-      res <- suppressWarnings(rma.uni(yi, vi, weights=weights, mods=sqrt(vi), method=x$method, weighted=x$weighted, ...))
+      res <- suppressWarnings(rma.uni(yi, vi, weights=wi, mods=sqrt(vi), method=x$method, weighted=x$weighted, ...))
       ### TODO: add check in case there are problems with fitting the model
       if (res$beta[2] < 0) {
          side <- "right"
@@ -45,17 +47,16 @@ trimfill.rma.uni <- function(x, side, estimator="L0", maxiter=100, verbose=FALSE
 
    ### flip data if examining right side
 
-   if (side == "right") {
+   if (side == "right")
       yi <- -1*yi
-   }
 
    ### sort data by increasing yi
 
-   idix <- sort(yi, index.return=TRUE)$ix
-   yi      <- yi[idix]
-   vi      <- vi[idix]
-   weights <- weights[idix]
-   ni      <- ni[idix]
+   ix <- sort(yi, index.return=TRUE)$ix
+   yi <- yi[ix]
+   vi <- vi[ix]
+   wi <- wi[ix]
+   ni <- ni[ix]
 
    #########################################################################
 
@@ -65,22 +66,25 @@ trimfill.rma.uni <- function(x, side, estimator="L0", maxiter=100, verbose=FALSE
    k0     <-  0 ### estimated number of missing studies
    iter   <-  0 ### iteration counter
 
-   while(abs(k0 - k0.sav) > 0) {
+   if (verbose)
+      cat("\n")
+
+   while (abs(k0 - k0.sav) > 0) {
 
       k0.sav <- k0 ### save current value of k0
 
       iter <- iter + 1
 
       if (iter > maxiter)
-         stop("Trim and fill algorithm did not converge.")
+         stop(mstyle$stop("Trim and fill algorithm did not converge."))
 
       ### truncated data
 
       yi.t <- yi[seq_len(k-k0)]
       vi.t <- vi[seq_len(k-k0)]
-      weights.t <- weights[seq_len(k-k0)]
+      wi.t <- wi[seq_len(k-k0)]
 
-      res <- suppressWarnings(rma.uni(yi.t, vi.t, weights=weights.t, method=x$method, weighted=x$weighted, ...))
+      res <- suppressWarnings(rma.uni(yi.t, vi.t, weights=wi.t, method=x$method, weighted=x$weighted, ...))
 
       ### intercept estimate based on truncated data
 
@@ -117,12 +121,13 @@ trimfill.rma.uni <- function(x, side, estimator="L0", maxiter=100, verbose=FALSE
 
       ### round k0 and make sure that k0 is non-negative
 
-      k0 <- max(0, round(k0))
-
+      k0    <- max(0, round(k0))
       se.k0 <- max(0, se.k0)
 
       if (verbose)
-         cat("Iteration:", iter, "\tmissing =", k0, "\t  beta =", ifelse(side == "right", -1*beta, beta), "\n")
+         cat(mstyle$verbose(paste0("Iteration: ", formatC(iter, format="f", digits=0, width=nchar(maxiter), flag="-"),
+                                   "  missing = ", formatC(k0, format="f", digits=0, width=nchar(k), flag="-"),
+                                   "  beta = ",    formatC(ifelse(side == "right", -1*beta, beta), format="f", digits=x$digits[["est"]]), "\n")))
 
    }
 
@@ -135,26 +140,41 @@ trimfill.rma.uni <- function(x, side, estimator="L0", maxiter=100, verbose=FALSE
       ### flip data back if side is right
 
       if (side == "right") {
-         yi.c <- -1*(yi.c - beta)
+         yi.c <- -1 * (yi.c - beta)
       } else {
          yi.c <- yi.c - beta
       }
 
       ### create filled-in data set
 
-      yi.fill      <- c(x$yi.f, -1*yi.c[(k-k0+1):k])
-      vi.fill      <- c(x$vi.f, vi[(k-k0+1):k])
-      weights.fill <- c(x$weights.f, weights[(k-k0+1):k])
-      ni.fill      <- c(x$ni.f, ni[(k-k0+1):k])
+      yi.fill <- c(x$yi.f, -1*yi.c[(k-k0+1):k])
+
+      ### apply limits if specified
+
+      if (!missing(ilim)) {
+         ilim <- sort(ilim)
+         if (length(ilim) != 2L)
+            stop(mstyle$stop("Argument 'ilim' must be of length 2."))
+         yi.fill[yi.fill < ilim[1]] <- ilim[1]
+         yi.fill[yi.fill > ilim[2]] <- ilim[2]
+      }
+
+      vi.fill <- c(x$vi.f, vi[(k-k0+1):k])
+      wi.fill <- c(x$weights.f, wi[(k-k0+1):k])
+      ni.fill <- c(x$ni.f, ni[(k-k0+1):k])
 
       ### add measure attribute to the yi.fill vector
 
       attr(yi.fill, "measure") <- x$measure
 
-      res      <- suppressWarnings(rma.uni(yi.fill, vi.fill, weights=weights.fill, ni=ni.fill, method=x$method, weighted=x$weighted, ...))
-      res$fill <- c(rep(FALSE,k),rep(TRUE,k0))
+      ### fit model with imputed data
 
-      res$ids <- c(x$ids, (x$k.f+1):(x$k.f+k0))
+      res <- suppressWarnings(rma.uni(yi.fill, vi.fill, weights=wi.fill, ni=ni.fill, method=x$method, weighted=x$weighted, ...))
+
+      ### fill, ids, and slab are of length 'k.f + k0' (i.e., subsetted but with NAs)
+
+      res$fill <- c(rep(FALSE,x$k.f), rep(TRUE,k0))
+      res$ids  <- c(x$ids, (max(x$ids)+1):(max(x$ids)+k0))
 
       if (x$slab.null) {
          res$slab <- c(paste("Study", x$ids), paste("Filled", seq_len(k0)))
@@ -176,6 +196,8 @@ trimfill.rma.uni <- function(x, side, estimator="L0", maxiter=100, verbose=FALSE
    res$se.k0  <- se.k0
    res$side   <- side
    res$k0.est <- estimator
+   res$k.all  <- x$k.all + k0
+
    if (estimator == "R0") {
       m <- -1:(k0-1)
       res$p.k0 <- 1 - sum(choose(0+m+1, m+1) * 0.5^(0+m+2))

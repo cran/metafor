@@ -27,7 +27,7 @@
    \item{pi.ub}{upper bound of the prediction intervals.}
    \item{\dots}{some additional elements/values.}
 
-   The \code{"list.rma"} object is formated and printed with \code{\link{print.list.rma}}.
+   The \code{"list.rma"} object is formatted and printed with \code{\link{print.list.rma}}.
 
    For objects of class \code{"rma.mv"}, a list of data frames with the same components as described above.
 }
@@ -45,9 +45,7 @@
    To be precise, it should be noted that the function actually calculates empirical BLUPs (eBLUPs), since the predicted values are a function of the estimated variance component(s).
 }
 \author{
-   Wolfgang Viechtbauer \email{wvb@metafor-project.org} \cr
-   package website: \url{http://www.metafor-project.org/} \cr
-   author homepage: \url{http://www.wvbauer.com/}
+   Wolfgang Viechtbauer \email{wvb@metafor-project.org} \url{http://www.metafor-project.org/}
 }
 \references{
    Kackar, R. N., & Harville, D. A. (1981). Unbiasedness of two-stage estimation and prediction procedures for mixed linear models. Communications in Statistics, Theory and Methods, \bold{10}, 1249--1261.

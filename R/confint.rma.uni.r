@@ -1,24 +1,26 @@
 ### Note: There is code below to obtain a profile likelihood CI for tau^2, but then
 ### I may have to introduce a 'type' argument to specify which type of CI to obtain.
 ### Actually, what would be most consistent is this:
-### if method='ML/REML': profile likelihood (PL) CI (based on the ML/REML likelihood)
-### if method='EB/PM':   Q-profile (QP) CI
-### if method='GENQ':    generalized Q-statistic (GENQ) CI (which also covers method='DL/HE' as special cases)
-### if method='SJ':      method by Sidik & Jonkman (2005) (but this performs poorly, except if tau^2 is very large)
-### if method='HS':      not sure since this is an ad-hoc estimator with no obvious underlying statistical principle
+### if method='ML/REML':    profile likelihood (PL) CI (based on the ML/REML likelihood)
+### if method='EB/PM/PMM':  Q-profile (QP) CI
+### if method='GENQ/GENQM': generalized Q-statistic (GENQ) CI (which also covers method='DL/HE' as special cases)
+### if method='SJ':         method by Sidik & Jonkman (2005) (but this performs poorly, except if tau^2 is very large)
+### if method='HS':         not sure since this is an ad-hoc estimator with no obvious underlying statistical principle
 ### Also could in principle compute Wald-type CIs (but those perform poorly except when k is very large).
-### But it may be a bit late to change how the function works (right now, type="GENQ" if method="GENQ" and type="QP" otherwise).
+### But it may be a bit late to change how the function works (right now, type="GENQ" if method="GENQ/GENQM" and type="QP" otherwise).
 
 confint.rma.uni <- function(object, parm, level, fixed=FALSE, random=TRUE, digits, transf, targs, verbose=FALSE, control, ...) {
 
+   mstyle <- .get.mstyle("crayon" %in% .packages())
+
    if (!inherits(object, "rma.uni"))
-      stop("Argument 'object' must be an object of class \"rma.uni\".")
+      stop(mstyle$stop("Argument 'object' must be an object of class \"rma.uni\"."))
 
    if (inherits(object, "robust.rma"))
-      stop("Method not yet implemented for objects of class \"robust.rma\". Sorry!")
+      stop(mstyle$stop("Method not available for objects of class \"robust.rma\"."))
 
    if (inherits(object, "rma.ls"))
-      stop("Method not yet implemented for objects of class \"rma.ls\". Sorry!")
+      stop(mstyle$stop("Method not available for objects of class \"rma.ls\"."))
 
    x <- object
 
@@ -33,8 +35,11 @@ confint.rma.uni <- function(object, parm, level, fixed=FALSE, random=TRUE, digit
    if (missing(level))
       level <- x$level
 
-   if (missing(digits))
-      digits <- x$digits
+   if (missing(digits)) {
+      digits <- .get.digits(xdigits=x$digits, dmiss=TRUE)
+   } else {
+      digits <- .get.digits(digits=digits, xdigits=x$digits, dmiss=FALSE)
+   }
 
    if (missing(transf))
       transf <- FALSE
@@ -46,16 +51,16 @@ confint.rma.uni <- function(object, parm, level, fixed=FALSE, random=TRUE, digit
       control <- list()
 
    if (!fixed && !random)
-      stop("At least one of the arguments 'fixed' and 'random' must be TRUE.")
+      stop(mstyle$stop("At least one of the arguments 'fixed' and 'random' must be TRUE."))
 
-   if (x$method == "GENQ") {
+   if (x$method == "GENQ" || x$method == "GENQM") {
       type <- "GENQ"
    } else {
       type <- "QP"
    }
 
    #if (missing(type)) {
-   #   if (x$method == "GENQ") {
+   #   if (x$method == "GENQ" || x$method == "GENQM") {
    #      type <- "GENQ"
    #   } else {
    #      type <- "QP"
@@ -64,7 +69,7 @@ confint.rma.uni <- function(object, parm, level, fixed=FALSE, random=TRUE, digit
    #   type <- match.arg(type, c("QP", "GENQ", "PL"))
    #}
 
-   level <- ifelse(level > 1, (100-level)/100, ifelse(level > .5, 1-level, level))
+   level <- ifelse(level == 0, 1, ifelse(level >= 1, (100-level)/100, ifelse(level > .5, 1-level, level)))
 
    #########################################################################
    #########################################################################
@@ -73,16 +78,16 @@ confint.rma.uni <- function(object, parm, level, fixed=FALSE, random=TRUE, digit
    if (random) {
 
       if (k == 1)
-         stop("Stopped because k = 1.")
+         stop(mstyle$stop("Stopped because k = 1."))
 
       if (x$method == "FE")
-         stop("Model does not contain a random-effects component.")
+         stop(mstyle$stop("Model does not contain a random-effects component."))
 
       if (x$tau2.fix)
-         stop("Model does not contain an estimated random-effects component.")
+         stop(mstyle$stop("Model does not contain an estimated random-effects component."))
 
-      if (type == "GENQ" && x$method != "GENQ")
-         stop("Model must be fitted with 'method=\"GENQ\" to use this option.")
+      if (type == "GENQ" && !(is.element(x$method, c("GENQ","GENQM"))))
+         stop(mstyle$stop("Model must be fitted with 'method=\"GENQ\" or 'method=\"GENQM\" to use this option."))
 
       ######################################################################
 
@@ -126,13 +131,13 @@ confint.rma.uni <- function(object, parm, level, fixed=FALSE, random=TRUE, digit
       if (type == "QP") {
 
          if (!x$allvipos)
-            stop("Cannot compute confidence interval for the amount of (residual)\n  heterogeneity with non-positive sampling variances in the data.")
+            stop(mstyle$stop("Cannot compute confidence interval for the amount of (residual)\n  heterogeneity with non-positive sampling variances in the data."))
 
          crit.u <- qchisq(level/2, k-p, lower.tail=FALSE) ### upper critical chi^2 value for df = k-p
          crit.l <- qchisq(level/2, k-p, lower.tail=TRUE)  ### lower critical chi^2 value for df = k-p
 
-         QE.tau2.max <- .QE.func(con$tau2.max, Y=Y, vi=vi, X=X, k=k, objective=0, verbose=FALSE)
-         QE.tau2.min <- .QE.func(con$tau2.min, Y=Y, vi=vi, X=X, k=k, objective=0, verbose=FALSE)
+         QE.tau2.max <- .QE.func(con$tau2.max, Y=Y, vi=vi, X=X, k=k, objective=0)
+         QE.tau2.min <- .QE.func(con$tau2.min, Y=Y, vi=vi, X=X, k=k, objective=0)
 
          #dfs <- 12; curve(dchisq(x, df=dfs), from=0, to=40, ylim=c(0,.1), xlab="", ylab=""); abline(v=qchisq(c(.025, .975), df=dfs)); text(qchisq(c(.025, .975), df=dfs)+1.6, .1, c("crit.l", "crit.u"))
 
@@ -244,7 +249,7 @@ confint.rma.uni <- function(object, parm, level, fixed=FALSE, random=TRUE, digit
       if (type == "GENQ") {
 
          if (!requireNamespace("CompQuadForm", quietly=TRUE))
-            stop("Please install the 'CompQuadForm' package when method='QGEN'.")
+            stop(mstyle$stop("Please install the 'CompQuadForm' package when method='QGEN'."))
 
          A <- diag(weights, nrow=k, ncol=k)
          stXAX <- .invcalc(X=X, W=A, k=k)
@@ -254,8 +259,8 @@ confint.rma.uni <- function(object, parm, level, fixed=FALSE, random=TRUE, digit
          ### note: .GENQ.func(tau2val, ..., Q=Q, level=0, getlower=TRUE) gives the area to the right of Q for a
          ### distribution with specified tau2val; and as we increase tau2val, so does the area to the right of Q
 
-         GENQ.tau2.max <- .GENQ.func(con$tau2.max, P=P, vi=vi, Q=Q, level=0, k=k, p=p, getlower=TRUE, verbose=FALSE)
-         GENQ.tau2.min <- .GENQ.func(con$tau2.min, P=P, vi=vi, Q=Q, level=0, k=k, p=p, getlower=TRUE, verbose=FALSE)
+         GENQ.tau2.max <- .GENQ.func(con$tau2.max, P=P, vi=vi, Q=Q, level=0, k=k, p=p, getlower=TRUE)
+         GENQ.tau2.min <- .GENQ.func(con$tau2.min, P=P, vi=vi, Q=Q, level=0, k=k, p=p, getlower=TRUE)
 
          ###################################################################
 
@@ -367,9 +372,9 @@ confint.rma.uni <- function(object, parm, level, fixed=FALSE, random=TRUE, digit
       if (type == "PL") {
 
          if (con$tau2.min > x$tau2)
-            stop("Lower bound of interval to be searched must be <= actual value of component.")
+            stop(mstyle$stop("Lower bound of interval to be searched must be <= actual value of component."))
          if (con$tau2.max < x$tau2)
-            stop("Upper bound of interval to be searched must be >= actual value of component.")
+            stop(mstyle$stop("Upper bound of interval to be searched must be >= actual value of component."))
 
          objective <- qchisq(1-level, df=1)
 
@@ -450,15 +455,15 @@ confint.rma.uni <- function(object, parm, level, fixed=FALSE, random=TRUE, digit
       ######################################################################
 
       if (!lb.conv)
-         warning("Error in iterative search for the lower bound.")
+         warning(mstyle$warning("Error in iterative search for the lower bound."))
 
       if (!ub.conv)
-         warning("Error in iterative search for the upper bound.")
+         warning(mstyle$warning("Error in iterative search for the upper bound."))
 
       #if (lb.sign == "<" && con$tau2.min > 0)
-      #   warning("Lower bound < tau2.min. Try decreasing tau2.min (via the 'control' argument).")
+      #   warning(mstyle$warning("Lower bound < tau2.min. Try decreasing tau2.min (via the 'control' argument)."))
       #if (ub.sign == ">")
-      #   warning("Upper bound > tau2.max. Try increasing tau2.max (via the 'control' argument).")
+      #   warning(mstyle$warning("Upper bound > tau2.max. Try increasing tau2.max (via the 'control' argument)."))
 
       ######################################################################
 

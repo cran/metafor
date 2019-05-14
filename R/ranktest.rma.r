@@ -2,14 +2,19 @@ ranktest.rma <- function(x, digits, ...) {
 
    #########################################################################
 
+   mstyle <- .get.mstyle("crayon" %in% .packages())
+
    if (!inherits(x, "rma"))
-      stop("Argument 'x' must be an object of class \"rma\".")
+      stop(mstyle$stop("Argument 'x' must be an object of class \"rma\"."))
 
    if (inherits(x, "robust.rma"))
-      stop("Method not yet implemented for objects of class \"robust.rma\". Sorry!")
+      stop(mstyle$stop("Method not available for objects of class \"robust.rma\"."))
 
-   if (missing(digits))
-      digits <- x$digits
+   if (missing(digits)) {
+      digits <- .get.digits(xdigits=x$digits, dmiss=TRUE)
+   } else {
+      digits <- .get.digits(digits=digits, xdigits=x$digits, dmiss=FALSE)
+   }
 
    #########################################################################
 

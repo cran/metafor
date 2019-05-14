@@ -1,57 +1,60 @@
 print.rma.peto <- function(x, digits, showfit=FALSE, ...) {
 
+   mstyle <- .get.mstyle("crayon" %in% .packages())
+
    if (!inherits(x, "rma.peto"))
-      stop("Argument 'x' must be an object of class \"rma.peto\".")
+      stop(mstyle$stop("Argument 'x' must be an object of class \"rma.peto\"."))
 
-   if (missing(digits))
-      digits <- x$digits
+   if (missing(digits)) {
+      digits <- .get.digits(xdigits=x$digits, dmiss=TRUE)
+   } else {
+      digits <- .get.digits(digits=digits, xdigits=x$digits, dmiss=FALSE)
+   }
 
-   cat("\n")
+   if (!exists(".rmspace"))
+      cat("\n")
 
-   cat("Fixed-Effects Model (k = ", x$k, ")", sep="")
+   cat(mstyle$section("Fixed-Effects Model"))
+   cat(mstyle$section(paste0(" (k = ", x$k, ")")))
 
    if (showfit) {
       cat("\n")
       if (anyNA(x$fit.stats$ML)) {
          fs <- x$fit.stats$ML
       } else {
-         fs <- c(formatC(x$fit.stats$ML, digits=digits, format="f"))
+         fs <- .fcf(x$fit.stats$ML, digits[["fit"]])
       }
       names(fs) <- c("logLik", "deviance", "AIC", "BIC", "AICc")
       cat("\n")
-      print(fs, quote=FALSE, print.gap=2)
+      tmp <- capture.output(print(fs, quote=FALSE, print.gap=2))
+      .print.table(tmp, mstyle)
       cat("\n")
    } else {
       cat("\n\n")
    }
 
    if (!is.na(x$QE)) {
-      cat("Test for Heterogeneity: \n")
-      cat("Q(df = ", x$k.pos-1, ") = ", formatC(x$QE, digits=digits, format="f"), ", p-val ", .pval(x$QEp, digits=digits, showeq=TRUE, sep=" "), sep="")
+      cat(mstyle$section("Test for Heterogeneity:"), "\n")
+      cat(mstyle$result(paste0("Q(df = ", x$k.pos-1, ") = ", .fcf(x$QE, digits[["test"]]), ", p-val ", .pval(x$QEp, digits=digits[["pval"]], showeq=TRUE, sep=" "))))
    }
 
-   res.table     <- c(x$beta, x$se, x$zval, x$pval, x$ci.lb, x$ci.ub)
-   res.table.exp <- c(exp(x$beta), exp(x$ci.lb), exp(x$ci.ub))
+   res.table <- c(estimate=.fcf(unname(x$beta), digits[["est"]]), se=.fcf(x$se, digits[["se"]]), zval=.fcf(x$zval, digits[["test"]]), pval=.pval(x$pval, digits[["pval"]]), ci.lb=.fcf(x$ci.lb, digits[["ci"]]), ci.ub=.fcf(x$ci.ub, digits[["ci"]]))
+   res.table.exp <- c(estimate=.fcf(exp(unname(x$beta)), digits[["est"]]), ci.lb=.fcf(exp(x$ci.lb), digits[["ci"]]), ci.ub=.fcf(exp(x$ci.ub), digits[["ci"]]))
 
-   if (!is.na(x$beta)) {
-      res.table    <- formatC(res.table, digits=digits, format="f")
-      res.table[4] <- .pval(x$pval, digits=digits)
-   }
+   cat("\n\n")
+   cat(mstyle$section("Model Results (log scale):"))
+   cat("\n\n")
+   tmp <- capture.output(.print.vector(res.table))
+   .print.table(tmp, mstyle)
 
-   if (!is.na(x$beta))
-      res.table.exp <- formatC(res.table.exp, digits=digits, format="f")
-
-   names(res.table)     <- c("estimate", "se", "zval", "pval", "ci.lb", "ci.ub")
-   names(res.table.exp) <- c("estimate", "ci.lb", "ci.ub")
-
-   cat("\n\nModel Results (log scale):\n\n")
-   .print.out(res.table)
-   #print(res.table, quote=FALSE, right=TRUE)
-
-   cat("\nModel Results (OR scale):\n\n")
-   .print.out(res.table.exp)
-   #print(res.table.exp, quote=FALSE, right=TRUE)
    cat("\n")
+   cat(mstyle$section("Model Results (OR scale):"))
+   cat("\n\n")
+   tmp <- capture.output(.print.vector(res.table.exp))
+   .print.table(tmp, mstyle)
+
+   if (!exists(".rmspace"))
+      cat("\n")
 
    invisible()
 
