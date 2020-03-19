@@ -9,8 +9,7 @@ level=95, digits, btt, tau2, verbose=FALSE, control, ...) {
 
    ###### setup
 
-   withcrayon <- "crayon" %in% .packages()
-   mstyle <- .get.mstyle(withcrayon)
+   mstyle <- .get.mstyle("crayon" %in% .packages())
 
    ### check argument specifications
    ### (arguments "to" and "vtype" are checked inside escalc function)
@@ -38,10 +37,10 @@ level=95, digits, btt, tau2, verbose=FALSE, control, ...) {
    ### in case user specifies more than one add/to value (as one can do with rma.mh() and rma.peto())
    ### (any kind of continuity correction is directly applied to the outcomes, which are then analyzed as such)
 
-   if (length(add) > 1)
+   if (length(add) > 1L)
       add <- add[1]
 
-   if (length(to) > 1)
+   if (length(to) > 1L)
       to <- to[1]
 
    na.act <- getOption("na.action")
@@ -55,16 +54,13 @@ level=95, digits, btt, tau2, verbose=FALSE, control, ...) {
    if (missing(control))
       control <- list()
 
+   time.start <- proc.time()
+
    ### get ... argument and check for extra/superfluous arguments
 
    ddd <- list(...)
 
    .chkdots(ddd, c("knha", "scale", "link", "outlist", "onlyo1", "addyi", "addvi", "time"))
-
-   ### handle 'time' argument from ...
-
-   if (.isTRUE(ddd$time))
-      time.start <- proc.time()
 
    ### handle 'knha' argument from ... (note: overrides test argument)
 
@@ -111,9 +107,16 @@ level=95, digits, btt, tau2, verbose=FALSE, control, ...) {
    formula.mods <- NULL
    formula.scale <- NULL
 
+   ### set options(warn=1) if verbose > 2
+
+   if (verbose > 2) {
+      opwarn <- options(warn=1)
+      on.exit(options(warn=opwarn$warn))
+   }
+
    #########################################################################
 
-   if (verbose)
+   if (verbose && !exists(".rmspace"))
       cat("\n")
 
    if (verbose > 1)
@@ -270,7 +273,7 @@ level=95, digits, btt, tau2, verbose=FALSE, control, ...) {
 
       ### check if user constrained vi to 0
 
-      if (length(vi) == 1 && vi == 0) {
+      if (length(vi) == 1L && vi == 0) {
          vi0 <- TRUE
       } else {
          vi0 <- FALSE
@@ -278,7 +281,7 @@ level=95, digits, btt, tau2, verbose=FALSE, control, ...) {
 
       ### allow easy setting of vi to a single value
 
-      if (length(vi) == 1)
+      if (length(vi) == 1L)
          vi <- rep(vi, k) ### note: k is number of outcomes before subsetting
 
       ### check length of yi and vi
@@ -598,7 +601,7 @@ level=95, digits, btt, tau2, verbose=FALSE, control, ...) {
 
    ### allow easy setting of weights to a single value
 
-   if (length(weights) == 1)
+   if (length(weights) == 1L)
       weights <- rep(weights, k) ### note: k is number of outcomes before subsetting
 
    ### check length of yi and weights (only if weights is not NULL)
@@ -628,9 +631,9 @@ level=95, digits, btt, tau2, verbose=FALSE, control, ...) {
       intercept <- FALSE                    ### set to FALSE since formula now controls whether the intercept is included or not
    }                                        ### note: code further below ([b]) actually checks whether intercept is included or not
 
-   ### turn a row vector for mods into a column vector
+   ### turn a vector for mods into a column vector
 
-   if (is.vector(mods))
+   if (.is.vector(mods))
       mods <- cbind(mods)
 
    ### turn a mods data frame into a matrix
@@ -875,7 +878,7 @@ level=95, digits, btt, tau2, verbose=FALSE, control, ...) {
 
    ### set/check 'btt' argument
 
-   btt <- .set.btt(btt, p, int.incl)
+   btt <- .set.btt(btt, p, int.incl, X)
    m <- length(btt) ### number of betas to test (m = p if all betas are tested)
 
    #########################################################################
@@ -883,20 +886,23 @@ level=95, digits, btt, tau2, verbose=FALSE, control, ...) {
    ### set default control parameters
 
    con <- list(verbose = FALSE,
-               tau2.init = NULL,      # initial value for iterative estimators (ML, REML, EB, SJ, SJIT, DLIT)
-               tau2.min = 0,          # lower bound for tau^2 value
-               tau2.max = 100,        # upper bound for tau^2 value (for PM/PMM/GENQM estimators; and passed down for tau^2 CI obtained with confint())
-               threshold = 10^-5,     # convergence threshold (for ML, REML, EB, SJIT, DLIT)
+               tau2.init = NULL,          # initial value for iterative estimators (ML, REML, EB, SJ, SJIT, DLIT)
+               tau2.min = 0,              # lower bound for tau^2 value
+               tau2.max = 100,            # upper bound for tau^2 value (for PM/PMM/GENQM estimators; and passed down for tau^2 CI obtained with confint())
+               threshold = 10^-5,         # convergence threshold (for ML, REML, EB, SJIT, DLIT)
                tol = .Machine$double.eps^0.25, # convergence tolerance for uniroot() as used for PM, PMM, and GENQM (also used in 'll0 - ll > con$tol' check for ML/REML)
-               ll0check = TRUE,       # should the 'll0 - ll > con$tol' check be conducted for ML/REML?
-               maxiter = 100,         # maximum number of iterations (for ML, REML, EB, SJIT, DLIT)
-               stepadj = 1,           # step size adjustment for Fisher scoring algorithm (for ML, REML, EB)
-               REMLf = TRUE,          # should |X'X| term be included in the REML log likelihood?
-               evtol = 1e-07,         # lower bound for eigenvalues to determine if model matrix is positive definite (also for checking if vimaxmin >= 1/con$evtol)
-               alpha.init = NULL,     # initial values for scale parameters
-               optimizer = "nlminb",  # optimizer to use ("optim", "nlminb", "uobyqa", "newuoa", "bobyqa", "nloptr", "nlm", "hjk", "nmk", "ucminf") for location-scale model
-               optmethod = "BFGS",    # argument 'method' for optim() ("Nelder-Mead" and "BFGS" are sensible options)
-               hessianCtrl=list(r=8), # arguments passed on to 'method.args' of hessian()
+               ll0check = TRUE,           # should the 'll0 - ll > con$tol' check be conducted for ML/REML?
+               maxiter = 100,             # maximum number of iterations (for ML, REML, EB, SJIT, DLIT)
+               stepadj = 1,               # step size adjustment for Fisher scoring algorithm (for ML, REML, EB)
+               REMLf = TRUE,              # should |X'X| term be included in the REML log likelihood?
+               evtol = 1e-07,             # lower bound for eigenvalues to determine if model matrix is positive definite (also for checking if vimaxmin >= 1/con$evtol)
+               alpha.init = NULL,         # initial values for scale parameters
+               optimizer = "nlminb",      # optimizer to use ("optim", "nlminb", "uobyqa", "newuoa", "bobyqa", "nloptr", "nlm", "hjk", "nmk", "ucminf", "optimParallel") for location-scale model
+               optmethod = "BFGS",        # argument 'method' for optim() ("Nelder-Mead" and "BFGS" are sensible options)
+               parallel = list(),         # parallel argument for optimParallel() (note: 'cl' argument in parallel is not passed; this is directly specified via 'cl')
+               cl = NULL,                 # arguments for optimParallel()
+               ncpus = 1L,                # arguments for optimParallel()
+               hessianCtrl=list(r=8),     # arguments passed on to 'method.args' of hessian()
                scaleZ = TRUE)
 
    ### replace defaults with any user-defined values
@@ -972,7 +978,7 @@ level=95, digits, btt, tau2, verbose=FALSE, control, ...) {
       if (method == "HS") {
 
          if (!allvipos)
-            stop(mstyle$stop("HS estimator cannot be used with non-positive sampling variances."))
+            stop(mstyle$stop("HS estimator cannot be used when there are non-positive sampling variances in the data."))
 
          wi    <- 1/vi
          W     <- diag(wi, nrow=k, ncol=k)
@@ -1002,7 +1008,7 @@ level=95, digits, btt, tau2, verbose=FALSE, control, ...) {
       if (method == "DL") {
 
          if (!allvipos)
-            stop(mstyle$stop("DL estimator cannot be used with non-positive sampling variances."))
+            stop(mstyle$stop("DL estimator cannot be used when there are non-positive sampling variances in the data."))
 
          wi    <- 1/vi
          W     <- diag(wi, nrow=k, ncol=k)
@@ -1062,7 +1068,7 @@ level=95, digits, btt, tau2, verbose=FALSE, control, ...) {
       if (method == "GENQ") {
 
          #if (!allvipos)
-         #   stop(mstyle$stop("GENQ estimator cannot be used with non-positive sampling variances."))
+         #   stop(mstyle$stop("GENQ estimator cannot be used when there are non-positive sampling variances in the data."))
 
          if (is.null(weights))
             stop(mstyle$stop("Must specify 'weights' when method='GENQ'."))
@@ -1200,7 +1206,7 @@ level=95, digits, btt, tau2, verbose=FALSE, control, ...) {
       if (method == "PM") {
 
          if (!allvipos)
-            stop(mstyle$stop("PM estimator cannot be used with non-positive sampling variances."))
+            stop(mstyle$stop("PM estimator cannot be used when there are non-positive sampling variances in the data."))
 
          if (!tau2.fix) {
 
@@ -1244,7 +1250,7 @@ level=95, digits, btt, tau2, verbose=FALSE, control, ...) {
       if (method == "PMM") {
 
          if (!allvipos)
-            stop(mstyle$stop("PMM estimator cannot be used with non-positive sampling variances."))
+            stop(mstyle$stop("PMM estimator cannot be used when there are non-positive sampling variances in the data."))
 
          if (!tau2.fix) {
 
@@ -1437,12 +1443,21 @@ level=95, digits, btt, tau2, verbose=FALSE, control, ...) {
 
       ### get optimizer arguments from control argument
 
-      optimizer  <- match.arg(con$optimizer, c("optim","nlminb","uobyqa","newuoa","bobyqa","nloptr","nlm","hjk","nmk","ucminf"))
-      optmethod  <- match.arg(con$optmethod, c("Nelder-Mead", "BFGS", "CG", "L-BFGS-B", "SANN", "Brent"))
+      optimizer  <- match.arg(con$optimizer, c("optim","nlminb","uobyqa","newuoa","bobyqa","nloptr","nlm","hjk","nmk","ucminf","optimParallel"))
+      optmethod  <- match.arg(con$optmethod, c("Nelder-Mead","BFGS","CG","L-BFGS-B","SANN","Brent"))
+      parallel   <- con$parallel
+      cl         <- con$cl
+      ncpus      <- con$ncpus
       optcontrol <- control[is.na(con.pos)] ### get arguments that are control arguments for optimizer
 
-      if (length(optcontrol) == 0)
+      if (length(optcontrol) == 0L)
          optcontrol <- list()
+
+      ### if control argument 'ncpus' is larger than 1, automatically switch to optimParallel optimizer
+      if (ncpus > 1L) {
+         con$optimizer <- "optimParallel"
+         optimizer <- "optimParallel"
+      }
 
       reml <- ifelse(method=="REML", TRUE, FALSE)
 
@@ -1473,6 +1488,11 @@ level=95, digits, btt, tau2, verbose=FALSE, control, ...) {
       if (optimizer == "ucminf") {
          if (!requireNamespace("ucminf", quietly=TRUE))
             stop(mstyle$stop("Please install the 'ucminf' package to use this optimizer."))
+      }
+
+      if (optimizer == "optimParallel") {
+         if (!requireNamespace("optimParallel", quietly=TRUE))
+            stop(mstyle$stop("Please install the 'optimParallel' package to use this optimizer."))
       }
 
       if (!requireNamespace("numDeriv", quietly=TRUE))
@@ -1594,6 +1614,45 @@ level=95, digits, btt, tau2, verbose=FALSE, control, ...) {
          optimizer <- paste0("ucminf::ucminf") ### need to use this due to requireNamespace()
          ctrl.arg <- ", control=optcontrol"
       }
+      if (optimizer=="optimParallel") {
+
+         par.arg <- "par"
+         optimizer <- paste0("optimParallel::optimParallel") ### need to use this due to requireNamespace()
+         ctrl.arg <- ", control=optcontrol, parallel=parallel"
+
+         parallel$cl <- NULL
+
+         if (is.null(cl)) {
+
+            ncpus <- as.integer(ncpus)
+
+            if (ncpus < 1)
+               stop(mstyle$stop("Control argument 'ncpus' must be >= 1."))
+
+            cl <- parallel::makePSOCKcluster(ncpus)
+            on.exit(parallel::stopCluster(cl), add=TRUE)
+
+         } else {
+
+            if (!inherits(cl, "SOCKcluster"))
+               stop(mstyle$stop("Specified cluster is not of class 'SOCKcluster'."))
+
+         }
+
+         parallel$cl <- cl
+
+         if (is.null(parallel$forward))
+            parallel$forward <- FALSE
+
+         if (is.null(parallel$loginfo)) {
+            if (verbose) {
+               parallel$loginfo <- TRUE
+            } else {
+               parallel$loginfo <- FALSE
+            }
+         }
+
+      }
 
       #return(list(con=con, optimizer=optimizer, optmethod=optmethod, optcontrol=optcontrol, ctrl.arg=ctrl.arg))
 
@@ -1619,12 +1678,17 @@ level=95, digits, btt, tau2, verbose=FALSE, control, ...) {
 
       #return(opt.res)
 
+      if (optimizer == "optimParallel::optimParallel" && verbose) {
+         tmp <- capture.output(print(opt.res$loginfo))
+         .print.output(tmp, mstyle$verbose)
+      }
+
       if (inherits(opt.res, "try-error"))
          stop(mstyle$stop("Error during optimization for scale model."))
 
       ### convergence checks
 
-      if (is.element(optimizer, c("optim","nlminb","dfoptim::hjk","dfoptim::nmk")) && opt.res$convergence != 0)
+      if (is.element(optimizer, c("optim","nlminb","dfoptim::hjk","dfoptim::nmk","optimParallel::optimParallel")) && opt.res$convergence != 0)
          stop(mstyle$stop(paste0("Optimizer (", optimizer, ") did not achieve convergence (convergence = ", opt.res$convergence, ").")))
 
       if (is.element(optimizer, c("minqa::uobyqa","minqa::newuoa","minqa::bobyqa")) && opt.res$ierr != 0)
@@ -1891,17 +1955,20 @@ level=95, digits, btt, tau2, verbose=FALSE, control, ...) {
          #QE    <- max(0, sum(wi*(yi - X %*% beta.FE)^2))
          QEp   <- pchisq(QE, df=k-p, lower.tail=FALSE)
 
+         ### calculation of 'typical' sampling variance
+
+         #vt <- (k-1) / (sum(wi) - sum(wi^2)/sum(wi)) ### this only applies to the RE model
+         #vt <- 1/mean(wi) ### harmonic mean of vi's (see Takkouche et al., 1999)
+         vt <- (k-p) / .tr(P)
+
          ### calculation of I^2 and H^2
 
          if (method == "FE") {
             I2 <- max(0, 100 * (QE - (k-p)) / QE)
             H2 <- QE / (k-p)
          } else {
-            #vi.avg <- (k-1) / (sum(wi) - sum(wi^2)/sum(wi)) ### this only applies to the RE model
-            #vi.avg <- 1/mean(wi) ### harmonic mean of vi's (see Takkouche et al., 1999)
-            vi.avg  <- (k-p) / .tr(P)
-            I2      <- 100 * mean(tau2) / (vi.avg + mean(tau2)) ### must use mean(tau2) in case tau2 is vector from location-scale model
-            H2      <- mean(tau2) / vi.avg + 1                  ### must use mean(tau2) in case tau2 is vector from location-scale model
+            I2 <- 100 * mean(tau2) / (vt + mean(tau2)) ### must use mean(tau2) in case tau2 is vector from location-scale model
+            H2 <- mean(tau2) / vt + 1                  ### must use mean(tau2) in case tau2 is vector from location-scale model
          }
 
       } else {
@@ -1910,13 +1977,16 @@ level=95, digits, btt, tau2, verbose=FALSE, control, ...) {
          QEp <- 1
          I2  <- 0
          H2  <- 1
+         vt  <- 0
 
       }
 
    } else {
 
       if (!vi0)
-         warning(mstyle$warning(paste0("Cannot compute ", ifelse(int.only, "Q", "QE"), "-test, I^2, or H^2 with non-positive sampling variances.")))
+         warning(mstyle$warning(paste0("Cannot compute ", ifelse(int.only, "Q", "QE"), "-test, I^2, or H^2 when there are non-positive sampling variances in the data.")))
+
+      vt <- NA
 
    }
 
@@ -2001,7 +2071,7 @@ level=95, digits, btt, tau2, verbose=FALSE, control, ...) {
       res <- list(b=beta, beta=beta, se=se, zval=zval, pval=pval, ci.lb=ci.lb, ci.ub=ci.ub, vb=vb,
                   tau2=tau2, se.tau2=se.tau2, tau2.fix=tau2.fix, tau2.f=tau2,
                   k=k, k.f=k.f, k.eff=k.eff, k.all=k.all, p=p, p.eff=p.eff, parms=parms, m=m,
-                  QE=QE, QEp=QEp, QM=QM, QMp=QMp, I2=I2, H2=H2, R2=R2,
+                  QE=QE, QEp=QEp, QM=QM, QMp=QMp, I2=I2, H2=H2, R2=R2, vt=vt,
                   int.only=int.only, int.incl=int.incl, allvipos=allvipos, coef.na=coef.na,
                   yi=yi, vi=vi, X=X, weights=weights, yi.f=yi.f, vi.f=vi.f, X.f=X.f, weights.f=weights.f, M=M,
                   ai.f=ai.f, bi.f=bi.f, ci.f=ci.f, di.f=di.f,
@@ -2031,11 +2101,11 @@ level=95, digits, btt, tau2, verbose=FALSE, control, ...) {
 
    }
 
-   if (.isTRUE(ddd$time)) {
-      time.end <- proc.time()
-      res$time <- unname(time.end - time.start)[3]
+   time.end <- proc.time()
+   res$time <- unname(time.end - time.start)[3]
+
+   if (.isTRUE(ddd$time))
       .print.time(res$time)
-   }
 
    if (verbose || .isTRUE(ddd$time))
       cat("\n")

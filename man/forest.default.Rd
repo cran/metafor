@@ -3,7 +3,8 @@
 \title{Forest Plots (Default Method)}
 \description{Function to create forest plots for a given set of data.}
 \usage{
-\method{forest}{default}(x, vi, sei, ci.lb, ci.ub, annotate=TRUE, showweights=FALSE,
+\method{forest}{default}(x, vi, sei, ci.lb, ci.ub,
+       annotate=TRUE, showweights=FALSE, header=FALSE,
        xlim, alim, clim, ylim, top=3, at, steps=5,
        level=95, refline=0, digits=2L, width,
        xlab, slab, ilab, ilab.xpos, ilab.pos,
@@ -19,6 +20,7 @@
    \item{ci.ub}{vector of length \eqn{k} with the corresponding upper confidence interval bounds. Not needed if \code{vi} or \code{sei} is specified. See \sQuote{Details}.}
    \item{annotate}{logical specifying whether annotations should be added to the plot (the default is \code{TRUE}).}
    \item{showweights}{logical specifying whether the annotations should also include inverse variance weights (the default is \code{FALSE}).}
+   \item{header}{logical specifying whether column headings should be added to the plot (the default is \code{FALSE}). Can also be a character vector to specify the left and right headings.}
    \item{xlim}{horizontal limits of the plot region. If unspecified, the function tries to set the horizontal plot limits to some sensible values.}
    \item{alim}{the actual x-axis limits. If unspecified, the function tries to set the x-axis limits to some sensible values.}
    \item{clim}{limits for the confidence intervals. If unspecified, no limits are used.}
@@ -35,7 +37,7 @@
    \item{ilab}{optional vector, matrix, or data frame providing additional information about the studies that should be added to the plot.}
    \item{ilab.xpos}{vector of numerical value(s) specifying the x-axis position(s) of the variable(s) given via \code{ilab} (must be specified if \code{ilab} is specified).}
    \item{ilab.pos}{integer(s) (either 1, 2, 3, or 4) specifying the alignment of the vector(s) given via \code{ilab} (2 means right, 4 mean left aligned). If unspecified, the default is to center the labels.}
-   \item{subset}{optional vector indicating the subset of studies that should be used for the plot. This can be a logical vector of length \eqn{k} or a numeric vector indicating the indices of the observations to include. Note that this argument can also be used for reordering the studies.}
+   \item{subset}{optional (logical or numeric) vector indicating the subset of studies that should be included in the plot. Note that this argument can also be used for reordering the studies.}
    \item{transf}{optional argument specifying the name of a function that should be used to transform the observed effect sizes or outcomes and corresponding confidence interval bounds (e.g., \code{transf=exp}; see also \link{transf}). If unspecified, no transformation is used.}
    \item{atransf}{optional argument specifying the name of a function that should be used to transform the x-axis labels and annotations (e.g., \code{atransf=exp}; see also \link{transf}). If unspecified, no transformation is used.}
    \item{targs}{optional arguments needed by the function specified via \code{transf} or \code{atransf}.}
@@ -80,7 +82,7 @@
 \references{
    Lewis, S., & Clarke, M. (2001). Forest plots: Trying to see the wood and the trees. \emph{British Medical Journal}, \bold{322}, 1479--1480.
 
-   Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \url{http://www.jstatsoft.org/v36/i03/}.
+   Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \url{https://www.jstatsoft.org/v036/i03}.
 }
 \seealso{
    \code{\link{forest}}, \code{\link{forest.rma}}, \code{\link{addpoly}}

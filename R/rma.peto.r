@@ -7,27 +7,26 @@ level=95, digits, verbose=FALSE, ...) {
 
    ###### setup
 
-   withcrayon <- "crayon" %in% .packages()
-   mstyle <- .get.mstyle(withcrayon)
+   mstyle <- .get.mstyle("crayon" %in% .packages())
 
    ### check argument specifications
 
-   if (length(add) == 1)
+   if (length(add) == 1L)
       add <- c(add, 0)
 
-   if (length(add) != 2)
+   if (length(add) != 2L)
       stop(mstyle$stop("Argument 'add' should specify one or two values (see 'help(rma.peto)')."))
 
-   if (length(to) == 1)
+   if (length(to) == 1L)
       to <- c(to, "none")
 
-   if (length(to) != 2)
+   if (length(to) != 2L)
       stop(mstyle$stop("Argument 'to' should specify one or two values (see 'help(rma.peto)')."))
 
-   if (length(drop00) == 1)
+   if (length(drop00) == 1L)
       drop00 <- c(drop00, FALSE)
 
-   if (length(drop00) != 2)
+   if (length(drop00) != 2L)
       stop(mstyle$stop("Argument 'drop00' should specify one or two values (see 'help(rma.peto)')."))
 
    na.act <- getOption("na.action")
@@ -41,16 +40,13 @@ level=95, digits, verbose=FALSE, ...) {
    if (!is.element(to[2], c("all","only0","if0all","none")))
       stop(mstyle$stop("Unknown 'to' argument specified."))
 
+   time.start <- proc.time()
+
    ### get ... argument and check for extra/superfluous arguments
 
    ddd <- list(...)
 
    .chkdots(ddd, c("outlist", "time"))
-
-   ### handle 'time' argument from ...
-
-   if (.isTRUE(ddd$time))
-      time.start <- proc.time()
 
    measure <- "PETO" ### set measure here so that it can be added below
 
@@ -60,6 +56,13 @@ level=95, digits, verbose=FALSE, ...) {
       digits <- .set.digits(dmiss=TRUE)
    } else {
       digits <- .set.digits(digits, dmiss=FALSE)
+   }
+
+   ### set options(warn=1) if verbose > 2
+
+   if (verbose > 2) {
+      opwarn <- options(warn=1)
+      on.exit(options(warn=opwarn$warn))
    }
 
    #########################################################################
@@ -128,6 +131,9 @@ level=95, digits, verbose=FALSE, ...) {
 
       if (length(slab) != k)
          stop(mstyle$stop("Study labels not of same length as data."))
+
+      if (is.factor(slab))
+         slab <- as.character(slab)
 
       slab.null <- FALSE
 
@@ -241,7 +247,7 @@ level=95, digits, verbose=FALSE, ...) {
 
    }
 
-   k.yi <- length(yi) ### number of yi/vi pairs that are not NA (needed for QE df and fitstats calculation)
+   k.yi <- length(yi) ### number of yi/vi pairs that are not NA (needed for QE df and fit.stats calculation)
 
    ### add/to procedures for the 2x2 tables for the actual meta-analysis
    ### note: technically, nothing needs to be added, but Stata/RevMan add 1/2 by default for only0 studies (but drop studies with no/all events)
@@ -402,11 +408,11 @@ level=95, digits, verbose=FALSE, ...) {
 
    }
 
-   if (.isTRUE(ddd$time)) {
-      time.end <- proc.time()
-      res$time <- unname(time.end - time.start)[3]
+   time.end <- proc.time()
+   res$time <- unname(time.end - time.start)[3]
+
+   if (.isTRUE(ddd$time))
       .print.time(res$time)
-   }
 
    if (verbose || .isTRUE(ddd$time))
       cat("\n")

@@ -16,6 +16,16 @@ profile.rma.mv <- function(fitted, sigma2, tau2, rho, gamma2, phi,
    if (parallel == "no" && ncpus > 1)
       parallel <- "snow"
 
+   if (!is.null(cl) && inherits(cl, "SOCKcluster")) {
+      parallel <- "snow"
+      ncpus <- length(cl)
+   }
+
+   ddd <- list(...)
+
+   if (.isTRUE(ddd$time))
+      time.start <- proc.time()
+
    #########################################################################
 
    ### check if user has specified one of the sigma2, tau2, rho, gamma2, or phi arguments
@@ -46,6 +56,7 @@ profile.rma.mv <- function(fitted, sigma2, tau2, rho, gamma2, phi,
             j <- j + 1
             mc.vc <- mc
             mc.vc$sigma2 <- pos
+            mc.vc$time <- FALSE
             mc.vc$fitted <- quote(x)
             if (progbar)
                cat(mstyle$verbose(paste("Profiling sigma2 =", pos, "\n")))
@@ -59,6 +70,7 @@ profile.rma.mv <- function(fitted, sigma2, tau2, rho, gamma2, phi,
                j <- j + 1
                mc.vc <- mc
                mc.vc$tau2 <- pos
+               mc.vc$time <- FALSE
                mc.vc$fitted <- quote(x)
                if (progbar)
                   cat(mstyle$verbose(paste("Profiling tau2 =", pos, "\n")))
@@ -70,6 +82,7 @@ profile.rma.mv <- function(fitted, sigma2, tau2, rho, gamma2, phi,
                j <- j + 1
                mc.vc <- mc
                mc.vc$rho <- pos
+               mc.vc$time <- FALSE
                mc.vc$fitted <- quote(x)
                if (progbar)
                   cat(mstyle$verbose(paste("Profiling rho =", pos, "\n")))
@@ -84,6 +97,7 @@ profile.rma.mv <- function(fitted, sigma2, tau2, rho, gamma2, phi,
                j <- j + 1
                mc.vc <- mc
                mc.vc$gamma2 <- pos
+               mc.vc$time <- FALSE
                mc.vc$fitted <- quote(x)
                if (progbar)
                   cat(mstyle$verbose(paste("Profiling gamma2 =", pos, "\n")))
@@ -95,6 +109,7 @@ profile.rma.mv <- function(fitted, sigma2, tau2, rho, gamma2, phi,
                j <- j + 1
                mc.vc <- mc
                mc.vc$phi <- pos
+               mc.vc$time <- FALSE
                mc.vc$fitted <- quote(x)
                if (progbar)
                   cat(mstyle$verbose(paste("Profiling phi =", pos, "\n")))
@@ -107,6 +122,11 @@ profile.rma.mv <- function(fitted, sigma2, tau2, rho, gamma2, phi,
          sav <- sav[[1]]
 
       sav$comps <- comps
+
+      if (.isTRUE(ddd$time)) {
+         time.end <- proc.time()
+         .print.time(unname(time.end - time.start)[3])
+      }
 
       class(sav) <- "profile.rma"
       return(invisible(sav))
@@ -259,7 +279,7 @@ profile.rma.mv <- function(fitted, sigma2, tau2, rho, gamma2, phi,
          vc.ub <- max(.1, vc*4) ### new method
       }
       if (comp == "tau2") {
-         if (is.element(x$struct[1], c("SPEXP","SPGAU","SPLIN","SPRAT","SPSPH","PHYPL","PHYPD"))) {
+         if (is.element(x$struct[1], c("SPEXP","SPGAU","SPLIN","SPRAT","SPSPH","PHYBM","PHYPL","PHYPD"))) {
             vc.lb <- max( 0, vc/2)
             vc.ub <- max(.1, vc*2)
          } else {
@@ -268,7 +288,7 @@ profile.rma.mv <- function(fitted, sigma2, tau2, rho, gamma2, phi,
          }
       }
       if (comp == "gamma2") {
-         if (is.element(x$struct[2], c("SPEXP","SPGAU","SPLIN","SPRAT","SPSPH","PHYPL","PHYPD"))) {
+         if (is.element(x$struct[2], c("SPEXP","SPGAU","SPLIN","SPRAT","SPSPH","PHYBM","PHYPL","PHYPD"))) {
             vc.lb <- max( 0, vc/2)
             vc.ub <- max(.1, vc*2)
          } else {
@@ -342,9 +362,9 @@ profile.rma.mv <- function(fitted, sigma2, tau2, rho, gamma2, phi,
 
    }
 
-   vcs <- seq(xlim[1], xlim[2], length=steps)
+   vcs <- seq(xlim[1], xlim[2], length.out=steps)
 
-   if (length(vcs) <= 1)
+   if (length(vcs) <= 1L)
       stop(mstyle$stop("Cannot set 'xlim' automatically. Please set this argument manually."))
 
    #return(vcs)
@@ -355,7 +375,7 @@ profile.rma.mv <- function(fitted, sigma2, tau2, rho, gamma2, phi,
    ### if not an empty list(), get position of sigma2.init, tau2.init, rho.init, gamma2.init, or phi.init arguments
    ### if these arguments were not specified, then the respective con.pos values are NA
 
-   if (length(x.control) > 0) {
+   if (length(x.control) > 0L) {
       con.pos.sigma2.init <- pmatch("sigma2.init", names(x.control))
       con.pos.tau2.init   <- pmatch("tau2.init",   names(x.control))
       con.pos.rho.init    <- pmatch("rho.init",    names(x.control))
@@ -492,10 +512,13 @@ profile.rma.mv <- function(fitted, sigma2, tau2, rho, gamma2, phi,
             cl <- parallel::makePSOCKcluster(ncpus)
             on.exit(parallel::stopCluster(cl))
          }
-         #res <- parallel::parLapplyLB(cl, vcs, .profile.rma.mv, obj=x, comp=comp, sigma2.pos=sigma2.pos, tau2.pos=tau2.pos, rho.pos=rho.pos, gamma2.pos=gamma2.pos, phi.pos=phi.pos, parallel=parallel, profile=TRUE)
-         #res <- parallel::clusterApply(cl, vcs, .profile.rma.mv, obj=x, comp=comp, sigma2.pos=sigma2.pos, tau2.pos=tau2.pos, rho.pos=rho.pos, gamma2.pos=gamma2.pos, phi.pos=phi.pos, parallel=parallel, profile=TRUE)
-         #res <- parallel::clusterApplyLB(cl, vcs, .profile.rma.mv, obj=x, comp=comp, sigma2.pos=sigma2.pos, tau2.pos=tau2.pos, rho.pos=rho.pos, gamma2.pos=gamma2.pos, phi.pos=phi.pos, parallel=parallel, profile=TRUE)
-         res <- parallel::parLapply(cl, vcs, .profile.rma.mv, obj=x, comp=comp, sigma2.pos=sigma2.pos, tau2.pos=tau2.pos, rho.pos=rho.pos, gamma2.pos=gamma2.pos, phi.pos=phi.pos, parallel=parallel, profile=TRUE)
+         if (.isTRUE(ddd$LB)) {
+            res <- parallel::parLapplyLB(cl, vcs, .profile.rma.mv, obj=x, comp=comp, sigma2.pos=sigma2.pos, tau2.pos=tau2.pos, rho.pos=rho.pos, gamma2.pos=gamma2.pos, phi.pos=phi.pos, parallel=parallel, profile=TRUE)
+            #res <- parallel::clusterApplyLB(cl, vcs, .profile.rma.mv, obj=x, comp=comp, sigma2.pos=sigma2.pos, tau2.pos=tau2.pos, rho.pos=rho.pos, gamma2.pos=gamma2.pos, phi.pos=phi.pos, parallel=parallel, profile=TRUE)
+         } else {
+            res <- parallel::parLapply(cl, vcs, .profile.rma.mv, obj=x, comp=comp, sigma2.pos=sigma2.pos, tau2.pos=tau2.pos, rho.pos=rho.pos, gamma2.pos=gamma2.pos, phi.pos=phi.pos, parallel=parallel, profile=TRUE)
+            #res <- parallel::clusterApply(cl, vcs, .profile.rma.mv, obj=x, comp=comp, sigma2.pos=sigma2.pos, tau2.pos=tau2.pos, rho.pos=rho.pos, gamma2.pos=gamma2.pos, phi.pos=phi.pos, parallel=parallel, profile=TRUE)
+         }
       }
 
       lls <- sapply(res, function(x) x$ll)
@@ -595,6 +618,11 @@ profile.rma.mv <- function(fitted, sigma2, tau2, rho, gamma2, phi,
       plot(sav, pch=pch, cline=cline, ...)
 
    #########################################################################
+
+   if (.isTRUE(ddd$time)) {
+      time.end <- proc.time()
+      .print.time(unname(time.end - time.start)[3])
+   }
 
    invisible(sav)
 

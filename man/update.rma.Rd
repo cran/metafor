@@ -2,7 +2,7 @@
 \alias{update.rma}
 \title{Model Updating for 'rma' Objects}
 \description{
-   The function is used to update and (by default) re-fit \code{"rma"} models. It does this by extracting the call stored in the object, updating the call and (by default) evaluating that call.
+   The function can be used to update and (by default) re-fit \code{"rma"} models. It does this by extracting the call stored in the object, updating the call and (by default) evaluating that call.
 }
 \usage{
 \method{update}{rma}(object, formula., \dots, evaluate = TRUE)
@@ -23,7 +23,7 @@
    The present function is based on \code{\link{update.default}}, with changes made by Wolfgang Viechtbauer (\email{wvb@metafor-project.org}) so that the formula updating works with the (somewhat non-standard) interface of the \code{\link{rma.uni}}, \code{\link{rma.glmm}}, and \code{\link{rma.mv}} functions.
 }
 \references{
-   Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \url{http://www.jstatsoft.org/v36/i03/}.
+   Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \url{https://www.jstatsoft.org/v036/i03}.
 }
 \seealso{
    \code{\link{rma.uni}}, \code{\link{rma.mh}}, \code{\link{rma.peto}}, \code{\link{rma.glmm}}, \code{\link{rma.mv}}

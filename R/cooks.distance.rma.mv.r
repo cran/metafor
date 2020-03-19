@@ -20,6 +20,11 @@ cooks.distance.rma.mv <- function(model, progbar=FALSE, cluster, reestimate=TRUE
    if (parallel == "no" && ncpus > 1)
       parallel <- "snow"
 
+   if (!is.null(cl) && inherits(cl, "SOCKcluster")) {
+      parallel <- "snow"
+      ncpus <- length(cl)
+   }
+
    misscluster <- ifelse(missing(cluster), TRUE, FALSE)
 
    if (misscluster)
@@ -27,8 +32,11 @@ cooks.distance.rma.mv <- function(model, progbar=FALSE, cluster, reestimate=TRUE
 
    ddd <- list(...)
 
-   btt <- .set.btt(ddd$btt, x$p, int.incl=FALSE)
+   btt <- .set.btt(ddd$btt, x$p, int.incl=FALSE, X=x$X)
    m <- length(btt)
+
+   if (.isTRUE(ddd$time))
+      time.start <- proc.time()
 
    #########################################################################
 
@@ -140,7 +148,11 @@ cooks.distance.rma.mv <- function(model, progbar=FALSE, cluster, reestimate=TRUE
             cl <- parallel::makePSOCKcluster(ncpus)
             on.exit(parallel::stopCluster(cl))
          }
-         res <- parallel::parLapply(cl, seq_len(n), .cooks.distance.rma.mv, obj=x, parallel=parallel, svb=svb, cluster=cluster, ids=ids, reestimate=reestimate, btt=btt)
+         if (.isTRUE(ddd$LB)) {
+            res <- parallel::parLapplyLB(cl, seq_len(n), .cooks.distance.rma.mv, obj=x, parallel=parallel, svb=svb, cluster=cluster, ids=ids, reestimate=reestimate, btt=btt)
+         } else {
+            res <- parallel::parLapply(cl, seq_len(n), .cooks.distance.rma.mv, obj=x, parallel=parallel, svb=svb, cluster=cluster, ids=ids, reestimate=reestimate, btt=btt)
+         }
       }
 
       cook.d <- sapply(res, function(x) x$cook.d)
@@ -177,6 +189,11 @@ cooks.distance.rma.mv <- function(model, progbar=FALSE, cluster, reestimate=TRUE
 
    if (na.act == "na.fail" && any(!x$not.na))
       stop(mstyle$stop("Missing values in results."))
+
+   if (.isTRUE(ddd$time)) {
+      time.end <- proc.time()
+      .print.time(unname(time.end - time.start)[3])
+   }
 
    return(out)
 

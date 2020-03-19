@@ -154,3 +154,16 @@ test_that("influence() correctly works with 'na.omit' and 'na.pass'.", {
    expect_equivalent(sum(is.na(sav$dfbs$intrcpt)), 4)
 
 })
+
+test_that("'infonly' argument works correctly with influence().", {
+
+   data(dat.bcg, package="metafor")
+   dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg, slab=paste0("Trial ", dat.bcg$trial))
+   res <- rma(yi, vi, data=dat, method="FE")
+   inf <- influence(res)
+   tmp <- capture.output(sav <- print(inf))
+   expect_equivalent(length(sav$rstudent), 13)
+   tmp <- capture.output(sav <- print(inf, infonly=TRUE))
+   expect_equivalent(length(sav$rstudent), 3)
+
+})

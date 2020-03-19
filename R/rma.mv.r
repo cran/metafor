@@ -14,7 +14,7 @@
 ### - CS   (compound symmetry)
 ### - HCS  (heteroscedastic compound symmetry)
 ### - UN   (general positive-definite matrix with no structure)
-### - UNHO (homoscedastic general positive-definite matrix with single tau2/gamma2 value and unstructured correlation matrix)
+### - UNR  (general positive-definite correlation matrix with a single tau2/gamma2 value)
 ### - AR   (AR1 structure with a single tau2/gamma2 value and autocorrelation rho/phi)
 ### - HAR  (heteroscedastic AR1 structure with multiple tau2/gamma2 values and autocorrelation rho/phi)
 ### - CAR  (continuous time AR1 structure)
@@ -32,16 +32,15 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
 
    ### check argument specifications
 
-   withcrayon <- "crayon" %in% .packages()
-   mstyle <- .get.mstyle(withcrayon)
+   mstyle <- .get.mstyle("crayon" %in% .packages())
 
    if (!is.element(method, c("FE","ML","REML")))
       stop(mstyle$stop("Unknown 'method' specified."))
 
-   if (any(!is.element(struct, c("CS","HCS","UN","AR","HAR","CAR","ID","DIAG","SPEXP","SPGAU","SPLIN","SPRAT","SPSPH","GEN")))) ### "PHYBM","PHYPL","PHYPD", "UNHO"
+   if (any(!is.element(struct, c("CS","HCS","UN","AR","HAR","CAR","ID","DIAG","SPEXP","SPGAU","SPLIN","SPRAT","SPSPH","GEN")))) # "UNR", "PHYBM","PHYPL","PHYPD",
       stop(mstyle$stop("Unknown 'struct' specified."))
 
-   if (length(struct) == 1)
+   if (length(struct) == 1L)
       struct <- c(struct, struct)
 
    na.act <- getOption("na.action")
@@ -81,16 +80,13 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
       digits <- .set.digits(digits, dmiss=FALSE)
    }
 
+   time.start <- proc.time()
+
    ### get ... argument and check for extra/superfluous arguments
 
    ddd <- list(...)
 
    .chkdots(ddd, c("tdist", "outlist", "time", "dist"))
-
-   ### handle 'time' argument from ...
-
-   if (.isTRUE(ddd$time))
-      time.start <- proc.time()
 
    ### handle 'tdist' argument from ... (note: overrides test argument)
 
@@ -122,7 +118,7 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
 
    if (!is.null(ddd$dist)) {
 
-      if (length(ddd$dist) == 1)
+      if (length(ddd$dist) == 1L)
          ddd$dist <- c(ddd$dist, ddd$dist)
 
       if (!is.list(ddd$dist))
@@ -156,6 +152,13 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
 
    formula.yi <- NULL
    formula.mods <- NULL
+
+   ### set options(warn=1) if verbose > 2
+
+   if (verbose > 2) {
+      opwarn <- options(warn=1)
+      on.exit(options(warn=opwarn$warn))
+   }
 
    #########################################################################
 
@@ -264,7 +267,7 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
       if (any(!sapply(V, .is.square)))
          stop(mstyle$stop("All list elements in 'V' must be square matrices."))
 
-      ### need to do this first, since is.vector(V) is TRUE for lists and so that further code works
+      ### turn list into block-diagonal (sparse) matrix
 
       if (sparse) {
          V <- bdiag(V)
@@ -276,7 +279,7 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
 
    ### check if user constrained V to 0 (can skip a lot of the steps below then)
 
-   if (is.vector(V) && length(V) == 1 && V == 0) {
+   if (.is.vector(V) && length(V) == 1L && V == 0) {
       V0 <- TRUE
    } else {
       V0 <- FALSE
@@ -286,7 +289,7 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
    ### note: if V is a scalar (e.g., V=0), then this will turn V into a kxk
    ### matrix with the value of V along the diagonal
 
-   if (V0 || is.vector(V) || nrow(V) == 1L || ncol(V) == 1L) {
+   if (V0 || .is.vector(V) || nrow(V) == 1L || ncol(V) == 1L) {
       if (sparse) {
          V <- Diagonal(k, as.vector(V))
       } else {
@@ -330,7 +333,7 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
       ### turn W into a diagonal matrix if it is a column/row vector
       ### in general, turn W into A (arbitrary weight matrix)
 
-      if (is.vector(W) || nrow(W) == 1L || ncol(W) == 1L) {
+      if (.is.vector(W) || nrow(W) == 1L || ncol(W) == 1L) {
 
          W <- as.vector(W)
 
@@ -415,9 +418,9 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
       intercept <- FALSE                    ### set to FALSE since formula now controls whether the intercept is included or not
    }                                        ### note: code further below ([b]) actually checks whether intercept is included or not
 
-   ### turn a row vector for mods into a column vector
+   ### turn a vector for mods into a column vector
 
-   if (is.vector(mods))
+   if (.is.vector(mods))
       mods <- cbind(mods)
 
    ### turn a mods data frame into a matrix
@@ -572,7 +575,7 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
 
       if (any(has.slash)) {
 
-         if (length(mf.r) == 1) {
+         if (length(mf.r) == 1L) {
 
             ### if formula only has one element of the form ~ 1 | var1/var2/..., create a list of the data frames (each with one column)
 
@@ -602,7 +605,7 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
 
       ### if there is no (~ 1 | factor) term, then mf.s is list(), so turn that into NULL
 
-      if (length(mf.s) == 0)
+      if (length(mf.s) == 0L)
          mf.s <- NULL
 
       ### does the random argument include at least one (~ 1 | id) term?
@@ -628,7 +631,7 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
       ### note: with ~ 1 | interaction(var1, var2), mf.r will have 2 columns, but is actually a 'one variable' term
       ###   and with ~ interaction(var1, var2) | var3, mf.r will have 3 columns, but is actually a 'two variable' term
       ### mf.r.ncols above is correct even in these cases (since it is based on the model.frame() results), but need
-      ### to be careful that this doesn't screw up anything in other functions (for now, mf.r.ncols not used in any other function)
+      ### to be careful that this doesn't screw up anything in other functions (for now, mf.r.ncols is not used in any other function)
 
       mf.r <- lapply(random.plus, get_all_vars, data=data)
 
@@ -646,6 +649,12 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
       withH <- FALSE
 
    }
+
+   ### warn user that 'struct' argument is disregarded if it has been changed
+   ### from the default, but the model doesn't contain '~ inner | outer' terms
+
+   if (!withG && struct[1] != "CS")
+      warning(mstyle$warning(paste0("Model does not contain an '~ inner | outer' term, so 'struct' argument is disregaded.")), call.=FALSE)
 
    #return(list(mf.r=mf.r, mf.s=mf.s, mf.g=mf.g, mf.h=mf.h))
 
@@ -691,6 +700,9 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
 
       if (length(slab) != k)
          stop(mstyle$stop("Study labels not of same length as data."))
+
+      if (is.factor(slab))
+         slab <- as.character(slab)
 
       slab.null <- FALSE
 
@@ -801,7 +813,7 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
 
       ### allow quickly setting all sigma2 values to a fixed value
 
-      if (length(sigma2) == 1)
+      if (length(sigma2) == 1L)
          sigma2 <- rep(sigma2, sigma2s)
 
       ### check if sigma2 is of the correct length
@@ -1101,13 +1113,13 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
          mf.s <- lapply(mf.s, function(x) x[not.na]) ### note: mf.s is a list of vectors at this point
          mf.g <- mf.g[not.na,,drop=FALSE]
          mf.h <- mf.h[not.na,,drop=FALSE]
-         if (is.element(struct[1], c("SPEXP","SPGAU","SPLIN","SPRAT","SPSPH","PHYPL","PHYPD"))) {
+         if (is.element(struct[1], c("SPEXP","SPGAU","SPLIN","SPRAT","SPSPH","PHYBM","PHYPL","PHYPD"))) {
             Z.G1 <- Z.G1[not.na,not.na,drop=FALSE]
          } else {
             Z.G1 <- Z.G1[not.na,,drop=FALSE]
          }
          Z.G2 <- Z.G2[not.na,,drop=FALSE]
-         if (is.element(struct[2], c("SPEXP","SPGAU","SPLIN","SPRAT","SPSPH","PHYPL","PHYPD"))) {
+         if (is.element(struct[2], c("SPEXP","SPGAU","SPLIN","SPRAT","SPSPH","PHYBM","PHYPL","PHYPD"))) {
             Z.H1 <- Z.H1[not.na,not.na,drop=FALSE]
          } else {
             Z.H1 <- Z.H1[not.na,,drop=FALSE]
@@ -1205,7 +1217,7 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
 
    ### set/check 'btt' argument
 
-   btt <- .set.btt(btt, p, int.incl)
+   btt <- .set.btt(btt, p, int.incl, X)
    m <- length(btt) ### number of betas to test (m = p if all betas are tested)
 
    #########################################################################
@@ -1484,8 +1496,11 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
    ### set default control parameters
 
    con <- list(verbose = FALSE,
-               optimizer = "nlminb",      # optimizer to use ("optim", "nlminb", "uobyqa", "newuoa", "bobyqa", "nloptr", "nlm", "hjk", "nmk", "ucminf")
+               optimizer = "nlminb",      # optimizer to use ("optim", "nlminb", "uobyqa", "newuoa", "bobyqa", "nloptr", "nlm", "hjk", "nmk", "ucminf", "optimParallel")
                optmethod = "BFGS",        # argument 'method' for optim() ("Nelder-Mead" and "BFGS" are sensible options)
+               parallel = list(),         # parallel argument for optimParallel() (note: 'cl' argument in parallel is not passed; this is directly specified via 'cl')
+               cl = NULL,                 # arguments for optimParallel()
+               ncpus = 1L,                # arguments for optimParallel()
                sigma2.init = sigma2.init, # initial value(s) for sigma2
                tau2.init = tau2.init,     # initial value(s) for tau2
                rho.init = rho.init,       # initial value(s) for rho
@@ -1493,7 +1508,7 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
                phi.init = phi.init,       # initial value(s) for phi
                REMLf = TRUE,              # full REML likelihood (including all constants)
                evtol = 1e-07,             # lower bound for eigenvalues to determine if model matrix is positive definite
-               cholesky = ifelse(is.element(struct, c("UN","GEN")), TRUE, FALSE), # by default, use Cholesky factorization for G and H matrix for "UN" and "GEN" structures
+               cholesky = ifelse(is.element(struct, c("UN","UNR","GEN")), TRUE, FALSE), # by default, use Cholesky factorization for G and H matrix for "UN", "UNR", and "GEN" structures
                posdefify = FALSE,         # to force G and H matrix to become positive definite
                hessian = FALSE,           # to compute Hessian
                hessianCtrl=list(r=8),     # arguments passed on to 'method.args' of hessian()
@@ -1510,10 +1525,24 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
 
    verbose <- con$verbose
 
+   ### expand initial values to correct length
+
+   if (length(con$sigma2.init) == 1L)
+      con$sigma2.init <- rep(con$sigma2.init, sigma2s)
+   if (length(con$tau2.init) == 1L)
+      con$tau2.init <- rep(con$tau2.init, tau2s)
+   if (length(con$rho.init) == 1L)
+      con$rho.init <- rep(con$rho.init, rhos)
+   if (length(con$gamma2.init) == 1L)
+      con$gamma2.init <- rep(con$gamma2.init, gamma2s)
+   if (length(con$phi.init) == 1L)
+      con$phi.init <- rep(con$phi.init, phis)
+
    ### checks on initial values set by the user (the initial values computed by the function are replaced by the user defined ones at this point)
 
    if (withS && any(con$sigma2.init <= 0))
       stop(mstyle$stop("Value(s) of 'sigma2.init' must be > 0"))
+
    if (withG && any(con$tau2.init <= 0))
       stop(mstyle$stop("Value(s) of 'tau2.init' must be > 0."))
    if (withG && struct[1]=="CAR" && (con$rho.init <= 0 | con$rho.init >= 1))
@@ -1522,8 +1551,9 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
       stop(mstyle$stop("Value(s) of 'rho.init' must be > 0."))
    if (withG && is.element(struct[1], c("PHYPL","PHYPD")) && con$rho.init < 0)
       stop(mstyle$stop("Value(s) of 'rho.init' must be in >= 0."))
-   if (withG && !is.element(struct[1], c("CAR","SPEXP","SPGAU","SPLIN","SPRAT","SPSPH","PHYPL","PHYPD")) && any(con$rho.init <= -1 | con$rho.init >= 1))
+   if (withG && !is.element(struct[1], c("CAR","SPEXP","SPGAU","SPLIN","SPRAT","SPSPH","PHYBM","PHYPL","PHYPD")) && any(con$rho.init <= -1 | con$rho.init >= 1))
       stop(mstyle$stop("Value(s) of 'rho.init' must be in (-1,1)."))
+
    if (withH && any(con$gamma2.init <= 0))
       stop(mstyle$stop("Value(s) of 'gamma2.init' must be > 0."))
    if (withH && struct[2]=="CAR" && (con$phi.init <= 0 | con$phi.init >= 1))
@@ -1532,26 +1562,26 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
       stop(mstyle$stop("Value(s) of 'phi.init' must be > 0."))
    if (withH && is.element(struct[2], c("PHYPL","PHYPD")) && con$phi.init < 0)
       stop(mstyle$stop("Value(s) of 'phi.init' must be in >= 0."))
-   if (withH && !is.element(struct[2], c("CAR","SPEXP","SPGAU","SPLIN","SPRAT","SPSPH","PHYPL","PHYPD")) && any(con$phi.init <= -1 | con$phi.init >= 1))
+   if (withH && !is.element(struct[2], c("CAR","SPEXP","SPGAU","SPLIN","SPRAT","SPSPH","PHYBM","PHYPL","PHYPD")) && any(con$phi.init <= -1 | con$phi.init >= 1))
       stop(mstyle$stop("Value(s) of 'phi.init' must be in (-1,1)."))
 
    ### in case user manually sets con$cholesky and specifies only a single value
 
-   if (length(con$cholesky) == 1)
+   if (length(con$cholesky) == 1L)
       con$cholesky <- rep(con$cholesky, 2)
 
-   ### use of Cholesky factorization only applicable for models with "UN" or "GEN" structure ("UNHO" may also be possible, but that still requires a fix; see below)
+   ### use of Cholesky factorization only applicable for models with "UN", "UNR", and "GEN" structure
 
-   if (!withG) ### in case user sets cholesky=TRUE and struct="UN" or struct="GEN" even though there is no 1st 'inner | outer' term
+   if (!withG) ### in case user sets cholesky=TRUE and struct="UN", struct="UNR", or struct="GEN" even though there is no 1st 'inner | outer' term
       con$cholesky[1] <- FALSE
 
-   if (con$cholesky[1] && !is.element(struct[1], c("UN","GEN")))
+   if (con$cholesky[1] && !is.element(struct[1], c("UN","UNR","GEN")))
       con$cholesky[1] <- FALSE
 
-   if (!withH) ### in case user sets cholesky=TRUE and struct="UN" or struct="GEN" even though there is no 2nd 'inner | outer' term
+   if (!withH) ### in case user sets cholesky=TRUE and struct="UN", struct="UNR", or struct="GEN" even though there is no 2nd 'inner | outer' term
       con$cholesky[2] <- FALSE
 
-   if (con$cholesky[2] && !is.element(struct[2], c("UN","GEN")))
+   if (con$cholesky[2] && !is.element(struct[2], c("UN","UNR","GEN")))
       con$cholesky[2] <- FALSE
 
    ### copy initial values back (in case they were replaced by user-defined values); those values are
@@ -1573,21 +1603,29 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
    con$sigma2.init <- log(sigma2.init)
 
    if (con$cholesky[1]) {
-      G <- .con.vcov.UN(tau2.init, rho.init)
+      if (struct[1] == "UNR") {
+         G <- .con.vcov.UNR(tau2.init, rho.init)
+      } else {
+         G <- .con.vcov.UN(tau2.init, rho.init)
+      }
       G <- try(chol(G), silent=TRUE)
       if (inherits(G, "try-error"))
          stop(mstyle$stop("Cannot take Choleski decomposition of initial 'G' matrix."))
-      con$tau2.init <- diag(G)        ### note: con$tau2.init and con$rho.init are the 'choled' values of the initial G matrix, so con$rho.init really
-      con$rho.init <- G[upper.tri(G)] ### contains the 'choled' covariances; and these values are also passed on the .ll.rma.mv as the initial values
+      if (struct[1] == "UNR") {
+         con$tau2.init <- log(tau2.init)
+      } else {
+         con$tau2.init <- diag(G)        ### note: con$tau2.init and con$rho.init are the 'choled' values of the initial G matrix, so con$rho.init really
+         con$rho.init <- G[upper.tri(G)] ### contains the 'choled' covariances; and these values are also passed on the .ll.rma.mv as the initial values
+      }
       if (length(con$rho.init) == 0L)
          con$rho.init <- 0
    } else {
       con$tau2.init <- log(tau2.init)
       if (struct[1] == "CAR")
          con$rho.init  <- qlogis(rho.init)
-      if (is.element(struct[1], c("SPEXP","SPGAU","SPLIN","SPRAT","SPSPH","PHYPL","PHYPD")))
+      if (is.element(struct[1], c("SPEXP","SPGAU","SPLIN","SPRAT","SPSPH","PHYBM","PHYPL","PHYPD")))
          con$rho.init  <- log(rho.init)
-      if (!is.element(struct[1], c("CAR","SPEXP","SPGAU","SPLIN","SPRAT","SPSPH","PHYPL","PHYPD")))
+      if (!is.element(struct[1], c("CAR","SPEXP","SPGAU","SPLIN","SPRAT","SPSPH","PHYBM","PHYPL","PHYPD")))
          con$rho.init  <- atanh(rho.init)
    }
 
@@ -1604,20 +1642,29 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
       con$gamma2.init <- log(gamma2.init)
       if (struct[2] == "CAR")
          con$phi.init  <- qlogis(phi.init)
-      if (is.element(struct[2], c("SPEXP","SPGAU","SPLIN","SPRAT","SPSPH","PHYPL","PHYPD")))
+      if (is.element(struct[2], c("SPEXP","SPGAU","SPLIN","SPRAT","SPSPH","PHYBM","PHYPL","PHYPD")))
          con$phi.init  <- log(phi.init)
-      if (!is.element(struct[2], c("CAR","SPEXP","SPGAU","SPLIN","SPRAT","SPSPH","PHYPL","PHYPD")))
+      if (!is.element(struct[2], c("CAR","SPEXP","SPGAU","SPLIN","SPRAT","SPSPH","PHYBM","PHYPL","PHYPD")))
          con$phi.init  <- atanh(phi.init)
    }
 
-   optimizer  <- match.arg(con$optimizer, c("optim","nlminb","uobyqa","newuoa","bobyqa","nloptr","nlm","hjk","nmk","ucminf"))
+   optimizer  <- match.arg(con$optimizer, c("optim","nlminb","uobyqa","newuoa","bobyqa","nloptr","nlm","hjk","nmk","ucminf","optimParallel"))
    optmethod  <- match.arg(con$optmethod, c("Nelder-Mead","BFGS","CG","L-BFGS-B","SANN","Brent"))
    evtol      <- con$evtol
    posdefify  <- con$posdefify
    cholesky   <- con$cholesky
+   parallel   <- con$parallel
+   cl         <- con$cl
+   ncpus      <- con$ncpus
    optcontrol <- control[is.na(con.pos)] ### get arguments that are control arguments for optimizer
 
-   if (length(optcontrol) == 0)
+   ### if control argument 'ncpus' is larger than 1, automatically switch to optimParallel optimizer
+   if (ncpus > 1L) {
+      con$optimizer <- "optimParallel"
+      optimizer <- "optimParallel"
+   }
+
+   if (length(optcontrol) == 0L)
       optcontrol <- list()
 
    reml <- ifelse(method=="REML", TRUE, FALSE)
@@ -1631,7 +1678,7 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
    if (optimizer=="nloptr" && !is.element("ftol_rel", names(optcontrol)))
       optcontrol$ftol_rel <- 1e-8
 
-   #return(list(con=con, optimizer=optimizer, optmethod=optmethod, evtol=evtol, posdefify=posdefify, optcontrol=optcontrol))
+   #return(list(con=con, optimizer=optimizer, optmethod=optmethod, parallel=parallel, cl=cl, ncpus=ncpus, evtol=evtol, posdefify=posdefify, optcontrol=optcontrol))
 
    if (is.element(optimizer, c("uobyqa","newuoa","bobyqa"))) {
       if (!requireNamespace("minqa", quietly=TRUE))
@@ -1651,6 +1698,11 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
    if (optimizer == "ucminf") {
       if (!requireNamespace("ucminf", quietly=TRUE))
          stop(mstyle$stop("Please install the 'ucminf' package to use this optimizer."))
+   }
+
+   if (optimizer == "optimParallel") {
+      if (!requireNamespace("optimParallel", quietly=TRUE))
+         stop(mstyle$stop("Please install the 'optimParallel' package to use this optimizer."))
    }
 
    ### check if length of sigma2.init, tau2.init, rho.init, gamma2.init, and phi.init matches number of variance components
@@ -1742,7 +1794,7 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
                                    if (withG) rho else NA,
                                    if (withH) gamma2 else NA,
                                    if (withH) phi else NA), digits=digits[["var"]]))
-         vcs <- data.frame(vcs)
+         vcs <- data.frame(vcs, stringsAsFactors=FALSE)
          rownames(vcs) <- c("initial", "specified")
          vcs <- rbind(included=ifelse(c(rep(withS, sigma2s), rep(withG, tau2s), rep(withG, rhos), rep(withH, gamma2s), rep(withH, phis)), "Yes", "No"), fixed=unlist(vc.fix), vcs)
          tmp <- capture.output(print(vcs, na.print="---"))
@@ -1800,6 +1852,45 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
       optimizer <- paste0("ucminf::ucminf") ### need to use this due to requireNamespace()
       ctrl.arg <- ", control=optcontrol"
    }
+   if (optimizer=="optimParallel") {
+
+      par.arg <- "par"
+      optimizer <- paste0("optimParallel::optimParallel") ### need to use this due to requireNamespace()
+      ctrl.arg <- ", control=optcontrol, parallel=parallel"
+
+      parallel$cl <- NULL
+
+      if (is.null(cl)) {
+
+         ncpus <- as.integer(ncpus)
+
+         if (ncpus < 1)
+            stop(mstyle$stop("Control argument 'ncpus' must be >= 1."))
+
+         cl <- parallel::makePSOCKcluster(ncpus)
+         on.exit(parallel::stopCluster(cl), add=TRUE)
+
+      } else {
+
+         if (!inherits(cl, "SOCKcluster"))
+            stop(mstyle$stop("Specified cluster is not of class 'SOCKcluster'."))
+
+      }
+
+      parallel$cl <- cl
+
+      if (is.null(parallel$forward))
+         parallel$forward <- FALSE
+
+      if (is.null(parallel$loginfo)) {
+         if (verbose) {
+            parallel$loginfo <- TRUE
+         } else {
+            parallel$loginfo <- FALSE
+         }
+      }
+
+   }
 
    if (method != "FE" && !is.null(random)) {
 
@@ -1821,12 +1912,17 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
          opt.res <- try(eval(parse(text=optcall)), silent=!verbose)
          #return(opt.res)
 
+         if (optimizer == "optimParallel::optimParallel" && verbose) {
+            tmp <- capture.output(print(opt.res$loginfo))
+            .print.output(tmp, mstyle$verbose)
+         }
+
          if (inherits(opt.res, "try-error"))
             stop(mstyle$stop("Error during optimization."))
 
          ### convergence checks
 
-         if (is.element(optimizer, c("optim","nlminb","dfoptim::hjk","dfoptim::nmk")) && opt.res$convergence != 0)
+         if (is.element(optimizer, c("optim","nlminb","dfoptim::hjk","dfoptim::nmk","optimParallel::optimParallel")) && opt.res$convergence != 0)
             stop(mstyle$stop(paste0("Optimizer (", optimizer, ") did not achieve convergence (convergence = ", opt.res$convergence, ").")))
 
          if (is.element(optimizer, c("minqa::uobyqa","minqa::newuoa","minqa::bobyqa")) && opt.res$ierr != 0)
@@ -1909,9 +2005,9 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
 
    if (withG) {
       G <- as.matrix(fitcall$G)
-      if (is.element(struct[1], c("SPEXP","SPGAU","SPLIN","SPRAT","SPSPH","PHYPL","PHYPD")))
+      if (is.element(struct[1], c("SPEXP","SPGAU","SPLIN","SPRAT","SPSPH","PHYBM","PHYPL","PHYPD")))
          colnames(G) <- rownames(G) <- seq_len(nrow(G))
-      if (is.element(struct[1], c("CS","HCS","UN","AR","HAR","CAR","ID","DIAG")))
+      if (is.element(struct[1], c("CS","HCS","UN","UNR","AR","HAR","CAR","ID","DIAG")))
          colnames(G) <- rownames(G) <- g.levels.f[[1]]
       if (is.element(struct[1], c("GEN")))
          colnames(G) <- rownames(G) <- g.names[-length(g.names)]
@@ -1921,9 +2017,9 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
 
    if (withH) {
       H <- as.matrix(fitcall$H)
-      if (is.element(struct[2], c("SPEXP","SPGAU","SPLIN","SPRAT","SPSPH","PHYPL","PHYPD")))
+      if (is.element(struct[2], c("SPEXP","SPGAU","SPLIN","SPRAT","SPSPH","PHYBM","PHYPL","PHYPD")))
          colnames(H) <- rownames(H) <- seq_len(nrow(H))
-      if (is.element(struct[2], c("CS","HCS","UN","AR","HAR","CAR","ID","DIAG")))
+      if (is.element(struct[2], c("CS","HCS","UN","UNR","AR","HAR","CAR","ID","DIAG")))
          colnames(H) <- rownames(H) <- h.levels.f[[1]]
       if (is.element(struct[2], c("GEN")))
          colnames(H) <- rownames(H) <- h.names[-length(h.names)]
@@ -2056,7 +2152,8 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
          if (rhos == 1) {
             colnames(hessian)[sigma2s+tau2s+1] <- "rho"
          } else {
-            colnames(hessian)[(sigma2s+tau2s+1):(sigma2s+tau2s+rhos)] <- paste("rho.", outer(seq_len(g.nlevels.f[1]), seq_len(g.nlevels.f), paste, sep=".")[upper.tri(matrix(NA,nrow=g.nlevels.f,ncol=g.nlevels.f))], sep="")
+            #colnames(hessian)[(sigma2s+tau2s+1):(sigma2s+tau2s+rhos)] <- paste("rho.", outer(seq_len(g.nlevels.f[1]), seq_len(g.nlevels.f), paste, sep=".")[upper.tri(matrix(NA,nrow=g.nlevels.f,ncol=g.nlevels.f))], sep="")
+            colnames(hessian)[(sigma2s+tau2s+1):(sigma2s+tau2s+rhos)] <- paste("rho.", seq_len(rhos), sep="")
          }
          if (gamma2s == 1) {
             colnames(hessian)[sigma2s+tau2s+rhos+1] <- "gamma^2"
@@ -2066,12 +2163,15 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
          if (phis == 1) {
             colnames(hessian)[sigma2s+tau2s+rhos+gamma2s+1] <- "phi"
          } else {
-            colnames(hessian)[(sigma2s+tau2s+rhos+gamma2s+1):(sigma2s+tau2s+rhos+gamma2s+phis)] <- paste("phi.", outer(seq_len(h.nlevels.f[1]), seq_len(h.nlevels.f), paste, sep=".")[upper.tri(matrix(NA,nrow=h.nlevels.f,ncol=h.nlevels.f))], sep="")
+            #colnames(hessian)[(sigma2s+tau2s+rhos+gamma2s+1):(sigma2s+tau2s+rhos+gamma2s+phis)] <- paste("phi.", outer(seq_len(h.nlevels.f[1]), seq_len(h.nlevels.f), paste, sep=".")[upper.tri(matrix(NA,nrow=h.nlevels.f,ncol=h.nlevels.f))], sep="")
+            colnames(hessian)[(sigma2s+tau2s+rhos+gamma2s+1):(sigma2s+tau2s+rhos+gamma2s+phis)] <- paste("phi.", seq_len(phis), sep="")
          }
 
          rownames(hessian) <- colnames(hessian)
 
          ### select correct rows/columns from Hessian depending on components in the model
+         ### FIXME: this isn't quite right, since "DIAG" and "ID" have a rho/phi element, but this is fixed at 0, so should also exclude this
+         ###        in fact, all fixed elements should be filtered out
 
          #if (withS && withG && withH)
             #hessian <- hessian[1:nrow(hessian),1:ncol(hessian), drop=FALSE]
@@ -2163,11 +2263,11 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
 
    }
 
-   if (.isTRUE(ddd$time)) {
-      time.end <- proc.time()
-      res$time <- unname(time.end - time.start)[3]
+   time.end <- proc.time()
+   res$time <- unname(time.end - time.start)[3]
+
+   if (.isTRUE(ddd$time))
       .print.time(res$time)
-   }
 
    if (verbose || .isTRUE(ddd$time))
       cat("\n")

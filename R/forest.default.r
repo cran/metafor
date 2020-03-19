@@ -1,4 +1,5 @@
-forest.default <- function(x, vi, sei, ci.lb, ci.ub, annotate=TRUE,  showweights=FALSE,
+forest.default <- function(x, vi, sei, ci.lb, ci.ub,
+annotate=TRUE,                             showweights=FALSE, header=FALSE,
 xlim, alim, clim, ylim, top=3, at, steps=5, level=95,      refline=0, digits=2L, width,
 xlab, slab,       ilab, ilab.xpos, ilab.pos, subset,
 transf, atransf, targs, rows,
@@ -25,6 +26,8 @@ cex, cex.lab, cex.axis, annosym, ...) {
 
    if (is.function(transf) && is.function(atransf))
       stop(mstyle$stop("Use either 'transf' or 'atransf' to specify a transformation (not both)."))
+
+   yi <- x
 
    ### note: transf and atransf must be function names and cannot, for example, be arguments
    ### passed down from other functions (i.e., deparse(substitute(...)) will grab exactly what
@@ -78,22 +81,14 @@ cex, cex.lab, cex.axis, annosym, ...) {
    if (length(efac) == 1L)
       efac <- rep(efac, 2)
 
+   ### annotation symbols vector
+
    if (missing(annosym))
       annosym <- c(" [", ", ", "]")
-   if (length(annosym) != 3)
+   if (length(annosym) != 3L)
       stop(mstyle$stop("Argument 'annosym' must be a vector of length 3."))
 
-   #########################################################################
-
-   ### digits[1] for annotations, digits[2] for x-axis labels
-   ### note: digits can also be a list (e.g., digits=list(2L,3))
-
-   if (length(digits) == 1L)
-      digits <- c(digits,digits)
-
    level <- ifelse(level == 0, 1, ifelse(level >= 1, (100-level)/100, ifelse(level > .5, 1-level, level)))
-
-   yi <- x
 
    ### set measure based on the measure attribute of yi
 
@@ -102,6 +97,55 @@ cex, cex.lab, cex.axis, annosym, ...) {
    } else {
       measure <- attr(yi, "measure")
    }
+
+   ### column header
+
+   estlab <- .setlab(measure, transf.char, atransf.char, gentype=3, short=TRUE)
+   if (is.expression(estlab)) {
+      header.right <- parse(text=paste0("bold(", estlab, " * '", annosym[1], "' * '", 100*(1-level), "% CI'", " * '", annosym[3], "')"))
+   } else {
+      header.right <- paste0(estlab, annosym[1], 100*(1-level), "% CI", annosym[3])
+   }
+
+   if (is.logical(header)) {
+      if (header) {
+         header.left <- "Study"
+      } else {
+         header.left <- NULL
+         header.right <- NULL
+      }
+   } else {
+      if (!is.character(header))
+         stop(mstyle$stop("Argument 'header' must either be a logical or character vector."))
+      if (length(header) == 1L) {
+         header.left <- header
+      } else {
+         header.left <- header[1]
+         header.right <- header[2]
+      }
+   }
+
+   ddd <- list(...)
+
+   lplot     <- function(..., textpos) plot(...)
+   labline   <- function(..., textpos) abline(...)
+   lsegments <- function(..., textpos) segments(...)
+   laxis     <- function(..., textpos) axis(...)
+   lmtext    <- function(..., textpos) mtext(...)
+   lpolygon  <- function(..., textpos) polygon(...)
+   ltext     <- function(..., textpos) text(...)
+   lpoints   <- function(..., textpos) points(...)
+
+   if (!is.null(ddd$order))
+      stop(mstyle$stop("Function does not have an 'order' argument (could use 'subset' argument instead)."))
+
+   #########################################################################
+
+   ### digits[1] for annotations, digits[2] for x-axis labels
+   ### note: digits can also be a list (e.g., digits=list(2L,3))
+
+   if (length(digits) == 1L)
+      digits <- c(digits,digits)
 
    if (hasArg(ci.lb) && hasArg(ci.ub)) {     ### CI bounds are specified by user
       if (length(ci.lb) != length(ci.ub))
@@ -143,7 +187,7 @@ cex, cex.lab, cex.axis, annosym, ...) {
          slab <- paste("Study", seq_len(k))
       }
    } else {
-      if (length(slab) == 1 && is.na(slab))
+      if (length(slab) == 1L && is.na(slab))
          slab <- rep("", k)
    }
 
@@ -371,6 +415,20 @@ cex, cex.lab, cex.axis, annosym, ...) {
    if (alim[1] < xlim[1]) { xlim[1] <- alim[1] }
    if (alim[2] > xlim[2]) { xlim[2] <- alim[2] }
 
+   ### allow adjustment of position of study labels and annotations via textpos argument
+
+   if (is.null(ddd$textpos))
+      ddd$textpos <- c(xlim[1], xlim[2])
+
+   if (length(ddd$textpos) != 2L)
+      stop(mstyle$stop("Argument 'textpos' must be of length 2."))
+
+   if (is.na(ddd$textpos[1]))
+      ddd$textpos[1] <- xlim[1]
+
+   if (is.na(ddd$textpos[2]))
+      ddd$textpos[2] <- xlim[2]
+
    ### set y axis limits
 
    if (missing(ylim)) {
@@ -409,7 +467,8 @@ cex, cex.lab, cex.axis, annosym, ...) {
 
    #########################################################################
 
-   ### set/get fonts
+   ### set/get fonts (1st for study labels, 2nd for annotations, 3rd for ilab)
+   ### when passing a named vector, the names are for 'family' and the values are for 'font'
 
    if (missing(fonts)) {
       fonts <- rep(par("family"), 3)
@@ -420,7 +479,10 @@ cex, cex.lab, cex.axis, annosym, ...) {
          fonts <- c(fonts, fonts[1])
    }
 
-   par(family=fonts[1])
+   if (is.null(names(fonts)))
+      fonts <- structure(c(1L,1L,1L), names=fonts)
+
+   par(family=names(fonts)[1], font=fonts[1])
 
    ### adjust margins
 
@@ -432,16 +494,16 @@ cex, cex.lab, cex.axis, annosym, ...) {
 
    ### start plot
 
-   plot(NA, NA, xlim=xlim, ylim=ylim, xlab="", ylab="", yaxt="n", xaxt="n", xaxs="i", bty="n", col="black", ...)
+   lplot(NA, NA, xlim=xlim, ylim=ylim, xlab="", ylab="", yaxt="n", xaxt="n", xaxs="i", bty="n", col="black", ...)
 
    ### horizontal title line
 
-   abline(h=ylim[2]-(top-1), lty=lty[2], col="black", ...)
+   labline(h=ylim[2]-(top-1), lty=lty[2], col="black", ...)
 
    ### add reference line
 
    if (is.numeric(refline))
-      segments(refline, ylim[1]-5, refline, ylim[2]-(top-1), lty="dotted", col="black", ...)
+      lsegments(refline, ylim[1]-5, refline, ylim[2]-(top-1), lty="dotted", col="black", ...)
 
    ### set cex, cex.lab, and cex.axis sizes as a function of the height of the figure
 
@@ -468,14 +530,14 @@ cex, cex.lab, cex.axis, annosym, ...) {
 
    ### add x axis
 
-   axis(side=1, at=at, labels=at.lab, cex.axis=cex.axis, col="black", ...)
+   laxis(side=1, at=at, labels=at.lab, cex.axis=cex.axis, col="black", ...)
 
    ### add x axis label
 
    if (missing(xlab))
       xlab <- .setlab(measure, transf.char, atransf.char, gentype=1)
 
-   mtext(xlab, side=1, at=min(at) + (max(at)-min(at))/2, line=par("mgp")[1]-0.5, cex=cex.lab, col="black", ...)
+   lmtext(xlab, side=1, at=min(at) + (max(at)-min(at))/2, line=par("mgp")[1]-0.5, cex=cex.lab, col="black", ...)
 
    ### add CI ends (either | or <> if outside of axis limits)
 
@@ -487,35 +549,35 @@ cex, cex.lab, cex.axis, annosym, ...) {
 
       ### if the lower bound is actually larger than upper x-axis limit, then everything is to the right and just draw a polygon pointing in that direction
       if (ci.lb[i] >= alim[2]) {
-         polygon(x=c(alim[2], alim[2]-(1.4/100)*cex*(xlim[2]-xlim[1]), alim[2]-(1.4/100)*cex*(xlim[2]-xlim[1]), alim[2]), y=c(rows[i], rows[i]+(height/150)*cex*efac[2], rows[i]-(height/150)*cex*efac[2], rows[i]), col=col[i], border=col[i], ...)
+         lpolygon(x=c(alim[2], alim[2]-(1.4/100)*cex*(xlim[2]-xlim[1]), alim[2]-(1.4/100)*cex*(xlim[2]-xlim[1]), alim[2]), y=c(rows[i], rows[i]+(height/150)*cex*efac[2], rows[i]-(height/150)*cex*efac[2], rows[i]), col=col[i], border=col[i], ...)
          next
       }
 
       ### if the upper bound is actually lower than lower x-axis limit, then everything is to the left and just draw a polygon pointing in that direction
       if (ci.ub[i] <= alim[1]) {
-         polygon(x=c(alim[1], alim[1]+(1.4/100)*cex*(xlim[2]-xlim[1]), alim[1]+(1.4/100)*cex*(xlim[2]-xlim[1]), alim[1]), y=c(rows[i], rows[i]+(height/150)*cex*efac[2], rows[i]-(height/150)*cex*efac[2], rows[i]), col=col[i], border=col[i], ...)
+         lpolygon(x=c(alim[1], alim[1]+(1.4/100)*cex*(xlim[2]-xlim[1]), alim[1]+(1.4/100)*cex*(xlim[2]-xlim[1]), alim[1]), y=c(rows[i], rows[i]+(height/150)*cex*efac[2], rows[i]-(height/150)*cex*efac[2], rows[i]), col=col[i], border=col[i], ...)
          next
       }
 
-      segments(max(ci.lb[i], alim[1]), rows[i], min(ci.ub[i], alim[2]), rows[i], lty=lty[1], col=col[i], ...)
+      lsegments(max(ci.lb[i], alim[1]), rows[i], min(ci.ub[i], alim[2]), rows[i], lty=lty[1], col=col[i], ...)
 
       if (ci.lb[i] >= alim[1]) {
-         segments(ci.lb[i], rows[i]-(height/150)*cex*efac[1], ci.lb[i], rows[i]+(height/150)*cex*efac[1], col=col[i], ...)
+         lsegments(ci.lb[i], rows[i]-(height/150)*cex*efac[1], ci.lb[i], rows[i]+(height/150)*cex*efac[1], col=col[i], ...)
       } else {
-         polygon(x=c(alim[1], alim[1]+(1.4/100)*cex*(xlim[2]-xlim[1]), alim[1]+(1.4/100)*cex*(xlim[2]-xlim[1]), alim[1]), y=c(rows[i], rows[i]+(height/150)*cex*efac[2], rows[i]-(height/150)*cex*efac[2], rows[i]), col=col[i], border=col[i], ...)
+         lpolygon(x=c(alim[1], alim[1]+(1.4/100)*cex*(xlim[2]-xlim[1]), alim[1]+(1.4/100)*cex*(xlim[2]-xlim[1]), alim[1]), y=c(rows[i], rows[i]+(height/150)*cex*efac[2], rows[i]-(height/150)*cex*efac[2], rows[i]), col=col[i], border=col[i], ...)
       }
 
       if (ci.ub[i] <= alim[2]) {
-         segments(ci.ub[i], rows[i]-(height/150)*cex*efac[1], ci.ub[i], rows[i]+(height/150)*cex*efac[1], col=col[i], ...)
+         lsegments(ci.ub[i], rows[i]-(height/150)*cex*efac[1], ci.ub[i], rows[i]+(height/150)*cex*efac[1], col=col[i], ...)
       } else {
-         polygon(x=c(alim[2], alim[2]-(1.4/100)*cex*(xlim[2]-xlim[1]), alim[2]-(1.4/100)*cex*(xlim[2]-xlim[1]), alim[2]), y=c(rows[i], rows[i]+(height/150)*cex*efac[2], rows[i]-(height/150)*cex*efac[2], rows[i]), col=col[i], border=col[i], ...)
+         lpolygon(x=c(alim[2], alim[2]-(1.4/100)*cex*(xlim[2]-xlim[1]), alim[2]-(1.4/100)*cex*(xlim[2]-xlim[1]), alim[2]), y=c(rows[i], rows[i]+(height/150)*cex*efac[2], rows[i]-(height/150)*cex*efac[2], rows[i]), col=col[i], border=col[i], ...)
       }
 
    }
 
    ### add study labels on the left
 
-   text(xlim[1], rows, slab, pos=4, cex=cex, col=col, ...)
+   ltext(ddd$textpos[1], rows, slab, pos=4, cex=cex, col=col, ...)
 
    ### add info labels
 
@@ -524,13 +586,13 @@ cex, cex.lab, cex.axis, annosym, ...) {
          stop(mstyle$stop("Must specify 'ilab.xpos' argument when adding information with 'ilab'."))
       if (length(ilab.xpos) != ncol(ilab))
          stop(mstyle$stop(paste0("Number of 'ilab' columns (", ncol(ilab), ") does not match length of 'ilab.xpos' argument (", length(ilab.xpos), ").")))
-      if (!is.null(ilab.pos) && length(ilab.pos) == 1)
+      if (!is.null(ilab.pos) && length(ilab.pos) == 1L)
          ilab.pos <- rep(ilab.pos, ncol(ilab))
-      par(family=fonts[3])
+      par(family=names(fonts)[3], font=fonts[3])
       for (l in seq_len(ncol(ilab))) {
-         text(ilab.xpos[l], rows, ilab[,l], pos=ilab.pos[l], cex=cex, ...)
+         ltext(ilab.xpos[l], rows, ilab[,l], pos=ilab.pos[l], cex=cex, ...)
       }
-      par(family=fonts[1])
+      par(family=names(fonts)[1], font=fonts[1])
    }
 
    ### add study annotations on the right: yi [LB, UB]
@@ -579,9 +641,9 @@ cex, cex.lab, cex.axis, annosym, ...) {
 
       annotext <- apply(annotext, 1, paste, collapse="")
       annotext[grepl("NA", annotext, fixed=TRUE)] <- ""
-      par(family=fonts[2])
-      text(x=xlim[2], rows, labels=annotext, pos=2, cex=cex, col=col, ...)
-      par(family=fonts[1])
+      par(family=names(fonts)[2], font=fonts[2])
+      ltext(ddd$textpos[2], rows, labels=annotext, pos=2, cex=cex, col=col, ...)
+      par(family=names(fonts)[1], font=fonts[1])
 
    }
 
@@ -594,11 +656,16 @@ cex, cex.lab, cex.axis, annosym, ...) {
          next
 
       if (yi[i] >= alim[1] && yi[i] <= alim[2])
-         points(yi[i], rows[i], pch=pch[i], cex=cex*psize[i], col=col[i], ...)
+         lpoints(yi[i], rows[i], pch=pch[i], cex=cex*psize[i], col=col[i], ...)
 
    }
 
-   #points(yi, rows, pch=pch, cex=cex*psize, ...)
+   #lpoints(yi, rows, pch=pch, cex=cex*psize, ...)
+
+   ### add header
+
+   ltext(ddd$textpos[1], ylim[2]-(top-1)+1, header.left, pos=4, font=2, cex=cex, ...)
+   ltext(ddd$textpos[2], ylim[2]-(top-1)+1, header.right, pos=2, font=2, cex=cex, ...)
 
    #########################################################################
 

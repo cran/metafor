@@ -21,7 +21,7 @@ llplot(measure, yi, vi, sei, ai, bi, ci, di, n1i, n2i, data, subset, drop00=TRUE
    \item{n1i}{vector to specify the group sizes or row totals (first group/row).}
    \item{n2i}{vector to specify the group sizes or row totals (second group/row).}
    \item{data}{optional data frame containing the variables given to the arguments above.}
-   \item{subset}{optional vector indicating the subset of studies that should be used. This can be a logical vector or a numeric vector indicating the indices of the studies to include.}
+   \item{subset}{optional (logical or numeric) vector indicating the subset of studies that should be included in the plot.}
    \item{drop00}{logical indicating whether studies with no cases (or only cases) in both groups should be dropped. See \sQuote{Details}.}
    \item{xvals}{integer specifying for how many distinct values the likelihood should be evaluated.}
    \item{xlim}{x-axis limits. If unspecified, the function tries to set the x-axis limits to some sensible values.}
@@ -49,7 +49,7 @@ llplot(measure, yi, vi, sei, ai, bi, ci, di, n1i, n2i, data, subset, drop00=TRUE
 \references{
    van Houwelingen, H. C., Zwinderman, K. H., & Stijnen, T. (1993). A bivariate approach to meta-analysis. \emph{Statistics in Medicine}, \bold{12}, 2273--2284.
 
-   Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \url{http://www.jstatsoft.org/v36/i03/}.
+   Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \url{https://www.jstatsoft.org/v036/i03}.
 }
 \seealso{
    \code{\link{rma.uni}}, \code{\link{rma.glmm}}

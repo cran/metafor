@@ -10,8 +10,11 @@
 
    The package also provides functions for creating forest, funnel, radial (Galbraith), normal quantile-quantile, \enc{L'Abbé}{L'Abbe}, Baujat, and GOSH plots. The presence of funnel plot asymmetry (which may be indicative of publication bias) and its potential impact on the results can be examined via the rank correlation and Egger's regression test and by applying the trim and fill method.
 }
+\section{The escalc Function}{
+   [\code{\link{escalc}}] Before a meta-analysis can be conducted, the relevant results from each study must be quantified in such a way that the resulting values can be further aggregated and compared. The \code{\link{escalc}} function can be used to compute a wide variety of effect size or outcome measures (and the corresponding sampling variances) that are often used in meta-analyses (e.g., risk ratios, odds ratios, risk differences, mean differences, standardized mean differences, ratios of means, correlation coefficients). Measures for quantifying some outcome for individual groups (e.g., proportions and incidence rates and transformations thereof), measures of change (e.g., raw and standardized mean changes), and measures of variability (e.g., standard deviations and coefficients of variation) are also available.
+}
 \section{The rma.uni Function}{
-   [\code{\link{rma.uni}}] The various meta-analytic models that are typically used in practice are special cases of the general linear (mixed-effects) model. The \code{\link{rma.uni}} function (with alias \code{\link{rma}}) provides a general framework for fitting such models. The function can be used in conjunction with any of the usual effect size or outcome measures used in meta-analyses (e.g., log risk ratios, log odds ratios, risk differences, mean differences, standardized mean differences, raw correlation coefficients, correlation coefficients transformed with Fisher's r-to-z transformation, and so on). For details on these effect size or outcome measures, see the documentation of the \code{\link{escalc}} function. The notation and models underlying the \code{\link{rma.uni}} function are explained below.
+   [\code{\link{rma.uni}}] The various meta-analytic models that are typically used in practice are special cases of the general linear (mixed-effects) model. The \code{\link{rma.uni}} function (with alias \code{\link{rma}}) provides a general framework for fitting such models. The function can be used in conjunction with any of the usual effect size or outcome measures used in meta-analyses (e.g., as computed using the \code{\link{escalc}} function). The notation and models underlying the \code{\link{rma.uni}} function are explained below.
 
    For a set of \eqn{i = 1, \ldots, k} independent studies, let \if{latex}{\eqn{y_i}}\if{html}{\eqn{yᵢ}}\if{text}{\eqn{y_i}} denote the observed value of the effect size or outcome measure in the \eqn{i}th study. Let \if{latex}{\eqn{\theta_i}}\if{html}{\eqn{\thetaᵢ}}\if{text}{\eqn{\theta_i}} denote the corresponding (unknown) true effect or outcome, such that \if{latex}{\deqn{y_i | \theta_i \sim N(\theta_i, v_i).}}\if{html}{\deqn{yᵢ | \thetaᵢ ~ N(\thetaᵢ, vᵢ).}}\if{text}{\deqn{y_i | \theta_i ~ N(\theta_i, v_i).}} In other words, the observed effects or outcomes are assumed to be unbiased and normally distributed estimates of the corresponding true effects or outcomes with sampling variances equal to \if{latex}{\eqn{v_i}}\if{html}{\eqn{vᵢ}}\if{text}{\eqn{v_i}}. The \if{latex}{\eqn{v_i}}\if{html}{\eqn{vᵢ}}\if{text}{\eqn{v_i}} values are assumed to be known. Depending on the outcome measure used, a bias correction, normalizing, and/or variance stabilizing transformation may be necessary to ensure that these assumptions are (approximately) true (e.g., the log transformation for odds ratios, the bias correction for standardized mean differences, Fisher's r-to-z transformation for correlations; see \code{\link{escalc}} for more details).
 
@@ -50,14 +53,14 @@
 \section{Citing the Package}{
    To cite the package, please use the following reference:
 
-   Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \url{http://www.jstatsoft.org/v36/i03/}.
+   Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \url{https://www.jstatsoft.org/v036/i03}.
 }
 \section{Getting Started with the Package}{
    The paper mentioned above is a good starting place for those interested in using the \pkg{metafor} package. The purpose of the article is to provide a general overview of the package and its capabilities (as of version 1.4-0). Not all of the functions and options are described in the paper, but it should provide a useful introduction to the package. The paper can be freely downloaded from the URL given above or can be directly loaded with the command \code{vignette("metafor")}.
 
    In addition to reading the paper, carefully read this page and then the help pages for the \code{\link{escalc}} and the \code{\link{rma.uni}} functions (or the \code{\link{rma.mh}}, \code{\link{rma.peto}}, \code{\link{rma.glmm}}, \code{\link{rma.mv}} functions if you intend to use these methods). The help pages for these functions provide links to many additional functions, which can be used after fitting a model. You can also read the entire documentation online at \url{https://wviechtb.github.io/metafor/reference/index.html} (where it is nicely formatted, equations are shown correctly, and the output from all examples is provided).
 
-   A (pdf) diagram showing the various functions in the metafor package (and how they are related to each other) can be opened with the command \code{vignette("metafor_diagram")}.
+   A (pdf) diagram showing the various functions in the metafor package (and how they are related to each other) can be opened with the command \code{vignette("diagram")}.
 
    Finally, additional information about the package, several detailed analysis examples, examples of plots and figures provided by the package (with the corresponding code), some additional tips and notes, and a FAQ can be found on the package website at \url{http://www.metafor-project.org/}.
 }
@@ -81,7 +84,7 @@
 
    Mantel, N., & Haenszel, W. (1959). Statistical aspects of the analysis of data from retrospective studies of disease. \emph{Journal of the National Cancer Institute}, \bold{22}, 719--748.
 
-   Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \url{http://www.jstatsoft.org/v36/i03/}.
+   Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \url{https://www.jstatsoft.org/v036/i03}.
 
    Yusuf, S., Peto, R., Lewis, J., Collins, R., & Sleight, P. (1985). Beta blockade during and after myocardial infarction: An overview of the randomized trials. \emph{Progress in Cardiovascular Disease}, \bold{27}, 335--371.
 }

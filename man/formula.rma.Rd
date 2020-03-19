@@ -9,7 +9,7 @@
 }
 \arguments{
    \item{x}{an object of class \code{"rma"}.}
-   \item{type}{the formula which should be returned; either \code{"mods"} (default), \code{"yi"} (in case argument \code{yi} was used to specify a formula), or \code{"scale"} (only for location-scale models.}
+   \item{type}{the formula which should be returned; either \code{"mods"} (default), \code{"yi"} (in case argument \code{yi} was used to specify a formula), or \code{"scale"} (only for location-scale models).}
    \item{\dots}{other arguments.}
 }
 \value{
@@ -19,7 +19,7 @@
    Wolfgang Viechtbauer \email{wvb@metafor-project.org} \url{http://www.metafor-project.org/}
 }
 \references{
-   Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \url{http://www.jstatsoft.org/v36/i03/}.
+   Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \url{https://www.jstatsoft.org/v036/i03}.
 }
 \seealso{
    \code{\link{rma.uni}}, \code{\link{rma.mv}}
@@ -30,7 +30,7 @@ dat <- dat.bcg
 
 ### calculate log risk ratios and corresponding sampling variances
 dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat,
-              slab=paste(dat$author, ", ", dat$year, sep=""))
+              slab=paste(author, ", ", year, sep=""))
 
 ### mixed-effects meta-regression model
 res <- rma(yi, vi, mods = ~ ablat + alloc, data=dat)

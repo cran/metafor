@@ -18,12 +18,8 @@ col.na="lightgray", ...) {
 
    any.na <- is.na(as.data.frame(x$inf))
 
-   if (any(any.na)) {
-
-      if (na.act == "na.fail")
-         stop(mstyle$stop("Missing values in results."))
-
-   }
+   if (any(any.na) && na.act == "na.fail")
+      stop(mstyle$stop("Missing values in results."))
 
    #########################################################################
 
@@ -73,14 +69,13 @@ col.na="lightgray", ...) {
 
    #########################################################################
 
-   ### filter out potential arguments for abbreviate() (which would cause problems with the various plot functions)
-   ### see: http://ucfagls.wordpress.com/2011/07/23/passing-non-graphical-parameters-to-graphical-functions-using/
+   ### filter out potential arguments to abbreviate() (which cause problems with the various plot functions)
 
-   lplot   <- function(..., minlength, strict) { plot(...) }
-   lpoints <- function(..., minlength, strict) { points(...) }
-   llines  <- function(..., minlength, strict) { lines(...) }
-   laxis   <- function(..., minlength, strict) { axis(...) }
-   labline <- function(..., minlength, strict) { abline(...) }
+   lplot   <- function(..., minlength, strict) plot(...)
+   lpoints <- function(..., minlength, strict) points(...)
+   llines  <- function(..., minlength, strict) lines(...)
+   laxis   <- function(..., minlength, strict) axis(...)
+   labline <- function(..., minlength, strict) abline(...)
 
    #########################################################################
 
@@ -94,31 +89,32 @@ col.na="lightgray", ...) {
    if (plotinf) {
 
       ### set layout (either defaults or user-specified)
+      ### note: could also use n2mfrow() here, but this behaves slightly differently
 
       par.mfrow <- par("mfrow")
       on.exit(par(mfrow = par.mfrow), add=TRUE)
 
       if (missing(layout)) {
 
-         if (length(which.inf) == 2)
+         if (length(which.inf) == 2L)
             par(mfrow=c(2,1))
 
-         if (length(which.inf) == 3)
+         if (length(which.inf) == 3L)
             par(mfrow=c(3,1))
 
-         if (length(which.inf) == 4)
+         if (length(which.inf) == 4L)
             par(mfrow=c(2,2))
 
-         if (length(which.inf) == 5)
+         if (length(which.inf) == 5L)
             par(mfrow=c(5,1))
 
-         if (length(which.inf) == 6)
+         if (length(which.inf) == 6L)
             par(mfrow=c(3,2))
 
-         if (length(which.inf) == 7)
+         if (length(which.inf) == 7L)
             par(mfrow=c(7,1))
 
-         if (length(which.inf) == 8)
+         if (length(which.inf) == 8L)
             par(mfrow=c(4,2))
 
       } else {

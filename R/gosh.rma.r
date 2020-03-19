@@ -30,9 +30,17 @@ gosh.rma <- function(x, subsets, progbar=TRUE, parallel="no", ncpus=1, cl=NULL, 
    if (parallel == "no" && ncpus > 1)
       parallel <- "snow"
 
+   if (!is.null(cl) && inherits(cl, "SOCKcluster")) {
+      parallel <- "snow"
+      ncpus <- length(cl)
+   }
+
    ddd <- list(...)
 
-   .chkdots(ddd, c("seed"))
+   .chkdots(ddd, c("seed", "time", "LB"))
+
+   if (.isTRUE(ddd$time))
+      time.start <- proc.time()
 
    ### total number of possible subsets
 
@@ -193,14 +201,29 @@ gosh.rma <- function(x, subsets, progbar=TRUE, parallel="no", ncpus=1, cl=NULL, 
             on.exit(parallel::stopCluster(cl))
          }
 
-         if (inherits(x, "rma.uni"))
-            res <- parallel::parLapply(cl, seq_len(N.tot), .profile.rma.uni, obj=x, parallel=parallel, subset=TRUE, sel=incl, FE=FE)
+         if (inherits(x, "rma.uni")) {
+            if (.isTRUE(ddd$LB)) {
+               res <- parallel::parLapplyLB(cl, seq_len(N.tot), .profile.rma.uni, obj=x, parallel=parallel, subset=TRUE, sel=incl, FE=FE)
+            } else {
+               res <- parallel::parLapply(cl, seq_len(N.tot), .profile.rma.uni, obj=x, parallel=parallel, subset=TRUE, sel=incl, FE=FE)
+            }
+         }
 
-         if (inherits(x, "rma.mh"))
-            res <- parallel::parLapply(cl, seq_len(N.tot), .profile.rma.mh, obj=x, parallel=parallel, subset=TRUE, sel=incl)
+         if (inherits(x, "rma.mh")) {
+            if (.isTRUE(ddd$LB)) {
+               res <- parallel::parLapplyLB(cl, seq_len(N.tot), .profile.rma.mh, obj=x, parallel=parallel, subset=TRUE, sel=incl)
+            } else {
+               res <- parallel::parLapply(cl, seq_len(N.tot), .profile.rma.mh, obj=x, parallel=parallel, subset=TRUE, sel=incl)
+            }
+         }
 
-         if (inherits(x, "rma.peto"))
-            res <- parallel::parLapply(cl, seq_len(N.tot), .profile.rma.peto, obj=x, parallel=parallel, subset=TRUE, sel=incl)
+         if (inherits(x, "rma.peto")) {
+            if (.isTRUE(ddd$LB)) {
+               res <- parallel::parLapplyLB(cl, seq_len(N.tot), .profile.rma.peto, obj=x, parallel=parallel, subset=TRUE, sel=incl)
+            } else {
+               res <- parallel::parLapply(cl, seq_len(N.tot), .profile.rma.peto, obj=x, parallel=parallel, subset=TRUE, sel=incl)
+            }
+         }
 
       }
 
@@ -240,6 +263,13 @@ gosh.rma <- function(x, subsets, progbar=TRUE, parallel="no", ncpus=1, cl=NULL, 
    ### was model fitted successfully / all values are not NA?
 
    fit <- apply(res, 1, function(x) all(!is.na(x)))
+
+   ### print processing time
+
+   if (.isTRUE(ddd$time)) {
+      time.end <- proc.time()
+      .print.time(unname(time.end - time.start)[3])
+   }
 
    ### list to return
 

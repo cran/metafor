@@ -34,7 +34,7 @@ anova.rma <- function(object, object2, btt, L, digits, ...) {
 
          ### set/check 'btt' argument
 
-         btt <- .set.btt(btt, p, x$int.incl)
+         btt <- .set.btt(btt, p, x$int.incl, x$X)
          m <- length(btt) ### number of betas to test (m = p if all betas are tested)
 
          QM <- as.vector(t(beta)[btt] %*% chol2inv(chol(vb[btt,btt])) %*% beta[btt])
@@ -52,7 +52,7 @@ anova.rma <- function(object, object2, btt, L, digits, ...) {
 
          ### if 'L' has been specified, then do Wald-type test(s) via 'L' argument
 
-         if (is.vector(L))
+         if (.is.vector(L))
             L <- rbind(L)
 
          if (is.data.frame(L))
@@ -130,7 +130,7 @@ anova.rma <- function(object, object2, btt, L, digits, ...) {
             hyp[j] <- gsub("+ -", "- ", hyp[j], fixed=TRUE) ### turn '+ -' into '-'
          }
          hyp <- paste0(hyp, " = 0") ### add '= 0' at the right
-         hyp <- data.frame(hyp)
+         hyp <- data.frame(hyp, stringsAsFactors=FALSE)
          colnames(hyp) <- ""
          rownames(hyp) <- paste0(seq_len(m), ":") ### add '1:', '2:', ... as row names
 
@@ -154,6 +154,14 @@ anova.rma <- function(object, object2, btt, L, digits, ...) {
 
       if (!identical(class(object), class(object2)))
          stop(mstyle$stop("Class of 'object1' must be the same as class of 'object2'."))
+
+      ddd <- list(...)
+
+      if (!is.null(ddd$test)) {
+         test <- match.arg(ddd$test, c("LRT", "Wald"))
+      } else {
+         test <- "LRT"
+      }
 
       ### assume 'object' is the full model and 'object2' the reduced model
 
@@ -187,14 +195,17 @@ anova.rma <- function(object, object2, btt, L, digits, ...) {
       }
 
       if (inherits(object, "rma.mv")) {
-         if (!(identical(as.vector(m.f$yi), as.vector(m.r$yi)) && identical(m.f$V, m.r$V))) ### as.vector() to strip attributes/names
+         if (!(identical(as.vector(m.f$yi), as.vector(m.r$yi)) && identical(as.matrix(m.f$V), as.matrix(m.r$V)))) ### as.vector() to strip attributes/names, as.matrix() to make both V matrices non-sparse
             stop(mstyle$stop("Observed outcomes and/or sampling variances/covariances not equal in the full and reduced model."))
       }
 
-      ### don't do this; reduced model may use method="FE" and full model method="(RE)ML", which is fine
+      ### for Wald-type test, both models should be fitted using the same method
 
-      #if (m.f$method != m.r$method)
-      #   stop(mstyle$stop("Full and reduced model do not use the same 'method'."))
+      if (test == "Wald" && (m.f$method != m.r$method))
+         stop(mstyle$stop("Full and reduced model do not use the same 'method'."))
+
+      ### for LRT, reduced model may use method="FE" and full model method="(RE)ML"
+      ### which is fine, but the other way around doesn't really make sense
 
       if (m.f$method == "FE" && m.r$method != "FE")
          stop(mstyle$stop("Full model uses a fixed- and reduced model uses random/mixed-effects model."))
@@ -202,40 +213,6 @@ anova.rma <- function(object, object2, btt, L, digits, ...) {
       ### could do even more checks for cases where the models are clearly not nested ...
 
       ######################################################################
-
-      p.diff <- p.f - p.r
-
-      if (m.f$method == "REML") {
-
-         LRT <- m.r$fit.stats["dev","REML"] - m.f$fit.stats["dev","REML"]
-         fit.stats.f <- t(m.f$fit.stats)["REML",] # to keep (row)names of fit.stats
-         fit.stats.r <- t(m.r$fit.stats)["REML",] # to keep (row)names of fit.stats
-
-         if (!identical(m.f$X, m.r$X))
-            warning(mstyle$warning("Models with different fixed effects. REML comparisons are not meaningful."))
-
-         ### in this case, one could consider just taking the ML deviances, but this
-         ### is really ad-hoc; there is some theory in Welham & Thompson (1997) about
-         ### LRTs for fixed effects when using REML estimation, but this involves
-         ### additional work
-
-      } else {
-
-         LRT <- m.r$fit.stats["dev","ML"] - m.f$fit.stats["dev","ML"]
-         fit.stats.f <- t(m.f$fit.stats)["ML",]
-         fit.stats.r <- t(m.r$fit.stats)["ML",]
-
-         ### in principle, a 'rma.uni' model may have been fitted with something besides ML
-         ### estimation (for tau^2), so technically the deviance is then not really that as
-         ### obtained with proper ML estimation; issue a warning about this?
-
-      }
-
-      ### set LRT to 0 if LRT < 0 (this should not happen, but could due to numerical issues)
-
-      LRT[LRT < 0] <- 0
-
-      pval <- pchisq(LRT, df=p.diff, lower.tail=FALSE)
 
       ### for 'rma.uni' objects, calculate pseudo R^2 value (based on the
       ### proportional reduction in tau^2) comparing full vs. reduced model
@@ -262,10 +239,66 @@ anova.rma <- function(object, object2, btt, L, digits, ...) {
          tau2.r <- NA
       }
 
-      res <- list(fit.stats.f=fit.stats.f, fit.stats.r=fit.stats.r, p.f=p.f, p.r=p.r,
-                  LRT=LRT, pval=pval, QE.f=m.f$QE, QE.r=m.r$QE,
-                  tau2.f=tau2.f, tau2.r=tau2.r, R2=R2,
-                  method=m.f$method, class.f=class(m.f), digits=digits, type="LRT")
+      if (test == "LRT") {
+
+         p.diff <- p.f - p.r
+
+         if (m.f$method == "REML") {
+
+            LRT <- m.r$fit.stats["dev","REML"] - m.f$fit.stats["dev","REML"]
+            fit.stats.f <- t(m.f$fit.stats)["REML",] # to keep (row)names of fit.stats
+            fit.stats.r <- t(m.r$fit.stats)["REML",] # to keep (row)names of fit.stats
+
+            if (!identical(m.f$X, m.r$X))
+               warning(mstyle$warning("Models with different fixed effects. REML comparisons are not meaningful."))
+
+            ### in this case, one could consider just taking the ML deviances, but this
+            ### is really ad-hoc; there is some theory in Welham & Thompson (1997) about
+            ### LRTs for fixed effects when using REML estimation, but this involves
+            ### additional work
+
+         } else {
+
+            LRT <- m.r$fit.stats["dev","ML"] - m.f$fit.stats["dev","ML"]
+            fit.stats.f <- t(m.f$fit.stats)["ML",]
+            fit.stats.r <- t(m.r$fit.stats)["ML",]
+
+            ### in principle, a 'rma.uni' model may have been fitted with something besides ML
+            ### estimation (for tau^2), so technically the deviance is then not really that as
+            ### obtained with proper ML estimation; issue a warning about this?
+
+         }
+
+         ### set LRT to 0 if LRT < 0 (this should not happen, but could due to numerical issues)
+
+         LRT[LRT < 0] <- 0
+
+         pval <- pchisq(LRT, df=p.diff, lower.tail=FALSE)
+
+         res <- list(fit.stats.f=fit.stats.f, fit.stats.r=fit.stats.r, p.f=p.f, p.r=p.r,
+                     LRT=LRT, pval=pval, QE.f=m.f$QE, QE.r=m.r$QE,
+                     tau2.f=tau2.f, tau2.r=tau2.r, R2=R2,
+                     method=m.f$method, class.f=class(m.f), digits=digits, type="LRT")
+
+      }
+
+      if (test == "Wald") {
+
+         btt <- setdiff(colnames(m.f$X), colnames(m.r$X))
+
+         if (length(setdiff(colnames(m.r$X), colnames(m.f$X))) != 0L)
+            stop(mstyle$stop("There are coefficients in the reduced model that are not in the full model."))
+
+         btt <- charmatch(btt, colnames(m.f$X))
+
+         if (any(is.na(btt)))
+            stop(mstyle$stop("Cannot identify coefficients to test."))
+
+         res <- anova(m.f, btt=btt)
+         return(res)
+
+      }
+
 
    }
 

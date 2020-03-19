@@ -19,7 +19,7 @@ reporter(x, \dots)
    \item{forest}{optional character string with arguments to be added to the call to \code{\link{forest.rma}} for generating the forest plot.}
    \item{funnel}{optional character string with arguments to be added to the call to \code{\link{funnel.rma}} for generating the funnel plot.}
    \item{footnotes}{logical indicating whether additional explanatory footnotes should be added to the report (default is \code{FALSE}).}
-   \item{verbose}{logical indicating whether information on the progress of generating the report should be provided (default is \code{TRUE}).}
+   \item{verbose}{logical indicating whether information on the progress of the report generation should be provided (default is \code{TRUE}).}
    \item{\dots}{other arguments.}
 }
 \details{
@@ -45,7 +45,7 @@ reporter(x, \dots)
    Wolfgang Viechtbauer \email{wvb@metafor-project.org} \url{http://www.metafor-project.org/}
 }
 \references{
-   Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \url{http://www.jstatsoft.org/v36/i03/}.
+   Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \url{https://www.jstatsoft.org/v036/i03}.
 }
 \seealso{
    \code{\link{rma.uni}}
@@ -56,7 +56,7 @@ dat <- dat.bcg
 
 ### calculate log risk ratios and corresponding sampling variances
 dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat,
-              slab=paste(dat$author, ", ", dat$year, sep=""))
+              slab=paste(author, ", ", year, sep=""))
 
 ### random-effects model
 res <- rma(yi, vi, data=dat)

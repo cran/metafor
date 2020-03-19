@@ -18,6 +18,10 @@ plot.profile.rma <- function(x, xlim, ylim, pch=19, xlab, ylab, main, cline=FALS
    missing.ylab <- missing(ylab)
    missing.main <- missing(main)
 
+   ### filter out 'time' and 'LB' arguments for plot() function
+
+   lplot <- function(..., time, LB) plot(...)
+
    #########################################################################
 
    if (x$comps == 1) {
@@ -37,7 +41,13 @@ plot.profile.rma <- function(x, xlim, ylim, pch=19, xlab, ylab, main, cline=FALS
       if (missing.main)
          main <- x$title
 
-      plot(x[[1]], x[[2]], type="o", xlab=xlab, ylab=ylab, main=main, bty="l", pch=pch, xlim=xlim, ylim=ylim, ...)
+      if (min(x[[1]]) <= x$vc && max(x[[1]]) >= x$vc) {
+         pos <- which(x[[1]] >= x$vc)[1]
+         x[[1]] <- c(x[[1]][seq_len(pos-1)], x$vc,    x[[1]][pos:length(x[[1]])])
+         x[[2]] <- c(x[[2]][seq_len(pos-1)], x$maxll, x[[2]][pos:length(x[[2]])])
+      }
+
+      lplot(x[[1]], x[[2]], type="o", xlab=xlab, ylab=ylab, main=main, bty="l", pch=pch, xlim=xlim, ylim=ylim, ...)
       abline(v=x$vc, lty="dotted")
       abline(h=x$maxll, lty="dotted")
 
@@ -57,7 +67,7 @@ plot.profile.rma <- function(x, xlim, ylim, pch=19, xlab, ylab, main, cline=FALS
          if (missing.xlab) {
             xlab <- x[[j]]$xlab
          } else {
-            if (length(xlab) == 1) {
+            if (length(xlab) == 1L) {
                xlab <- rep(xlab, x$comps)
             }
          }
@@ -65,7 +75,7 @@ plot.profile.rma <- function(x, xlim, ylim, pch=19, xlab, ylab, main, cline=FALS
          if (missing.ylab) {
             ylab <- paste(ifelse(x[[j]]$method=="REML", "Restricted ", ""), "Log-Likelihood", sep="")
          } else {
-            if (length(ylab) == 1) {
+            if (length(ylab) == 1L) {
                ylab <- rep(ylab, x$comps)
             }
          }
@@ -73,12 +83,16 @@ plot.profile.rma <- function(x, xlim, ylim, pch=19, xlab, ylab, main, cline=FALS
          if (missing.main) {
             main <- x[[j]]$title
          } else {
-            if (length(main) == 1) {
+            if (length(main) == 1L) {
                main <- rep(main, x$comps)
             }
          }
 
-         plot(x[[j]], xlim=xlim, ylim=ylim, main=if (missing.main) main else main[j], pch=pch, xlab=if (missing.xlab) xlab else xlab[j], ylab=if (missing.ylab) ylab else ylab[j], cline=cline, ...)
+         lplot(x[[j]], xlim=xlim, ylim=ylim, pch=pch,
+               xlab=if (missing.xlab) xlab else xlab[j],
+               ylab=if (missing.ylab) ylab else ylab[j],
+               main=if (missing.main) main else main[j],
+               cline=cline, ...)
 
       }
 

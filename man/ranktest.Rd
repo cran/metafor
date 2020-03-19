@@ -15,7 +15,7 @@ ranktest(x, \dots)
    \item{x}{an object of class \code{"rma"} or a vector with the observed effect sizes or outcomes.}
    \item{vi}{vector with the corresponding sampling variances.}
    \item{sei}{vector with the corresponding standard errors.}
-   \item{subset}{optional vector indicating the subset of studies that should be included in the test. This can be a logical vector of the same length as \code{x} or a numeric vector indicating the indices of the observations to include. Only relevant when passing a vector via \code{x}.}
+   \item{subset}{optional (logical or numeric) vector indicating the subset of studies that should be included in the test. Only relevant when passing a vector via \code{x}.}
    \item{digits}{integer specifying the number of decimal places to which the printed results should be rounded (the default is 4).}
    \item{\dots}{other arguments.}
 }
@@ -42,7 +42,7 @@ ranktest(x, \dots)
 \references{
    Begg, C. B., & Mazumdar, M. (1994). Operating characteristics of a rank correlation test for publication bias. \emph{Biometrics}, \bold{50}, 1088--1101.
 
-   Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \url{http://www.jstatsoft.org/v36/i03/}.
+   Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \url{https://www.jstatsoft.org/v036/i03}.
 }
 \seealso{
    \code{\link{regtest}}

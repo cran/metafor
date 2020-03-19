@@ -11,7 +11,7 @@
 \usage{
 \method{influence}{rma.uni}(model, digits, progbar=FALSE, \dots)
 
-\method{print}{infl.rma.uni}(x, digits, \dots)
+\method{print}{infl.rma.uni}(x, digits=x$digits, infonly=FALSE, \dots)
 
 \method{cooks.distance}{rma.uni}(model, progbar=FALSE, \dots)
 \method{dfbetas}{rma.uni}(model, progbar=FALSE, \dots)
@@ -22,6 +22,7 @@
    \item{x}{an object of class \code{"infl.rma.uni"} (for \code{print}).}
    \item{digits}{integer specifying the number of decimal places to which the printed results should be rounded (if unspecified, the default is to take the value from the object).}
    \item{progbar}{logical indicating whether a progress bar should be shown (the default is \code{FALSE}).}
+   \item{infonly}{logical indicating whether only the influential cases should be printed (the default is \code{FALSE}).}
    \item{type}{character string indicating whether to return only the diagonal of the hat matrix (\code{"diagonal"}) or the entire hat matrix (\code{"matrix"}).}
    \item{\dots}{other arguments.}
 }
@@ -84,7 +85,7 @@
 
    Hedges, L. V., & Olkin, I. (1985). \emph{Statistical methods for meta-analysis}. San Diego, CA: Academic Press.
 
-   Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \url{http://www.jstatsoft.org/v36/i03/}.
+   Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \url{https://www.jstatsoft.org/v036/i03}.
 
    Viechtbauer, W., & Cheung, M. W.-L. (2010). Outlier and influence diagnostics for meta-analysis. \emph{Research Synthesis Methods}, \bold{1}, 112--125.
 }
