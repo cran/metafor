@@ -2,8 +2,7 @@ print.rma.uni <- function(x, digits, showfit=FALSE, signif.stars=getOption("show
 
    mstyle <- .get.mstyle("crayon" %in% .packages())
 
-   if (!inherits(x, "rma.uni"))
-      stop(mstyle$stop("Argument 'x' must be an object of class \"rma.uni\"."))
+   .chkclass(class(x), must="rma.uni")
 
    if (missing(digits)) {
       digits <- .get.digits(xdigits=x$digits, dmiss=TRUE)
@@ -20,7 +19,7 @@ print.rma.uni <- function(x, digits, showfit=FALSE, signif.stars=getOption("show
       if (x$k0.est == "R0") {
          cat(mstyle$text(paste0("Test of H0: no missing studies on the ", x$side, " side:     ")))
          cat(paste0(rep(" ", nchar(x$k0)), collapse=""))
-         cat(mstyle$result(paste0("p-val ", .pval(x$p.k0, digits=digits[["pval"]], showeq=TRUE, sep=" "))))
+         cat(mstyle$result(paste0("p-val ", .pval(x$p.k0, digits[["pval"]], showeq=TRUE, sep=" "))))
          cat("\n")
       }
       if (exists(".rmspace"))
@@ -30,25 +29,39 @@ print.rma.uni <- function(x, digits, showfit=FALSE, signif.stars=getOption("show
    if (!exists(".rmspace"))
       cat("\n")
 
-   if (x$method == "FE") {
-      if (x$int.only) {
-         cat(mstyle$section("Fixed-Effects Model"))
-      } else {
-         cat(mstyle$section("Fixed-Effects with Moderators Model"))
-      }
-      cat(mstyle$section(paste0(" (k = ", x$k, ")")))
-   } else {
-      if (x$int.only) {
-         cat(mstyle$section("Random-Effects Model"))
-      } else {
-         cat(mstyle$section("Mixed-Effects Model"))
-      }
+   if (x$model == "rma.ls") {
+
+      cat(mstyle$section("Location-Scale Model"))
       cat(mstyle$section(paste0(" (k = ", x$k, "; ")))
       if (x$tau2.fix) {
          cat(mstyle$section("user-specified tau^2 value)"))
       } else {
          cat(mstyle$section(paste0("tau^2 estimator: ", x$method, ")")))
       }
+
+   } else {
+
+      if (is.element(x$method, c("FE","EE","CE"))) {
+         if (x$int.only) {
+            cat(mstyle$section(sapply(x$method, switch, "FE"="Fixed-Effects Model", "EE"="Equal-Effects Model", "CE"="Common-Effects Model", USE.NAMES=FALSE)))
+         } else {
+            cat(mstyle$section("Fixed-Effects with Moderators Model"))
+         }
+         cat(mstyle$section(paste0(" (k = ", x$k, ")")))
+      } else {
+         if (x$int.only) {
+            cat(mstyle$section("Random-Effects Model"))
+         } else {
+            cat(mstyle$section("Mixed-Effects Model"))
+         }
+         cat(mstyle$section(paste0(" (k = ", x$k, "; ")))
+         if (x$tau2.fix) {
+            cat(mstyle$section("user-specified tau^2 value)"))
+         } else {
+            cat(mstyle$section(paste0("tau^2 estimator: ", x$method, ")")))
+         }
+      }
+
    }
 
    cat("\n")
@@ -67,9 +80,9 @@ print.rma.uni <- function(x, digits, showfit=FALSE, signif.stars=getOption("show
 
    cat("\n")
 
-   if (x$model == "rma.uni") {
+   if (x$model == "rma.uni" || x$model == "rma.uni.selmodel") {
 
-      if (x$method != "FE") {
+      if (!is.element(x$method, c("FE","EE","CE"))) {
          if (x$int.only) {
             cat(mstyle$text("tau^2 (estimated amount of total heterogeneity): "))
             cat(mstyle$result(paste0(.fcf(x$tau2, ifelse(abs(x$tau2) <= .Machine$double.eps*10,0,digits[["var"]])), ifelse(is.na(x$se.tau2), "", paste0(" (SE = " , .fcf(x$se.tau2, digits[["sevar"]]), ")")))))
@@ -111,13 +124,14 @@ print.rma.uni <- function(x, digits, showfit=FALSE, signif.stars=getOption("show
          }
       }
 
-      if (x$method != "FE" && !x$int.only && !is.null(x$R2)) {
+      if (!is.element(x$method, c("FE","EE","CE")) && !x$int.only && !is.null(x$R2)) {
          cat(mstyle$text("R^2 (amount of heterogeneity accounted for):            "))
          cat(mstyle$result(paste0(ifelse(is.na(x$R2), NA, .fcf(x$R2, 2)), "%")))
          cat("\n")
       }
 
-      cat("\n")
+      if (!is.element(x$method, c("FE","EE","CE")) || !is.na(x$I2) || !is.na(x$H2) || (!is.element(x$method, c("FE","EE","CE")) && !x$int.only && !is.null(x$R2)))
+         cat("\n")
 
    }
 
@@ -125,37 +139,57 @@ print.rma.uni <- function(x, digits, showfit=FALSE, signif.stars=getOption("show
       if (x$int.only) {
          cat(mstyle$section("Test for Heterogeneity:"))
          cat("\n")
-         cat(mstyle$result(paste0("Q(df = ", x$k-x$p, ") = ", .fcf(x$QE, digits[["test"]]), ", p-val ", .pval(x$QEp, digits=digits[["pval"]], showeq=TRUE, sep=" "))))
+         cat(mstyle$result(paste0("Q(df = ", x$k-x$p, ") = ", .fcf(x$QE, digits[["test"]]), ", p-val ", .pval(x$QEp, digits[["pval"]], showeq=TRUE, sep=" "))))
       } else {
          cat(mstyle$section("Test for Residual Heterogeneity:"))
          cat("\n")
-         cat(mstyle$result(paste0("QE(df = ", x$k-x$p, ") = ", .fcf(x$QE, digits[["test"]]), ", p-val ", .pval(x$QEp, digits=digits[["pval"]], showeq=TRUE, sep=" "))))
+         cat(mstyle$result(paste0("QE(df = ", x$k-x$p, ") = ", .fcf(x$QE, digits[["test"]]), ", p-val ", .pval(x$QEp, digits[["pval"]], showeq=TRUE, sep=" "))))
       }
       cat("\n\n")
    }
 
-   if (x$p > 1 && !is.na(x$QM)) {
-      cat(mstyle$section(paste0("Test of Moderators (coefficient", ifelse(x$m == 1, " ", "s "), .format.btt(x$btt),"):")))
+   if (x$model == "rma.uni.selmodel" && !is.na(x$LRT.tau2)) {
+      if (x$int.only) {
+         cat(mstyle$section("Test for Heterogeneity:"))
+         cat("\n")
+         cat(mstyle$result(paste0("LRT(df = 1) = ", .fcf(x$LRT.tau2, digits[["test"]]), ", p-val ", .pval(x$LRTp.tau2, digits[["pval"]], showeq=TRUE, sep=" "))))
+      } else {
+         cat(mstyle$section("Test for Residual Heterogeneity:"))
+         cat("\n")
+         cat(mstyle$result(paste0("LRT(df = 1) = ", .fcf(x$LRT.tau2, digits[["test"]]), ", p-val ", .pval(x$LRTp.tau2, digits[["pval"]], showeq=TRUE, sep=" "))))
+      }
+      cat("\n\n")
+   }
+
+   if (x$p > 1L && !is.na(x$QM)) {
+      if (x$model == "rma.ls") {
+         cat(mstyle$section(paste0("Test of Location Coefficients (coefficient", ifelse(x$m == 1, " ", "s "), .format.btt(x$btt),"):")))
+      } else {
+         cat(mstyle$section(paste0("Test of Moderators (coefficient", ifelse(x$m == 1, " ", "s "), .format.btt(x$btt),"):")))      }
       cat("\n")
       if (is.element(x$test, c("knha","adhoc","t"))) {
-         cat(mstyle$result(paste0("F(df1 = ", x$m, ", df2 = ", x$dfs, ") = ", .fcf(x$QM, digits[["test"]]), ", p-val ", .pval(x$QMp, digits=digits[["pval"]], showeq=TRUE, sep=" "))))
+         cat(mstyle$result(paste0("F(df1 = ", x$QMdf[1], ", df2 = ", x$QMdf[2], ") = ", .fcf(x$QM, digits[["test"]]), ", p-val ", .pval(x$QMp, digits[["pval"]], showeq=TRUE, sep=" "))))
       } else {
-         cat(mstyle$result(paste0("QM(df = ", x$m, ") = ", .fcf(x$QM, digits[["test"]]), ", p-val ", .pval(x$QMp, digits=digits[["pval"]], showeq=TRUE, sep=" "))))
+         cat(mstyle$result(paste0("QM(df = ", x$QMdf[1], ") = ", .fcf(x$QM, digits[["test"]]), ", p-val ", .pval(x$QMp, digits[["pval"]], showeq=TRUE, sep=" "))))
       }
       cat("\n\n")
    }
 
-   res.table <- cbind(estimate=.fcf(c(x$beta), digits[["est"]]), se=.fcf(x$se, digits[["se"]]), zval=.fcf(x$zval, digits[["test"]]), pval=.pval(x$pval, digits[["pval"]]), ci.lb=.fcf(x$ci.lb, digits[["ci"]]), ci.ub=.fcf(x$ci.ub, digits[["ci"]]))
+   if (is.element(x$test, c("knha","adhoc","t"))) {
+      res.table <- data.frame(estimate=.fcf(c(x$beta), digits[["est"]]), se=.fcf(x$se, digits[["se"]]), tval=.fcf(x$zval, digits[["test"]]), df=round(x$ddf,2), pval=.pval(x$pval, digits[["pval"]]), ci.lb=.fcf(x$ci.lb, digits[["ci"]]), ci.ub=.fcf(x$ci.ub, digits[["ci"]]), stringsAsFactors=FALSE)
+   } else {
+      res.table <- data.frame(estimate=.fcf(c(x$beta), digits[["est"]]), se=.fcf(x$se, digits[["se"]]), zval=.fcf(x$zval, digits[["test"]]), pval=.pval(x$pval, digits[["pval"]]), ci.lb=.fcf(x$ci.lb, digits[["ci"]]), ci.ub=.fcf(x$ci.ub, digits[["ci"]]), stringsAsFactors=FALSE)
+   }
    rownames(res.table) <- rownames(x$beta)
-   if (is.element(x$test, c("knha","adhoc","t")))
-      colnames(res.table)[3] <- "tval"
    signif <- symnum(x$pval, corr=FALSE, na=FALSE, cutpoints=c(0, 0.001, 0.01, 0.05, 0.1, 1), symbols = c("***", "**", "*", ".", " "))
    if (signif.stars) {
       res.table <- cbind(res.table, signif)
-      colnames(res.table)[7] <- ""
+      colnames(res.table)[ncol(res.table)] <- ""
    }
 
    ddd <- list(...)
+
+   .chkdots(ddd, c("num"))
 
    if (.isTRUE(ddd$num))
       rownames(res.table) <- paste0(1:nrow(res.table), ") ", rownames(res.table))
@@ -163,7 +197,7 @@ print.rma.uni <- function(x, digits, showfit=FALSE, signif.stars=getOption("show
    if (x$int.only)
       res.table <- res.table[1,]
 
-   if (x$model == "rma.uni") {
+   if (x$model == "rma.uni" || x$model == "rma.uni.selmodel") {
       cat(mstyle$section("Model Results:"))
    } else {
       cat(mstyle$section("Model Results (Location):"))
@@ -178,17 +212,34 @@ print.rma.uni <- function(x, digits, showfit=FALSE, signif.stars=getOption("show
 
    if (x$model == "rma.ls") {
 
-      res.table <- cbind(estimate=.fcf(c(x$alpha), digits[["est"]]), se=.fcf(x$se.alpha, digits[["se"]]), zval=.fcf(x$zval.alpha, digits[["test"]]), pval=.pval(x$pval.alpha, digits[["pval"]]), ci.lb=.fcf(x$ci.lb.alpha, digits[["ci"]]), ci.ub=.fcf(x$ci.ub.alpha, digits[["ci"]]))
+      if (x$q > 1L && !is.na(x$QS)) {
+         cat("\n")
+         cat(mstyle$section(paste0("Test of Scale Coefficients (coefficient", ifelse(x$m.alpha == 1, " ", "s "), .format.btt(x$att),"):")))
+         cat("\n")
+         if (is.element(x$test, c("knha","adhoc","t"))) {
+            cat(mstyle$result(paste0("F(df1 = ", x$QSdf[1], ", df2 = ", x$QSdf[2], ") = ", .fcf(x$QS, digits[["test"]]), ", p-val ", .pval(x$QSp, digits[["pval"]], showeq=TRUE, sep=" "))))
+         } else {
+            cat(mstyle$result(paste0("QS(df = ", x$QSdf[1], ") = ", .fcf(x$QS, digits[["test"]]), ", p-val ", .pval(x$QSp, digits[["pval"]], showeq=TRUE, sep=" "))))
+         }
+         cat("\n")
+      }
+
+      if (x$test == "t") {
+         res.table <- data.frame(estimate=.fcf(c(x$alpha), digits[["est"]]), se=.fcf(x$se.alpha, digits[["se"]]), tval=.fcf(x$zval.alpha, digits[["test"]]), df=round(x$ddf.alpha, 2), pval=.pval(x$pval.alpha, digits[["pval"]]), ci.lb=.fcf(x$ci.lb.alpha, digits[["ci"]]), ci.ub=.fcf(x$ci.ub.alpha, digits[["ci"]]), stringsAsFactors=FALSE)
+      } else {
+         res.table <- data.frame(estimate=.fcf(c(x$alpha), digits[["est"]]), se=.fcf(x$se.alpha, digits[["se"]]), zval=.fcf(x$zval.alpha, digits[["test"]]), pval=.pval(x$pval.alpha, digits[["pval"]]), ci.lb=.fcf(x$ci.lb.alpha, digits[["ci"]]), ci.ub=.fcf(x$ci.ub.alpha, digits[["ci"]]), stringsAsFactors=FALSE)
+      }
       rownames(res.table) <- rownames(x$alpha)
-      if (is.element(x$test, c("t")))
-         colnames(res.table)[3] <- "tval"
       signif <- symnum(x$pval.alpha, corr=FALSE, na=FALSE, cutpoints=c(0, 0.001, 0.01, 0.05, 0.1, 1), symbols = c("***", "**", "*", ".", " "))
       if (signif.stars) {
          res.table <- cbind(res.table, signif)
-         colnames(res.table)[7] <- ""
+         colnames(res.table)[ncol(res.table)] <- ""
       }
 
-      ddd <- list(...)
+      for (j in 1:nrow(res.table)) {
+         res.table[j, is.na(res.table[j,])]  <- ifelse(x$alpha.fix[j], "---", "NA")
+         res.table[j, res.table[j,] == "NA"] <- ifelse(x$alpha.fix[j], "---", "NA")
+      }
 
       if (.isTRUE(ddd$num))
          rownames(res.table) <- paste0(1:nrow(res.table), ") ", rownames(res.table))
@@ -201,6 +252,53 @@ print.rma.uni <- function(x, digits, showfit=FALSE, signif.stars=getOption("show
       cat("\n\n")
 
       if (length(x$alpha) == 1L) {
+         tmp <- capture.output(.print.vector(res.table))
+      } else {
+         tmp <- capture.output(print(res.table, quote=FALSE, right=TRUE, print.gap=2))
+      }
+      .print.table(tmp, mstyle)
+
+   }
+
+   if (x$model == "rma.uni.selmodel") {
+
+      if (!is.na(x$LRT)) {
+         cat("\n")
+         cat(mstyle$section("Test for Selection Model Parameters:"))
+         cat("\n")
+         cat(mstyle$result(paste0("LRT(df = ", x$LRTdf, ") = ", .fcf(x$LRT, digits[["test"]]), ", p-val ", .pval(x$LRTp, digits[["pval"]], showeq=TRUE, sep=" "))))
+         cat("\n")
+      }
+
+      res.table <- data.frame(estimate=.fcf(c(x$delta), digits[["est"]]), se=.fcf(x$se.delta, digits[["se"]]), zval=.fcf(x$zval.delta, digits[["test"]]), pval=.pval(x$pval.delta, digits[["pval"]]), ci.lb=.fcf(x$ci.lb.delta, digits[["ci"]]), ci.ub=.fcf(x$ci.ub.delta, digits[["ci"]]), stringsAsFactors=FALSE)
+
+      if (x$type == "stepfun") {
+         rownames(res.table) <- rownames(x$ptable)
+         res.table <- cbind(k=x$ptable$k, res.table)
+      } else {
+         rownames(res.table) <- paste0("delta.", seq_along(x$delta))
+      }
+      #if (x$test == "t")
+      #   colnames(res.table)[3] <- "tval"
+      signif <- symnum(x$pval.delta, corr=FALSE, na=FALSE, cutpoints=c(0, 0.001, 0.01, 0.05, 0.1, 1), symbols = c("***", "**", "*", ".", " "))
+      if (signif.stars) {
+         res.table <- cbind(res.table, signif)
+         colnames(res.table)[ncol(res.table)] <- ""
+      }
+
+      for (j in 1:nrow(res.table)) {
+         res.table[j, is.na(res.table[j,])]  <- ifelse(x$delta.fix[j], "---", "NA")
+         res.table[j, res.table[j,] == "NA"] <- ifelse(x$delta.fix[j], "---", "NA")
+      }
+
+      if (length(x$delta) == 1L)
+         res.table <- res.table[1,]
+
+      cat("\n")
+      cat(mstyle$section("Selection Model Results:"))
+      cat("\n\n")
+
+      if (length(x$delta) == 1L) {
          tmp <- capture.output(.print.vector(res.table))
       } else {
          tmp <- capture.output(print(res.table, quote=FALSE, right=TRUE, print.gap=2))

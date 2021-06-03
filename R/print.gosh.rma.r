@@ -2,8 +2,7 @@ print.gosh.rma <- function(x, digits=x$digits, ...) {
 
    mstyle <- .get.mstyle("crayon" %in% .packages())
 
-   if (!inherits(x, "gosh.rma"))
-      stop(mstyle$stop("Argument 'x' must be an object of class \"gosh.rma\"."))
+   .chkclass(class(x), must="gosh.rma")
 
    digits <- .get.digits(digits=digits, xdigits=x$digits, dmiss=FALSE)
 
@@ -28,7 +27,7 @@ print.gosh.rma <- function(x, digits=x$digits, ...) {
 
    res.table <- .fcf(res.table, digits[["est"]])
 
-   colnames(res.table) <- c("mean", "min", "Q1", "median", "Q3", "max")
+   colnames(res.table) <- c("mean", "min", "q1", "median", "q3", "max")
    rownames(res.table) <- colnames(x$res)
 
    if (ncol(x$res) == 6)
@@ -39,9 +38,9 @@ print.gosh.rma <- function(x, digits=x$digits, ...) {
    if (ncol(x$res) > 6)
       res.table <- rbind(res.table[seq_len(5),], "", res.table[6:nrow(res.table),,drop=FALSE])
 
-   ### remove row for tau^2 in FE models
+   ### remove row for tau^2 in FE/EE/CE models
 
-   if (x$method == "FE")
+   if (is.element(x$method, c("FE","EE","CE")))
       res.table <- res.table[-5,]
 
    tmp <- capture.output(print(res.table, quote=FALSE, right=TRUE))

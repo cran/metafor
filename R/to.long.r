@@ -5,6 +5,12 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, vlong=FALSE, append=TRUE, 
 
    ### check argument specifications
 
+   if (missing(measure))
+      stop(mstyle$stop("Must specify an effect size or outcome measure via the 'measure' argument."))
+
+   if (!is.character(measure))
+      stop(mstyle$stop("The 'measure' argument must be a character string."))
+
    if (!is.element(measure, c("RR","OR","PETO","RD","AS","PHI","YUQ","YUY","RTET", ### 2x2 table measures
                               "PBIT","OR2D","OR2DN","OR2DL",                       ### - transformations to SMD
                               "MPRD","MPRR","MPOR","MPORC","MPPETO",               ### - measures for matched pairs data
@@ -16,7 +22,7 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, vlong=FALSE, append=TRUE, 
                               "PCOR","ZPCOR","SPCOR",                              ### partial and semi-partial correlations
                               "PR","PLN","PLO","PAS","PFT",                        ### single proportions (and transformations thereof)
                               "IR","IRLN","IRS","IRFT",                            ### single-group person-time data (and transformations thereof)
-                              "MN","MNLN","CVLN","SDLN",                           ### mean, log(mean), log(CV), log(SD)
+                              "MN","MNLN","CVLN","SDLN","SMD1",                    ### mean, log(mean), log(CV), log(SD), single-group SMD
                               "MC","SMCC","SMCR","SMCRH","ROMC","CVRC","VRC",      ### raw/standardized mean change, log(ROM), CVR, and VR for dependent samples
                               "ARAW","AHW","ABT")))                                ### alpha (and transformations thereof)
       stop(mstyle$stop("Unknown 'measure' specified."))
@@ -80,21 +86,31 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, vlong=FALSE, append=TRUE, 
 
       k <- length(ai) ### number of outcomes before subsetting
 
+      if (length(ai)==0L || length(bi)==0L || length(ci)==0L || length(di)==0L)
+         stop(mstyle$stop("Cannot compute outcomes. Check that all of the required \n  information is specified via the appropriate arguments."))
+
+      if (!all(k == c(length(ai),length(bi),length(ci),length(di))))
+         stop(mstyle$stop("Supplied data vectors are not all of the same length."))
+
       if (!is.null(subset)) {
+         subset <- .setnafalse(subset, k=k)
          ai <- ai[subset]
          bi <- bi[subset]
          ci <- ci[subset]
          di <- di[subset]
       }
 
-      if (length(ai)==0L || length(bi)==0L || length(ci)==0L || length(di)==0L)
-         stop(mstyle$stop("Cannot compute outcomes. Check that all of the required \n  information is specified via the appropriate arguments."))
+      n1i <- ai + bi
+      n2i <- ci + di
 
-      if (!all(length(ai) == c(length(ai),length(bi),length(ci),length(di))))
-         stop(mstyle$stop("Supplied data vectors are not all of the same length."))
+      if (any(c(ai > n1i, ci > n2i), na.rm=TRUE))
+         stop(mstyle$stop("One or more event counts are larger than the corresponding group sizes."))
 
       if (any(c(ai, bi, ci, di) < 0, na.rm=TRUE))
          stop(mstyle$stop("One or more counts are negative."))
+
+      if (any(c(n1i < 0, n2i < 0), na.rm=TRUE))
+         stop(mstyle$stop("One or more group sizes are < 0."))
 
       ni.u <- ai + bi + ci + di ### unadjusted total sample sizes
 
@@ -169,24 +185,25 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, vlong=FALSE, append=TRUE, 
 
       k <- length(x1i) ### number of outcomes before subsetting
 
+      if (length(x1i)==0L || length(x2i)==0L || length(t1i)==0L || length(t2i)==0L)
+         stop(mstyle$stop("Cannot compute outcomes. Check that all of the required \n  information is specified via the appropriate arguments."))
+
+      if (!all(k == c(length(x1i),length(x2i),length(t1i),length(t2i))))
+         stop(mstyle$stop("Supplied data vectors are not all of the same length."))
+
       if (!is.null(subset)) {
+         subset <- .setnafalse(subset, k=k)
          x1i <- x1i[subset]
          x2i <- x2i[subset]
          t1i <- t1i[subset]
          t2i <- t2i[subset]
       }
 
-      if (length(x1i)==0L || length(x2i)==0L || length(t1i)==0L || length(t2i)==0L)
-         stop(mstyle$stop("Cannot compute outcomes. Check that all of the required \n  information is specified via the appropriate arguments."))
-
-      if (!all(length(x1i) == c(length(x1i),length(x2i),length(t1i),length(t2i))))
-         stop(mstyle$stop("Supplied data vectors are not all of the same length."))
-
       if (any(c(x1i, x2i) < 0, na.rm=TRUE))
          stop(mstyle$stop("One or more counts are negative."))
 
-      if (any(c(t1i, t2i) < 0, na.rm=TRUE))
-         stop(mstyle$stop("One or more person-times are negative."))
+      if (any(c(t1i, t2i) <= 0, na.rm=TRUE))
+         stop(mstyle$stop("One or more person-times are <= 0."))
 
       ni.u <- t1i + t2i ### unadjusted total sample sizes
 
@@ -257,7 +274,14 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, vlong=FALSE, append=TRUE, 
 
       k <- length(n1i) ### number of outcomes before subsetting
 
+      if (length(m1i)==0L || length(m2i)==0L || length(sd1i)==0L || length(sd2i)==0L || length(n1i)==0L || length(n2i)==0L)
+         stop(mstyle$stop("Cannot compute outcomes. Check that all of the required \n  information is specified via the appropriate arguments."))
+
+      if (!all(k == c(length(m1i),length(m2i),length(sd1i),length(sd2i),length(n1i),length(n2i))))
+         stop(mstyle$stop("Supplied data vectors are not all of the same length."))
+
       if (!is.null(subset)) {
+         subset <- .setnafalse(subset, k=k)
          m1i  <- m1i[subset]
          m2i  <- m2i[subset]
          sd1i <- sd1i[subset]
@@ -266,17 +290,11 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, vlong=FALSE, append=TRUE, 
          n2i  <- n2i[subset]
       }
 
-      if (length(m1i)==0L || length(m2i)==0L || length(sd1i)==0L || length(sd2i)==0L || length(n1i)==0L || length(n2i)==0L)
-         stop(mstyle$stop("Cannot compute outcomes. Check that all of the required \n  information is specified via the appropriate arguments."))
-
-      if (!all(length(m1i) == c(length(m1i),length(m2i),length(sd1i),length(sd2i),length(n1i),length(n2i))))
-         stop(mstyle$stop("Supplied data vectors are not all of the same length."))
-
       if (any(c(sd1i, sd2i) < 0, na.rm=TRUE))
          stop(mstyle$stop("One or more standard deviations are negative."))
 
-      if (any(c(n1i, n2i) < 0, na.rm=TRUE))
-         stop(mstyle$stop("One or more sample sizes are negative."))
+      if (any(c(n1i, n2i) < 1, na.rm=TRUE))
+         stop(mstyle$stop("One or more sample sizes are < 1."))
 
       ni.u <- n1i + n2i ### unadjusted total sample sizes
 
@@ -293,22 +311,23 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, vlong=FALSE, append=TRUE, 
 
       k <- length(ri) ### number of outcomes before subsetting
 
-      if (!is.null(subset)) {
-         ri <- ri[subset]
-         ni <- ni[subset]
-      }
-
       if (length(ri)==0L || length(ni)==0L)
          stop(mstyle$stop("Cannot compute outcomes. Check that all of the required \n  information is specified via the appropriate arguments."))
 
       if (length(ri) != length(ni))
          stop(mstyle$stop("Supplied data vectors are not of the same length."))
 
+      if (!is.null(subset)) {
+         subset <- .setnafalse(subset, k=k)
+         ri <- ri[subset]
+         ni <- ni[subset]
+      }
+
       if (any(abs(ri) > 1, na.rm=TRUE))
          stop(mstyle$stop("One or more correlations are > 1 or < -1."))
 
-      if (any(ni < 0, na.rm=TRUE))
-         stop(mstyle$stop("One or more sample sizes are negative."))
+      if (any(ni < 1, na.rm=TRUE))
+         stop(mstyle$stop("One or more sample sizes are < 1."))
 
       ni.u <- ni ### unadjusted total sample sizes
 
@@ -328,21 +347,30 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, vlong=FALSE, append=TRUE, 
 
       k <- length(xi) ### number of outcomes before subsetting
 
-      if (!is.null(subset)) {
-         xi <- xi[subset]
-         mi <- mi[subset]
-      }
-
       if (length(xi)==0L || length(mi)==0L)
          stop(mstyle$stop("Cannot compute outcomes. Check that all of the required \n  information is specified via the appropriate arguments."))
 
       if (length(xi) != length(mi))
          stop(mstyle$stop("Supplied data vectors are not all of the same length."))
 
+      if (!is.null(subset)) {
+         subset <- .setnafalse(subset, k=k)
+         xi <- xi[subset]
+         mi <- mi[subset]
+      }
+
+      ni <- xi + mi
+
+      if (any(xi > ni, na.rm=TRUE))
+         stop(mstyle$stop("One or more event counts are larger than the corresponding group sizes."))
+
       if (any(c(xi, mi) < 0, na.rm=TRUE))
          stop(mstyle$stop("One or more counts are negative."))
 
-      ni.u <- xi + mi ### unadjusted total sample sizes
+      if (any(ni < 1, na.rm=TRUE))
+         stop(mstyle$stop("One or more group sizes are < 1."))
+
+      ni.u <- ni ### unadjusted total sample sizes
 
       if (to == "all") {
 
@@ -394,22 +422,23 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, vlong=FALSE, append=TRUE, 
 
       k <- length(xi) ### number of outcomes before subsetting
 
-      if (!is.null(subset)) {
-         xi <- xi[subset]
-         ti <- ti[subset]
-      }
-
       if (length(xi)==0L || length(ti)==0L)
          stop(mstyle$stop("Cannot compute outcomes. Check that all of the required \n  information is specified via the appropriate arguments."))
 
       if (length(xi) != length(ti))
          stop(mstyle$stop("Supplied data vectors are not all of the same length."))
 
+      if (!is.null(subset)) {
+         subset <- .setnafalse(subset, k=k)
+         xi <- xi[subset]
+         ti <- ti[subset]
+      }
+
       if (any(xi < 0, na.rm=TRUE))
          stop(mstyle$stop("One or more counts are negative."))
 
-      if (any(ti < 0, na.rm=TRUE))
-         stop(mstyle$stop("One or more person-times are negative."))
+      if (any(ti <= 0, na.rm=TRUE))
+         stop(mstyle$stop("One or more person-times are <= 0."))
 
       ni.u <- ti ### unadjusted total sample sizes
 
@@ -451,7 +480,7 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, vlong=FALSE, append=TRUE, 
 
    #########################################################################
 
-   if (is.element(measure, c("MN","MNLN"))) {
+   if (is.element(measure, c("MN","MNLN","SMD1"))) {
 
       mf.mi  <- mf[[match("mi",  names(mf))]]
       mf.sdi <- mf[[match("sdi", names(mf))]]
@@ -462,23 +491,24 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, vlong=FALSE, append=TRUE, 
 
       k <- length(ni) ### number of outcomes before subsetting
 
+      if (length(mi)==0L || length(sdi)==0L || length(ni)==0L)
+         stop(mstyle$stop("Cannot compute outcomes. Check that all of the required \n  information is specified via the appropriate arguments."))
+
+      if (!all(k == c(length(mi),length(sdi),length(ni))))
+         stop(mstyle$stop("Supplied data vectors are not all of the same length."))
+
       if (!is.null(subset)) {
+         subset <- .setnafalse(subset, k=k)
          mi  <- mi[subset]
          sdi <- sdi[subset]
          ni  <- ni[subset]
       }
 
-      if (length(mi)==0L || length(sdi)==0L || length(ni)==0L)
-         stop(mstyle$stop("Cannot compute outcomes. Check that all of the required \n  information is specified via the appropriate arguments."))
-
-      if (!all(length(mi) == c(length(mi),length(sdi),length(ni))))
-         stop(mstyle$stop("Supplied data vectors are not all of the same length."))
-
       if (any(sdi < 0, na.rm=TRUE))
          stop(mstyle$stop("One or more standard deviations are negative."))
 
-      if (any(ni < 0, na.rm=TRUE))
-         stop(mstyle$stop("One or more sample sizes are negative."))
+      if (any(ni < 1, na.rm=TRUE))
+         stop(mstyle$stop("One or more sample sizes are < 1."))
 
       if (is.element(measure, c("MNLN","CVLN")) && any(mi < 0, na.rm=TRUE))
          stop(mstyle$stop("One or more means are negative."))
@@ -506,7 +536,26 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, vlong=FALSE, append=TRUE, 
 
       k <- length(m1i) ### number of outcomes before subsetting
 
+      if (is.element(measure, c("MC","SMCC","SMCRH","ROMC","CVRC"))) {
+
+         if (length(m1i)==0L || length(m2i)==0L || length(sd1i)==0L || length(sd2i)==0L || length(ni)==0L || length(ri)==0L)
+            stop(mstyle$stop("Cannot compute outcomes. Check that all of the required \n  information is specified via the appropriate arguments."))
+
+         if (!all(k == c(length(m1i),length(m2i),length(sd1i),length(sd2i),length(ni),length(ri))))
+            stop(mstyle$stop("Supplied data vectors are not all of the same length."))
+
+      } else {
+
+         if (length(m1i)==0L || length(m2i)==0L || length(sd1i)==0L || length(ni)==0L || length(ri)==0L)
+            stop(mstyle$stop("Cannot compute outcomes. Check that all of the required \n  information is specified via the appropriate arguments."))
+
+         if (!all(k == c(length(m1i),length(m2i),length(sd1i),length(ni),length(ri))))
+            stop(mstyle$stop("Supplied data vectors are not all of the same length."))
+
+      }
+
       if (!is.null(subset)) {
+         subset <- .setnafalse(subset, k=k)
          m1i  <- m1i[subset]
          m2i  <- m2i[subset]
          sd1i <- sd1i[subset]
@@ -516,34 +565,18 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, vlong=FALSE, append=TRUE, 
       }
 
       if (is.element(measure, c("MC","SMCC","SMCRH","ROMC","CVRC"))) {
-
-         if (length(m1i)==0L || length(m2i)==0L || length(sd1i)==0L || length(sd2i)==0L || length(ni)==0L || length(ri)==0L)
-            stop(mstyle$stop("Cannot compute outcomes. Check that all of the required \n  information is specified via the appropriate arguments."))
-
-         if (!all(length(m1i) == c(length(m1i),length(m2i),length(sd1i),length(sd2i),length(ni),length(ri))))
-            stop(mstyle$stop("Supplied data vectors are not all of the same length."))
-
          if (any(c(sd1i, sd2i) < 0, na.rm=TRUE))
             stop(mstyle$stop("One or more standard deviations are negative."))
-
       } else {
-
-         if (length(m1i)==0L || length(m2i)==0L || length(sd1i)==0L || length(ni)==0L || length(ri)==0L)
-            stop(mstyle$stop("Cannot compute outcomes. Check that all of the required \n  information is specified via the appropriate arguments."))
-
-         if (!all(length(m1i) == c(length(m1i),length(m2i),length(sd1i),length(ni),length(ri))))
-            stop(mstyle$stop("Supplied data vectors are not all of the same length."))
-
          if (any(sd1i < 0, na.rm=TRUE))
             stop(mstyle$stop("One or more standard deviations are negative."))
-
       }
 
       if (any(abs(ri) > 1, na.rm=TRUE))
          stop(mstyle$stop("One or more correlations are > 1 or < -1."))
 
-      if (any(ni < 0, na.rm=TRUE))
-         stop(mstyle$stop("One or more sample sizes are negative."))
+      if (any(ni < 1, na.rm=TRUE))
+         stop(mstyle$stop("One or more sample sizes are < 1."))
 
       ni.u <- ni ### unadjusted total sample sizes
 
@@ -562,17 +595,18 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, vlong=FALSE, append=TRUE, 
 
       k <- length(ai) ### number of outcomes before subsetting
 
+      if (length(ai)==0L || length(mi)==0L || length(ni)==0L)
+         stop(mstyle$stop("Cannot compute outcomes. Check that all of the required \n  information is specified via the appropriate arguments."))
+
+      if (!all(k == c(length(ai),length(mi),length(ni))))
+         stop(mstyle$stop("Supplied data vectors are not all of the same length."))
+
       if (!is.null(subset)) {
+         subset <- .setnafalse(subset, k=k)
          ai <- ai[subset]
          mi <- mi[subset]
          ni <- ni[subset]
       }
-
-      if (length(ai)==0L || length(mi)==0L || length(ni)==0L)
-         stop(mstyle$stop("Cannot compute outcomes. Check that all of the required \n  information is specified via the appropriate arguments."))
-
-      if (!all(length(ai) == c(length(ai),length(mi),length(ni))))
-         stop(mstyle$stop("Supplied data vectors are not all of the same length."))
 
       if (any(ai > 1, na.rm=TRUE))
          stop(mstyle$stop("One or more alpha values are > 1."))
@@ -580,8 +614,8 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, vlong=FALSE, append=TRUE, 
       if (any(mi < 2, na.rm=TRUE))
          stop(mstyle$stop("One or more mi values are < 2."))
 
-      if (any(ni < 0, na.rm=TRUE))
-         stop(mstyle$stop("One or more sample sizes are negative."))
+      if (any(ni < 1, na.rm=TRUE))
+         stop(mstyle$stop("One or more sample sizes are < 1."))
 
       ni.u <- ni ### unadjusted total sample sizes
 
@@ -595,7 +629,7 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, vlong=FALSE, append=TRUE, 
 
    if (is.null(slab)) {
 
-      slab  <- seq_len(k)
+      slab <- seq_len(k)
 
    } else {
 
@@ -645,7 +679,7 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, vlong=FALSE, append=TRUE, 
             slab <- slab[not.na]
             if (has.data)
                data <- data[not.na,]
-            warning(mstyle$warning("Tables with NAs omitted."))
+            warning(mstyle$warning("Tables with NAs omitted."), call.=FALSE)
          }
 
          if (na.act == "na.fail")
@@ -681,8 +715,8 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, vlong=FALSE, append=TRUE, 
          }
 
          dat[[1]] <- factor(dat[[1]])
-         dat[[2]] <- factor(dat[[2]])
-         dat[[3]] <- factor(dat[[3]])
+         dat[[2]] <- factor(dat[[2]], levels=c(2,1))
+         dat[[3]] <- factor(dat[[3]], levels=c(2,1))
 
          if (has.data && append)
             dat <- cbind(data[rep(seq_len(k), each=4),], dat)
@@ -706,7 +740,7 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, vlong=FALSE, append=TRUE, 
          }
 
          dat[[1]] <- factor(dat[[1]])
-         dat[[2]] <- factor(dat[[2]])
+         dat[[2]] <- factor(dat[[2]], levels=c(2,1))
 
          if (has.data && append)
             dat <- cbind(data[rep(seq_len(k), each=2),], dat)
@@ -735,7 +769,7 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, vlong=FALSE, append=TRUE, 
             slab <- slab[not.na]
             if (has.data)
                data <- data[not.na,]
-            warning(mstyle$warning("Tables with NAs omitted."))
+            warning(mstyle$warning("Tables with NAs omitted."), call.=FALSE)
          }
 
          if (na.act == "na.fail")
@@ -771,8 +805,8 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, vlong=FALSE, append=TRUE, 
          }
 
          dat[[1]] <- factor(dat[[1]])
-         dat[[2]] <- factor(dat[[2]])
-         dat[[3]] <- factor(dat[[3]])
+         dat[[2]] <- factor(dat[[2]], levels=c(2,1))
+         dat[[3]] <- factor(dat[[3]], levels=c(2,1))
 
          if (has.data && append)
             dat <- data.frame(data[rep(seq_len(k), each=4),], dat)
@@ -796,7 +830,7 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, vlong=FALSE, append=TRUE, 
          }
 
          dat[[1]] <- factor(dat[[1]])
-         dat[[2]] <- factor(dat[[2]])
+         dat[[2]] <- factor(dat[[2]], levels=c(2,1))
 
          if (has.data && append)
             dat <- cbind(data[rep(seq_len(k), each=2),], dat)
@@ -825,7 +859,7 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, vlong=FALSE, append=TRUE, 
             slab <- slab[not.na]
             if (has.data)
                data <- data[not.na,]
-            warning(mstyle$warning("Tables with NAs omitted."))
+            warning(mstyle$warning("Tables with NAs omitted."), call.=FALSE)
          }
 
          if (na.act == "na.fail")
@@ -861,8 +895,8 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, vlong=FALSE, append=TRUE, 
          }
 
          dat[[1]] <- factor(dat[[1]])
-         dat[[2]] <- factor(dat[[2]])
-         dat[[3]] <- factor(dat[[3]])
+         dat[[2]] <- factor(dat[[2]], levels=c(2,1))
+         dat[[3]] <- factor(dat[[3]], levels=c(2,1))
 
          if (has.data && append)
             dat <- cbind(data[rep(seq_len(k), each=4),], dat)
@@ -886,7 +920,7 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, vlong=FALSE, append=TRUE, 
          }
 
          dat[[1]] <- factor(dat[[1]])
-         dat[[2]] <- factor(dat[[2]])
+         dat[[2]] <- factor(dat[[2]], levels=c(2,1))
 
          if (has.data && append)
             dat <- cbind(data[rep(seq_len(k), each=2),], dat)
@@ -915,7 +949,7 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, vlong=FALSE, append=TRUE, 
             slab <- slab[not.na]
             if (has.data)
                data <- data[not.na,]
-            warning(mstyle$warning("Tables with NAs omitted."))
+            warning(mstyle$warning("Tables with NAs omitted."), call.=FALSE)
          }
 
          if (na.act == "na.fail")
@@ -947,7 +981,7 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, vlong=FALSE, append=TRUE, 
       }
 
       dat[[1]] <- factor(dat[[1]])
-      dat[[2]] <- factor(dat[[2]])
+      dat[[2]] <- factor(dat[[2]], levels=c(2,1))
 
       if (has.data && append)
          dat <- cbind(data[rep(seq_len(k), each=2),], dat)
@@ -976,7 +1010,7 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, vlong=FALSE, append=TRUE, 
             slab <- slab[not.na]
             if (has.data)
                data <- data[not.na,]
-            warning(mstyle$warning("Tables with NAs omitted."))
+            warning(mstyle$warning("Tables with NAs omitted."), call.=FALSE)
          }
 
          if (na.act == "na.fail")
@@ -1009,7 +1043,7 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, vlong=FALSE, append=TRUE, 
       }
 
       dat[[1]] <- factor(dat[[1]])
-      dat[[2]] <- factor(dat[[2]])
+      dat[[2]] <- factor(dat[[2]], levels=c(2,1))
 
       if (has.data && append)
          dat <- cbind(data[rep(seq_len(k), each=2),], dat)
@@ -1034,7 +1068,7 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, vlong=FALSE, append=TRUE, 
             slab <- slab[not.na]
             if (has.data)
                data <- data[not.na,]
-            warning(mstyle$warning("Tables with NAs omitted."))
+            warning(mstyle$warning("Tables with NAs omitted."), call.=FALSE)
          }
 
          if (na.act == "na.fail")
@@ -1089,7 +1123,7 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, vlong=FALSE, append=TRUE, 
             slab <- slab[not.na]
             if (has.data)
                data <- data[not.na,]
-            warning(mstyle$warning("Tables with NAs omitted."))
+            warning(mstyle$warning("Tables with NAs omitted."), call.=FALSE)
          }
 
          if (na.act == "na.fail")
@@ -1124,7 +1158,7 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, vlong=FALSE, append=TRUE, 
          }
 
          dat[[1]] <- factor(dat[[1]])
-         dat[[2]] <- factor(dat[[2]])
+         dat[[2]] <- factor(dat[[2]], levels=c(2,1))
 
          if (has.data && append)
             dat <- cbind(data[rep(seq_len(k), each=2),], dat)
@@ -1173,7 +1207,7 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, vlong=FALSE, append=TRUE, 
             slab <- slab[not.na]
             if (has.data)
                data <- data[not.na,]
-            warning(mstyle$warning("Tables with NAs omitted."))
+            warning(mstyle$warning("Tables with NAs omitted."), call.=FALSE)
          }
 
          if (na.act == "na.fail")
@@ -1212,7 +1246,7 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, vlong=FALSE, append=TRUE, 
 
    #########################################################################
 
-   if (is.element(measure, c("MN","MNLN"))) {
+   if (is.element(measure, c("MN","MNLN","SMD1"))) {
 
       ### check for NAs in table data and act accordingly
 
@@ -1229,7 +1263,7 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, vlong=FALSE, append=TRUE, 
             slab <- slab[not.na]
             if (has.data)
                data <- data[not.na,]
-            warning(mstyle$warning("Tables with NAs omitted."))
+            warning(mstyle$warning("Tables with NAs omitted."), call.=FALSE)
          }
 
          if (na.act == "na.fail")
@@ -1294,7 +1328,7 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, vlong=FALSE, append=TRUE, 
             slab <- slab[not.na]
             if (has.data)
                data <- data[not.na,]
-            warning(mstyle$warning("Tables with NAs omitted."))
+            warning(mstyle$warning("Tables with NAs omitted."), call.=FALSE)
          }
 
          if (na.act == "na.fail")
@@ -1381,7 +1415,7 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, vlong=FALSE, append=TRUE, 
             slab <- slab[not.na]
             if (has.data)
                data <- data[not.na,]
-            warning(mstyle$warning("Tables with NAs omitted."))
+            warning(mstyle$warning("Tables with NAs omitted."), call.=FALSE)
          }
 
          if (na.act == "na.fail")

@@ -5,14 +5,14 @@ context("Checking tip: rma() results match up with those from lm()")
 source("tolerances.r") # read in tolerances
 
 ### this is essentially checking the equivalence of the results as explained here:
-### http://www.metafor-project.org/doku.php/tips:regression_with_rma
+### https://www.metafor-project.org/doku.php/tips:regression_with_rma
 
 test_that("results for rma() and lm() match for method='FE'.", {
 
    stackloss$vi <- 0
 
    res.lm  <- lm(stack.loss ~ Air.Flow + Water.Temp + Acid.Conc., data=stackloss)
-   expect_warning(res.rma <- rma(stack.loss, vi, mods =  ~ Air.Flow + Water.Temp + Acid.Conc., data=stackloss, test="knha", control=list(REMLf=FALSE)))
+   res.rma <- rma(stack.loss, vi, mods =  ~ Air.Flow + Water.Temp + Acid.Conc., data=stackloss, test="knha", control=list(REMLf=FALSE))
 
    ### log likelihood (REML) should be the same
    expect_equivalent(logLik(res.lm, REML=TRUE), logLik(res.rma), tolerance=.tol[["fit"]])

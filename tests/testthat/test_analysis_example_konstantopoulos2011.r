@@ -1,6 +1,6 @@
 ### library(metafor); library(testthat); Sys.setenv(NOT_CRAN="true")
 
-### see also: http://www.metafor-project.org/doku.php/analyses:konstantopoulos2011
+### see also: https://www.metafor-project.org/doku.php/analyses:konstantopoulos2011
 
 context("Checking analysis example: konstantopoulos2011")
 
@@ -67,7 +67,7 @@ test_that("results are correct for the three-level random-effects model fitted w
    expect_equivalent(res.ml$sigma2, c(0.0577, 0.0329), tolerance=.tol[["var"]])
 
    sav <- predict(res.ml)
-   expect_equivalent(c(sav$cr.lb, sav$cr.ub), c(-0.4262, 0.7951), tolerance=.tol[["pred"]])
+   expect_equivalent(c(sav$pi.lb, sav$pi.ub), c(-0.4262, 0.7951), tolerance=.tol[["pred"]])
 
 })
 
@@ -118,7 +118,8 @@ test_that("profiling works for the three-level random-effects model (multilevel 
    ### profile variance components
    opar <- par(no.readonly=TRUE)
    par(mfrow=c(2,1))
-   profile(res.ml, progbar=FALSE)
+   sav <- profile(res.ml, progbar=FALSE)
+   out <- capture.output(print(sav))
    par(opar)
 
 })

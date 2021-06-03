@@ -2,8 +2,7 @@ leave1out.rma.mh <- function(x, digits, transf, targs, progbar=FALSE, ...) {
 
    mstyle <- .get.mstyle("crayon" %in% .packages())
 
-   if (!inherits(x, "rma.mh"))
-      stop(mstyle$stop("Argument 'x' must be an object of class \"rma.mh\"."))
+   .chkclass(class(x), must="rma.mh")
 
    na.act <- getOption("na.action")
 
@@ -30,6 +29,8 @@ leave1out.rma.mh <- function(x, digits, transf, targs, progbar=FALSE, ...) {
 
    ddd <- list(...)
 
+   .chkdots(ddd, c("time"))
+
    if (.isTRUE(ddd$time))
       time.start <- proc.time()
 
@@ -44,26 +45,26 @@ leave1out.rma.mh <- function(x, digits, transf, targs, progbar=FALSE, ...) {
    QE    <- rep(NA_real_, x$k.f)
    QEp   <- rep(NA_real_, x$k.f)
    #tau2 <- rep(NA_real_, x$k.f)
-   #I2   <- rep(NA_real_, x$k.f)
-   #H2   <- rep(NA_real_, x$k.f)
+   I2   <- rep(NA_real_, x$k.f)
+   H2   <- rep(NA_real_, x$k.f)
 
    ### note: skipping NA cases
 
    if (progbar)
-      pbar <- txtProgressBar(min=0, max=x$k.f, style=3)
+      pbar <- pbapply::startpb(min=0, max=x$k.f)
 
    for (i in seq_len(x$k.f)) {
 
       if (progbar)
-         setTxtProgressBar(pbar, i)
+         pbapply::setpb(pbar, i)
 
       if (!x$not.na[i])
          next
 
       if (is.element(x$measure, c("RR","OR","RD"))) {
-         res <- try(suppressWarnings(rma.mh(ai=x$ai.f, bi=x$bi.f, ci=x$ci.f, di=x$di.f, measure=x$measure, add=x$add, to=x$to, drop00=x$drop00, correct=x$correct, subset=-i)), silent=TRUE)
+         res <- try(suppressWarnings(rma.mh(ai=x$ai.f, bi=x$bi.f, ci=x$ci.f, di=x$di.f, measure=x$measure, add=x$add, to=x$to, drop00=x$drop00, correct=x$correct, level=x$level, subset=-i)), silent=TRUE)
       } else {
-         res <- try(suppressWarnings(rma.mh(x1i=x$x1i.f, x2i=x$x2i.f, t1i=x$t1i.f, t2i=x$t2i.f, measure=x$measure, add=x$add, to=x$to, drop00=x$drop00, correct=x$correct, subset=-i)), silent=TRUE)
+         res <- try(suppressWarnings(rma.mh(x1i=x$x1i.f, x2i=x$x2i.f, t1i=x$t1i.f, t2i=x$t2i.f, measure=x$measure, add=x$add, to=x$to, drop00=x$drop00, correct=x$correct, level=x$level, subset=-i)), silent=TRUE)
       }
 
       if (inherits(res, "try-error"))
@@ -78,13 +79,13 @@ leave1out.rma.mh <- function(x, digits, transf, targs, progbar=FALSE, ...) {
       QE[i]    <- res$QE
       QEp[i]   <- res$QEp
       #tau2[i] <- res$tau2
-      #I2[i]   <- res$I2
-      #H2[i]   <- res$H2
+      I2[i]   <- res$I2
+      H2[i]   <- res$H2
 
    }
 
    if (progbar)
-      close(pbar)
+      pbapply::closepb(pbar)
 
    #########################################################################
 
@@ -117,19 +118,18 @@ leave1out.rma.mh <- function(x, digits, transf, targs, progbar=FALSE, ...) {
    #########################################################################
 
    if (na.act == "na.omit") {
-      out <- list(estimate=beta[x$not.na], se=se[x$not.na], zval=zval[x$not.na], pval=pval[x$not.na], ci.lb=ci.lb[x$not.na], ci.ub=ci.ub[x$not.na], Q=QE[x$not.na], Qp=QEp[x$not.na])
+      out <- list(estimate=beta[x$not.na], se=se[x$not.na], zval=zval[x$not.na], pval=pval[x$not.na], ci.lb=ci.lb[x$not.na], ci.ub=ci.ub[x$not.na], Q=QE[x$not.na], Qp=QEp[x$not.na], I2=I2[x$not.na], H2=H2[x$not.na])
       out$slab <- x$slab[x$not.na]
    }
 
    if (na.act == "na.exclude" || na.act == "na.pass") {
-      out <- list(estimate=beta, se=se, zval=zval, pval=pval, ci.lb=ci.lb, ci.ub=ci.ub, Q=QE, Qp=QEp)
+      out <- list(estimate=beta, se=se, zval=zval, pval=pval, ci.lb=ci.lb, ci.ub=ci.ub, Q=QE, Qp=QEp, I2=I2, H2=H2)
       out$slab <- x$slab
    }
 
    if (na.act == "na.fail" && any(!x$not.na))
       stop(mstyle$stop("Missing values in results."))
 
-   #out <- out[-c(2,3,4)]
    out$digits <- digits
    out$transf <- transf
 

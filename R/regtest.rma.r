@@ -4,20 +4,7 @@ regtest.rma <- function(x, model="rma", predictor="sei", ret.fit=FALSE, digits, 
 
    mstyle <- .get.mstyle("crayon" %in% .packages())
 
-   if (!inherits(x, "rma"))
-      stop(mstyle$stop("Argument 'x' must be an object of class \"rma\"."))
-
-   if (inherits(x, "robust.rma"))
-      stop(mstyle$stop("Method not available for objects of class \"robust.rma\"."))
-
-   if (inherits(x, "rma.glmm"))
-      stop(mstyle$stop("Method not available for objects of class \"rma.glmm\"."))
-
-   if (inherits(x, "rma.mv"))
-      stop(mstyle$stop("Method not available for objects of class \"rma.mv\"."))
-
-   if (inherits(x, "rma.ls"))
-      stop(mstyle$stop("Method not available for objects of class \"rma.ls\"."))
+   .chkclass(class(x), must="rma", notav=c("robust.rma", "rma.glmm", "rma.mv", "rma.ls", "rma.uni.selmodel"))
 
    model <- match.arg(model, c("lm", "rma"))
    predictor <- match.arg(predictor, c("sei", "vi", "ni", "ninv", "sqrtni", "sqrtninv"))
@@ -32,10 +19,16 @@ regtest.rma <- function(x, model="rma", predictor="sei", ret.fit=FALSE, digits, 
 
    yi <- x$yi
    vi <- x$vi
-   weights <- x$weights
    ni <- x$ni ### may be NULL
-   X  <- x$X
    p  <- x$p
+
+   if (inherits(x, "rma.mh") || inherits(x, "rma.peto")) {
+      weights <- NULL
+      X <- cbind(rep(1,length(yi)))
+   } else {
+      weights <- x$weights
+      X <- x$X
+   }
 
    if (predictor == "sei")
       X <- cbind(X, sei=sqrt(vi))
@@ -72,25 +65,45 @@ regtest.rma <- function(x, model="rma", predictor="sei", ret.fit=FALSE, digits, 
 
    if (model == "rma") {
 
-      fit  <- rma.uni(yi, vi, weights=weights, mods=X, intercept=FALSE, method=x$method, weighted=x$weighted, test=x$test, tau2=ifelse(x$tau2.fix, x$tau2, NA), control=x$control, ...)
+      fit  <- rma.uni(yi, vi, weights=weights, mods=X, intercept=FALSE, method=x$method, weighted=x$weighted, test=x$test, level=x$level, tau2=ifelse(x$tau2.fix, x$tau2, NA), control=x$control, ...)
       zval <- fit$zval[p+1]
       pval <- fit$pval[p+1]
-      dfs  <- fit$dfs
+      ddf  <- fit$ddf
 
    } else {
 
       yi   <- c(yi) ### to remove attributes
       fit  <- lm(yi ~ X - 1, weights=1/vi)
-      fit  <- summary(fit)
-      zval <- coef(fit)[p+1,3]
-      pval <- coef(fit)[p+1,4]
-      dfs  <- x$k - x$p - 1
+      tmp  <- summary(fit)
+      zval <- coef(tmp)[p+1,3]
+      pval <- coef(tmp)[p+1,4]
+      ddf  <- x$k - x$p - 1
 
    }
 
-   res <- list(model=model, predictor=predictor, zval=zval, pval=pval, dfs=dfs, method=x$method, digits=digits, ret.fit=ret.fit, fit=fit)
+   ### get the 'limit estimate'
 
-   class(res) <- "regtest.rma"
+   if (predictor %in% c("sei", "vi", "ninv", "sqrtninv") && p == 1L && .is.intercept(X[,1])) {
+
+      if (model=="lm") {
+         est <- coef(tmp)[1,1]
+         ci.lb <- est - qt(x$level/2, df=ddf, lower.tail=FALSE) * coef(tmp)[1,2]
+         ci.ub <- est + qt(x$level/2, df=ddf, lower.tail=FALSE) * coef(tmp)[1,2]
+      } else {
+         est <- coef(fit)[1]
+         ci.lb <- fit$ci.lb[1]
+         ci.ub <- fit$ci.ub[1]
+      }
+
+   } else {
+
+      est <- ci.lb <- ci.ub <- NULL
+
+   }
+
+   res <- list(model=model, predictor=predictor, zval=zval, pval=pval, dfs=ddf, ddf=ddf, method=x$method, digits=digits, ret.fit=ret.fit, fit=fit, est=est, ci.lb=ci.lb, ci.ub=ci.ub)
+
+   class(res) <- "regtest"
    return(res)
 
 }

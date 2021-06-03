@@ -5,8 +5,14 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
 
    mstyle <- .get.mstyle("crayon" %in% .packages())
 
-   if (missing(measure))
+   if (missing(measure) && missing(yi))
       stop(mstyle$stop("Must specify an effect size or outcome measure via the 'measure' argument."))
+
+   if (!missing(yi) && missing(measure))
+      measure <- "GEN"
+
+   if (!is.character(measure))
+      stop(mstyle$stop("The 'measure' argument must be a character string."))
 
    if (!is.element(measure, c("RR","OR","PETO","RD","AS","PHI","YUQ","YUY","RTET", ### 2x2 table measures
                               "PBIT","OR2D","OR2DN","OR2DL",                       ### - transformations to SMD
@@ -19,7 +25,7 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
                               "PCOR","ZPCOR","SPCOR",                              ### partial and semi-partial correlations
                               "PR","PLN","PLO","PAS","PFT",                        ### single proportions (and transformations thereof)
                               "IR","IRLN","IRS","IRFT",                            ### single-group person-time data (and transformations thereof)
-                              "MN","MNLN","CVLN","SDLN",                           ### mean, log(mean), log(CV), log(SD)
+                              "MN","MNLN","CVLN","SDLN","SMD1",                    ### mean, log(mean), log(CV), log(SD), single-group SMD
                               "MC","SMCC","SMCR","SMCRH","ROMC","CVRC","VRC",      ### raw/standardized mean change, log(ROM), CVR, and VR for dependent samples
                               "ARAW","AHW","ABT",                                  ### alpha (and transformations thereof)
                               "GEN")))
@@ -28,7 +34,7 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
    if (!is.element(to, c("all","only0","if0all","none")))
       stop(mstyle$stop("Unknown 'to' argument specified."))
 
-   if (any(!is.element(vtype, c("UB","LS","HO","ST","CS","AV")), na.rm=TRUE)) ### vtype can be an entire vector, so use any() and na.rm=TRUE
+   if (any(!is.element(vtype, c("UB","LS","LS2","HO","ST","CS","AV","AVHO")), na.rm=TRUE)) ### vtype can be an entire vector, so use any() and na.rm=TRUE
       stop(mstyle$stop("Unknown 'vtype' argument specified."))
 
    if (add.measure) {
@@ -58,6 +64,12 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
       }
 
    }
+
+   ### check if user is trying to use the 'formula interface' to escalc()
+   ### note: if so, argument 'ai' may mistakenly be a formula, so check for that as well (further below)
+
+   if (hasArg(formula) || hasArg(weights))
+      stop(mstyle$stop("The 'formula interface' to escalc() has been deprecated."))
 
    ### get ... argument and check for extra/superfluous arguments
 
@@ -129,6 +141,8 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
       if (is.element(measure, c("RR","OR","RD","AS","PETO","PHI","YUQ","YUY","RTET","PBIT","OR2D","OR2DN","OR2DL","MPRD","MPRR","MPOR","MPORC","MPPETO"))) {
 
          mf.ai  <- mf[[match("ai",  names(mf))]]
+         if (any("~" %in% as.character(mf.ai)))
+            stop(mstyle$stop("The 'formula interface' to escalc() has been deprecated."))
          mf.bi  <- mf[[match("bi",  names(mf))]]
          mf.ci  <- mf[[match("ci",  names(mf))]]
          mf.di  <- mf[[match("di",  names(mf))]]
@@ -145,26 +159,31 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
 
          k.all <- length(ai)
 
+         if (length(ai)==0L || length(bi)==0L || length(ci)==0L || length(di)==0L)
+            stop(mstyle$stop("Cannot compute outcomes. Check that all of the required \n  information is specified via the appropriate arguments."))
+
+         if (!all(k.all == c(length(ai),length(bi),length(ci),length(di))))
+            stop(mstyle$stop("Supplied data vectors are not all of the same length."))
+
          if (!is.null(subset)) {
+            subset <- .setnafalse(subset, k=k.all)
             ai <- ai[subset]
             bi <- bi[subset]
             ci <- ci[subset]
             di <- di[subset]
-            n1i <- n1i[subset]
-            n2i <- n2i[subset]
          }
 
-         if (length(ai)==0L || length(bi)==0L || length(ci)==0L || length(di)==0L)
-            stop(mstyle$stop("Cannot compute outcomes. Check that all of the required \n  information is specified via the appropriate arguments."))
-
-         if (!all(length(ai) == c(length(ai),length(bi),length(ci),length(di))))
-            stop(mstyle$stop("Supplied data vectors are not all of the same length."))
+         n1i <- ai + bi
+         n2i <- ci + di
 
          if (any(c(ai > n1i, ci > n2i), na.rm=TRUE))
             stop(mstyle$stop("One or more event counts are larger than the corresponding group sizes."))
 
          if (any(c(ai, bi, ci, di) < 0, na.rm=TRUE))
             stop(mstyle$stop("One or more counts are negative."))
+
+         if (any(c(n1i < 0, n2i < 0), na.rm=TRUE))
+            stop(mstyle$stop("One or more group sizes are < 0."))
 
          ni.u <- ai + bi + ci + di ### unadjusted total sample sizes
 
@@ -302,11 +321,11 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
             vi <- rep(NA_real_, k)
 
             if (addvi) {
-               mnwp1i <- sum(ai, na.rm=TRUE) / sum(n1i, na.rm=TRUE) ### sample size weighted average of proportions (same as sum(n1i*p1i)/sum(n1i))
-               mnwp2i <- sum(ci, na.rm=TRUE) / sum(n2i, na.rm=TRUE) ### sample size weighted average of proportions (same as sum(n2i*p2i)/sum(n2i))
+               mnwp1i <- .wmean(p1i, n1i, na.rm=TRUE) ### sample size weighted average of proportions
+               mnwp2i <- .wmean(p2i, n2i, na.rm=TRUE) ### sample size weighted average of proportions
             } else {
-               mnwp1i.u <- sum(ai.u, na.rm=TRUE) / sum(n1i.u, na.rm=TRUE) ### sample size weighted average of proportions (same as sum(n1i.u*p1i.u)/sum(n1i.u))
-               mnwp2i.u <- sum(ci.u, na.rm=TRUE) / sum(n2i.u, na.rm=TRUE) ### sample size weighted average of proportions (same as sum(n2i.u*p2i.u)/sum(n2i.u))
+               mnwp1i.u <- .wmean(p1i.u, n1i.u, na.rm=TRUE) ### sample size weighted average of proportions
+               mnwp2i.u <- .wmean(p2i.u, n2i.u, na.rm=TRUE) ### sample size weighted average of proportions
             }
 
             if (!all(is.element(vtype, c("UB","LS","AV"))))
@@ -543,24 +562,25 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
 
          k.all <- length(x1i)
 
+         if (length(x1i)==0L || length(x2i)==0L || length(t1i)==0L || length(t2i)==0L)
+            stop(mstyle$stop("Cannot compute outcomes. Check that all of the required \n  information is specified via the appropriate arguments."))
+
+         if (!all(k.all == c(length(x1i),length(x2i),length(t1i),length(t2i))))
+            stop(mstyle$stop("Supplied data vectors are not all of the same length."))
+
          if (!is.null(subset)) {
+            subset <- .setnafalse(subset, k=k.all)
             x1i <- x1i[subset]
             x2i <- x2i[subset]
             t1i <- t1i[subset]
             t2i <- t2i[subset]
          }
 
-         if (length(x1i)==0L || length(x2i)==0L || length(t1i)==0L || length(t2i)==0L)
-            stop(mstyle$stop("Cannot compute outcomes. Check that all of the required \n  information is specified via the appropriate arguments."))
-
-         if (!all(length(x1i) == c(length(x1i),length(x2i),length(t1i),length(t2i))))
-            stop(mstyle$stop("Supplied data vectors are not all of the same length."))
-
          if (any(c(x1i, x2i) < 0, na.rm=TRUE))
             stop(mstyle$stop("One or more counts are negative."))
 
-         if (any(c(t1i, t2i) < 0, na.rm=TRUE))
-            stop(mstyle$stop("One or more person-times are negative."))
+         if (any(c(t1i, t2i) <= 0, na.rm=TRUE))
+            stop(mstyle$stop("One or more person-times are <= 0."))
 
          ni.u <- t1i + t2i ### unadjusted total sample sizes
 
@@ -689,15 +709,6 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
 
          k.all <- length(n1i)
 
-         if (!is.null(subset)) {
-            m1i  <- m1i[subset]
-            m2i  <- m2i[subset]
-            sd1i <- sd1i[subset]
-            sd2i <- sd2i[subset]
-            n1i  <- n1i[subset]
-            n2i  <- n2i[subset]
-         }
-
          ### for these measures, need m1i, m2i, sd1i, sd2i, n1i, and n2i
 
          if (is.element(measure, c("MD","SMD","SMDH","ROM","RPB","RBIS","D2OR","D2ORN","D2ORL","CVR"))) {
@@ -705,7 +716,7 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
             if (length(m1i)==0L || length(m2i)==0L || length(sd1i)==0L || length(sd2i)==0L || length(n1i)==0L || length(n2i)==0L)
                stop(mstyle$stop("Cannot compute outcomes. Check that all of the required \n  information is specified via the appropriate arguments."))
 
-            if (!all(length(m1i) == c(length(m1i),length(m2i),length(sd1i),length(sd2i),length(n1i),length(n2i))))
+            if (!all(k.all == c(length(m1i),length(m2i),length(sd1i),length(sd2i),length(n1i),length(n2i))))
                stop(mstyle$stop("Supplied data vectors are not all of the same length."))
 
          }
@@ -717,16 +728,26 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
             if (length(sd1i)==0L || length(sd2i)==0L || length(n1i)==0L || length(n2i)==0L)
                stop(mstyle$stop("Cannot compute outcomes. Check that all of the required \n  information is specified via the appropriate arguments."))
 
-            if (!all(length(sd1i) == c(length(sd1i),length(sd2i),length(n1i),length(n2i))))
+            if (!all(k.all == c(length(sd1i),length(sd2i),length(n1i),length(n2i))))
                stop(mstyle$stop("Supplied data vectors are not all of the same length."))
 
+         }
+
+         if (!is.null(subset)) {
+            subset <- .setnafalse(subset, k=k.all)
+            m1i  <- m1i[subset]
+            m2i  <- m2i[subset]
+            sd1i <- sd1i[subset]
+            sd2i <- sd2i[subset]
+            n1i  <- n1i[subset]
+            n2i  <- n2i[subset]
          }
 
          if (any(c(sd1i, sd2i) < 0, na.rm=TRUE))
             stop(mstyle$stop("One or more standard deviations are negative."))
 
-         if (any(c(n1i, n2i) < 0, na.rm=TRUE))
-            stop(mstyle$stop("One or more sample sizes are negative."))
+         if (any(c(n1i, n2i) < 1, na.rm=TRUE))
+            stop(mstyle$stop("One or more sample sizes are < 1."))
 
          ni.u <- n1i + n2i ### unadjusted total sample sizes
 
@@ -780,10 +801,10 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
 
             vi <- rep(NA_real_, k)
 
-            mnwyi <- sum(ni*yi, na.rm=TRUE) / sum(ni, na.rm=TRUE) ### sample size weighted average of yi's
+            mnwyi <- .wmean(yi, ni, na.rm=TRUE) ### sample size weighted average of yi's
 
-            if (!all(is.element(vtype, c("UB","LS","AV"))))
-               stop(mstyle$stop("For this outcome measure, 'vtype' must be either 'UB', 'LS', or 'AV'."))
+            if (!all(is.element(vtype, c("UB","LS","LS2","AV"))))
+               stop(mstyle$stop("For this outcome measure, 'vtype' must be either 'UB', 'LS', 'LS2', or 'AV'."))
 
             for (i in seq_len(k)) {
 
@@ -798,6 +819,10 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
                ### estimator assuming homogeneity (using sample size weighted average of the yi's)
                if (vtype[i] == "AV")
                   vi[i] <- 1/n1i[i] + 1/n2i[i] + mnwyi^2/(2*ni[i])
+
+               ### large sample approximation to the sampling variance (using equation from Borenstein, 2009)
+               if (vtype[i] == "LS2")
+                  vi[i] <- cmi[i]^2 * (1/n1i[i] + 1/n2i[i] + di[i]^2/(2*ni[i]))
 
             }
 
@@ -827,8 +852,13 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
 
             vi <- rep(NA_real_, k)
 
-            if (!all(is.element(vtype, c("LS","HO"))))
-               stop(mstyle$stop("For this outcome measure, 'vtype' must be either 'LS' or 'HO'."))
+            mn1wcvi <- .wmean(sd1i/m1i, n1i, na.rm=TRUE) ### sample size weighted average of the coefficient of variation in group 1
+            mn2wcvi <- .wmean(sd2i/m2i, n2i, na.rm=TRUE) ### sample size weighted average of the coefficient of variation in group 2
+            not.na  <- !(is.na(n1i) | is.na(n2i) | is.na(sd1i/m1i) | is.na(sd2i/m2i))
+            mnwcvi  <- (sum(n1i[not.na]*(sd1i/m1i)[not.na]) + sum(n2i[not.na]*(sd2i/m2i)[not.na])) / sum((n1i+n2i)[not.na]) ### sample size weighted average of the two CV values
+
+            if (!all(is.element(vtype, c("LS","HO","AV","AVHO"))))
+               stop(mstyle$stop("For this outcome measure, 'vtype' must be either 'LS', 'HO', 'AV', or 'AVHO'."))
 
             for (i in seq_len(k)) {
 
@@ -839,6 +869,14 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
                ### estimator assuming homoscedasticity
                if (vtype[i] == "HO")
                   vi[i] <- sdpi[i]^2/(n1i[i]*m1i[i]^2) + sdpi[i]^2/(n2i[i]*m2i[i]^2)
+
+               ### estimator using the weighted averages of the CV values
+               if (vtype[i] == "AV")
+                  vi[i] <- mn1wcvi^2/n1i[i] + mn2wcvi^2/n2i[i]
+
+               ### estimator using the weighted average of two weighted averages of the CV values
+               if (vtype[i] == "AVHO")
+                  vi[i] <- mnwcvi^2 * (1/n1i[i] + 1/n2i[i])
 
             }
 
@@ -938,33 +976,32 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
 
          k.all <- length(ri)
 
-         if (!is.null(subset)) {
-            ri <- ri[subset]
-            ni <- ni[subset]
-         }
-
          if (length(ri)==0L || length(ni)==0L)
             stop(mstyle$stop("Cannot compute outcomes. Check that all of the required \n  information is specified via the appropriate arguments."))
 
          if (length(ri) != length(ni))
             stop(mstyle$stop("Supplied data vectors are not of the same length."))
 
+         if (!is.null(subset)) {
+            subset <- .setnafalse(subset, k=k.all)
+            ri <- ri[subset]
+            ni <- ni[subset]
+         }
+
          if (any(abs(ri) > 1, na.rm=TRUE))
             stop(mstyle$stop("One or more correlations are > 1 or < -1."))
 
-         if (any(ni < 0, na.rm=TRUE))
-            stop(mstyle$stop("One or more sample sizes are negative."))
+         if (any(ni < 1, na.rm=TRUE))
+            stop(mstyle$stop("One or more sample sizes are < 1."))
 
          if (measure != "UCOR" && vtype == "UB")
             stop(mstyle$stop("Use of vtype='UB' only permitted when measure='UCOR'."))
 
-         if (any(ni <= 4, na.rm=TRUE)) {
-            if (measure == "UCOR") {
-               warning(mstyle$warning("Cannot compute the bias-corrected correlation coefficient when ni <= 4."))
-            } else {
-               warning(mstyle$warning("Cannot estimate the sampling variance when ni <= 4."))
-            }
-         }
+         if (measure == "UCOR" && any(ni <= 4, na.rm=TRUE))
+            warning(mstyle$warning("Cannot compute the bias-corrected correlation coefficient when ni <= 4."), call.=FALSE)
+
+         if (measure == "ZCOR" && any(ni <= 3, na.rm=TRUE))
+            warning(mstyle$warning("Cannot estimate the sampling variance when ni <= 3."), call.=FALSE)
 
          ni.u <- ni ### unadjusted total sample sizes
 
@@ -992,7 +1029,7 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
 
             vi <- rep(NA_real_, k)
 
-            mnwyi <- sum(ni*yi, na.rm=TRUE) / sum(ni, na.rm=TRUE) ### sample size weighted average of yi's
+            mnwyi <- .wmean(yi, ni, na.rm=TRUE) ### sample size weighted average of yi's
 
             if (!all(is.element(vtype, c("UB","LS","AV"))))
                stop(mstyle$stop("For this outcome measure, 'vtype' must be either 'UB', 'LS', or 'AV'."))
@@ -1024,9 +1061,9 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
             vi <- 1/(ni-3)
          }
 
-         ### set sampling variances for ni <= 4 to NA
+         ### set sampling variances for ni <= 3 to NA
 
-         vi[ni <= 4] <- NA
+         vi[ni <= 3] <- NA
 
       }
 
@@ -1045,30 +1082,31 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
 
          k.all <- length(ti)
 
-         if (!is.null(subset)) {
-            ti  <- ti[subset]
-            r2i <- r2i[subset]
-            mi  <- mi[subset]
-            ni  <- ni[subset]
-         }
-
          if (measure=="PCOR" && (length(ti)==0L || length(ni)==0L || length(mi)==0L))
             stop(mstyle$stop("Cannot compute outcomes. Check that all of the required \n  information is specified via the appropriate arguments."))
 
          if (measure=="SPCOR" && (length(ti)==0L || length(ni)==0L || length(mi)==0L || length(r2i)==0L))
             stop(mstyle$stop("Cannot compute outcomes. Check that all of the required \n  information is specified via the appropriate arguments."))
 
-         if (measure=="PCOR" && !all(length(ti) == c(length(ni),length(mi))))
+         if (measure=="PCOR" && !all(k.all == c(length(ni),length(mi))))
             stop(mstyle$stop("Supplied data vectors are not all of the same length."))
 
-         if (measure=="SPCOR" && !all(length(ti) == c(length(ni),length(mi),length(r2i))))
+         if (measure=="SPCOR" && !all(k.all == c(length(ni),length(mi),length(r2i))))
             stop(mstyle$stop("Supplied data vectors are not all of the same length."))
+
+         if (!is.null(subset)) {
+            subset <- .setnafalse(subset, k=k.all)
+            ti  <- ti[subset]
+            r2i <- r2i[subset]
+            mi  <- mi[subset]
+            ni  <- ni[subset]
+         }
 
          if (measure=="SPCOR" && any(r2i > 1 | r2i < 0, na.rm=TRUE))
             stop(mstyle$stop("One or more R^2 values are > 1 or < 0."))
 
-         if (any(ni < 0, na.rm=TRUE))
-            stop(mstyle$stop("One or more sample sizes are negative."))
+         if (any(ni < 1, na.rm=TRUE))
+            stop(mstyle$stop("One or more sample sizes are < 1."))
 
          if (any(mi < 0, na.rm=TRUE))
             stop(mstyle$stop("One or more mi values are negative."))
@@ -1083,8 +1121,31 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
          ### partial correlation coefficient
 
          if (measure == "PCOR") {
+
             yi <- ti / sqrt(ti^2 + (ni - mi - 1))
-            vi <- (1 - yi^2)^2 / (ni - mi - 1)
+
+            if (length(vtype) == 1L)
+               vtype <- rep(vtype, k)
+
+            vi <- rep(NA_real_, k)
+
+            mnwyi <- .wmean(yi, ni, na.rm=TRUE) ### sample size weighted average of yi's
+
+            if (!all(is.element(vtype, c("LS","AV"))))
+               stop(mstyle$stop("For this outcome measure, 'vtype' must be either 'LS' or 'AV'."))
+
+            for (i in seq_len(k)) {
+
+               ### large sample approximation to the sampling variance
+               if (vtype[i] == "LS")
+                  vi[i] <- (1 - yi[i]^2)^2 / (ni[i] - mi[i] - 1)
+
+               ### estimator assuming homogeneity (using sample size weighted average of the yi's)
+               if (vtype[i] == "AV")
+                  vi[i] <- (1 - mnwyi^2)^2 / (ni[i] - mi[i] - 1)
+
+            }
+
          }
 
          ### r-to-z transformed partial correlation
@@ -1098,8 +1159,31 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
          ### semi-partial correlation coefficient
 
          if (measure == "SPCOR") {
+
             yi <- ti * sqrt(1 - r2i) / sqrt(ni - mi - 1)
-            vi <- (r2i^2 - 2*r2i + (r2i - yi^2) + 1 - (r2i - yi^2)^2) / ni
+
+            if (length(vtype) == 1L)
+               vtype <- rep(vtype, k)
+
+            vi <- rep(NA_real_, k)
+
+            mnwyi <- .wmean(yi, ni, na.rm=TRUE) ### sample size weighted average of yi's
+
+            if (!all(is.element(vtype, c("LS","AV"))))
+               stop(mstyle$stop("For this outcome measure, 'vtype' must be either 'LS' or 'AV'."))
+
+            for (i in seq_len(k)) {
+
+               ### large sample approximation to the sampling variance
+               if (vtype[i] == "LS")
+                  vi[i] <- (r2i[i]^2 - 2*r2i[i] + (r2i[i] - yi[i]^2) + 1 - (r2i[i] - yi[i]^2)^2) / ni[i]
+
+               ### estimator assuming homogeneity (using sample size weighted average of the yi's)
+               if (vtype[i] == "AV")
+                  vi[i] <- (r2i[i]^2 - 2*r2i[i] + (r2i[i] - mnwyi^2) + 1 - (r2i[i] - mnwyi^2)^2) / ni[i]
+
+            }
+
          }
 
       }
@@ -1118,17 +1202,19 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
 
          k.all <- length(xi)
 
-         if (!is.null(subset)) {
-            xi <- xi[subset]
-            mi <- mi[subset]
-            ni <- ni[subset]
-         }
-
          if (length(xi)==0L || length(mi)==0L)
             stop(mstyle$stop("Cannot compute outcomes. Check that all of the required \n  information is specified via the appropriate arguments."))
 
          if (length(xi) != length(mi))
             stop(mstyle$stop("Supplied data vectors are not all of the same length."))
+
+         if (!is.null(subset)) {
+            subset <- .setnafalse(subset, k=k.all)
+            xi <- xi[subset]
+            mi <- mi[subset]
+         }
+
+         ni <- xi + mi
 
          if (any(xi > ni, na.rm=TRUE))
             stop(mstyle$stop("One or more event counts are larger than the corresponding group sizes."))
@@ -1136,7 +1222,10 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
          if (any(c(xi, mi) < 0, na.rm=TRUE))
             stop(mstyle$stop("One or more counts are negative."))
 
-         ni.u <- xi + mi ### unadjusted total sample sizes
+         if (any(ni < 1, na.rm=TRUE))
+            stop(mstyle$stop("One or more group sizes are < 1."))
+
+         ni.u <- ni ### unadjusted total sample sizes
 
          k <- length(xi)
 
@@ -1210,9 +1299,9 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
             vi <- rep(NA_real_, k)
 
             if (addvi) {
-               mnwpri <- sum(xi, na.rm=TRUE) / sum(ni, na.rm=TRUE) ### sample size weighted average of proportions (same as sum(ni*pri)/sum(ni))
+               mnwpri <- .wmean(pri, ni, na.rm=TRUE) ### sample size weighted average of proportions
             } else {
-               mnwpri.u <- sum(xi.u, na.rm=TRUE) / sum(ni.u, na.rm=TRUE) ### sample size weighted average of proportions (same as sum(ni.u*pri.u)/sum(ni.u))
+               mnwpri.u <- .wmean(pri.u, ni.u, na.rm=TRUE) ### sample size weighted average of proportions
             }
 
             if (!all(is.element(vtype, c("UB","LS","AV"))))
@@ -1267,10 +1356,10 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
             vi <- rep(NA_real_, k)
 
             if (addvi) {
-               mnwpri <- sum(xi, na.rm=TRUE) / sum(ni, na.rm=TRUE) ### sample size weighted average of proportions (same as sum(ni*pri)/sum(ni))
-               #mnwpri <- exp(sum(ni*yi)/sum(ni))                  ### alternative strategy (exp of the sample size weighted average of the log proportions)
+               mnwpri <- .wmean(pri, ni, na.rm=TRUE) ### sample size weighted average of proportions
+               #mnwpri <- exp(.wmean(yi, ni, na.rm=TRUE)) ### alternative strategy (exp of the sample size weighted average of the log proportions)
             } else {
-               mnwpri.u <- sum(xi.u, na.rm=TRUE) / sum(ni.u, na.rm=TRUE) ### sample size weighted average of proportions (same as sum(ni.u*pri.u)/sum(ni.u))
+               mnwpri.u <- .wmean(pri.u, ni.u, na.rm=TRUE) ### sample size weighted average of proportions
             }
 
             if (!all(is.element(vtype, c("LS","AV"))))
@@ -1316,10 +1405,10 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
             vi <- rep(NA_real_, k)
 
             if (addvi) {
-               mnwpri <- sum(xi, na.rm=TRUE) / sum(ni, na.rm=TRUE) ### sample size weighted average of proportions (same as sum(ni*pri)/sum(ni))
-               #mnwpri <- transf.ilogit(sum(ni*yi)/sum(ni))        ### alternative strategy (inverse logit of the sample size weighted average of the logit transformed proportions)
+               mnwpri <- .wmean(pri, ni, na.rm=TRUE) ### sample size weighted average of proportions
+               #mnwpri <- transf.ilogit(.wmean(yi, ni, na.rm=TRUE)) ### alternative strategy (inverse logit of the sample size weighted average of the logit transformed proportions)
             } else {
-               mnwpri.u <- sum(xi.u, na.rm=TRUE) / sum(ni.u, na.rm=TRUE) ### sample size weighted average of proportions (same as sum(ni.u*pri.u)/sum(ni.u))
+               mnwpri.u <- .wmean(pri.u, ni.u, na.rm=TRUE) ### sample size weighted average of proportions
             }
 
             if (!all(is.element(vtype, c("LS","AV"))))
@@ -1378,22 +1467,23 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
 
          k.all <- length(xi)
 
-         if (!is.null(subset)) {
-            xi <- xi[subset]
-            ti <- ti[subset]
-         }
-
          if (length(xi)==0L || length(ti)==0L)
             stop(mstyle$stop("Cannot compute outcomes. Check that all of the required \n  information is specified via the appropriate arguments."))
 
          if (length(xi) != length(ti))
             stop(mstyle$stop("Supplied data vectors are not all of the same length."))
 
+         if (!is.null(subset)) {
+            subset <- .setnafalse(subset, k=k.all)
+            xi <- xi[subset]
+            ti <- ti[subset]
+         }
+
          if (any(xi < 0, na.rm=TRUE))
             stop(mstyle$stop("One or more counts are negative."))
 
-         if (any(ti < 0, na.rm=TRUE))
-            stop(mstyle$stop("One or more person-times are negative."))
+         if (any(ti <= 0, na.rm=TRUE))
+            stop(mstyle$stop("One or more person-times are <= 0."))
 
          ni.u <- ti ### unadjusted total sample sizes
 
@@ -1497,7 +1587,7 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
 
       ######################################################################
 
-      if (is.element(measure, c("MN","MNLN","CVLN","SDLN"))) {
+      if (is.element(measure, c("MN","MNLN","CVLN","SDLN","SMD1"))) {
 
          mf.mi  <- mf[[match("mi",  names(mf))]] ### for SDLN, do not need to supply this
          mf.sdi <- mf[[match("sdi", names(mf))]]
@@ -1508,20 +1598,14 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
 
          k.all <- length(ni)
 
-         if (!is.null(subset)) {
-            mi  <- mi[subset]
-            sdi <- sdi[subset]
-            ni  <- ni[subset]
-         }
-
          ### for these measures, need mi, sdi, and ni
 
-         if (is.element(measure, c("MN","MNLN","CVLN"))) {
+         if (is.element(measure, c("MN","MNLN","CVLN","SMD1"))) {
 
             if (length(mi)==0L || length(sdi)==0L || length(ni)==0L)
                stop(mstyle$stop("Cannot compute outcomes. Check that all of the required \n  information is specified via the appropriate arguments."))
 
-            if (!all(length(mi) == c(length(mi),length(sdi),length(ni))))
+            if (!all(k.all == c(length(mi),length(sdi),length(ni))))
                stop(mstyle$stop("Supplied data vectors are not all of the same length."))
 
          }
@@ -1538,11 +1622,18 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
 
          }
 
+         if (!is.null(subset)) {
+            subset <- .setnafalse(subset, k=k.all)
+            mi  <- mi[subset]
+            sdi <- sdi[subset]
+            ni  <- ni[subset]
+         }
+
          if (any(sdi < 0, na.rm=TRUE))
             stop(mstyle$stop("One or more standard deviations are negative."))
 
-         if (any(ni < 0, na.rm=TRUE))
-            stop(mstyle$stop("One or more sample sizes are negative."))
+         if (any(ni < 1, na.rm=TRUE))
+            stop(mstyle$stop("One or more sample sizes are < 1."))
 
          if (is.element(measure, c("MNLN","CVLN")) && any(mi < 0, na.rm=TRUE))
             stop(mstyle$stop("One or more means are negative."))
@@ -1581,6 +1672,14 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
             vi <- 1/(2*(ni-1))
          }
 
+         ### single-group SMD
+
+         if (measure == "SMD1") {
+            cmi <- .cmicalc(ni-1)
+            yi <- cmi * mi / sdi
+            vi <- 1/ni + yi^2/(2*ni)
+         }
+
       }
 
       ######################################################################
@@ -1602,15 +1701,6 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
 
          k.all <- length(ni)
 
-         if (!is.null(subset)) {
-            m1i  <- m1i[subset]
-            m2i  <- m2i[subset]
-            sd1i <- sd1i[subset]
-            sd2i <- sd2i[subset]
-            ni   <- ni[subset]
-            ri   <- ri[subset]
-         }
-
          if (is.element(measure, c("MC","SMCC","SMCRH","ROMC","CVRC"))) {
 
             ### for these measures, need m1i, m2i, sd1i, sd2i, ni, and ri
@@ -1618,11 +1708,8 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
             if (length(m1i)==0L || length(m2i)==0L || length(sd1i)==0L || length(sd2i)==0L || length(ni)==0L || length(ri)==0L)
                stop(mstyle$stop("Cannot compute outcomes. Check that all of the required \n  information is specified via the appropriate arguments."))
 
-            if (!all(length(m1i) == c(length(m1i),length(m2i),length(sd1i),length(sd2i),length(ni),length(ri))))
+            if (!all(k.all == c(length(m1i),length(m2i),length(sd1i),length(sd2i),length(ni),length(ri))))
                stop(mstyle$stop("Supplied data vectors are not all of the same length."))
-
-            if (any(c(sd1i, sd2i) < 0, na.rm=TRUE))
-               stop(mstyle$stop("One or more standard deviations are negative."))
 
          }
 
@@ -1633,11 +1720,8 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
             if (length(m1i)==0L || length(m2i)==0L || length(sd1i)==0L || length(ni)==0L || length(ri)==0L)
                stop(mstyle$stop("Cannot compute outcomes. Check that all of the required \n  information is specified via the appropriate arguments."))
 
-            if (!all(length(m1i) == c(length(m1i),length(m2i),length(sd1i),length(ni),length(ri))))
+            if (!all(k.all == c(length(m1i),length(m2i),length(sd1i),length(ni),length(ri))))
                stop(mstyle$stop("Supplied data vectors are not all of the same length."))
-
-            if (any(sd1i < 0, na.rm=TRUE))
-               stop(mstyle$stop("One or more standard deviations are negative."))
 
          }
 
@@ -1648,19 +1732,36 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
             if (length(sd1i)==0L || length(sd2i)==0L || length(ni)==0L || length(ri)==0L)
                stop(mstyle$stop("Cannot compute outcomes. Check that all of the required \n  information is specified via the appropriate arguments."))
 
-            if (!all(length(sd1i) == c(length(sd1i),length(sd2i),length(ni),length(ri))))
+            if (!all(k.all == c(length(sd1i),length(sd2i),length(ni),length(ri))))
                stop(mstyle$stop("Supplied data vectors are not all of the same length."))
 
+         }
+
+         if (!is.null(subset)) {
+            subset <- .setnafalse(subset, k=k.all)
+            m1i  <- m1i[subset]
+            m2i  <- m2i[subset]
+            sd1i <- sd1i[subset]
+            sd2i <- sd2i[subset]
+            ni   <- ni[subset]
+            ri   <- ri[subset]
+         }
+
+         if (is.element(measure, c("MC","SMCC","SMCRH","ROMC","CVRC","VRC"))) {
             if (any(c(sd1i, sd2i) < 0, na.rm=TRUE))
                stop(mstyle$stop("One or more standard deviations are negative."))
+         }
 
+         if (is.element(measure, c("SMCR"))) {
+            if (any(sd1i < 0, na.rm=TRUE))
+               stop(mstyle$stop("One or more standard deviations are negative."))
          }
 
          if (any(abs(ri) > 1, na.rm=TRUE))
             stop(mstyle$stop("One or more correlations are > 1 or < -1."))
 
-         if (any(ni < 0, na.rm=TRUE))
-            stop(mstyle$stop("One or more sample sizes are negative."))
+         if (any(ni < 1, na.rm=TRUE))
+            stop(mstyle$stop("One or more sample sizes are < 1."))
 
          ni.u <- ni ### unadjusted total sample sizes
 
@@ -1680,19 +1781,64 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
          ### note: does not assume homoscedasticity, since we use sddi here
 
          if (measure == "SMCC") {
+
             cmi <- .cmicalc(mi)
             sddi <- sqrt(sd1i^2 + sd2i^2 - 2*ri*sd1i*sd2i)
-            yi <- cmi * (m1i - m2i) / sddi
-            vi <- 1/ni + yi^2 / (2*ni)
+            di <- (m1i - m2i) / sddi
+            yi <- cmi * di
+
+            if (length(vtype) == 1L)
+               vtype <- rep(vtype, k)
+
+            vi <- rep(NA_real_, k)
+
+            if (!all(is.element(vtype, c("LS","LS2"))))
+               stop(mstyle$stop("For this outcome measure, 'vtype' must be either ''LS' or 'LS2'."))
+
+            for (i in seq_len(k)) {
+
+               ### large sample approximation to the sampling variance
+               if (vtype[i] == "LS")
+                  vi[i] <- 1/ni[i] + yi[i]^2 / (2*ni[i])
+
+               ### large sample approximation to the sampling variance
+               if (vtype[i] == "LS2")
+                  vi[i] <- cmi[i]^2 * (1/ni[i] + di[i]^2 / (2*ni[i]))
+
+            }
+
          }
 
          ### standardized mean change with raw score standardization (using sd1i)
          ### note: yi does not assume homoscedasticity, but vi does
 
          if (measure == "SMCR") {
+
             cmi <- .cmicalc(mi)
-            yi <- cmi * (m1i - m2i) / sd1i
-            vi <- 2*(1-ri)/ni + yi^2 / (2*ni)
+            di <- (m1i - m2i) / sd1i
+            yi <- cmi * di
+
+            if (length(vtype) == 1L)
+               vtype <- rep(vtype, k)
+
+            vi <- rep(NA_real_, k)
+
+            if (!all(is.element(vtype, c("LS","LS2"))))
+               stop(mstyle$stop("For this outcome measure, 'vtype' must be either ''LS' or 'LS2'."))
+
+            for (i in seq_len(k)) {
+
+               ### large sample approximation to the sampling variance
+               if (vtype[i] == "LS")
+                  vi[i] <- 2*(1-ri[i])/ni[i] + yi[i]^2 / (2*ni[i])
+
+               ### large sample approximation to the sampling variance (using corrected (!) equation from Borenstein, 2009)
+               if (vtype[i] == "LS2")
+                  vi[i] <- cmi[i]^2 * (2*(1-ri[i])/ni[i] + di[i]^2 / (2*ni[i]))
+                  #vi[i] <- cmi[i]^2 * 2*(1-ri[i]) * (1/ni[i] + di[i]^2 / (2*ni[i])) # as in  Borenstein (2009) but this is incorrect
+
+            }
+
          }
 
          ### standardized mean change with raw score standardization (using sd1i)
@@ -1745,17 +1891,18 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
 
          k.all <- length(ai)
 
+         if (length(ai)==0L || length(mi)==0L || length(ni)==0L)
+            stop(mstyle$stop("Cannot compute outcomes. Check that all of the required \n  information is specified via the appropriate arguments."))
+
+         if (!all(k.all == c(length(ai),length(mi),length(ni))))
+            stop(mstyle$stop("Supplied data vectors are not all of the same length."))
+
          if (!is.null(subset)) {
+            subset <- .setnafalse(subset, k=k.all)
             ai <- ai[subset]
             mi <- mi[subset]
             ni <- ni[subset]
          }
-
-         if (length(ai)==0L || length(mi)==0L || length(ni)==0L)
-            stop(mstyle$stop("Cannot compute outcomes. Check that all of the required \n  information is specified via the appropriate arguments."))
-
-         if (!all(length(ai) == c(length(ai),length(mi),length(ni))))
-            stop(mstyle$stop("Supplied data vectors are not all of the same length."))
 
          if (any(ai > 1, na.rm=TRUE))
             stop(mstyle$stop("One or more alpha values are > 1."))
@@ -1763,8 +1910,8 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
          if (any(mi < 2, na.rm=TRUE))
             stop(mstyle$stop("One or more mi values are < 2."))
 
-         if (any(ni < 0, na.rm=TRUE))
-            stop(mstyle$stop("One or more sample sizes are negative."))
+         if (any(ni < 1, na.rm=TRUE))
+            stop(mstyle$stop("One or more sample sizes are < 1."))
 
          ni.u <- ni ### unadjusted total sample sizes
 
@@ -1819,16 +1966,10 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
 
       if (is.null(vi)) {
          if (is.null(sei)) {
-            stop(mstyle$stop("Need to specify 'vi' or 'sei' argument."))
+            stop(mstyle$stop("Must specify 'vi' or 'sei' argument."))
          } else {
             vi <- sei^2
          }
-      }
-
-      if (!is.null(subset)) {
-         yi <- yi[subset]
-         vi <- vi[subset]
-         ni <- ni[subset]
       }
 
       if (length(yi) != length(vi))
@@ -1836,6 +1977,13 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
 
       if (!is.null(ni) && (length(yi) != length(ni)))
          stop(mstyle$stop("Supplied data vectors are not of the same length."))
+
+      if (!is.null(subset)) {
+         subset <- .setnafalse(subset, k=k.all)
+         yi <- yi[subset]
+         vi <- vi[subset]
+         ni <- ni[subset]
+      }
 
       ni.u <- ni ### unadjusted total sample sizes
 
@@ -1857,7 +2005,7 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
    is.inf <- is.infinite(yi) | is.infinite(vi)
 
    if (any(is.inf)) {
-      warning(mstyle$warning("Some 'yi' and/or 'vi' values equal to +-Inf. Recoded to NAs."))
+      warning(mstyle$warning("Some 'yi' and/or 'vi' values equal to +-Inf. Recoded to NAs."), call.=FALSE)
       yi[is.inf] <- NA
       vi[is.inf] <- NA
    }
@@ -1879,6 +2027,9 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
 
    if (!is.null(slab)) {
 
+      if (length(slab) != k.all)
+         stop(mstyle$stop("Study labels not of same length as data."))
+
       if (is.factor(slab))
          slab <- as.character(slab)
 
@@ -1893,9 +2044,6 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
       if (anyDuplicated(slab))
          slab <- .make.unique(slab)
 
-      if (length(slab) != length(yi))
-         stop(mstyle$stop("Study labels not of same length as data."))
-
    }
 
    ### if include/subset is NULL, set to TRUE vector
@@ -1905,19 +2053,10 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
    if (is.null(subset))
       subset <- rep(TRUE, k.all)
 
-   ### turn numeric include/subset vectors into logical vectors
+   ### turn numeric include vector into logical vector (already done for subset)
 
-   if (is.numeric(include)) {
-      include.logical <- rep(FALSE, k.all)
-      include.logical[include] <- TRUE
-      include <- include.logical
-   }
-
-   if (is.numeric(subset)) {
-      subset.logical <- rep(FALSE, k.all)
-      subset.logical[subset] <- TRUE
-      subset <- subset.logical
-   }
+   if (!is.null(include))
+      include <- .setnafalse(include, arg="include", k=k.all)
 
    ### apply subset to include
 
@@ -1960,7 +2099,8 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
       if (add.measure)
          dat[[var.names[3]]][!is.na(yi) & include & measure.replace] <- measure
 
-      attributes(dat[[var.names[1]]])$ni[include & yi.replace] <- ni.u[include & yi.replace]
+      if (!is.null(ni.u))
+         attributes(dat[[var.names[1]]])$ni[include & yi.replace] <- ni.u[include & yi.replace]
 
    } else {
 
@@ -2003,6 +2143,7 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
    ### add 'out.names' back to object in case these attributes exist (if summary() has been used on the object)
    attr(dat, "sei.names")   <- attr(data, "sei.names")
    attr(dat, "zi.names")    <- attr(data, "zi.names")
+   attr(dat, "pval.names")  <- attr(data, "pval.names")
    attr(dat, "ci.lb.names") <- attr(data, "ci.lb.names")
    attr(dat, "ci.ub.names") <- attr(data, "ci.ub.names")
 

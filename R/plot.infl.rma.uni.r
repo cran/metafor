@@ -4,8 +4,7 @@ col.na="lightgray", ...) {
 
    mstyle <- .get.mstyle("crayon" %in% .packages())
 
-   if (!inherits(x, "infl.rma.uni"))
-      stop(mstyle$stop("Argument 'x' must be an object of class \"infl.rma.uni\"."))
+   .chkclass(class(x), must="infl.rma.uni")
 
    na.act <- getOption("na.action")
 
@@ -155,8 +154,8 @@ col.na="lightgray", ...) {
                if (na.act == "na.exclude" || na.act == "na.pass")
                   llines(seq_len(len.ids)[not.na], zi[not.na], col=col.na, ...)
                llines(seq_len(len.ids), zi, ...)
-               lpoints(seq_len(len.ids), zi, pch=pch, bg=bg, ...)
-               lpoints(seq_len(len.ids)[ids.infl], zi[ids.infl], bg=bg.infl, pch=pch, ...)
+               lpoints(x=seq_len(len.ids),           y=zi,           bg=bg,      pch=pch, ...)
+               lpoints(x=seq_len(len.ids)[ids.infl], y=zi[ids.infl], bg=bg.infl, pch=pch, ...)
                #if (num.infl)
                #   text(seq_len(len.ids)[ids.infl], zi[ids.infl], seq_len(len.ids)[ids.infl], pos=ifelse(zi[ids.infl] > 0, 3, 1), ...)
             } else {
@@ -192,8 +191,8 @@ col.na="lightgray", ...) {
                if (na.act == "na.exclude" || na.act == "na.pass")
                   llines(seq_len(len.ids)[not.na], zi[not.na], col=col.na, ...)
                llines(seq_len(len.ids), zi, ...)
-               lpoints(seq_len(len.ids), zi, pch=pch, bg=bg, ...)
-               lpoints(seq_len(len.ids)[ids.infl], zi[ids.infl], bg=bg.infl, pch=pch, ...)
+               lpoints(x=seq_len(len.ids),           y=zi,           bg=bg,      pch=pch, ...)
+               lpoints(x=seq_len(len.ids)[ids.infl], y=zi[ids.infl], bg=bg.infl, pch=pch, ...)
                #if (num.infl)
                #   text(seq_len(len.ids)[ids.infl], zi[ids.infl], seq_len(len.ids)[ids.infl], pos=ifelse(zi[ids.infl] > 0, 3, 1), ...)
             } else {
@@ -227,8 +226,8 @@ col.na="lightgray", ...) {
                if (na.act == "na.exclude" || na.act == "na.pass")
                   llines(seq_len(len.ids)[not.na], zi[not.na], col=col.na, ...)
                llines(seq_len(len.ids), zi, ...)
-               lpoints(seq_len(len.ids), zi, pch=pch, bg=bg, ...)
-               lpoints(seq_len(len.ids)[ids.infl], zi[ids.infl], bg=bg.infl, pch=pch, ...)
+               lpoints(x=seq_len(len.ids),           y=zi,           bg=bg,      pch=pch, ...)
+               lpoints(x=seq_len(len.ids)[ids.infl], y=zi[ids.infl], bg=bg.infl, pch=pch, ...)
                #if (num.infl)
                #   text(seq_len(len.ids)[ids.infl], zi[ids.infl], seq_len(len.ids)[ids.infl], pos=3, ...)
             } else {
@@ -268,8 +267,8 @@ col.na="lightgray", ...) {
                if (na.act == "na.exclude" || na.act == "na.pass")
                   llines(seq_len(len.ids)[not.na], zi[not.na], col=col.na, ...)
                llines(seq_len(len.ids), zi, ...)
-               lpoints(seq_len(len.ids), zi, pch=pch, bg=bg, ...)
-               lpoints(seq_len(len.ids)[ids.infl], zi[ids.infl], bg=bg.infl, pch=pch, ...)
+               lpoints(x=seq_len(len.ids),           y=zi,           bg=bg,      pch=pch, ...)
+               lpoints(x=seq_len(len.ids)[ids.infl], y=zi[ids.infl], bg=bg.infl, pch=pch, ...)
                #if (num.infl)
                #   text(seq_len(len.ids)[ids.infl], zi[ids.infl], seq_len(len.ids)[ids.infl], pos=ifelse(zi[ids.infl] > 1, 3, 1), ...)
             } else {
@@ -303,8 +302,8 @@ col.na="lightgray", ...) {
                if (na.act == "na.exclude" || na.act == "na.pass")
                   llines(seq_len(len.ids)[not.na], zi[not.na], col=col.na, ...)
                llines(seq_len(len.ids), zi, ...)
-               lpoints(seq_len(len.ids), zi, pch=pch, bg=bg, ...)
-               lpoints(seq_len(len.ids)[ids.infl], zi[ids.infl], bg=bg.infl, pch=pch, ...)
+               lpoints(x=seq_len(len.ids),           y=zi,           bg=bg,      pch=pch, ...)
+               lpoints(x=seq_len(len.ids)[ids.infl], y=zi[ids.infl], bg=bg.infl, pch=pch, ...)
             } else {
                lplot(NA, NA, xlim=c(0,1), ylim=c(0,1), xaxt="n", yaxt="n", main="tau2.del", xlab="", ylab="", ...)
             }
@@ -337,8 +336,8 @@ col.na="lightgray", ...) {
                if (na.act == "na.exclude" || na.act == "na.pass")
                   llines(seq_len(len.ids)[not.na], zi[not.na], col=col.na, ...)
                llines(seq_len(len.ids), zi, ...)
-               lpoints(seq_len(len.ids), zi, pch=pch, bg=bg, ...)
-               lpoints(seq_len(len.ids)[ids.infl], zi[ids.infl], bg=bg.infl, pch=pch, ...)
+               lpoints(x=seq_len(len.ids),           y=zi,           bg=bg,      pch=pch, ...)
+               lpoints(x=seq_len(len.ids)[ids.infl], y=zi[ids.infl], bg=bg.infl, pch=pch, ...)
             } else {
                lplot(NA, NA, xlim=c(0,1), ylim=c(0,1), xaxt="n", yaxt="n", main="QE.del", xlab="", ylab="", ...)
             }
@@ -371,8 +370,8 @@ col.na="lightgray", ...) {
                if (na.act == "na.exclude" || na.act == "na.pass")
                   llines(seq_len(len.ids)[not.na], zi[not.na], col=col.na, ...)
                llines(seq_len(len.ids), zi, ...)
-               lpoints(seq_len(len.ids), zi, pch=pch, bg=bg, ...)
-               lpoints(seq_len(len.ids)[ids.infl], zi[ids.infl], bg=bg.infl, pch=pch, ...)
+               lpoints(x=seq_len(len.ids),           y=zi,           bg=bg,      pch=pch, ...)
+               lpoints(x=seq_len(len.ids)[ids.infl], y=zi[ids.infl], bg=bg.infl, pch=pch, ...)
             } else {
                lplot(NA, NA, xlim=c(0,1), ylim=c(0,1), xaxt="n", yaxt="n", main="hat", xlab="", ylab="", ...)
             }
@@ -404,8 +403,8 @@ col.na="lightgray", ...) {
                if (na.act == "na.exclude" || na.act == "na.pass")
                   llines(seq_len(len.ids)[not.na], zi[not.na], col=col.na, ...)
                llines(seq_len(len.ids), zi, ...)
-               lpoints(seq_len(len.ids), zi, pch=pch, bg=bg, ...)
-               lpoints(seq_len(len.ids)[ids.infl], zi[ids.infl], bg=bg.infl, pch=pch, ...)
+               lpoints(x=seq_len(len.ids),           y=zi,           bg=bg,      pch=pch, ...)
+               lpoints(x=seq_len(len.ids)[ids.infl], y=zi[ids.infl], bg=bg.infl, pch=pch, ...)
             } else {
                lplot(NA, NA, xlim=c(0,1), ylim=c(0,1), xaxt="n", yaxt="n", main="weight", xlab="", ylab="", ...)
             }
@@ -463,8 +462,8 @@ col.na="lightgray", ...) {
          if (na.act == "na.exclude" || na.act == "na.pass")
             llines(seq_len(len.ids)[not.na], zi[not.na], col=col.na, ...)
          llines(seq_len(len.ids), zi, ...)
-         lpoints(seq_len(len.ids), zi, pch=pch, bg=bg, ...)
-         lpoints(seq_len(len.ids)[ids.infl], zi[ids.infl], bg=bg.infl, pch=pch, ...)
+         lpoints(x=seq_len(len.ids),           y=zi,           bg=bg,      pch=pch, ...)
+         lpoints(x=seq_len(len.ids)[ids.infl], y=zi[ids.infl], bg=bg.infl, pch=pch, ...)
 
       }
 

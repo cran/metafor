@@ -2,8 +2,7 @@ rstudent.rma.peto <- function(model, digits, progbar=FALSE, ...) {
 
    mstyle <- .get.mstyle("crayon" %in% .packages())
 
-   if (!inherits(model, "rma.peto"))
-      stop(mstyle$stop("Argument 'model' must be an object of class \"rma.peto\"."))
+   .chkclass(class(model), must="rma.peto")
 
    na.act <- getOption("na.action")
 
@@ -20,6 +19,8 @@ rstudent.rma.peto <- function(model, digits, progbar=FALSE, ...) {
 
    ddd <- list(...)
 
+   .chkdots(ddd, c("time"))
+
    if (.isTRUE(ddd$time))
       time.start <- proc.time()
 
@@ -31,17 +32,17 @@ rstudent.rma.peto <- function(model, digits, progbar=FALSE, ...) {
    ### note: skipping NA tables
 
    if (progbar)
-      pbar <- txtProgressBar(min=0, max=x$k.f, style=3)
+      pbar <- pbapply::startpb(min=0, max=x$k.f)
 
    for (i in seq_len(x$k.f)) {
 
       if (progbar)
-         setTxtProgressBar(pbar, i)
+         pbapply::setpb(pbar, i)
 
       if (!x$not.na[i])
          next
 
-      res <- try(suppressWarnings(rma.peto(ai=x$ai.f, bi=x$bi.f, ci=x$ci.f, di=x$di.f, add=x$add, to=x$to, drop00=x$drop00, subset=-i)), silent=TRUE)
+      res <- try(suppressWarnings(rma.peto(ai=x$ai.f, bi=x$bi.f, ci=x$ci.f, di=x$di.f, add=x$add, to=x$to, drop00=x$drop00, level=x$level, subset=-i)), silent=TRUE)
 
       if (inherits(res, "try-error"))
          next
@@ -52,7 +53,7 @@ rstudent.rma.peto <- function(model, digits, progbar=FALSE, ...) {
    }
 
    if (progbar)
-      close(pbar)
+      pbapply::closepb(pbar)
 
    resid <- x$yi.f - delpred
    resid[abs(resid) < 100 * .Machine$double.eps] <- 0

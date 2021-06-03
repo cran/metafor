@@ -2,14 +2,7 @@ leave1out.rma.uni <- function(x, digits, transf, targs, progbar=FALSE, ...) {
 
    mstyle <- .get.mstyle("crayon" %in% .packages())
 
-   if (!inherits(x, "rma.uni"))
-      stop(mstyle$stop("Argument 'x' must be an object of class \"rma.uni\"."))
-
-   if (inherits(x, "robust.rma"))
-      stop(mstyle$stop("Method not available for objects of class \"robust.rma\"."))
-
-   if (inherits(x, "rma.ls"))
-      stop(mstyle$stop("Method not available for objects of class \"rma.ls\"."))
+   .chkclass(class(x), must="rma.uni", notav=c("robust.rma", "rma.ls", "rma.uni.selmodel"))
 
    na.act <- getOption("na.action")
 
@@ -36,6 +29,8 @@ leave1out.rma.uni <- function(x, digits, transf, targs, progbar=FALSE, ...) {
 
    ddd <- list(...)
 
+   .chkdots(ddd, c("time"))
+
    if (.isTRUE(ddd$time))
       time.start <- proc.time()
 
@@ -57,17 +52,17 @@ leave1out.rma.uni <- function(x, digits, transf, targs, progbar=FALSE, ...) {
    ### also: it is possible that model fitting fails, so that generates more NAs (these NAs will always be shown in output)
 
    if (progbar)
-      pbar <- txtProgressBar(min=0, max=x$k.f, style=3)
+      pbar <- pbapply::startpb(min=0, max=x$k.f)
 
    for (i in seq_len(x$k.f)) {
 
       if (progbar)
-         setTxtProgressBar(pbar, i)
+         pbapply::setpb(pbar, i)
 
       if (!x$not.na[i])
          next
 
-      res <- try(suppressWarnings(rma.uni(x$yi.f, x$vi.f, weights=x$weights.f, intercept=TRUE, method=x$method, weighted=x$weighted, test=x$test, tau2=ifelse(x$tau2.fix, x$tau2, NA), control=x$control, subset=-i)), silent=TRUE)
+      res <- try(suppressWarnings(rma.uni(x$yi.f, x$vi.f, weights=x$weights.f, intercept=TRUE, method=x$method, weighted=x$weighted, test=x$test, level=x$level, tau2=ifelse(x$tau2.fix, x$tau2, NA), control=x$control, subset=-i, skipr2=TRUE)), silent=TRUE)
 
       if (inherits(res, "try-error"))
          next
@@ -87,7 +82,7 @@ leave1out.rma.uni <- function(x, digits, transf, targs, progbar=FALSE, ...) {
    }
 
    if (progbar)
-      close(pbar)
+      pbapply::closepb(pbar)
 
    #########################################################################
 
@@ -129,10 +124,14 @@ leave1out.rma.uni <- function(x, digits, transf, targs, progbar=FALSE, ...) {
    if (na.act == "na.fail" && any(!x$not.na))
       stop(mstyle$stop("Missing values in results."))
 
-   if (x$method == "FE")
-      out <- out[-c(9,10,11)]
+   if (is.element(x$test, c("knha","adhoc","t")))
+      names(out)[3] <- "tval"
 
-   #out <- out[-c(2,3,4)]
+   ### remove tau2 for FE/EE/CE models
+
+   if (is.element(x$method, c("FE","EE","CE")))
+      out <- out[-9]
+
    out$digits <- digits
    out$transf <- transf
 

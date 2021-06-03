@@ -2,8 +2,10 @@ confint.rma.mh <- function(object, parm, level, digits, transf, targs, ...) {
 
    mstyle <- .get.mstyle("crayon" %in% .packages())
 
-   if (!inherits(object, "rma.mh"))
-      stop(mstyle$stop("Argument 'object' must be an object of class \"rma.mh\"."))
+   .chkclass(class(object), must="rma.mh")
+
+   if (!missing(parm))
+      warning(mstyle$warning("Argument 'parm' (currently) ignored."), call.=FALSE)
 
    x <- object
 
@@ -23,6 +25,8 @@ confint.rma.mh <- function(object, parm, level, digits, transf, targs, ...) {
       targs <- NULL
 
    ddd <- list(...)
+
+   .chkdots(ddd, c("time"))
 
    if (.isTRUE(ddd$time))
       time.start <- proc.time()
@@ -52,6 +56,12 @@ confint.rma.mh <- function(object, parm, level, digits, transf, targs, ...) {
          ci.ub <- sapply(ci.ub, transf, targs)
       }
    }
+
+   ### make sure order of intervals is always increasing
+
+   tmp <- .psort(ci.lb, ci.ub)
+   ci.lb <- tmp[,1]
+   ci.ub <- tmp[,2]
 
    #########################################################################
 

@@ -4,7 +4,7 @@
           se    = .01, # standard errors
           test  = .01, # test statistics, standardized residuals
           pval  = .01, # p-values
-          ci    = .01, # confidence/credibility/prediction interval bounds, CI for effects
+          ci    = .01, # confidence/prediction interval bounds, CI for effects
           var   = .01, # variance components (and CIs thereof), also if sqrt(), var-cov matrices, sampling variances
           cor   = .01, # correlations, ICCs
           cov   = .01, # covariances
@@ -14,7 +14,7 @@
           het   = .01, # heterogeneity statistics (and CIs thereof)
           inf   = .01, # influence statistics, hat values
           den   = .01, # density
-          misc  = .01) # miscellanoue, mix of values
+          misc  = .01) # miscellaneous, mix of values
 
 # to quickly set all tolerances to a common value
 #.tol[1:length(.tol)] <- .001

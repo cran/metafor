@@ -1,18 +1,8 @@
-simulate.rma <- function (object, nsim = 1, seed = NULL, ...) {
+simulate.rma <- function(object, nsim = 1, seed = NULL, olim, ...) {
 
    mstyle <- .get.mstyle("crayon" %in% .packages())
 
-   if (!inherits(object, "rma"))
-      stop(mstyle$stop("Argument 'object' must be an object of class \"rma\"."))
-
-   if (inherits(object, "rma.glmm"))
-      stop(mstyle$stop("Method not available for objects of class \"rma.glmm\"."))
-
-   if (inherits(object, "rma.mh"))
-      stop(mstyle$stop("Method not available for objects of class \"rma.mh\"."))
-
-   if (inherits(object, "rma.peto"))
-      stop(mstyle$stop("Method not available for objects of class \"rma.peto\"."))
+   .chkclass(class(object), must="rma", notav=c("rma.glmm", "rma.mh", "rma.peto", "rma.uni.selmodel"))
 
    na.act <- getOption("na.action")
 
@@ -46,6 +36,16 @@ simulate.rma <- function (object, nsim = 1, seed = NULL, ...) {
 
    if (inherits(object, "rma.mv"))
       val <- t(.mvrnorm(nsim, mu=ftd, Sigma=object$M))
+
+   ### apply observation/outcome limits if specified
+
+   if (!missing(olim)) {
+      if (length(olim) != 2L)
+         stop(mstyle$stop("Argument 'olim' must be of length 2."))
+      olim <- sort(olim)
+      val[val < olim[1]] <- olim[1]
+      val[val > olim[2]] <- olim[2]
+   }
 
    #########################################################################
 

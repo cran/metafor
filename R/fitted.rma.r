@@ -2,8 +2,7 @@ fitted.rma <- function(object, ...) {
 
    mstyle <- .get.mstyle("crayon" %in% .packages())
 
-   if (!inherits(object, "rma"))
-      stop(mstyle$stop("Argument 'object' must be an object of class \"rma\"."))
+   .chkclass(class(object), must="rma")
 
    na.act <- getOption("na.action")
 
@@ -11,7 +10,8 @@ fitted.rma <- function(object, ...) {
       stop(mstyle$stop("Unknown 'na.action' specified under options()."))
 
    ### note: fitted values can be calculated for all studies including those that
-   ### have NAs on yi/vi; but if NA on X's, then the fitted value will also be NA
+   ### have NA on yi/vi (and with "na.pass" these will be provided); but if there
+   ### is an NA in the X's, then the fitted value will also be NA
 
    out <- c(object$X.f %*% object$beta)
    names(out) <- object$slab

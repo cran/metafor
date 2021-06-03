@@ -1,9 +1,8 @@
-print.ranktest.rma <- function(x, digits=x$digits, ...) {
+print.ranktest <- function(x, digits=x$digits, ...) {
 
    mstyle <- .get.mstyle("crayon" %in% .packages())
 
-   if (!inherits(x, "ranktest.rma"))
-      stop(mstyle$stop("Argument 'x' must be an object of class \"ranktest.rma\"."))
+   .chkclass(class(x), must="ranktest")
 
    digits <- .get.digits(digits=digits, xdigits=x$digits, dmiss=FALSE)
 
@@ -12,7 +11,7 @@ print.ranktest.rma <- function(x, digits=x$digits, ...) {
 
    cat(mstyle$section("Rank Correlation Test for Funnel Plot Asymmetry"))
    cat("\n\n")
-   cat(mstyle$result(paste0("Kendall's tau = ", .fcf(x$tau, digits[["est"]]), ", p ", .pval(x$pval, digits=digits[["pval"]], showeq=TRUE, sep=" "))))
+   cat(mstyle$result(paste0("Kendall's tau = ", .fcf(x$tau, digits[["est"]]), ", p ", .pval(x$pval, digits[["pval"]], showeq=TRUE, sep=" "))))
    cat("\n")
    #cat("H0: true tau is equal to 0\n\n")
 

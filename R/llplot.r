@@ -11,6 +11,8 @@ lty, lwd, col, level=99.99, refline=0, ...) {
    if (missing(measure))
       stop(mstyle$stop("Must specify an effect size or outcome measure via the 'measure' argument."))
 
+   .chkclass(class(measure), notap="rma", type="Function")
+
    if (!is.element(measure, c("GEN", "OR")))
       stop(mstyle$stop("Currently only measure=\"GEN\" or measure=\"OR\" can be specified."))
 
@@ -86,7 +88,7 @@ lty, lwd, col, level=99.99, refline=0, ...) {
 
       if (is.null(vi)) {
          if (is.null(sei)) {
-            stop(mstyle$stop("Need to specify 'vi' or 'sei' argument."))
+            stop(mstyle$stop("Must specify 'vi' or 'sei' argument."))
          } else {
             vi <- sei^2
          }
@@ -103,6 +105,7 @@ lty, lwd, col, level=99.99, refline=0, ...) {
       ### subsetting
 
       if (!is.null(subset)) {
+         subset <- .setnafalse(subset, k=k)
          yi <- yi[subset]
          vi <- vi[subset]
       }
@@ -162,6 +165,7 @@ lty, lwd, col, level=99.99, refline=0, ...) {
       ### subsetting
 
       if (!is.null(subset)) {
+         subset <- .setnafalse(subset, k=k)
          ai <- ai[subset]
          bi <- bi[subset]
          ci <- ci[subset]
@@ -189,7 +193,7 @@ lty, lwd, col, level=99.99, refline=0, ...) {
          lty <- rep(lty, k)
       } else {
          if (length(lty) != k)
-            stop(mstyle$stop("Length of 'lty' argument does not match length of data."))
+            stop(mstyle$stop(paste0("Length of 'lty' argument (", length(lty), ") does not match length of data (", k, ").")))
       }
    }
 
@@ -198,7 +202,7 @@ lty, lwd, col, level=99.99, refline=0, ...) {
          lwd <- rep(lwd, k)
       } else {
          if (length(lwd) != k)
-            stop(mstyle$stop("Length of 'lwd' argument does not match length of data."))
+         stop(mstyle$stop(paste0("Length of 'lwd' argument (", length(lwd), ") does not match length of data (", k, ").")))
       }
    }
 
@@ -207,7 +211,7 @@ lty, lwd, col, level=99.99, refline=0, ...) {
          col <- rep(col, k)
       } else {
          if (length(col) != k)
-            stop(mstyle$stop("Length of 'col' argument does not match length of data."))
+            stop(mstyle$stop(paste0("Length of 'col' argument (", length(col), ") does not match length of data (", k, ").")))
       }
    }
 
@@ -253,7 +257,7 @@ lty, lwd, col, level=99.99, refline=0, ...) {
          id0  <- id0[not.na]
          id00 <- id00[not.na]
          k    <- length(ai)
-         warning(mstyle$warning("Studies with NAs omitted from plotting."))
+         warning(mstyle$warning("Studies with NAs omitted from plotting."), call.=FALSE)
       }
 
       if (na.act == "na.fail")
@@ -280,17 +284,17 @@ lty, lwd, col, level=99.99, refline=0, ...) {
          lty <- ifelse(id0 | id00, ifelse(id00, "dotted", "dashed"), "solid")
    }
 
-   ### set default line widths (4.0 to 0.2 according to the rank of vi)
+   ### set default line widths (4.0 to 0.4 according to the rank of vi)
 
    if (is.null(lwd))
-      lwd <- seq(from=4.0, to=0.2, length.out=k)[rank(vi)]
+      lwd <- seq(from=4.0, to=0.4, length.out=k)[rank(vi)]
 
-   ### set default line color (gray0 to gray80 according to the rank of vi)
+   ### set default line color (gray0 to gray60 according to the rank of vi)
 
    if (is.null(col))
-      col <- paste0("gray", round(seq(from=0, to=80, length.out=k))[rank(vi)])
+      col <- paste0("gray", round(seq(from=0, to=60, length.out=k))[rank(vi)])
 
-   ### set x axis limits
+   ### set x-axis limits
 
    ci.lb <- yi - qnorm(level/2, lower.tail=FALSE) * sqrt(vi)
    ci.ub <- yi + qnorm(level/2, lower.tail=FALSE) * sqrt(vi)
@@ -342,7 +346,7 @@ lty, lwd, col, level=99.99, refline=0, ...) {
 
    lls[out] <- NA
 
-   ### set y axis limits
+   ### set y-axis limits
 
    if (missing(ylim)) {
       ylim <- c(0, max(lls, na.rm=TRUE))

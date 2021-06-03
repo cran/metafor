@@ -2,13 +2,10 @@ influence.rma.uni <- function(model, digits, progbar=FALSE, ...) {
 
    mstyle <- .get.mstyle("crayon" %in% .packages())
 
-   if (!inherits(model, "rma.uni"))
-      stop(mstyle$stop("Argument 'model' must be an object of class \"rma.uni\"."))
-
-   if (inherits(model, "rma.ls"))
-      stop(mstyle$stop("Method not available for objects of class \"rma.ls\"."))
+   .chkclass(class(model), must="rma.uni", notav=c("rma.ls", "rma.uni.selmodel"))
 
    na.act <- getOption("na.action")
+   on.exit(options(na.action=na.act))
 
    if (!is.element(na.act, c("na.omit", "na.exclude", "na.fail", "na.pass")))
       stop(mstyle$stop("Unknown 'na.action' specified under options()."))
@@ -20,7 +17,9 @@ influence.rma.uni <- function(model, digits, progbar=FALSE, ...) {
 
    ddd <- list(...)
 
-   btt <- .set.btt(ddd$btt, x$p, int.incl=FALSE, X=x$X)
+   .chkdots(ddd, c("btt", "measure", "time"))
+
+   btt <- .set.btt(ddd$btt, x$p, int.incl=FALSE, Xnames=colnames(x$X))
    m <- length(btt)
 
    if (is.null(ddd$measure)) {
@@ -85,14 +84,14 @@ influence.rma.uni <- function(model, digits, progbar=FALSE, ...) {
    ### also: it is possible that model fitting fails, so that generates more NAs (these NAs will always be shown in output)
 
    if (progbar)
-      pbar <- txtProgressBar(min=0, max=x$k, style=3)
+      pbar <- pbapply::startpb(min=0, max=x$k)
 
    for (i in seq_len(x$k)) {
 
       if (progbar)
-         setTxtProgressBar(pbar, i)
+         pbapply::setpb(pbar, i)
 
-      res <- try(suppressWarnings(rma.uni(x$yi, x$vi, weights=x$weights, mods=x$X, intercept=FALSE, method=x$method, weighted=x$weighted, test=x$test, tau2=ifelse(x$tau2.fix, x$tau2, NA), control=x$control, subset=-i)), silent=TRUE)
+      res <- try(suppressWarnings(rma.uni(x$yi, x$vi, weights=x$weights, mods=x$X, intercept=FALSE, method=x$method, weighted=x$weighted, test=x$test, level=x$level, tau2=ifelse(x$tau2.fix, x$tau2, NA), control=x$control, subset=-i, skipr2=TRUE)), silent=TRUE)
 
       if (inherits(res, "try-error"))
          next
@@ -164,7 +163,7 @@ influence.rma.uni <- function(model, digits, progbar=FALSE, ...) {
    }
 
    if (progbar)
-      close(pbar)
+      pbapply::closepb(pbar)
 
    ### calculate studentized residual
 

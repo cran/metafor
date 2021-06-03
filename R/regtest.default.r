@@ -26,6 +26,14 @@ regtest.default <- function(x, vi, sei, ni, subset, model="rma", predictor="sei"
    model <- match.arg(model, c("lm", "rma"))
    predictor <- match.arg(predictor, c("sei", "vi", "ni", "ninv", "sqrtni", "sqrtninv"))
 
+   ddd <- list(...)
+
+   if (!is.null(ddd$level)) {
+      level <- ifelse(level == 0, 1, ifelse(level >= 1, (100-level)/100, ifelse(level > .5, 1-level, level)))
+   } else {
+      level <- .05
+   }
+
    #########################################################################
 
    ### check if sampling variances and/or standard errors are available
@@ -42,9 +50,14 @@ regtest.default <- function(x, vi, sei, ni, subset, model="rma", predictor="sei"
    }
 
    if (is.null(vi))
-      stop(mstyle$stop("Need to specify 'vi' or 'sei' argument."))
+      stop(mstyle$stop("Must specify 'vi' or 'sei' argument."))
 
    yi <- x
+
+   ### check length of yi and vi
+
+   if (length(yi) != length(vi))
+      stop(mstyle$stop("Length of 'yi' and 'vi' (or 'sei') is not the same."))
 
    ### if ni has not been specified but is an attribute of yi, get it
 
@@ -65,6 +78,7 @@ regtest.default <- function(x, vi, sei, ni, subset, model="rma", predictor="sei"
    ### if a subset of studies is specified
 
    if (!is.null(subset)) {
+      subset <- .setnafalse(subset, k=length(yi))
       yi <- yi[subset]
       vi <- vi[subset]
       ni <- ni[subset]
@@ -83,7 +97,7 @@ regtest.default <- function(x, vi, sei, ni, subset, model="rma", predictor="sei"
          yi <- yi[not.na]
          vi <- vi[not.na]
          ni <- ni[not.na]
-         warning(mstyle$warning("Studies with NAs omitted from test."))
+         warning(mstyle$warning("Studies with NAs omitted from test."), call.=FALSE)
 
       }
 
@@ -103,7 +117,7 @@ regtest.default <- function(x, vi, sei, ni, subset, model="rma", predictor="sei"
    if (is.element(predictor, c("ni", "ninv", "sqrtni", "sqrtninv"))) {
 
       if (is.null(ni)) {
-         stop(mstyle$stop("Sample size information need to be specified via 'ni' argument."))
+         stop(mstyle$stop("Sample size information must be specified via 'ni' argument."))
 
       } else {
 
@@ -132,22 +146,42 @@ regtest.default <- function(x, vi, sei, ni, subset, model="rma", predictor="sei"
       fit  <- rma.uni(yi, vi, mods=X, intercept=FALSE, ...)
       zval <- fit$zval[2]
       pval <- fit$pval[2]
-      dfs  <- fit$dfs
+      ddf  <- fit$ddf
 
    } else {
 
       yi   <- c(yi) ### to remove attributes
       fit  <- lm(yi ~ X - 1, weights=1/vi)
-      fit  <- summary(fit)
-      zval <- coef(fit)[2,3]
-      pval <- coef(fit)[2,4]
-      dfs  <- length(yi) - 2
+      tmp  <- summary(fit)
+      zval <- coef(tmp)[2,3]
+      pval <- coef(tmp)[2,4]
+      ddf  <- length(yi) - 2
 
    }
 
-   res <- list(model=model, predictor=predictor, zval=zval, pval=pval, dfs=dfs, method=fit$method, digits=digits, ret.fit=ret.fit, fit=fit)
+   ### get the 'limit estimate'
 
-   class(res) <- "regtest.rma"
+   if (predictor %in% c("sei", "vi", "ninv", "sqrtninv")) {
+
+      if (model=="lm") {
+         est <- coef(tmp)[1,1]
+         ci.lb <- est - qt(level/2, df=ddf, lower.tail=FALSE) * coef(tmp)[1,2]
+         ci.ub <- est + qt(level/2, df=ddf, lower.tail=FALSE) * coef(tmp)[1,2]
+      } else {
+         est <- coef(fit)[1]
+         ci.lb <- fit$ci.lb[1]
+         ci.ub <- fit$ci.ub[1]
+      }
+
+   } else {
+
+      est <- ci.lb <- ci.ub <- NULL
+
+   }
+
+   res <- list(model=model, predictor=predictor, zval=zval, pval=pval, dfs=ddf, ddf=ddf, method=fit$method, digits=digits, ret.fit=ret.fit, fit=fit, est=est, ci.lb=ci.lb, ci.ub=ci.ub)
+
+   class(res) <- "regtest"
    return(res)
 
 }

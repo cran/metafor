@@ -2,10 +2,9 @@ ranef.rma.uni <- function(object, level, digits, transf, targs, ...) {
 
    mstyle <- .get.mstyle("crayon" %in% .packages())
 
-   x <- object
+   .chkclass(class(object), must="rma.uni", notav="rma.uni.selmodel")
 
-   if (!inherits(x, "rma.uni"))
-      stop(mstyle$stop("Argument 'x' must be an object of class \"rma.uni\"."))
+   x <- object
 
    na.act <- getOption("na.action")
 
@@ -30,7 +29,7 @@ ranef.rma.uni <- function(object, level, digits, transf, targs, ...) {
    level <- ifelse(level == 0, 1, ifelse(level >= 1, (100-level)/100, ifelse(level > .5, 1-level, level)))
 
    if (is.element(x$test, c("knha","adhoc","t"))) {
-      crit <- qt(level/2, df=x$dfs, lower.tail=FALSE)
+      crit <- qt(level/2, df=x$ddf, lower.tail=FALSE)
    } else {
       crit <- qnorm(level/2, lower.tail=FALSE)
    }
@@ -52,7 +51,7 @@ ranef.rma.uni <- function(object, level, digits, transf, targs, ...) {
 
    for (i in seq_len(x$k.f)[x$not.na]) { ### note: skipping NA cases
       Xi <- matrix(x$X.f[i,], nrow=1)
-      if (x$method == "FE") {
+      if (is.element(x$method, c("FE","EE","CE"))) {
          pred[i]  <- 0
          vpred[i] <- 0
       } else {

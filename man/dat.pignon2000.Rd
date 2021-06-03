@@ -19,13 +19,13 @@
    The trials were also divided according to the timing of the chomotherapy: (1) adjuvant, after the locoregional treatment, (2) neoadjuvant, before the locoregional treatment, and (3) concomitant, chemotherapy given concomitantly or alternating with radiotherapy.
 }
 \source{
-   Pignon, J. P., Bourhis, J., Domenge, C., & Designe, L. (2000). Chemotherapy added to locoregional treatment for head and neck squamous-cell carcinoma: Three meta-analyses of updated individual data. \emph{Lancet}, \bold{355}(9208), 949--955.
+   Pignon, J. P., Bourhis, J., Domenge, C., & Designe, L. (2000). Chemotherapy added to locoregional treatment for head and neck squamous-cell carcinoma: Three meta-analyses of updated individual data. \emph{Lancet}, \bold{355}(9208), 949--955. \verb{https://doi.org/10.1016/S0140-6736(00)90011-4}
 }
 \examples{
 ### copy data into 'dat'
 dat <- dat.pignon2000
 
-### compute estimated log hazard ratios and sampling variances
+### calculate log hazard ratios and sampling variances
 dat$yi <- with(dat, OmE/V)
 dat$vi <- with(dat, 1/V)
 dat

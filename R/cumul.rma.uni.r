@@ -2,14 +2,7 @@ cumul.rma.uni <- function(x, order, digits, transf, targs, progbar=FALSE, ...) {
 
    mstyle <- .get.mstyle("crayon" %in% .packages())
 
-   if (!inherits(x, "rma.uni"))
-      stop(mstyle$stop("Argument 'x' must be an object of class \"rma.uni\"."))
-
-   if (inherits(x, "robust.rma"))
-      stop(mstyle$stop("Method not available for objects of class \"robust.rma\"."))
-
-   if (inherits(x, "rma.ls"))
-      stop(mstyle$stop("Method not available for objects of class \"rma.ls\"."))
+   .chkclass(class(x), must="rma.uni", notav=c("robust.rma", "rma.ls", "rma.uni.selmodel"))
 
    na.act <- getOption("na.action")
 
@@ -18,9 +11,6 @@ cumul.rma.uni <- function(x, order, digits, transf, targs, progbar=FALSE, ...) {
 
    if (!x$int.only)
       stop(mstyle$stop("Method only applicable for models without moderators."))
-
-   if (missing(order))
-      order <- NULL
 
    if (missing(digits)) {
       digits <- .get.digits(xdigits=x$digits, dmiss=TRUE)
@@ -36,13 +26,36 @@ cumul.rma.uni <- function(x, order, digits, transf, targs, progbar=FALSE, ...) {
 
    ddd <- list(...)
 
+   .chkdots(ddd, c("time", "decreasing"))
+
    if (.isTRUE(ddd$time))
       time.start <- proc.time()
 
+   if (is.null(ddd$decreasing)) {
+      decreasing <- FALSE
+   } else {
+      decreasing <- ddd$decreasing
+   }
+
    #########################################################################
 
-   if (is.null(order))
-      order <- seq_len(x$k.f)
+   if (grepl("^order\\(", deparse(substitute(order))))
+      warning(mstyle$warning("Use of order() in 'order' argument is probably erroneous."), call.=FALSE)
+
+   if (missing(order))
+      order <- seq_len(x$k.all)
+
+   if (length(order) != x$k.all)
+      stop(mstyle$stop(paste0("Length of the 'order' argument (", length(order), ") does not correspond to the size of the original dataset (", x$k.all, ").")))
+
+   ### note: order variable is assumed to be of the same length as the size of the
+   ###       original dataset passed to the model fitting function and so we apply
+   ###       the same subsetting (if necessary) as was done during model fitting
+
+   if (!is.null(x$subset))
+      order <- order[x$subset]
+
+   order <- order(order, decreasing=decreasing)
 
    yi.f      <- x$yi.f[order]
    vi.f      <- x$vi.f[order]
@@ -50,6 +63,7 @@ cumul.rma.uni <- function(x, order, digits, transf, targs, progbar=FALSE, ...) {
    weights.f <- x$weights.f[order]
    not.na    <- x$not.na[order]
    slab      <- x$slab[order]
+   ids       <- x$ids[order]
 
    beta  <- rep(NA_real_, x$k.f)
    se    <- rep(NA_real_, x$k.f)
@@ -67,17 +81,17 @@ cumul.rma.uni <- function(x, order, digits, transf, targs, progbar=FALSE, ...) {
    ### also: it is possible that model fitting fails, so that generates more NAs (these NAs will always be shown in output)
 
    if (progbar)
-      pbar <- txtProgressBar(min=0, max=x$k.f, style=3)
+      pbar <- pbapply::startpb(min=0, max=x$k.f)
 
    for (i in seq_len(x$k.f)) {
 
       if (progbar)
-         setTxtProgressBar(pbar, i)
+         pbapply::setpb(pbar, i)
 
       if (!not.na[i])
          next
 
-      res <- try(suppressWarnings(rma.uni(yi.f, vi.f, weights=weights.f, intercept=TRUE, method=x$method, weighted=x$weighted, test=x$test, tau2=ifelse(x$tau2.fix, x$tau2, NA), control=x$control, subset=seq_len(i))), silent=TRUE)
+      res <- try(suppressWarnings(rma.uni(yi.f, vi.f, weights=weights.f, intercept=TRUE, method=x$method, weighted=x$weighted, test=x$test, level=x$level, tau2=ifelse(x$tau2.fix, x$tau2, NA), control=x$control, subset=seq_len(i))), silent=TRUE)
 
       if (inherits(res, "try-error"))
          next
@@ -97,12 +111,7 @@ cumul.rma.uni <- function(x, order, digits, transf, targs, progbar=FALSE, ...) {
    }
 
    if (progbar)
-      close(pbar)
-
-   ### for first 'not.na' element, I2 and H2 would be NA (since k=1), but set to 0 and 1, respectively
-
-   I2[which(not.na)[1]] <- 0
-   H2[which(not.na)[1]] <- 1
+      pbapply::closepb(pbar)
 
    #########################################################################
 
@@ -132,13 +141,15 @@ cumul.rma.uni <- function(x, order, digits, transf, targs, progbar=FALSE, ...) {
    #########################################################################
 
    if (na.act == "na.omit") {
-      out <- list(estimate=beta[not.na], se=se[not.na], zval=zval[not.na], pvals=pval[not.na], ci.lb=ci.lb[not.na], ci.ub=ci.ub[not.na], QE=QE[not.na], QEp=QEp[not.na], tau2=tau2[not.na], I2=I2[not.na], H2=H2[not.na])
+      out <- list(estimate=beta[not.na], se=se[not.na], zval=zval[not.na], pvals=pval[not.na], ci.lb=ci.lb[not.na], ci.ub=ci.ub[not.na], Q=QE[not.na], Qp=QEp[not.na], tau2=tau2[not.na], I2=I2[not.na], H2=H2[not.na])
       out$slab <- slab[not.na]
+      out$ids  <- ids[not.na]
    }
 
    if (na.act == "na.exclude" || na.act == "na.pass") {
-      out <- list(estimate=beta, se=se, zval=zval, pvals=pval, ci.lb=ci.lb, ci.ub=ci.ub, QE=QE, QEp=QEp, tau2=tau2, I2=I2, H2=H2)
+      out <- list(estimate=beta, se=se, zval=zval, pvals=pval, ci.lb=ci.lb, ci.ub=ci.ub, Q=QE, Qp=QEp, tau2=tau2, I2=I2, H2=H2)
       out$slab <- slab
+      out$ids  <- ids
    }
 
    if (na.act == "na.fail" && any(!x$not.na))
@@ -147,10 +158,10 @@ cumul.rma.uni <- function(x, order, digits, transf, targs, progbar=FALSE, ...) {
    if (is.element(x$test, c("knha","adhoc","t")))
       names(out)[3] <- "tval"
 
-   ### remove tau2, I2, and H2 columns for FE models
+   ### remove tau2 for FE/EE/CE models
 
-   if (x$method == "FE")
-      out <- out[-c(9,10,11)]
+   if (is.element(x$method, c("FE","EE","CE")))
+      out <- out[-9]
 
    out$digits    <- digits
    out$transf    <- transf

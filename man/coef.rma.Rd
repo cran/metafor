@@ -1,4 +1,5 @@
 \name{coef.rma}
+\alias{coef}
 \alias{coef.rma}
 \alias{coef.summary.rma}
 \title{Extract the Model Coefficients and Coefficient Table from 'rma' and 'summary.rma' Objects}
@@ -7,7 +8,6 @@
 }
 \usage{
 \method{coef}{rma}(object, \dots)
-
 \method{coef}{summary.rma}(object, \dots)
 }
 \arguments{
@@ -23,23 +23,28 @@
    \item{ci.lb}{corresponding lower bound of the confidence interval(s).}
    \item{ci.ub}{corresponding upper bound of the confidence interval(s).}
 
-   When the model was fitted with the Knapp and Hartung (2003) method (i.e., \code{test="knha"} in the \code{\link{rma.uni}} function) or with \code{test="t"} in the \code{\link{rma.glmm}} and \code{\link{rma.mv}} functions, then \code{zval} is called \code{tval} in the data frame that is returned by the function.
+   When the model was fitted with \code{test="t"} or \code{test="knha"}, then \code{zval} is called \code{tval} in the data frame that is returned by the function.
 }
 \author{
-   Wolfgang Viechtbauer \email{wvb@metafor-project.org} \url{http://www.metafor-project.org/}
+   Wolfgang Viechtbauer \email{wvb@metafor-project.org} \url{https://www.metafor-project.org}
 }
 \references{
-   Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \url{https://www.jstatsoft.org/v036/i03}.
+   Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \verb{https://doi.org/10.18637/jss.v036.i03}
 }
 \seealso{
    \code{\link{rma.uni}}, \code{\link{rma.mh}}, \code{\link{rma.peto}}, \code{\link{rma.glmm}}, \code{\link{rma.mv}}
 }
 \examples{
-### meta-analysis of the log risk ratios using a mixed-effects model
-### with two moderators (absolute latitude and publication year)
-res <- rma(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg,
-           mods = ~ ablat + year, data=dat.bcg)
+### calculate log risk ratios and corresponding sampling variances
+dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
+
+### fit mixed-effects model with absolute latitude and publication year as moderators
+res <- rma(yi, vi, mods = ~ ablat + year, data=dat)
+
+### extract model coefficients
 coef(res)
+
+### extract model coefficient table
 coef(summary(res))
 }
 \keyword{models}

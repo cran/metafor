@@ -2,11 +2,7 @@ hc.rma.uni <- function(object, digits, transf, targs, control, ...) {
 
    mstyle <- .get.mstyle("crayon" %in% .packages())
 
-   if (!inherits(object, "rma.uni"))
-      stop(mstyle$stop("Argument 'object' must be an object of class \"rma.uni\"."))
-
-   if (inherits(object, "rma.ls"))
-      stop(mstyle$stop("Method not available for objects of class \"rma.ls\"."))
+   .chkclass(class(object), must="rma.uni", notav=c("rma.ls", "rma.uni.selmodel"))
 
    x <- object
 
@@ -44,7 +40,8 @@ hc.rma.uni <- function(object, digits, transf, targs, control, ...) {
 
    ### set control parameters for uniroot() and possibly replace with user-defined values
    con <- list(tol=.Machine$double.eps^0.25, maxiter=1000, verbose=FALSE)
-   con[pmatch(names(control), names(con))] <- control
+   con.pos <- pmatch(names(control), names(con))
+   con[c(na.omit(con.pos))] <- control[!is.na(con.pos)]
 
    #########################################################################
 

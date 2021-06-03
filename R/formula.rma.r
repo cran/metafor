@@ -2,12 +2,11 @@ formula.rma <- function(x, type="mods", ...) {
 
    mstyle <- .get.mstyle("crayon" %in% .packages())
 
-   if (!inherits(x, "rma"))
-      stop(mstyle$stop("Argument 'x' must be an object of class \"rma\"."))
+   .chkclass(class(x), must="rma")
 
    type <- match.arg(type, c("mods", "yi", "scale"))
 
-   if (x$model=="rma.ls" && type=="scale")
+   if (type == "scale" && x$model != "rma.ls")
       stop(mstyle$stop("Can only use type='scale' for location-scale models."))
 
    if (type == "mods")

@@ -4,10 +4,10 @@ label=FALSE, offset=0.3, pos=13, lty, ...) {
 
    mstyle <- .get.mstyle("crayon" %in% .packages())
 
-   if (!inherits(y, "rma.uni"))
-      stop(mstyle$stop("Argument 'y' must be an object of class \"rma.uni\"."))
+   .chkclass(class(y), must="rma.uni", notav="rma.uni.selmodel")
 
    na.act <- getOption("na.action")
+   on.exit(options(na.action=na.act))
 
    x <- y
 

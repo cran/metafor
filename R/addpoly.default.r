@@ -1,13 +1,13 @@
-# Note: If 'x' and 'vi' (or 'sei') are specified, the CI bounds for the
-# polygon are calculated based on a standard normal distribution. But the
-# Knapp and Hartung method may have been used to obtain 'vi' (or 'sei'),
-# in which case we would want to use a t-distribution. But adding a
-# corresponding argument would be a bit awkward, since the user would then
-# also have to specify the degrees of freedom. Instead, the user can just
-# pass the CI bounds (that were calculated with 'test="knha"') directly to
-# the function via the 'ci.lb' and 'ci.ub' argument.
+# Note: If x and vi (or sei) are specified, the CI bounds for the polygon are
+# calculated based on a normal distribution. But the Knapp and Hartung method
+# may have been used to obtain vi (or sei), in which case we would want to use
+# a t-distribution. Adding a corresponding argument would be a bit awkward,
+# since the user would then have to specify the degrees of freedom. Instead,
+# the user can just pass the CI (and PI) bounds (that were calculated with
+# test="knha") directly to the function via the ci.lb and ci.ub (and pi.lb and
+# pi.ub) arguments.
 
-addpoly.default <- function(x, vi, sei, ci.lb, ci.ub, cr.lb, cr.ub,
+addpoly.default <- function(x, vi, sei, ci.lb, ci.ub, pi.lb, pi.ub,
 rows=-1, level=95, annotate=TRUE, digits=2, width, mlab, transf,
 atransf, targs, efac=1, col, border, fonts, cex, ...) {
 
@@ -44,6 +44,17 @@ atransf, targs, efac=1, col, border, fonts, cex, ...) {
    if (missing(cex))
       cex <- NULL
 
+   ddd <- list(...)
+
+   if (!is.null(ddd$cr.lb))
+      pi.lb <- ddd$cr.lb
+   if (!is.null(ddd$cr.ub))
+      pi.ub <- ddd$cr.ub
+
+   lsegments <- function(..., cr.lb, cr.ub, addcred, pi.type) segments(...)
+   ltext     <- function(..., cr.lb, cr.ub, addcred, pi.type) text(...)
+   lpolygon  <- function(..., cr.lb, cr.ub, addcred, pi.type) polygon(...)
+
    ### set/get fonts (1st for labels, 2nd for annotations)
    ### when passing a named vector, the names are for 'family' and the values are for 'font'
 
@@ -75,8 +86,8 @@ atransf, targs, efac=1, col, border, fonts, cex, ...) {
       if (missing(vi) && missing(sei)) {
 
          ### vi/sei not specified, so calculate vi based on CI bounds
-         ### note: technically assumes that the CI is a symmetric Wald-type
-         ###       CI computed based on a standard normal distribution
+         ### note: assumes that the CI is a symmetric Wald-type CI
+         ###       computed based on a standard normal distribution
 
          vi <- ((ci.ub - ci.lb) / (2*qnorm(level/2, lower.tail=FALSE)))^2
 
@@ -112,18 +123,18 @@ atransf, targs, efac=1, col, border, fonts, cex, ...) {
 
    }
 
-   if (hasArg(cr.lb) && hasArg(cr.ub)) {
+   if (hasArg(pi.lb) && hasArg(pi.ub))  {
 
-      if (length(cr.lb) != length(cr.ub))
-         stop(mstyle$stop("Length of 'cr.lb' and 'cr.ub' is not the same."))
+      if (length(pi.lb) != length(pi.ub))
+         stop(mstyle$stop("Length of 'pi.lb' and 'pi.ub' is not the same."))
 
-      if (length(cr.lb) != length(yi))
-         stop(mstyle$stop("Length of ('cr.lb', 'cr.ub') does not match length of 'x'."))
+      if (length(pi.lb) != length(yi))
+         stop(mstyle$stop("Length of ('pi.lb', 'pi.ub') does not match length of 'x'."))
 
    } else {
 
-      cr.lb <- rep(NA, length(yi))
-      cr.ub <- rep(NA, length(yi))
+      pi.lb <- rep(NA, length(yi))
+      pi.ub <- rep(NA, length(yi))
 
    }
 
@@ -139,7 +150,7 @@ atransf, targs, efac=1, col, border, fonts, cex, ...) {
    }
 
    if (length(rows) != length(yi))
-      stop(mstyle$stop("Number of outcomes does not correspond to the length of the 'rows' argument."))
+      stop(mstyle$stop(paste0("Length of the 'rows' argument (", length(rows), ") does not correspond to the number of polygons to be plotted (", length(yi), ").")))
 
    ### check for NAs in yi/vi and act accordingly
 
@@ -154,8 +165,8 @@ atransf, targs, efac=1, col, border, fonts, cex, ...) {
          vi    <- vi[not.na]
          ci.lb <- ci.lb[not.na]
          ci.ub <- ci.ub[not.na]
-         cr.lb <- cr.lb[not.na]
-         cr.ub <- cr.ub[not.na]
+         pi.lb <- pi.lb[not.na]
+         pi.ub <- pi.ub[not.na]
          mlab  <- mlab[not.na]
 
          ### rearrange rows due to NAs being omitted
@@ -183,14 +194,14 @@ atransf, targs, efac=1, col, border, fonts, cex, ...) {
          yi    <- sapply(yi, transf)
          ci.lb <- sapply(ci.lb, transf)
          ci.ub <- sapply(ci.ub, transf)
-         cr.lb <- sapply(cr.lb, transf)
-         cr.ub <- sapply(cr.ub, transf)
+         pi.lb <- sapply(pi.lb, transf)
+         pi.ub <- sapply(pi.ub, transf)
       } else {
          yi    <- sapply(yi, transf, targs)
          ci.lb <- sapply(ci.lb, transf, targs)
          ci.ub <- sapply(ci.ub, transf, targs)
-         cr.lb <- sapply(cr.lb, transf, targs)
-         cr.ub <- sapply(cr.ub, transf, targs)
+         pi.lb <- sapply(pi.lb, transf, targs)
+         pi.ub <- sapply(pi.ub, transf, targs)
       }
    }
 
@@ -199,9 +210,9 @@ atransf, targs, efac=1, col, border, fonts, cex, ...) {
    tmp <- .psort(ci.lb, ci.ub)
    ci.lb <- tmp[,1]
    ci.ub <- tmp[,2]
-   tmp <- .psort(cr.lb, cr.ub)
-   cr.lb <- tmp[,1]
-   cr.ub <- tmp[,2]
+   tmp <- .psort(pi.lb, pi.ub)
+   pi.lb <- tmp[,1]
+   pi.ub <- tmp[,2]
 
    ### determine height of plot and set cex accordingly (if not specified)
 
@@ -238,7 +249,7 @@ atransf, targs, efac=1, col, border, fonts, cex, ...) {
 
       }
 
-      annotext <- formatC(annotext, format="f", digits=digits)
+      annotext <- .fcf(annotext, digits)
 
       if (missing(width) || is.null(width)) {
          width <- apply(annotext, 2, function(x) max(nchar(x)))
@@ -254,23 +265,34 @@ atransf, targs, efac=1, col, border, fonts, cex, ...) {
       annotext <- cbind(annotext[,1], " [", annotext[,2], ", ", annotext[,3], "]")
       annotext <- apply(annotext, 1, paste, collapse="")
       par(family=names(fonts)[2], font=fonts[2])
-      text(x=xlim[2], rows, labels=annotext, pos=2, cex=cex, ...)
+      ltext(x=xlim[2], rows, labels=annotext, pos=2, cex=cex, ...)
       par(family=names(fonts)[1], font=fonts[1])
 
    }
+
+   if (length(col) == 1L)
+      col <- rep(col, k)
+
+   if (length(border) == 1L)
+      border <- rep(border, k)
 
    ### add polygon(s)
 
    for (i in seq_len(k)) {
 
-      segments(cr.lb[i], rows[i], cr.ub[i], rows[i], lty="dotted", col="gray50", ...)
-      segments(cr.lb[i], rows[i]-(height/150)*cex*efac, cr.lb[i], rows[i]+(height/150)*cex*efac, col="gray50", ...)
-      segments(cr.ub[i], rows[i]-(height/150)*cex*efac, cr.ub[i], rows[i]+(height/150)*cex*efac, col="gray50", ...)
+      lsegments(pi.lb[i], rows[i], pi.ub[i], rows[i], lty="dotted", col="gray50", ...)
+      lsegments(pi.lb[i], rows[i]-(height/150)*cex*efac, pi.lb[i], rows[i]+(height/150)*cex*efac, col="gray50", ...)
+      lsegments(pi.ub[i], rows[i]-(height/150)*cex*efac, pi.ub[i], rows[i]+(height/150)*cex*efac, col="gray50", ...)
 
-      polygon(x=c(ci.lb[i], yi[i], ci.ub[i], yi[i]), y=c(rows[i], rows[i]+(height/100)*cex*efac, rows[i], rows[i]-(height/100)*cex*efac), col=col, border=border, ...)
+      lpolygon(x=c(ci.lb[i], yi[i], ci.ub[i], yi[i]), y=c(rows[i], rows[i]+(height/100)*cex*efac, rows[i], rows[i]-(height/100)*cex*efac), col=col[i], border=border[i], ...)
 
-      if (!is.null(mlab))
-         text(xlim[1], rows[i], mlab[i], pos=4, cex=cex, ...)
+      if (!is.null(mlab)) {
+         if (is.list(mlab)) {
+            ltext(xlim[1], rows[i], mlab[[i]], pos=4, cex=cex, ...)
+         } else {
+            ltext(xlim[1], rows[i], mlab[i], pos=4, cex=cex, ...)
+         }
+      }
 
    }
 

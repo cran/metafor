@@ -4,23 +4,17 @@ plot.rma.uni <- function(x, qqplot=FALSE, ...) {
 
    mstyle <- .get.mstyle("crayon" %in% .packages())
 
-   if (!inherits(x, "rma.uni"))
-      stop(mstyle$stop("Argument 'x' must be an object of class \"rma.uni\"."))
-
-   if (inherits(x, "robust.rma"))
-      stop(mstyle$stop("Method not available for objects of class \"robust.rma\"."))
-
-   if (inherits(x, "rma.ls"))
-      stop(mstyle$stop("Method not available for objects of class \"rma.ls\"."))
+   .chkclass(class(x), must="rma.uni", notav=c("robust.rma", "rma.ls", "rma.uni.selmodel"))
 
    na.act <- getOption("na.action")
+   on.exit(options(na.action=na.act))
 
    if (!is.element(na.act, c("na.omit", "na.exclude", "na.fail", "na.pass")))
       stop(mstyle$stop("Unknown 'na.action' specified under options()."))
 
    par.mfrow <- par("mfrow")
    par(mfrow=c(2,2))
-   on.exit(par(mfrow = par.mfrow))
+   on.exit(par(mfrow = par.mfrow), add=TRUE)
 
    #########################################################################
 
@@ -69,7 +63,7 @@ plot.rma.uni <- function(x, qqplot=FALSE, ...) {
          plot(NA, NA, xlim=c(1,k), ylim=c(min(z, -2, na.rm=TRUE), max(z, 2, na.rm=TRUE)), xaxt="n", xlab="Study", ylab="", bty="l", ...)
          lines(seq_len(k)[not.na], z[not.na], col="lightgray", ...)
          lines(seq_len(k), z, ...)
-         points(seq_len(k), z, pch=21, bg="black", ...)
+         points(x=seq_len(k), y=z, pch=21, bg="black", ...)
          axis(side=1, at=seq_len(k), labels=ids, ...)
          abline(h=0, lty="dashed", ...)
          abline(h=c(qnorm(.025),qnorm(.975)), lty="dotted", ...)
@@ -130,7 +124,7 @@ plot.rma.uni <- function(x, qqplot=FALSE, ...) {
          plot(NA, NA, xlim=c(1,k), ylim=c(min(z, -2, na.rm=TRUE), max(z, 2, na.rm=TRUE)), xaxt="n", xlab="Study", ylab="", bty="l", ...)
          lines(seq_len(k)[not.na], z[not.na], col="lightgray", ...)
          lines(seq_len(k), z, ...)
-         points(seq_len(k), z, pch=21, bg="black", ...)
+         points(x=seq_len(k), y=z, pch=21, bg="black", ...)
          axis(side=1, at=seq_len(k), labels=ids, ...)
          abline(h=0, lty="dashed", ...)
          abline(h=c(qnorm(.025),qnorm(.975)), lty="dotted", ...)

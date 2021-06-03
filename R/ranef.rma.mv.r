@@ -2,10 +2,9 @@ ranef.rma.mv <- function(object, level, digits, transf, targs, verbose=FALSE, ..
 
    mstyle <- .get.mstyle("crayon" %in% .packages())
 
-   x <- object
+   .chkclass(class(object), must="rma.mv")
 
-   if (!inherits(x, "rma.mv"))
-      stop(mstyle$stop("Argument 'x' must be an object of class \"rma.mv\"."))
+   x <- object
 
    na.act <- getOption("na.action")
 
@@ -15,8 +14,11 @@ ranef.rma.mv <- function(object, level, digits, transf, targs, verbose=FALSE, ..
    if (missing(level))
       level <- x$level
 
-   if (missing(digits))
-      digits <- x$digits
+   if (missing(digits)) {
+      digits <- .get.digits(xdigits=x$digits, dmiss=TRUE)
+   } else {
+      digits <- .get.digits(digits=digits, xdigits=x$digits, dmiss=FALSE)
+   }
 
    if (missing(transf))
       transf <- FALSE
@@ -28,11 +30,8 @@ ranef.rma.mv <- function(object, level, digits, transf, targs, verbose=FALSE, ..
 
    level <- ifelse(level == 0, 1, ifelse(level >= 1, (100-level)/100, ifelse(level > .5, 1-level, level)))
 
-   if (is.element(x$test, c("knha","adhoc","t"))) {
-      crit <- qt(level/2, df=x$dfs, lower.tail=FALSE)
-   } else {
+   if (x$test != "t")
       crit <- qnorm(level/2, lower.tail=FALSE)
-   }
 
    ### TODO: check computations for user-defined weights
 
@@ -98,7 +97,15 @@ ranef.rma.mv <- function(object, level, digits, transf, targs, verbose=FALSE, ..
          pred <- as.vector(DZtW %*% cbind(ei))
          pred[abs(pred) < 100 * .Machine$double.eps] <- 0
          #vpred <- D - (DZtW %*% x$Z.S[[j]] %*% D - DZtW %*% x$X %*% stXWX %*% t(x$X) %*% W %*% x$Z.S[[j]] %*% D)
-         vpred <- D - (DZtW %*% (I - Hmat) %*% x$Z.S[[j]] %*% D)
+         vpred <- D - (DZtW %*% (I - Hmat) %*% x$Z.S[[j]] %*% D) # this one is the same as ranef.rma.uni() for standard RE/ME models
+         #vpred <- DZtW %*% (I - Hmat) %*% x$Z.S[[j]] %*% D # = var(u^)
+         #vpred <- D - (DZtW %*% x$Z.S[[j]] %*% D) # same as lme4::ranef()
+         #vpred <- DZtW %*% x$Z.S[[j]] %*% D
+
+         if (x$test == "t") {
+            ddf <- .ddf.calc(x$dfs, k=x$k, p=x$p, mf.s=x$mf.s[[j]], beta=FALSE)
+            crit <- qt(level/2, df=ddf, lower.tail=FALSE)
+         }
 
          se <- sqrt(diag(vpred))
          pi.lb <- c(pred - crit * se)
@@ -151,9 +158,9 @@ ranef.rma.mv <- function(object, level, digits, transf, targs, verbose=FALSE, ..
 
    if (x$withG) {
 
-      if (x$struct[1] == "GEN") {
+      if (is.element(x$struct[1], c("GEN","GDIAG"))) {
          if (verbose)
-            message(mstyle$message("Computation of BLUPs not available for struct=\"GEN\"."))
+            message(mstyle$message("Computation of BLUPs not currently available for struct=\"GEN\"."))
       } else {
 
       if (verbose)
@@ -166,6 +173,11 @@ ranef.rma.mv <- function(object, level, digits, transf, targs, verbose=FALSE, ..
       #vpred <- G - (GW %*% G - GW %*% x$X %*% stXWX %*% t(x$X) %*% W %*% G)
       vpred <- G - (GW %*% (I - Hmat) %*% G)
 
+      if (x$test == "t") {
+         ddf <- .ddf.calc(x$dfs, k=x$k, p=x$p, mf.g=x$mf.g[[2]], beta=FALSE)
+         crit <- qt(level/2, df=ddf, lower.tail=FALSE)
+      }
+
       se <- sqrt(diag(vpred))
       pi.lb <- c(pred - crit * se)
       pi.ub <- c(pred + crit * se)
@@ -174,7 +186,7 @@ ranef.rma.mv <- function(object, level, digits, transf, targs, verbose=FALSE, ..
 
       nvars <- ncol(x$mf.g)
 
-      if (is.element(x$struct[1], c("SPEXP","SPGAU","SPLIN","SPRAT","SPSPH","PHYBM","PHYPL","PHYPD","GEN"))) {
+      if (is.element(x$struct[1], c("SPEXP","SPGAU","SPLIN","SPRAT","SPSPH","PHYBM","PHYPL","PHYPD","GEN","GDIAG"))) {
          r.names <- paste(formatC(x$ids[x$not.na], format="f", digits=0, width=max(nchar(x$ids[x$not.na]))), x$mf.g[[nvars]], sep=" | ")
       } else {
          #r.names <- paste(x$mf.g[[1]], x$mf.g[[2]], sep=" | ")
@@ -187,7 +199,7 @@ ranef.rma.mv <- function(object, level, digits, transf, targs, verbose=FALSE, ..
 
       rownames(pred) <- r.names[!is.dup]
 
-      if (is.element(x$struct[1], c("SPEXP","SPGAU","SPLIN","SPRAT","SPSPH","PHYBM","PHYPL","PHYPD","GEN"))) {
+      if (is.element(x$struct[1], c("SPEXP","SPGAU","SPLIN","SPRAT","SPSPH","PHYBM","PHYPL","PHYPD","GEN","GDIAG"))) {
          #r.order <- order(x$mf.g[[nvars]][!is.dup], seq_len(x$k)[!is.dup])
          r.order <- seq_len(x$k)
       } else {
@@ -209,9 +221,9 @@ ranef.rma.mv <- function(object, level, digits, transf, targs, verbose=FALSE, ..
 
    if (x$withH) {
 
-      if (x$struct[2] == "GEN") {
+      if (is.element(x$struct[2], c("GEN","GDIAG"))) {
          if (verbose)
-            message(mstyle$message("Computation of BLUPs not available for struct=\"GEN\"."))
+            message(mstyle$message("Computation of BLUPs not currently available for struct=\"GEN\"."))
       } else {
 
       if (verbose)
@@ -224,6 +236,11 @@ ranef.rma.mv <- function(object, level, digits, transf, targs, verbose=FALSE, ..
       #vpred <- H - (HW %*% H - HW %*% x$X %*% stXWX %*% t(x$X) %*% W %*% H)
       vpred <- H - (HW %*% (I - Hmat) %*% H)
 
+      if (x$test == "t") {
+         ddf <- .ddf.calc(x$dfs, k=x$k, p=x$p, mf.h=x$mf.h[[2]], beta=FALSE)
+         crit <- qt(level/2, df=ddf, lower.tail=FALSE)
+      }
+
       se <- sqrt(diag(vpred))
       pi.lb <- c(pred - crit * se)
       pi.ub <- c(pred + crit * se)
@@ -232,7 +249,7 @@ ranef.rma.mv <- function(object, level, digits, transf, targs, verbose=FALSE, ..
 
       nvars <- ncol(x$mf.h)
 
-      if (is.element(x$struct[2], c("SPEXP","SPGAU","SPLIN","SPRAT","SPSPH","PHYBM","PHYPL","PHYPD","GEN"))) {
+      if (is.element(x$struct[2], c("SPEXP","SPGAU","SPLIN","SPRAT","SPSPH","PHYBM","PHYPL","PHYPD","GEN","GDIAG"))) {
          r.names <- paste(formatC(x$ids[x$not.na], format="f", digits=0, width=max(nchar(x$ids[x$not.na]))), x$mf.h[[nvars]], sep=" | ")
       } else {
          #r.names <- paste(x$mf.h[[1]], x$mf.h[[2]], sep=" | ")
@@ -245,7 +262,7 @@ ranef.rma.mv <- function(object, level, digits, transf, targs, verbose=FALSE, ..
 
       rownames(pred) <- r.names[!is.dup]
 
-      if (is.element(x$struct[2], c("SPEXP","SPGAU","SPLIN","SPRAT","SPSPH","PHYBM","PHYPL","PHYPD","GEN"))) {
+      if (is.element(x$struct[2], c("SPEXP","SPGAU","SPLIN","SPRAT","SPSPH","PHYBM","PHYPL","PHYPD","GEN","GDIAG"))) {
          #r.order <- order(x$mf.h[[nvars]][!is.dup], seq_len(x$k)[!is.dup])
          r.order <- seq_len(x$k)
       } else {

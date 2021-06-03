@@ -20,21 +20,27 @@
    The data can be used for a network meta-analysis, either using an arm-based or a contrast-based model. See \sQuote{Examples} below.
 }
 \source{
-   Senn, S., Gavini, F., Magrez, D., & Scheen, A. (2013). Issues in performing a network meta-analysis. \emph{Statistical Methods in Medical Research}, \bold{22}, 169--189.
+   Law, M., Jackson, D., Turner, R., Rhodes, K., & Viechtbauer, W. (2016). Two new methods to fit models for network meta-analysis with random inconsistency effects. \emph{BMC Medical Research Methodology}, \bold{16}, 87. \verb{https://doi.org/10.1186/s12874-016-0184-5}
+
+   Senn, S., Gavini, F., Magrez, D., & Scheen, A. (2013). Issues in performing a network meta-analysis. \emph{Statistical Methods in Medical Research}, \bold{22}(2), 169--189. \verb{https://doi.org/10.1177/0962280211432220}
 }
 \examples{
 ### copy data into 'dat' and examine data
 dat <- dat.senn2013
 dat
 
-### create network graph ('plyr' and 'igraph' packages must be installed)
+### create network graph ('igraph' package must be installed)
 \dontrun{
-require(plyr)
 require(igraph)
-pairs <- do.call(rbind, sapply(split(dat$treatment, dat$study), function(x) t(combn(x,2))))
-pairs <- ddply(data.frame(pairs), .(X1, X2), count)
-g <- graph.edgelist(as.matrix(pairs[,1:2]), directed=FALSE)
-plot(g, edge.curved=FALSE, edge.width=pairs$freq, vertex.label.dist=.8)}
+pairs <- data.frame(do.call(rbind,
+   sapply(split(dat$treatment, dat$study), function(x) t(combn(x,2)))), stringsAsFactors=FALSE)
+pairs$X1 <- factor(pairs$X1, levels=sort(unique(dat$treatment)))
+pairs$X2 <- factor(pairs$X2, levels=sort(unique(dat$treatment)))
+tab <- table(pairs[,1], pairs[,2])
+tab # adjacency matrix
+g <- graph_from_adjacency_matrix(tab, mode = "plus", weighted=TRUE, diag=FALSE)
+plot(g, edge.curved=FALSE, edge.width=E(g)$weight, layout=layout_as_star(g, center="placebo"),
+     vertex.size=45, vertex.color="lightgray", vertex.label.color="black", vertex.label.font=2)}
 
 ### table of studies versus treatments examined
 print(addmargins(table(dat$study, dat$treatment)), zero.print="")
@@ -59,17 +65,15 @@ res.fe
 anova(res.fe, btt="treatment")
 
 ### forest plot of the contrast estimates (treatments versus placebos)
-dev.new(width=7, height=5)
 forest(tail(coef(res.fe), 9), tail(diag(vcov(res.fe)), 9), slab=levels(dat$treatment)[-1],
        xlim=c(-2.5, 2.0), alim=c(-1.5, 0.5), psize=1, xlab="Estimate", header="Treatment")
 
-### weight matrix for the estimation of the fixed effects (leaving out study effects)
+### weight matrix for the estimation of the fixed effects (leaving out the study effects)
 w <- t(tail(vcov(res.fe) \%*\% t(model.matrix(res.fe)) \%*\% weights(res.fe, type="matrix"), 9))
 rownames(w) <- res.fe$slab
 
 ### create shade plot for the diabetes network with placebo as the reference treatment
 ### negative values in blue shades, positive values in red shades
-dev.new()
 cols <- colorRampPalette(c("blue", "gray95", "red"))(9)
 heatmap(w, Rowv=NA, Colv=NA, scale="none", margins=c(6,11), col=cols,
         cexRow=.7, cexCol=1, labCol=levels(dat$treatment)[-1])
@@ -87,7 +91,7 @@ anova(res.re, btt="treatment")
 forest(tail(coef(res.re), 9), tail(diag(vcov(res.re)), 9), slab=levels(dat$treatment)[-1],
        xlim=c(-3.0, 2.5), alim=c(-1.5, 0.5), psize=1, xlab="Estimate", header="Treatment")
 
-### compute contribution of each study to the overall Q-test value
+### compute the contribution of each study to the overall Q-test value
 qi <- sort(by((resid(res.fe) / sqrt(dat$vi))^2, dat$study, sum))
 
 ### check that the values add up
@@ -129,17 +133,23 @@ dat
 ### network meta-analysis using a contrast-based random-effects model
 ### by setting rho=1/2, tau^2 reflects the amount of heterogeneity for all treatment comparisons
 ### the treatment left out (placebo) becomes the reference level for the treatment comparisons
-res.cb <- rma.mv(yi, V, mods = ~ acarbose + benfluorex + metformin + miglitol + pioglitazone +
-                                 rosiglitazone + sitagliptin + sulfonylurea + vildagliptin - 1,
-                 random = ~ factor(id) | study, rho=1/2, data=dat)
-res.cb
+res <- rma.mv(yi, V, mods = ~ acarbose + benfluorex + metformin + miglitol + pioglitazone +
+                              rosiglitazone + sitagliptin + sulfonylurea + vildagliptin - 1,
+              random = ~ comp | study, rho=1/2, data=dat)
+res
 
 ### estimate all pairwise differences between treatments (using the 'multcomp' package)
 if (require(multcomp)) {
-   contr <- contrMat(setNames(rep(1,res.cb$p), colnames(res.cb$X)), type="Tukey")
-   sav <- predict(res.cb, newmods=contr)
+   contr <- contrMat(setNames(rep(1,res$p), colnames(res$X)), type="Tukey")
+   sav <- predict(res, newmods=contr)
    sav[["slab"]] <- rownames(contr)
    sav
 }
+
+### fit random inconsistency effects model (see Law et al., 2016)
+res <- rma.mv(yi, V, mods = ~ acarbose + benfluorex + metformin + miglitol + pioglitazone +
+                              rosiglitazone + sitagliptin + sulfonylurea + vildagliptin - 1,
+              random = list(~ comp | study, ~ comp | design), rho=1/2, phi=1/2, data=dat)
+res
 }
 \keyword{datasets}

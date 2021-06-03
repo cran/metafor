@@ -1,13 +1,12 @@
 addpoly.rma <- function(x, row=-2, level=x$level, annotate=TRUE,
-addcred=FALSE, digits=2, width, mlab, transf, atransf, targs,
+addpred=FALSE, digits=2, width, mlab, transf, atransf, targs,
 efac=1, col, border, fonts, cex, ...) {
 
    #########################################################################
 
    mstyle <- .get.mstyle("crayon" %in% .packages())
 
-   if (!inherits(x, "rma"))
-      stop(mstyle$stop("Argument 'x' must be an object of class \"rma\"."))
+   .chkclass(class(x), must="rma")
 
    if (!x$int.only)
       stop(mstyle$stop("Fitted model should not contain moderators."))
@@ -39,13 +38,24 @@ efac=1, col, border, fonts, cex, ...) {
    if (missing(cex))
       cex <- NULL
 
-   if (addcred) {
-      temp <- predict(x, level=level)
-      cr.lb <- temp$cr.lb
-      cr.ub <- temp$cr.ub
+   ddd <- list(...)
+
+   if (!is.null(ddd$addcred))
+      addpred <- ddd$addcred
+
+   if (is.null(ddd$pi.type)) {
+      pi.type <- "default"
    } else {
-      cr.lb <- NA
-      cr.ub <- NA
+      pi.type <- ddd$pi.type
+   }
+
+   if (addpred) {
+      temp <- predict(x, level=level, pi.type=pi.type)
+      pi.lb <- temp$pi.lb
+      pi.ub <- temp$pi.ub
+   } else {
+      pi.lb <- NA
+      pi.ub <- NA
    }
 
    #########################################################################
@@ -53,11 +63,11 @@ efac=1, col, border, fonts, cex, ...) {
    ### label for model estimate (if not specified)
 
    if (is.null(mlab))
-      mlab <- ifelse((x$method=="FE"), "FE Model", "RE Model")
+      mlab <- sapply(x$method, switch, "FE"="FE Model", "EE"="EE Model", "CE"="CE Model", "RE Model", USE.NAMES=FALSE)
 
    ### passing ci.lb and ci.ub, so that the bounds are correct when the model was fitted with test="knha"
 
-   addpoly(x$beta, ci.lb=x$ci.lb, ci.ub=x$ci.ub, cr.lb=cr.lb, cr.ub=cr.ub,
+   addpoly(x$beta, ci.lb=x$ci.lb, ci.ub=x$ci.ub, pi.lb=pi.lb, pi.ub=pi.ub,
            rows=row, level=level, annotate=annotate, digits=digits, width=width,
            mlab=mlab, transf=transf, atransf=atransf, targs=targs,
            efac=efac, col=col, border=border, fonts=fonts, cex=cex, ...)

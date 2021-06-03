@@ -18,33 +18,42 @@
 \details{
    The dataset includes the results from 24 studies on the effectiveness of various counseling types for smoking cessation (i.e., self-help, individual counseling, group counseling, and no contact). The dataset indicates the total number of individuals within each study arm and the number that were abstinent from 6 to 12 months. The majority of the studies compared two interventions types against each other, while 2 studies compared three types against each other simultaneously.
 
-   The data can be used for a \sQuote{network meta-analysis} (also called \sQuote{mixed treatment comparison meta-analysis}). The code below shows how such an analysis can be conducted using an arm-based and a contrast-based model (see Salanti et al., 2008, for more details).
+   The data can be used for a \sQuote{network meta-analysis} (also called a \sQuote{mixed treatment comparison}). The code below shows how such an analysis can be conducted using an arm-based and a contrast-based model (see Salanti et al., 2008, for more details).
 }
 \source{
-   Hasselblad, V. (1998). Meta-analysis of multitreatment studies. \emph{Medical Decision Making}, \bold{18}, 37--43.
+   Hasselblad, V. (1998). Meta-analysis of multitreatment studies. \emph{Medical Decision Making}, \bold{18}(1), 37--43. \verb{https://doi.org/10.1177/0272989X9801800110}
 }
 \references{
    Gleser, L. J., & Olkin, I. (2009). Stochastically dependent effect sizes. In H. Cooper, L. V. Hedges, & J. C. Valentine (Eds.), \emph{The handbook of research synthesis and meta-analysis} (2nd ed., pp. 357--376). New York: Russell Sage Foundation.
 
-   Salanti, G., Higgins, J. P. T., Ades, A. E., & Ioannidis, J. P. A. (2008). Evaluation of networks of randomized trials. \emph{Statistical Methods in Medical Research}, \bold{17}, 279--301.
+   Law, M., Jackson, D., Turner, R., Rhodes, K., & Viechtbauer, W. (2016). Two new methods to fit models for network meta-analysis with random inconsistency effects. \emph{BMC Medical Research Methodology}, \bold{16}, 87. \verb{https://doi.org/10.1186/s12874-016-0184-5}
+
+   Salanti, G., Higgins, J. P. T., Ades, A. E., & Ioannidis, J. P. A. (2008). Evaluation of networks of randomized trials. \emph{Statistical Methods in Medical Research}, \bold{17}(3), 279--301. \verb{https://doi.org/10.1177/0962280207080643}
 }
 \examples{
 ### copy data into 'dat'
 dat <- dat.hasselblad1998
+dat
+
+### create network graph ('igraph' package must be installed)
+\dontrun{
+require(igraph)
+pairs <- data.frame(do.call(rbind,
+   sapply(split(dat$trt, dat$study), function(x) t(combn(x,2)))), stringsAsFactors=FALSE)
+lvls <- c("no_contact", "self_help", "ind_counseling", "grp_counseling")
+pairs$X1 <- factor(pairs$X1, levels=lvls)
+pairs$X2 <- factor(pairs$X2, levels=lvls)
+tab <- table(pairs[,1], pairs[,2])
+tab # adjacency matrix
+g <- graph_from_adjacency_matrix(tab, mode = "plus", weighted=TRUE, diag=FALSE)
+vertex_attr(g, "name") <- c("No Contact", "Self-Help",
+                            "Individual\nCounseling", "Group\nCounseling")
+plot(g, edge.curved=FALSE, edge.width=E(g)$weight, layout=layout_on_grid,
+     vertex.size=45, vertex.color="lightgray", vertex.label.color="black", vertex.label.font=2)}
 
 ### calculate log odds for each study arm
 dat <- escalc(measure="PLO", xi=xi, ni=ni, add=1/2, to="all", data=dat)
 dat
-
-### create network graph ('plyr' and 'igraph' packages must be installed)
-\dontrun{
-require(plyr)
-require(igraph)
-pairs <- do.call(rbind, sapply(split(dat$trt, dat$study), function(x) t(combn(x,2))))
-pairs <- ddply(data.frame(pairs), .(X1, X2), count)
-g <- graph.edgelist(as.matrix(pairs[,1:2]), directed=FALSE)
-plot(g, edge.curved=FALSE, edge.width=pairs$freq, vertex.label.dist=.7,
-vertex.label=c("Individual\nCounseling", "Group\nCounseling", "No Contact", "Self-Help"))}
 
 ### convert trt variable to factor with desired ordering of levels
 dat$trt <- factor(dat$trt, levels=c("no_contact", "self_help", "ind_counseling", "grp_counseling"))
@@ -100,10 +109,15 @@ dat
 ### network meta-analysis using a contrast-based random-effects model
 ### by setting rho=1/2, tau^2 reflects the amount of heterogeneity for all treatment comparisons
 res <- rma.mv(yi, V, mods = ~ self_help + ind_counseling + grp_counseling - 1,
-              random = ~ factor(id) | study, rho=1/2, data=dat)
+              random = ~ comp | study, rho=1/2, data=dat)
 res
 
 ### predicted odds ratios of interventions versus no contact
 predict(res, newmods=diag(3), transf=exp, digits=2)
+
+### fit random inconsistency effects model (see Law et al., 2016)
+res <- rma.mv(yi, V, mods = ~ self_help + ind_counseling + grp_counseling - 1,
+              random = list(~ comp | study, ~ comp | design), rho=1/2, phi=1/2, data=dat)
+res
 }
 \keyword{datasets}

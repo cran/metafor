@@ -2,8 +2,10 @@ confint.rma.mv <- function(object, parm, level, fixed=FALSE, sigma2, tau2, rho, 
 
    mstyle <- .get.mstyle("crayon" %in% .packages())
 
-   if (!inherits(object, "rma.mv"))
-      stop(mstyle$stop("Argument 'object' must be an object of class \"rma.mv\"."))
+   .chkclass(class(object), must="rma.mv")
+
+   if (!missing(parm))
+      warning(mstyle$warning("Argument 'parm' (currently) ignored."), call.=FALSE)
 
    x <- object
 
@@ -32,8 +34,17 @@ confint.rma.mv <- function(object, parm, level, fixed=FALSE, sigma2, tau2, rho, 
 
    ddd <- list(...)
 
+   .chkdots(ddd, c("time", "xlim", "extint"))
+
    if (.isTRUE(ddd$time))
       time.start <- proc.time()
+
+   if (!is.null(ddd$xlim)) {
+      if (length(ddd$xlim) != 2L)
+         stop(mstyle$stop("Argument 'xlim' should be a vector of length 2."))
+      control$vc.min <- ddd$xlim[1]
+      control$vc.max <- ddd$xlim[2]
+   }
 
    ### check if user has specified one of the sigma2, tau2, rho, gamma2, or phi arguments
 
@@ -63,10 +74,10 @@ confint.rma.mv <- function(object, parm, level, fixed=FALSE, sigma2, tau2, rho, 
             cl.vc <- cl
             cl.vc$sigma2 <- pos
             cl.vc$time <- FALSE
-            cl.vc$object <- quote(x)
+            #cl.vc$object <- quote(x)
             if (verbose)
                cat(mstyle$verbose(paste("\nObtaining CI for sigma2 =", pos, "\n")))
-            res.all[[j]] <- eval(cl.vc)
+            res.all[[j]] <- eval(cl.vc, envir=parent.frame())
          }
       }
 
@@ -77,10 +88,10 @@ confint.rma.mv <- function(object, parm, level, fixed=FALSE, sigma2, tau2, rho, 
                cl.vc <- cl
                cl.vc$tau2 <- pos
                cl.vc$time <- FALSE
-               cl.vc$object <- quote(x)
+               #cl.vc$object <- quote(x)
                if (verbose)
                   cat(mstyle$verbose(paste("\nObtaining CI for tau2 =", pos, "\n")))
-               res.all[[j]] <- eval(cl.vc)
+               res.all[[j]] <- eval(cl.vc, envir=parent.frame())
             }
          }
          if (any(!x$vc.fix$rho)) {
@@ -89,10 +100,10 @@ confint.rma.mv <- function(object, parm, level, fixed=FALSE, sigma2, tau2, rho, 
                cl.vc <- cl
                cl.vc$rho <- pos
                cl.vc$time <- FALSE
-               cl.vc$object <- quote(x)
+               #cl.vc$object <- quote(x)
                if (verbose)
                   cat(mstyle$verbose(paste("\nObtaining CI for rho =", pos, "\n")))
-               res.all[[j]] <- eval(cl.vc)
+               res.all[[j]] <- eval(cl.vc, envir=parent.frame())
             }
          }
       }
@@ -104,10 +115,10 @@ confint.rma.mv <- function(object, parm, level, fixed=FALSE, sigma2, tau2, rho, 
                cl.vc <- cl
                cl.vc$gamma2 <- pos
                cl.vc$time <- FALSE
-               cl.vc$object <- quote(x)
+               #cl.vc$object <- quote(x)
                if (verbose)
                   cat(mstyle$verbose(paste("\nObtaining CI for gamma2 =", pos, "\n")))
-               res.all[[j]] <- eval(cl.vc)
+               res.all[[j]] <- eval(cl.vc, envir=parent.frame())
             }
          }
          if (any(!x$vc.fix$phi)) {
@@ -116,10 +127,10 @@ confint.rma.mv <- function(object, parm, level, fixed=FALSE, sigma2, tau2, rho, 
                cl.vc <- cl
                cl.vc$phi <- pos
                cl.vc$time <- FALSE
-               cl.vc$object <- quote(x)
+               #cl.vc$object <- quote(x)
                if (verbose)
                   cat(mstyle$verbose(paste("\nObtaining CI for phi =", pos, "\n")))
-               res.all[[j]] <- eval(cl.vc)
+               res.all[[j]] <- eval(cl.vc, envir=parent.frame())
             }
          }
       }
@@ -328,7 +339,8 @@ confint.rma.mv <- function(object, parm, level, fixed=FALSE, sigma2, tau2, rho, 
          }
       }
 
-      con[pmatch(names(control), names(con))] <- control
+      con.pos <- pmatch(names(control), names(con))
+      con[c(na.omit(con.pos))] <- control[!is.na(con.pos)]
 
       if (verbose)
          con$verbose <- verbose
@@ -371,11 +383,11 @@ confint.rma.mv <- function(object, parm, level, fixed=FALSE, sigma2, tau2, rho, 
 
          for (i in seq_len(con$eptries)) {
 
-            res <- try(.profile.rma.mv(val = con$vc.min, obj=x, comp=comp, sigma2.pos=sigma2.pos, tau2.pos=tau2.pos, rho.pos=rho.pos, gamma2.pos=gamma2.pos, phi.pos=phi.pos, CI=TRUE, objective=objective, verbose=verbose), silent=TRUE)
+            res <- try(.profile.rma.mv(con$vc.min, obj=x, comp=comp, sigma2.pos=sigma2.pos, tau2.pos=tau2.pos, rho.pos=rho.pos, gamma2.pos=gamma2.pos, phi.pos=phi.pos, confint=TRUE, objective=objective, verbose=verbose), silent=TRUE)
 
-            if (!inherits(res, "try-error")) {
+            if (!inherits(res, "try-error") && !is.na(res)) {
 
-               if (res < 0) {
+               if (!.isTRUE(ddd$extint) && res < 0) {
 
                   vc.lb <- con$vc.min
                   lb.conv <- TRUE
@@ -391,7 +403,11 @@ confint.rma.mv <- function(object, parm, level, fixed=FALSE, sigma2, tau2, rho, 
 
                } else {
 
-                  res <- try(uniroot(.profile.rma.mv, interval=c(con$vc.min, vc), tol=con$tol, maxiter=con$maxiter, obj=x, comp=comp, sigma2.pos=sigma2.pos, tau2.pos=tau2.pos, rho.pos=rho.pos, gamma2.pos=gamma2.pos, phi.pos=phi.pos, CI=TRUE, objective=objective, verbose=verbose, check.conv=TRUE)$root, silent=TRUE)
+                  if (.isTRUE(ddd$extint)) {
+                     res <- try(uniroot(.profile.rma.mv, interval=c(con$vc.min, vc), tol=con$tol, maxiter=con$maxiter, extendInt="downX", obj=x, comp=comp, sigma2.pos=sigma2.pos, tau2.pos=tau2.pos, rho.pos=rho.pos, gamma2.pos=gamma2.pos, phi.pos=phi.pos, confint=TRUE, objective=objective, verbose=verbose, check.conv=TRUE)$root, silent=TRUE)
+                  } else {
+                     res <- try(uniroot(.profile.rma.mv, interval=c(con$vc.min, vc), tol=con$tol, maxiter=con$maxiter, obj=x, comp=comp, sigma2.pos=sigma2.pos, tau2.pos=tau2.pos, rho.pos=rho.pos, gamma2.pos=gamma2.pos, phi.pos=phi.pos, confint=TRUE, objective=objective, verbose=verbose, check.conv=TRUE)$root, silent=TRUE)
+                  }
 
                   ### check if uniroot method converged
                   if (!inherits(res, "try-error")) {
@@ -423,11 +439,11 @@ confint.rma.mv <- function(object, parm, level, fixed=FALSE, sigma2, tau2, rho, 
 
          for (i in seq_len(con$eptries)) {
 
-            res <- try(.profile.rma.mv(val = con$vc.max, obj=x, comp=comp, sigma2.pos=sigma2.pos, tau2.pos=tau2.pos, rho.pos=rho.pos, gamma2.pos=gamma2.pos, phi.pos=phi.pos, CI=TRUE, objective=objective, verbose=verbose), silent=TRUE)
+            res <- try(.profile.rma.mv(con$vc.max, obj=x, comp=comp, sigma2.pos=sigma2.pos, tau2.pos=tau2.pos, rho.pos=rho.pos, gamma2.pos=gamma2.pos, phi.pos=phi.pos, confint=TRUE, objective=objective, verbose=verbose), silent=TRUE)
 
-            if (!inherits(res, "try-error")) {
+            if (!inherits(res, "try-error") && !is.na(res)) {
 
-               if (res < 0) {
+               if (!.isTRUE(ddd$extint) && res < 0) {
 
                   vc.ub <- con$vc.max
                   ub.conv <- TRUE
@@ -443,7 +459,11 @@ confint.rma.mv <- function(object, parm, level, fixed=FALSE, sigma2, tau2, rho, 
 
                } else {
 
-                  res <- try(uniroot(.profile.rma.mv, interval=c(vc, con$vc.max), tol=con$tol, maxiter=con$maxiter, obj=x, comp=comp, sigma2.pos=sigma2.pos, tau2.pos=tau2.pos, rho.pos=rho.pos, gamma2.pos=gamma2.pos, phi.pos=phi.pos, CI=TRUE, objective=objective, verbose=verbose, check.conv=TRUE)$root, silent=TRUE)
+                  if (.isTRUE(ddd$extint)) {
+                     res <- try(uniroot(.profile.rma.mv, interval=c(vc, con$vc.max), tol=con$tol, maxiter=con$maxiter, extendInt="upX", obj=x, comp=comp, sigma2.pos=sigma2.pos, tau2.pos=tau2.pos, rho.pos=rho.pos, gamma2.pos=gamma2.pos, phi.pos=phi.pos, confint=TRUE, objective=objective, verbose=verbose, check.conv=TRUE)$root, silent=TRUE)
+                  } else {
+                     res <- try(uniroot(.profile.rma.mv, interval=c(vc, con$vc.max), tol=con$tol, maxiter=con$maxiter, obj=x, comp=comp, sigma2.pos=sigma2.pos, tau2.pos=tau2.pos, rho.pos=rho.pos, gamma2.pos=gamma2.pos, phi.pos=phi.pos, confint=TRUE, objective=objective, verbose=verbose, check.conv=TRUE)$root, silent=TRUE)
+                  }
 
                   ### check if uniroot method converged
                   if (!inherits(res, "try-error")) {
@@ -470,10 +490,10 @@ confint.rma.mv <- function(object, parm, level, fixed=FALSE, sigma2, tau2, rho, 
       ######################################################################
 
       if (!lb.conv)
-         warning(mstyle$warning("Cannot obtain lower bound of profile likelihood CI due to convergence problems."))
+         warning(mstyle$warning("Cannot obtain lower bound of profile likelihood CI due to convergence problems."), call.=FALSE)
 
       if (!ub.conv)
-         warning(mstyle$warning("Cannot obtain upper bound of profile likelihood CI due to convergence problems."))
+         warning(mstyle$warning("Cannot obtain upper bound of profile likelihood CI due to convergence problems."), call.=FALSE)
 
       ######################################################################
 
@@ -531,8 +551,8 @@ confint.rma.mv <- function(object, parm, level, fixed=FALSE, sigma2, tau2, rho, 
 
    if (fixed) {
 
-      if (is.element(x$test, c("t"))) {
-         crit <- qt(level/2, df=x$dfs, lower.tail=FALSE)
+      if (x$test == "t") {
+         crit <- sapply(seq_along(x$ddf), function(j) if (x$ddf[j] > 0) qt(level/2, df=x$ddf[j], lower.tail=FALSE) else NA)
       } else {
          crit <- qnorm(level/2, lower.tail=FALSE)
       }
@@ -552,6 +572,12 @@ confint.rma.mv <- function(object, parm, level, fixed=FALSE, sigma2, tau2, rho, 
             ci.ub <- sapply(ci.ub, transf, targs)
          }
       }
+
+      ### make sure order of intervals is always increasing
+
+      tmp <- .psort(ci.lb, ci.ub)
+      ci.lb <- tmp[,1]
+      ci.ub <- tmp[,2]
 
       res.fixed <- cbind(estimate=beta, ci.lb=ci.lb, ci.ub=ci.ub)
       rownames(res.fixed) <- rownames(x$beta)

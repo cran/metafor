@@ -1,14 +1,13 @@
 plot.gosh.rma <- function(x, het="I2", pch=16, cex=0.5, out, col, alpha, border,
-xlim, ylim, xhist=TRUE, yhist=TRUE, hh=.3, breaks, adjust, lwd, labels, ...) {
+xlim, ylim, xhist=TRUE, yhist=TRUE, hh=0.3, breaks, adjust, lwd, labels, ...) {
 
    mstyle <- .get.mstyle("crayon" %in% .packages())
 
-   if (!inherits(x, "gosh.rma"))
-      stop(mstyle$stop("Argument 'x' must be an object of class \"gosh.rma\"."))
+   .chkclass(class(x), must="gosh.rma")
 
    het <- match.arg(het, c("QE", "I2", "H2", "tau2"))
 
-   if (het == "tau2" && x$method == "FE")
+   if (het == "tau2" && is.element(x$method, c("FE","EE","CE")))
       stop(mstyle$stop("Cannot plot 'tau2' for fixed-effects models."))
 
    if (missing(alpha))

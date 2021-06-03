@@ -2,17 +2,13 @@ reporter.rma.uni <- function(x, dir, filename, format="html_document", open=TRUE
 
    mstyle <- .get.mstyle("crayon" %in% .packages())
 
-   if (!inherits(x, "rma.uni"))
-      stop(mstyle$stop("Argument 'x' must be an object of class \"rma.uni\"."))
+   .chkclass(class(x), must="rma.uni", notav=c("robust.rma", "rma.ls", "rma.uni.selmodel"))
 
    if (!suppressMessages(suppressWarnings(requireNamespace("rmarkdown", quietly=TRUE))))
       stop(mstyle$stop("Please install the 'rmarkdown' package to use the reporter function."))
 
    if (!is.element(x$test, c("z", "knha")))
       stop(mstyle$stop("Cannot only use reporter function when test='z' or test='knha'."))
-
-   if (x$model == "rma.ls")
-      stop(mstyle$stop("Cannot use reporter function for location-scale models."))
 
    if (!x$weighted)
       stop(mstyle$stop("Cannot use reporter function when 'weighted=FALSE'."))
@@ -24,13 +20,10 @@ reporter.rma.uni <- function(x, dir, filename, format="html_document", open=TRUE
       stop(mstyle$stop("Cannot use reporter function for models with a fixed tau^2 value."))
 
    if (!x$int.only)
-      stop(mstyle$stop("Cannot currently use reporter function for models with moderators. This will be implemented shortly."))
+      stop(mstyle$stop("Cannot currently use reporter function for models with moderators. This will be implemented eventually."))
 
    if (x$k == 1)
       stop(mstyle$stop("Cannot use reporter function when k = 1."))
-
-   if (inherits(x, "robust.rma"))
-      stop(mstyle$stop("Cannot use reporter function for objects of class \"robust.rma\"."))
 
    if (missing(digits)) {
       digits <- .get.digits(xdigits=x$digits, dmiss=TRUE)
@@ -41,7 +34,7 @@ reporter.rma.uni <- function(x, dir, filename, format="html_document", open=TRUE
    format <- match.arg(format, c("html_document", "pdf_document", "word_document")) # , "bookdown::pdf_document2"))
 
    if (format == "pdf_document" && (Sys.which("pdflatex") == ""))
-      warning(mstyle$warning("Cannot detect pdflatex executable. Rendering the pdf is likely to fail."), immediate.=TRUE)
+      warning(mstyle$warning("Cannot detect pdflatex executable. Rendering the pdf is likely to fail."), call.=FALSE, immediate.=TRUE)
 
    ### set/get directory for generating the report
 
@@ -100,22 +93,41 @@ reporter.rma.uni <- function(x, dir, filename, format="html_document", open=TRUE
 
    ### process forest argument
 
-   if (missing(forest)) {
-      args.forest <- ""
-   } else {
-      if (!is.character(args.forest))
-         stop(mstyle$stop("Argument 'args.forest' must be a character string."))
-      args.forest <- paste0(", ", forest)
+   plot.forest <- TRUE
+   args.forest <- ""
+   if (!missing(forest)) {
+      if (is.logical(forest)) {
+         if (isFALSE(forest))
+            plot.forest <- FALSE
+      } else {
+         if (!is.character(forest))
+            stop(mstyle$stop("Argument 'forest' must be a character string."))
+         args.forest <- paste0(", ", forest)
+      }
    }
 
    ### process funnel argument
 
-   if (missing(funnel)) {
-      args.funnel <- ""
+   plot.funnel <- TRUE
+   args.funnel <- ""
+   if (!missing(funnel)) {
+      if (is.logical(funnel)) {
+         if (isFALSE(funnel))
+            plot.funnel <- FALSE
+      } else {
+         if (!is.character(funnel))
+            stop(mstyle$stop("Argument 'funnel' must be a character string."))
+         args.funnel <- paste0(", ", funnel)
+      }
+   }
+
+   ### forest and funnel plot numbers
+   if (plot.forest) {
+      num.forest <- 1
+      num.funnel <- 2
    } else {
-      if (!is.character(args.funnel))
-         stop(mstyle$stop("Argument 'args.funnel' must be a character string."))
-      args.funnel <- paste0(", ", funnel)
+      num.forest <- NA
+      num.funnel <- 1
    }
 
    ### save model object
@@ -150,17 +162,35 @@ reporter.rma.uni <- function(x, dir, filename, format="html_document", open=TRUE
 
    ### model type
 
-   model <- ifelse(x$method == "FE", ifelse(x$int.only, "FE", "MR"), ifelse(x$int.only, "RE", "ME"))
-   model.name <- c(FE = "fixed-effects", MR = "(fixed-effects) meta-regression", RE = "random-effects", ME = "(mixed-effects) meta-regression")[model]
+   if (x$int.only) {
+      if (is.element(x$method, c("FE","EE","CE"))) {
+         model <- x$method
+      } else {
+         model <- "RE"
+      }
+   } else {
+      if (is.element(x$method, c("FE","EE","CE"))) {
+         model <- "MR"
+      } else {
+         model <- "ME"
+      }
+   }
+
+   model.name <- c(FE = "fixed-effects", EE = "equal-effects", CE = "common-effects", MR = "(fixed-effects) meta-regression", RE = "random-effects", ME = "(mixed-effects) meta-regression")[model]
 
    ### get tau^2 estimator name and set reference
 
-   tau2.method <- c(FE = "", HS = "Hunter-Schmidt", HE = "Hedges'", DL = "DerSimonian-Laird", GENQ = "generalized Q-statistic", GENQM = "(median-unbiased) generalized Q-statistic", SJ = "Sidik-Jonkman", ML = "maximum-likelihood", REML = "restricted maximum-likelihood", EB = "empirical Bayes", PM = "Paule-Mandel", PMM = "(median-unbiased) Paule-Mandel")[x$method]
+   tau2.method <- c(FE = "", HS = "Hunter-Schmidt", HSk = "k-corrected Hunter-Schmidt", HE = "Hedges'", DL = "DerSimonian-Laird", GENQ = "generalized Q-statistic", GENQM = "(median-unbiased) generalized Q-statistic", SJ = "Sidik-Jonkman", ML = "maximum-likelihood", REML = "restricted maximum-likelihood", EB = "empirical Bayes", PM = "Paule-Mandel", PMM = "(median-unbiased) Paule-Mandel")[x$method]
 
    if (x$method == "HS" && model == "RE")
       tau2.ref <- "[@hunter1990; @viechtbauer2005]"
    if (x$method == "HS" && model == "ME")
       tau2.ref <- "[@hunter1990; @viechtbauer2015]"
+
+   if (x$method == "HSk" && model == "RE")
+      tau2.ref <- "[@brannick2019; @hunter1990; @viechtbauer2005]"
+   if (x$method == "HSk" && model == "ME")
+      tau2.ref <- "[@brannick2019; @hunter1990; @viechtbauer2015]"
 
    if (x$method == "HE" && model == "RE")
       tau2.ref <- "[@hedges1985]"
@@ -212,7 +242,7 @@ reporter.rma.uni <- function(x, dir, filename, format="html_document", open=TRUE
 
    ### Q-test reference
 
-   if (is.element(model, c("FE", "RE"))) {
+   if (is.element(model, c("FE","EE","CE","RE"))) {
       qtest.ref <- "[@cochran1954]"
    } else {
       qtest.ref <- "[@hedges1983]"
@@ -241,8 +271,15 @@ reporter.rma.uni <- function(x, dir, filename, format="html_document", open=TRUE
    ### yaml header
 
    header <- paste0("---\n")
-   header <- paste0(header, "output: ", format, "\n")
+   header <- paste0(header, "output:\n")
+   if (format == "html_document")
+      header <- paste0(header, "  html_document:\n    toc: true\n    toc_float:\n      collapsed: false\n")
+   if (format == "pdf_document")
+      header <- paste0(header, "  pdf_document:\n    toc: true\n")
+   if (format == "word_document")
+      header <- paste0(header, "  word_document\n")
    header <- paste0(header, "title: Analysis Report\n")
+   header <- paste0(header, "toc-title: Table of Contents\n")
    header <- paste0(header, "author: Generated with the reporter() Function of the metafor Package\n")
    header <- paste0(header, "bibliography: references.bib\n")
    header <- paste0(header, "csl: apa.csl\n")
@@ -267,12 +304,12 @@ reporter.rma.uni <- function(x, dir, filename, format="html_document", open=TRUE
    if (x$measure != "GEN")
       methods <- paste0(methods, "The analysis was carried out using the ", measure, " as the outcome measure. ")
 
-   methods <- paste0(methods, "A ", model.name, " model was fitted to the data. ")
+   methods <- paste0(methods, "A", ifelse(model.name == "equal-effects", "n ", " "), model.name, " model was fitted to the data. ")
 
    if (is.element(model, c("RE", "ME")))
       methods <- paste0(methods, "The amount of ", ifelse(x$int.only, "", "residual "), "heterogeneity (i.e., $\\tau^2$), was estimated using the ", tau2.method, " estimator ", tau2.ref, ". ")
 
-   if (model == "FE")
+   if (is.element(model, c("FE","EE","CE")))
       methods <- paste0(methods, "The $Q$-test for heterogeneity ", qtest.ref, " and the $I^2$ statistic [@higgins2002] are reported. ")
 
    if (model == "MR")
@@ -285,7 +322,7 @@ reporter.rma.uni <- function(x, dir, filename, format="html_document", open=TRUE
       methods <- paste0(methods, "In addition to the estimate of $\\tau^2$, the $Q$-test for residual heterogeneity ", qtest.ref, " is reported. ")
 
    if (model == "RE")
-      methods <- paste0(methods, "In case any amount of heterogeneity is detected (i.e., $\\hat{\\tau}^2 > 0$, regardless of the results of the $Q$-test), a credibility/prediction interval for the true outcomes is also provided [@riley2011]. ")
+      methods <- paste0(methods, "In case any amount of heterogeneity is detected (i.e., $\\hat{\\tau}^2 > 0$, regardless of the results of the $Q$-test), a prediction interval for the true outcomes is also provided [@riley2011]. ")
 
    if (x$test == "knha")
       methods <- paste0(methods, "Tests and confidence intervals were computed using the Knapp and Hartung method [@knapp2003]. ")
@@ -300,13 +337,13 @@ reporter.rma.uni <- function(x, dir, filename, format="html_document", open=TRUE
 
    methods <- if (footnotes) paste0(methods, "[^cook] ") else paste0(methods, " ")
 
-   if (is.element(model, c("FE", "RE")))
+   if (is.element(model, c("FE","EE","CE","RE")))
       methods <- paste0(methods, "The rank correlation test [@begg1994] and the regression test [@sterne2005], using the standard error of the observed outcomes as predictor, are used to check for funnel plot asymmetry. ")
 
-   if (is.element(model, c("MR", "ME")))
+   if (is.element(model, c("MR","ME")))
       methods <- paste0(methods, "The regression test [@sterne2005], using the standard error of the observed outcomes as predictor (in addition to the moderators already included in the model), is used to check for funnel plot asymmetry. ")
 
-   methods <- paste0(methods, "The analysis was carried out using R (version ", getRversion(), ") [@rcore2018] and the **metafor** package (version ", x$version, ") [@viechtbauer2010a]. ")
+   methods <- paste0(methods, "The analysis was carried out using R (version ", getRversion(), ") [@rcore2020] and the **metafor** package (version ", x$version, ") [@viechtbauer2010a]. ")
 
    #########################################################################
 
@@ -323,24 +360,27 @@ reporter.rma.uni <- function(x, dir, filename, format="html_document", open=TRUE
    ### percent positive/negative
    results <- paste0(results, "with the majority of estimates being ", ifelse(mean(x$yi > 0) > .50, "positive", "negative"), " (", ifelse(mean(x$yi > 0) > .50, round(100*mean(x$yi > 0)), round(100*mean(x$yi < 0))), "%). ")
 
-   if (is.element(model, c("FE", "RE"))) {
+   if (is.element(model, c("FE","EE","CE","RE"))) {
 
       ### estimated average outcome with CI
-      results <- paste0(results, "The estimated average ", measure, " based on the ", model.name, " model was ", ifelse(model == "FE", "$\\hat{\\theta} = ", "$\\hat{\\mu} = "), .fcf(c(x$beta), digits[["est"]]), "$ ")
+      results <- paste0(results, "The estimated average ", measure, " based on the ", model.name, " model was ", ifelse(is.element(model, c("FE","EE","CE")), "$\\hat{\\theta} = ", "$\\hat{\\mu} = "), .fcf(c(x$beta), digits[["est"]]), "$ ")
       results <- paste0(results, "(", level, "% CI: $", .fcf(x$ci.lb, digits[["ci"]]), "$ to $", .fcf(x$ci.ub, digits[["ci"]]), "$). ")
 
       ### note: for some outcome measures (e.g., proportions), the test H0: mu/theta = 0 is not really relevant; maybe check for this
       results <- paste0(results, "Therefore, the average outcome ", ifelse(x$pval > 0.05, "did not differ", "differed"), " significantly from zero ($", ifelse(x$test == "z", "z", paste0("t(", x$k-1, ")")), " = ", .fcf(x$zval, digits[["test"]]), "$, ", fpval(x$pval), "). ")
 
       ### forest plot
-      results <- paste0(results, "A forest plot showing the observed outcomes and the estimate based on the ", model.name, " model is shown in Figure 1.\n\n")
-      if (is.element(format, c("pdf_document", "bookdown::pdf_document2")))
-         results <- paste0(results, "```{r, forestplot, echo=FALSE, fig.align=\"center\", fig.cap=\"Forest plot showing the observed outcomes and the estimate of the ", model.name, " model\"")
-      if (format == "html_document")
-         results <- paste0(results, "```{r, forestplot, echo=FALSE, fig.align=\"center\", fig.cap=\"Figure 1: Forest plot showing the observed outcomes and the estimate of the ", model.name, " model\"")
-      if (format == "word_document")
-         results <- paste0(results, "```{r, forestplot, echo=FALSE, fig.cap=\"Figure 1: Forest plot showing the observed outcomes and the estimate of the ", model.name, " model\"")
-      results <- paste0(results, ", dev.args=list(pointsize=9)}\npar(family=\"mono\")\ntmp <- metafor::forest(x, addcred=TRUE", args.forest, ")\ntext(tmp$xlim[1], x$k+2, \"Study\", pos=4, font=2, cex=tmp$cex)\ntext(tmp$xlim[2], x$k+2, \"Outcome [", level, "% CI]\", pos=2, font=2, cex=tmp$cex)\n```")
+      if (plot.forest) {
+         results <- paste0(results, "A forest plot showing the observed outcomes and the estimate based on the ", model.name, " model is shown in Figure ", num.forest, ".\n\n")
+         if (is.element(format, c("pdf_document", "bookdown::pdf_document2")))
+            results <- paste0(results, "```{r, forestplot, echo=FALSE, fig.align=\"center\", fig.cap=\"Forest plot showing the observed outcomes and the estimate of the ", model.name, " model\"")
+         if (format == "html_document")
+            results <- paste0(results, "```{r, forestplot, echo=FALSE, fig.align=\"center\", fig.cap=\"Figure ", num.forest, ": Forest plot showing the observed outcomes and the estimate of the ", model.name, " model\"")
+         if (format == "word_document")
+            results <- paste0(results, "```{r, forestplot, echo=FALSE, fig.cap=\"Figure ", num.forest, ": Forest plot showing the observed outcomes and the estimate of the ", model.name, " model\"")
+         results <- paste0(results, ", dev.args=list(pointsize=9)}\npar(family=\"mono\")\npar(mar=c(5,4,1,2))\ntmp <- metafor::forest(x, addpred=TRUE, header=TRUE", args.forest, ")\n```")
+         #text(tmp$xlim[1], x$k+2, \"Study\", pos=4, font=2, cex=tmp$cex)\ntext(tmp$xlim[2], x$k+2, \"Outcome [", level, "% CI]\", pos=2, font=2, cex=tmp$cex)\n
+      }
 
       results <- paste0(results, "\n\n")
 
@@ -360,15 +400,15 @@ reporter.rma.uni <- function(x, dir, filename, format="html_document", open=TRUE
       ### I^2 statistic
       results <- paste0(results, ", $I^2 = ", .fcf(x$I2, digits[["het"]]), "$%). ")
 
-      ### for the RE model, when any amount of heterogeneity is detected, provide credibility/prediction interval and note whether the directionality of effects is consistent or not
+      ### for the RE model, when any amount of heterogeneity is detected, provide prediction interval and note whether the directionality of effects is consistent or not
       if (model == "RE" && x$tau2 > 0) {
          pred <- predict(x)
-         results <- paste0(results, "A ", level, "% credibility/prediction interval for the true outcomes is given by $", .fcf(pred$cr.lb, digits[["ci"]]), "$ to $", .fcf(pred$cr.ub, digits[["ci"]]), "$. ")
-         if (c(x$beta) > 0 && pred$cr.lb < 0)
+         results <- paste0(results, "A ", level, "% prediction interval for the true outcomes is given by $", .fcf(pred$pi.lb, digits[["ci"]]), "$ to $", .fcf(pred$pi.ub, digits[["ci"]]), "$. ")
+         if (c(x$beta) > 0 && pred$pi.lb < 0)
             results <- paste0(results, "Hence, although the average outcome is estimated to be positive, in some studies the true outcome may in fact be negative.")
-         if (c(x$beta) < 0 && pred$cr.ub > 0)
+         if (c(x$beta) < 0 && pred$pi.ub > 0)
             results <- paste0(results, "Hence, although the average outcome is estimated to be negative, in some studies the true outcome may in fact be positive.")
-         if ((c(x$beta) > 0 && pred$cr.lb > 0) || (c(x$beta) < 0 && pred$cr.ub < 0))
+         if ((c(x$beta) > 0 && pred$pi.lb > 0) || (c(x$beta) < 0 && pred$pi.ub < 0))
             results <- paste0(results, "Hence, even though there may be some heterogeneity, the true outcomes of the studies are generally in the same direction as the estimated average outcome.")
       }
 
@@ -419,7 +459,8 @@ reporter.rma.uni <- function(x, dir, filename, format="html_document", open=TRUE
       ### publication bias
       ranktest <- suppressWarnings(ranktest(x))
       regtest  <- regtest(x)
-      results <- paste0(results, "A funnel plot of the estimates is shown in Figure 2. ")
+      if (plot.funnel)
+         results <- paste0(results, "A funnel plot of the estimates is shown in Figure ", num.funnel, ". ")
       if (ranktest$pval > .05 && regtest$pval > .05) {
          results <- paste0(results, "Neither the rank correlation nor the regression test indicated any funnel plot asymmetry ")
          results <- paste0(results, "(", fpval(ranktest$pval), " and ", fpval(regtest$pval), ", respectively). ")
@@ -434,12 +475,14 @@ reporter.rma.uni <- function(x, dir, filename, format="html_document", open=TRUE
          results <- paste0(results, "The rank correlation test indicated funnel plot asymmetry ($", fpval(ranktest$pval), ") but not the regression test (", fpval(regtest$pval), "). ")
 
       ### funnel plot
-      if (is.element(format, c("pdf_document", "bookdown::pdf_document2")))
-         results <- paste0(results, "\n\n```{r, funnelplot, echo=FALSE, fig.align=\"center\", fig.cap=\"Funnel plot\", dev.args=list(pointsize=9)}\nmetafor::funnel(x", args.funnel, ")\n```")
-      if (format == "html_document")
-         results <- paste0(results, "\n\n```{r, funnelplot, echo=FALSE, fig.align=\"center\", fig.cap=\"Figure 2: Funnel plot\", dev.args=list(pointsize=9)}\nmetafor::funnel(x", args.funnel, ")\n```")
-      if (format == "word_document")
-         results <- paste0(results, "\n\n```{r, funnelplot, echo=FALSE, fig.cap=\"Figure 2: Funnel plot\", dev.args=list(pointsize=9)}\nmetafor::funnel(x", args.funnel, ")\n```")
+      if (plot.funnel) {
+         if (is.element(format, c("pdf_document", "bookdown::pdf_document2")))
+            results <- paste0(results, "\n\n```{r, funnelplot, echo=FALSE, fig.align=\"center\", fig.cap=\"Funnel plot\", dev.args=list(pointsize=9)}\npar(mar=c(5,4,2,2))\nmetafor::funnel(x", args.funnel, ")\n```")
+         if (format == "html_document")
+            results <- paste0(results, "\n\n```{r, funnelplot, echo=FALSE, fig.align=\"center\", fig.cap=\"Figure ", num.funnel, ": Funnel plot\", dev.args=list(pointsize=9)}\npar(mar=c(5,4,2,2))\nmetafor::funnel(x", args.funnel, ")\n```")
+         if (format == "word_document")
+            results <- paste0(results, "\n\n```{r, funnelplot, echo=FALSE, fig.cap=\"Figure ", num.funnel, ": Funnel plot\", dev.args=list(pointsize=9)}\npar(mar=c(5,4,2,2))\nmetafor::funnel(x", args.funnel, ")\n```")
+      }
 
    }
 
@@ -547,7 +590,7 @@ reporter.rma.uni <- function(x, dir, filename, format="html_document", open=TRUE
          if (is.function(optb)) {
             invisible(optb(file.out))
          } else {
-            system(paste0(getOption("browser"), " '", file.out, "'"))
+            system(paste0(optb, " '", file.out, "'"))
          }
       }
 

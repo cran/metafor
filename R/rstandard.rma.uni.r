@@ -2,10 +2,10 @@ rstandard.rma.uni <- function(model, digits, type="marginal", ...) {
 
    mstyle <- .get.mstyle("crayon" %in% .packages())
 
-   if (!inherits(model, "rma.uni"))
-      stop(mstyle$stop("Argument 'model' must be an object of class \"rma.uni\"."))
+   .chkclass(class(model), must="rma.uni", notav=c("robust.rma", "rma.uni.selmodel"))
 
    na.act <- getOption("na.action")
+   on.exit(options(na.action=na.act))
 
    if (!is.element(na.act, c("na.omit", "na.exclude", "na.fail", "na.pass")))
       stop(mstyle$stop("Unknown 'na.action' specified under options()."))
@@ -14,11 +14,11 @@ rstandard.rma.uni <- function(model, digits, type="marginal", ...) {
 
    x <- model
 
-   if (!is.null(x$weight) & type == "conditional")
+   if (type == "conditional" && (!is.null(x$weights) || !x$weighted))
       stop(mstyle$stop("Extraction of conditional residuals not available for models with non-standard weights."))
 
-   if (type == "conditional" & inherits(x, "robust.rma"))
-      stop(mstyle$stop("Extraction of conditional residuals not available for objects of class \"robust.rma\"."))
+   #if (type == "conditional" & inherits(x, "robust.rma"))
+   #   stop(mstyle$stop("Extraction of conditional residuals not available for objects of class \"robust.rma\"."))
 
    if (missing(digits)) {
       digits <- .get.digits(xdigits=x$digits, dmiss=TRUE)
@@ -44,11 +44,14 @@ rstandard.rma.uni <- function(model, digits, type="marginal", ...) {
       ei[abs(ei) < 100 * .Machine$double.eps] <- 0
       #ei[abs(ei) < 100 * .Machine$double.eps * median(abs(ei), na.rm=TRUE)] <- 0 ### see lm.influence
 
-      if (inherits(x, "robust.rma")) {
-         ve <- ImH %*% tcrossprod(x$meat,ImH)
-      } else {
-         ve <- ImH %*% tcrossprod(x$M,ImH)
-      }
+      ### don't allow this; the SEs of the residuals cannot be estimated consistently for "robust.rma" objects
+      #if (inherits(x, "robust.rma")) {
+      #   ve <- ImH %*% tcrossprod(x$meat,ImH)
+      #} else {
+         #ve <- ImH %*% tcrossprod(x$M,ImH)
+      #}
+
+      ve <- ImH %*% tcrossprod(x$M,ImH)
 
       #ve <- x$M + x$X %*% x$vb %*% t(x$X) - 2*H%*%x$M
       sei <- sqrt(diag(ve))

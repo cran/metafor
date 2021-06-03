@@ -2,14 +2,7 @@ permutest.rma.uni <- function(x, exact=FALSE, iter=1000, permci=FALSE, progbar=T
 
    mstyle <- .get.mstyle("crayon" %in% .packages())
 
-   if (!inherits(x, "rma.uni"))
-      stop(mstyle$stop("Argument 'x' must be an object of class \"rma.uni\"."))
-
-   if (inherits(x, "robust.rma"))
-      stop(mstyle$stop("Method not available for objects of class \"robust.rma\"."))
-
-   if (inherits(x, "rma.ls"))
-      stop(mstyle$stop("Method not available for objects of class \"rma.ls\"."))
+   .chkclass(class(x), must="rma.uni", notav=c("robust.rma", "rma.ls", "rma.uni.selmodel"))
 
    if (missing(digits)) {
       digits <- .get.digits(xdigits=x$digits, dmiss=TRUE)
@@ -19,7 +12,7 @@ permutest.rma.uni <- function(x, exact=FALSE, iter=1000, permci=FALSE, progbar=T
 
    ddd <- list(...)
 
-   .chkdots(ddd, c("tol", "seed", "time"))
+   .chkdots(ddd, c("tol", "time", "seed"))
 
    if (!is.null(ddd$tol)) # in case user specifies comptol in the old manner
       comptol <- ddd$tol
@@ -98,7 +91,8 @@ permutest.rma.uni <- function(x, exact=FALSE, iter=1000, permci=FALSE, progbar=T
    con <- list(comptol=.Machine$double.eps^0.5, tol=.Machine$double.eps^0.25,
                maxiter=100, alternative="two.sided", p2defn="abs", stat="test",
                cialt="one.sided", seed=seed, distfac=1)
-   con[pmatch(names(control), names(con))] <- control
+   con.pos <- pmatch(names(control), names(con))
+   con[c(na.omit(con.pos))] <- control[!is.na(con.pos)]
 
    if (exists("comptol", inherits=FALSE))
       con$comptol <- comptol
@@ -136,7 +130,7 @@ permutest.rma.uni <- function(x, exact=FALSE, iter=1000, permci=FALSE, progbar=T
          stop(mstyle$stop("Number of iterations requested too large."))
 
       if (progbar)
-         pbar <- txtProgressBar(min=0, max=iter, style=3)
+         pbar <- pbapply::startpb(min=0, max=iter)
 
       if (exact) { ### exact permutation test for intercept-only models
 
@@ -144,7 +138,7 @@ permutest.rma.uni <- function(x, exact=FALSE, iter=1000, permci=FALSE, progbar=T
 
          for (i in seq_len(iter)) {
 
-            res <- try(suppressWarnings(rma.uni(signmat[i,]*x$yi, x$vi, weights=x$weights, intercept=TRUE, method=x$method, weighted=x$weighted, test=x$test, btt=1, tau2=ifelse(x$tau2.fix, x$tau2, NA), control=x$control)), silent=FALSE)
+            res <- try(suppressWarnings(rma.uni(signmat[i,]*x$yi, x$vi, weights=x$weights, intercept=TRUE, method=x$method, weighted=x$weighted, test=x$test, level=x$level, btt=1, tau2=ifelse(x$tau2.fix, x$tau2, NA), control=x$control, skipr2=TRUE)), silent=FALSE)
 
             if (inherits(res, "try-error"))
                next
@@ -154,7 +148,7 @@ permutest.rma.uni <- function(x, exact=FALSE, iter=1000, permci=FALSE, progbar=T
             QM.perm[i]   <- res$QM
 
             if (progbar)
-               setTxtProgressBar(pbar, i)
+               pbapply::setpb(pbar, i)
 
          }
 
@@ -167,9 +161,7 @@ permutest.rma.uni <- function(x, exact=FALSE, iter=1000, permci=FALSE, progbar=T
             signs <- sample(c(-1,1), x$k, replace=TRUE) ### easier to understand (a tad slower for small k, but faster for larger k)
             #signs <- 2*rbinom(x$k,1,.5)-1
 
-            #if (i == 2) print(sample(c(-1,1), x$k, replace=TRUE))
-
-            res <- try(suppressWarnings(rma.uni(signs*x$yi, x$vi, weights=x$weights, intercept=TRUE, method=x$method, weighted=x$weighted, test=x$test, btt=1, tau2=ifelse(x$tau2.fix, x$tau2, NA), control=x$control)), silent=FALSE)
+            res <- try(suppressWarnings(rma.uni(signs*x$yi, x$vi, weights=x$weights, intercept=TRUE, method=x$method, weighted=x$weighted, test=x$test, level=x$level, btt=1, tau2=ifelse(x$tau2.fix, x$tau2, NA), control=x$control, skipr2=TRUE)), silent=FALSE)
 
             if (inherits(res, "try-error"))
                next
@@ -181,7 +173,7 @@ permutest.rma.uni <- function(x, exact=FALSE, iter=1000, permci=FALSE, progbar=T
             i <- i + 1
 
             if (progbar)
-               setTxtProgressBar(pbar, i)
+               pbapply::setpb(pbar, i)
 
          }
 
@@ -271,7 +263,7 @@ permutest.rma.uni <- function(x, exact=FALSE, iter=1000, permci=FALSE, progbar=T
          stop(mstyle$stop("Number of iterations requested too large."))
 
       if (progbar)
-         pbar <- txtProgressBar(min=0, max=iter, style=3)
+         pbar <- pbapply::startpb(min=0, max=iter)
 
       if (exact) { ### exact permutation test for meta-regression models
 
@@ -280,7 +272,7 @@ permutest.rma.uni <- function(x, exact=FALSE, iter=1000, permci=FALSE, progbar=T
 
          for (i in seq_len(iter)) {
 
-            res <- try(suppressWarnings(rma.uni(x$yi, x$vi, weights=x$weights, mods=cbind(X[permmat[i,],]), intercept=FALSE, method=x$method, weighted=x$weighted, test=x$test, btt=x$btt, tau2=ifelse(x$tau2.fix, x$tau2, NA), control=x$control)), silent=FALSE)
+            res <- try(suppressWarnings(rma.uni(x$yi, x$vi, weights=x$weights, mods=cbind(X[permmat[i,],]), intercept=FALSE, method=x$method, weighted=x$weighted, test=x$test, level=x$level, btt=x$btt, tau2=ifelse(x$tau2.fix, x$tau2, NA), control=x$control, skipr2=TRUE)), silent=FALSE)
 
             if (inherits(res, "try-error"))
                next
@@ -290,7 +282,7 @@ permutest.rma.uni <- function(x, exact=FALSE, iter=1000, permci=FALSE, progbar=T
             QM.perm[i]    <- res$QM
 
             if (progbar)
-               setTxtProgressBar(pbar, i)
+               pbapply::setpb(pbar, i)
 
          }
 
@@ -300,7 +292,7 @@ permutest.rma.uni <- function(x, exact=FALSE, iter=1000, permci=FALSE, progbar=T
 
          while (i <= iter) {
 
-            res <- try(suppressWarnings(rma.uni(x$yi, x$vi, weights=x$weights, mods=cbind(X[sample(x$k),]), intercept=FALSE, method=x$method, weighted=x$weighted, test=x$test, btt=x$btt, tau2=ifelse(x$tau2.fix, x$tau2, NA), control=x$control)), silent=FALSE)
+            res <- try(suppressWarnings(rma.uni(x$yi, x$vi, weights=x$weights, mods=cbind(X[sample(x$k),]), intercept=FALSE, method=x$method, weighted=x$weighted, test=x$test, level=x$level, btt=x$btt, tau2=ifelse(x$tau2.fix, x$tau2, NA), control=x$control, skipr2=TRUE)), silent=FALSE)
 
             if (inherits(res, "try-error"))
                next
@@ -312,7 +304,7 @@ permutest.rma.uni <- function(x, exact=FALSE, iter=1000, permci=FALSE, progbar=T
             i <- i + 1
 
             if (progbar)
-               setTxtProgressBar(pbar, i)
+               pbapply::setpb(pbar, i)
 
          }
 
@@ -389,7 +381,7 @@ permutest.rma.uni <- function(x, exact=FALSE, iter=1000, permci=FALSE, progbar=T
    }
 
    if (progbar)
-      close(pbar)
+      pbapply::closepb(pbar)
 
    #########################################################################
 
@@ -407,7 +399,7 @@ permutest.rma.uni <- function(x, exact=FALSE, iter=1000, permci=FALSE, progbar=T
       if (1/iter > level / ifelse(con$cialt == "one.sided", 1, 2)) {
 
          permci <- FALSE
-         warning(mstyle$warning("Cannot obtain ", 100*(1-x$level), "% permutation-based CI; number of permutations (", iter, ") too low."))
+         warning(mstyle$warning("Cannot obtain ", 100*(1-x$level), "% permutation-based CI; number of permutations (", iter, ") too low."), call.=FALSE)
 
       } else {
 
@@ -472,8 +464,8 @@ permutest.rma.uni <- function(x, exact=FALSE, iter=1000, permci=FALSE, progbar=T
 
    #########################################################################
 
-   out <- list(pval=pval, QMp=QMp, beta=x$beta, se=x$se, zval=x$zval, ci.lb=ci.lb, ci.ub=ci.ub,
-               QM=x$QM, k=x$k, p=x$p, btt=x$btt, m=x$m, test=x$test, dfs=x$dfs,
+   out <- list(pval=pval, QMdf=x$QMdf, QMp=QMp, beta=x$beta, se=x$se, zval=x$zval, ci.lb=ci.lb, ci.ub=ci.ub,
+               QM=x$QM, k=x$k, p=x$p, btt=x$btt, m=x$m, test=x$test, dfs=x$dfs, ddf=x$ddf,
                int.only=x$int.only, digits=digits, exact.iter=exact.iter, permci=permci)
 
    if (retpermdist) {

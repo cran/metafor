@@ -2,8 +2,7 @@ weights.rma.peto <- function(object, type="diagonal", ...) {
 
    mstyle <- .get.mstyle("crayon" %in% .packages())
 
-   if (!inherits(object, "rma.peto"))
-      stop(mstyle$stop("Argument 'object' must be an object of class \"rma.peto\"."))
+   .chkclass(class(object), must="rma.peto")
 
    na.act <- getOption("na.action")
 
@@ -29,7 +28,7 @@ weights.rma.peto <- function(object, type="diagonal", ...) {
    if (type == "diagonal") {
 
       weight <- rep(NA_real_, x$k.f)
-      weight[x$not.na] <- wi/sum(wi) * 100
+      weight[x$not.na] <- wi / sum(wi) * 100
       names(weight) <- x$slab
 
       if (na.act == "na.omit")

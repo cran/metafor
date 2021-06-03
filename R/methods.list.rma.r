@@ -8,15 +8,15 @@
 
    slab.pos <- which(names(out) == "slab")
 
-   if (!missing(i)) ### for X element
-      out[seq_len(slab.pos-1)] <- lapply(out[seq_len(slab.pos-1)], function(r) if (class(r) == "matrix") r[i,] else r[i])
+   if (!missing(i)) ### for X and Z element
+      out[seq_len(slab.pos-1)] <- lapply(out[seq_len(slab.pos-1)], function(r) if (inherits(r, "matrix")) r[i,,drop=FALSE] else r[i])
 
    ### catch cases where user selects values outside 1:k
 
    if (length(out[[1]]) == 0L)
       return(NULL)
 
-   #out <- out[j] ### this causes all kinds of problems, so left out for now
+   #out <- out[j] ### this causes all kinds of problems, so left out for now (TODO: check if this is really a problem)
 
    out$slab <- x$slab[i]
 
@@ -121,26 +121,35 @@ tail.list.rma <- function (x, n = 6L, ...) {
 
 `$<-.list.rma` <- function(x, name, value) {
 
-   slab.pos <- which(names(x) == "slab")
+   if (name %in% names(x)) {
 
-   out <- list()
+      x[[name]] <- value
+      return(x)
 
-   for (i in seq_len(slab.pos-1)) {
-      out[[i]] <- x[[i]]
+   } else {
+
+      slab.pos <- which(names(x) == "slab")
+
+      out <- list()
+
+      for (i in seq_len(slab.pos-1)) {
+         out[[i]] <- x[[i]]
+      }
+
+      names(out) <- names(x)[seq_len(slab.pos-1)]
+
+      out[[name]] <- value
+
+      for (i in (slab.pos:length(x))) {
+         out[[i+1]] <- x[[i]]
+      }
+
+      names(out)[(slab.pos+1):(length(x)+1)] <- names(x)[slab.pos:length(x)]
+
+      class(out) <- class(x)
+      return(out)
+
    }
-
-   names(out) <- names(x)[seq_len(slab.pos-1)]
-
-   out[[name]] <- value
-
-   for (i in (slab.pos:length(x))) {
-      out[[i+1]] <- x[[i]]
-   }
-
-   names(out)[(slab.pos+1):(length(x)+1)] <- names(x)[slab.pos:length(x)]
-
-   class(out) <- class(x)
-   return(out)
 
 }
 

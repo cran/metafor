@@ -43,18 +43,18 @@
          cut.col <- qnorm((ai+ci)/ni)
       }
 
-      #       │ ci : di    #   ci = lo X and hi Y    di = hi X and hi Y
-      # var Y │∙∙∙∙:∙∙∙∙   #
-      #       │ ai : bi    #   ai = lo X and lo Y    bi = hi X and lo Y
+      #       │ ci | di    #   ci = lo X and hi Y    di = hi X and hi Y
+      # var Y │----+----   #
+      #       │ ai | bi    #   ai = lo X and lo Y    bi = hi X and lo Y
       #       ┼─────────
       #          var X
       #
       #      lo   hi
-      #    ┌────┬────┐
-      # lo │ ai │ bi │
-      #    ├────┼────┤ var Y
-      # hi │ ci │ di │
-      #    └────┴────┘
+      #    +----+----+
+      # lo | ai | bi |
+      #    +----+----+ var Y
+      # hi | ci | di |
+      #    +----+----+
       #       var X
 
       R <- matrix(c(1,rho,rho,1), nrow=2, ncol=2)
@@ -107,7 +107,7 @@
 
    ### check for non-convergence
    if (inherits(res, "try-error")) {
-      warning(mstyle$warning("Could not estimate tetrachoric correlation coefficient."))
+      warning(mstyle$warning("Could not estimate tetrachoric correlation coefficient."), call.=FALSE)
       return(list(yi=NA, vi=NA))
    }
 
@@ -118,7 +118,7 @@
 
    ### check for non-convergence
    if (inherits(res, "try-error")) {
-      warning(mstyle$warning("Could not estimate tetrachoric correlation coefficient."))
+      warning(mstyle$warning("Could not estimate tetrachoric correlation coefficient."), call.=FALSE)
       return(list(yi=NA, vi=NA))
    }
 
@@ -129,7 +129,7 @@
 
    ### check for problems with computing the inverse
    if (inherits(vi, "try-error")) {
-      warning(mstyle$warning("Could not estimate sampling variance of tetrachoric correlation coefficient."))
+      warning(mstyle$warning("Could not estimate sampling variance of tetrachoric correlation coefficient."), call.=FALSE)
       vi <- NA
    }
 
@@ -282,23 +282,5 @@
 
 #integrate(function(x) .dzcor(x, n=5, rho=.8), lower=-100, upper=100)
 #integrate(function(x) x*.dzcor(x, n=5, rho=.8), lower=-100, upper=100)
-
-############################################################################
-
-### function that prints the model fitting time
-
-.print.time <- function(x) {
-
-   mstyle <- .get.mstyle("crayon" %in% .packages())
-
-   hours   <- floor(x/60/60)
-   minutes <- floor(x/60) - hours*60
-   seconds <- round(x - minutes*60 - hours*60*60, ifelse(x > 60, 0, 2))
-
-   cat("\n")
-   cat(mstyle$message(paste("Processing time:", hours, ifelse(hours == 0 || hours > 1, "hours,", "hour,"), minutes, ifelse(minutes == 0 || minutes > 1, "minutes,", "minute,"), seconds, ifelse(x < 60 || seconds == 0 || seconds > 1, "seconds", "second"))))
-   cat("\n")
-
-}
 
 ############################################################################

@@ -63,7 +63,7 @@
    ### turn each variable in mf.g into a factor (not for SP/PHY structures or GEN)
    ### if a variable was a factor to begin with, this drops any unused levels, but order of existing levels is preserved
 
-   if (is.element(struct, c("SPEXP","SPGAU","SPLIN","SPRAT","SPSPH","PHYBM","PHYPL","PHYPD","GEN"))) {
+   if (is.element(struct, c("SPEXP","SPGAU","SPLIN","SPRAT","SPSPH","PHYBM","PHYPL","PHYPD","GEN","GDIAG"))) {
       mf.g <- data.frame(mf.g[-nvars], outer=factor(mf.g[[nvars]]))
    } else {
       mf.g <- data.frame(inner=factor(mf.g[[1]]), outer=factor(mf.g[[2]]))
@@ -77,7 +77,7 @@
    ### get number of levels of each variable in mf.g (vector with two values, for the inner and outer factor)
 
    #g.nlevels <- c(nlevels(mf.g[[1]]), nlevels(mf.g[[2]])) ### works only for factors
-   if (is.element(struct, c("SPEXP","SPGAU","SPLIN","SPRAT","SPSPH","PHYBM","PHYPL","PHYPD","GEN"))) {
+   if (is.element(struct, c("SPEXP","SPGAU","SPLIN","SPRAT","SPSPH","PHYBM","PHYPL","PHYPD","GEN","GDIAG"))) {
       g.nlevels <- c(length(unique(apply(mf.g[-nvars], 1, paste, collapse=" + "))), length(unique(mf.g[[nvars]])))
    } else {
       g.nlevels <- c(length(unique(mf.g[[1]])), length(unique(mf.g[[2]])))
@@ -86,7 +86,7 @@
    ### get levels of each variable in mf.g
 
    #g.levels <- list(levels(mf.g[[1]]), levels(mf.g[[2]])) ### works only for factors
-   if (is.element(struct, c("SPEXP","SPGAU","SPLIN","SPRAT","SPSPH","PHYBM","PHYPL","PHYPD","GEN"))) {
+   if (is.element(struct, c("SPEXP","SPGAU","SPLIN","SPRAT","SPSPH","PHYBM","PHYPL","PHYPD","GEN","GDIAG"))) {
       g.levels <- list(sort(unique(apply(mf.g[-nvars], 1, paste, collapse=" + "))), sort(unique((mf.g[[nvars]]))))
    } else {
       #g.levels <- list(sort(unique(as.character(mf.g[[1]]))), sort(unique(as.character(mf.g[[2]]))))
@@ -117,6 +117,11 @@
       p     <- nvars - 1
       tau2s <- p
       rhos  <- ifelse(p > 1, p*(p-1)/2, 1)
+   }
+   if (struct == "GDIAG") {
+      p     <- nvars - 1
+      tau2s <- p
+      rhos  <- 1
    }
 
    ### set default value(s) for tau2 if it is unspecified
@@ -183,7 +188,7 @@
 
    }
 
-   if (is.element(struct, c("GEN"))) {
+   if (is.element(struct, c("GEN","GDIAG"))) {
 
       if (sparse) {
          Z.G1 <- Matrix(as.matrix(mf.g[-nvars]), sparse=TRUE)
@@ -235,7 +240,7 @@
    ### redo: turn each variable in mf.g into a factor (not for SP structures or GEN)
    ### (reevaluates the levels present, but order of existing levels is preserved)
 
-   if (is.element(struct, c("SPEXP","SPGAU","SPLIN","SPRAT","SPSPH","PHYBM","PHYPL","PHYPD","GEN"))) {
+   if (is.element(struct, c("SPEXP","SPGAU","SPLIN","SPRAT","SPSPH","PHYBM","PHYPL","PHYPD","GEN","GDIAG"))) {
       mf.g <- data.frame(mf.g[-nvars], outer=factor(mf.g[[nvars]]))
    } else {
       mf.g <- data.frame(inner=factor(mf.g[[1]]), outer=factor(mf.g[[2]]))
@@ -244,7 +249,7 @@
    ### redo: get number of levels of each variable in mf.g (vector with two values, for the inner and outer factor)
 
    #g.nlevels <- c(nlevels(mf.g[[1]]), nlevels(mf.g[[2]])) ### works only for factors
-   if (is.element(struct, c("SPEXP","SPGAU","SPLIN","SPRAT","SPSPH","PHYBM","PHYPL","PHYPD","GEN"))) {
+   if (is.element(struct, c("SPEXP","SPGAU","SPLIN","SPRAT","SPSPH","PHYBM","PHYPL","PHYPD","GEN","GDIAG"))) {
       g.nlevels <- c(length(unique(apply(mf.g[-nvars], 1, paste, collapse=" + "))), length(unique(mf.g[[nvars]])))
    } else {
       g.nlevels <- c(length(unique(mf.g[[1]])), length(unique(mf.g[[2]])))
@@ -253,7 +258,7 @@
    ### redo: get levels of each variable in mf.g
 
    #g.levels <- list(levels(mf.g[[1]]), levels(mf.g[[2]])) ### works only for factors
-   if (is.element(struct, c("SPEXP","SPGAU","SPLIN","SPRAT","SPSPH","PHYBM","PHYPL","PHYPD","GEN"))) {
+   if (is.element(struct, c("SPEXP","SPGAU","SPLIN","SPRAT","SPSPH","PHYBM","PHYPL","PHYPD","GEN","GDIAG"))) {
       g.levels <- list(sort(unique(apply(mf.g[-nvars], 1, paste, collapse=" + "))), sort(unique((mf.g[[nvars]]))))
    } else {
       #g.levels <- list(sort(unique(as.character(mf.g[[1]]))), sort(unique(as.character(mf.g[[2]]))))
@@ -264,14 +269,14 @@
 
    g.levels.r <- !is.element(g.levels.f[[1]], g.levels[[1]])
 
-   ### warn if any levels were removed (not for "AR","CAR","SPEXP","SPGAU","SPLIN","SPRAT","SPSPH","GEN")
+   ### warn if any levels were removed (not for "AR","CAR","SPEXP","SPGAU","SPLIN","SPRAT","SPSPH","GEN","GDIAG")
 
-   if (any(g.levels.r) && !is.element(struct, c("AR","CAR","SPEXP","SPGAU","SPLIN","SPRAT","SPSPH","GEN")))
+   if (any(g.levels.r) && !is.element(struct, c("AR","CAR","SPEXP","SPGAU","SPLIN","SPRAT","SPSPH","GEN","GDIAG")))
       warning(mstyle$warning(paste0("One or more levels of inner factor (i.e., ", paste(g.levels.f[[1]][g.levels.r], collapse=", "), ") removed due to NAs.")), call.=FALSE)
 
-   ### for "ID" and "DIAG", fix rho to 0
+   ### for "ID", "DIAG", and "GDIAG", fix rho to 0
 
-   if (is.element(struct, c("ID","DIAG")))
+   if (is.element(struct, c("ID","DIAG","GDIAG")))
       rho <- 0
 
    ### if there is only a single arm for "CS","HCS","AR","HAR","CAR" (either to begin with or after removing NAs), then fix rho to 0
@@ -281,14 +286,14 @@
       warning(mstyle$warning(paste0("Inner factor has only a single level, so fixed value of ", ifelse(isG, 'rho', 'phi'), " to 0.")), call.=FALSE)
    }
 
-   ### if there is only a single arm for SP/PHY structures or GEN (either to begin with or after removing NAs), cannot fit model
+   ### if there is only a single arm for SP/PHY structures or GEN/GDIAG (either to begin with or after removing NAs), cannot fit model
 
-   if (g.nlevels[1] == 1 && is.element(struct, c("SPEXP","SPGAU","SPLIN","SPRAT","SPSPH","PHYBM","PHYPL","PHYPD","GEN")))
+   if (g.nlevels[1] == 1 && is.element(struct, c("SPEXP","SPGAU","SPLIN","SPRAT","SPSPH","PHYBM","PHYPL","PHYPD","GEN","GDIAG")))
       stop(mstyle$stop("Cannot fit model since inner term only has a single level."), call.=FALSE)
 
    ### k per level of the inner factor
 
-   if (is.element(struct, c("SPEXP","SPGAU","SPLIN","SPRAT","SPSPH","PHYBM","PHYPL","PHYPD","GEN"))) {
+   if (is.element(struct, c("SPEXP","SPGAU","SPLIN","SPRAT","SPSPH","PHYBM","PHYPL","PHYPD","GEN","GDIAG"))) {
       g.levels.k <- table(factor(apply(mf.g[-nvars], 1, paste, collapse=" + "), levels=g.levels.f[[1]]))
    } else {
       g.levels.k <- table(factor(mf.g[[1]], levels=g.levels.f[[1]]))
@@ -300,7 +305,7 @@
    #if (is.element(struct, c("HCS","UN","DIAG","HAR"))) {
    #   if (any(is.na(tau2) & g.levels.k == 1)) {
    #      tau2[is.na(tau2) & g.levels.k == 1] <- 0
-   #      warning(mstyle$warning("Inner factor has k=1 for one or more levels. Corresponding 'tau2' value(s) fixed to 0."))
+   #      warning(mstyle$warning("Inner factor has k=1 for one or more levels. Corresponding 'tau2' value(s) fixed to 0."), call.=FALSE)
    #   }
    #}
 
@@ -319,7 +324,7 @@
 
    g.levels.comb.k <- NULL
 
-   if (!is.element(struct, c("SPEXP","SPGAU","SPLIN","SPRAT","SPSPH","PHYBM","PHYPL","PHYPD","GEN"))) {
+   if (!is.element(struct, c("SPEXP","SPGAU","SPLIN","SPRAT","SPSPH","PHYBM","PHYPL","PHYPD","GEN","GDIAG"))) {
 
       ### create matrix where each row (= study) indicates how often each arm occurred
       ### then turn this into a list (with each element equal to a row (= study))
@@ -374,6 +379,10 @@
 
    if (struct == "UNR") {
       G <- .con.vcov.UNR(tau2, rho)
+   }
+
+   if (is.element(struct, c("GDIAG"))) {
+      G <- diag(tau2, nrow=length(tau2), ncol=length(tau2))
    }
 
    if (is.element(struct, c("ID","DIAG"))) {
@@ -537,7 +546,7 @@
       if (struct == "PHYPD")
          rho.init <- 1
       if (!is.element(struct, c("PHYBM","PHYPL","PHYPD")))
-         rho.init <- suppressMessages(quantile(Dmat[upper.tri(Dmat)], 0.25)) # suppressMessages() to avoid '<sparse>[ <logic> ] : .M.sub.i.logical() maybe inefficient' messages when sparse=TRUE
+         rho.init <- unname(suppressMessages(quantile(Dmat[upper.tri(Dmat)], 0.25))) # suppressMessages() to avoid '<sparse>[ <logic> ] : .M.sub.i.logical() maybe inefficient' messages when sparse=TRUE
    } else {
       rho.init <- NULL
    }
@@ -720,6 +729,10 @@
       }
    }
 
+   if (struct == "GDIAG") {
+      E <- diag(v, nrow=length(v), ncol=length(v))
+   }
+
    if (is.element(struct, c("ID","DIAG")))
       E <- diag(v, nrow=ncol.Z1, ncol=ncol.Z1)
 
@@ -788,7 +801,7 @@
 
    ### set variance and corresponding correlation value(s) to 0 for any levels that were removed
 
-   if (!is.element(struct, c("SPEXP","SPGAU","SPLIN","SPRAT","SPSPH","PHYBM","PHYPL","PHYPD","GEN")) && any(levels.r)) {
+   if (!is.element(struct, c("SPEXP","SPGAU","SPLIN","SPRAT","SPSPH","PHYBM","PHYPL","PHYPD","GEN","GDIAG")) && any(levels.r)) {
       E[levels.r,] <- 0
       E[,levels.r] <- 0
    }
@@ -880,7 +893,7 @@
    if (inherits(W, "try-error")) {
 
       ### if M is not positive-definite, set the (restricted) log likelihood to -Inf
-      ### this idea is based on: http://stats.stackexchange.com/q/11368/1934 (this is crude, but should
+      ### this idea is based on: https://stats.stackexchange.com/q/11368/1934 (this is crude, but should
       ### move the parameter estimates away from values that create the non-positive-definite M matrix)
 
       if (dofit) {
@@ -990,3 +1003,262 @@
 
 ############################################################################
 
+.cooks.distance.rma.mv <- function(i, obj, parallel, svb, cluster, ids, reestimate, btt) {
+
+   if (parallel == "snow")
+      library(metafor)
+
+   incl <- cluster %in% ids[i]
+
+   ### note: not.na=FALSE only when there are missings in data, not when model below cannot be fitted or results in dropped coefficients
+
+   if (reestimate) {
+
+      ### set initial values to estimates from full model
+
+      control             <- obj$control
+      control$sigma2.init <- obj$sigma2
+      control$tau2.init   <- obj$tau2
+      control$rho.init    <- obj$rho
+      control$gamma2.init <- obj$gamma2
+      control$phi.init    <- obj$phi
+
+      ### fit model without data from ith cluster
+
+      res <- try(suppressWarnings(rma.mv(obj$yi, V=obj$V, W=obj$W, mods=obj$X, random=obj$random, struct=obj$struct, intercept=FALSE, data=obj$mf.r, method=obj$method, test=obj$test, dfs=obj$dfs, level=obj$level, R=obj$R, Rscale=obj$Rscale, sigma2=ifelse(obj$vc.fix$sigma2, obj$sigma2, NA), tau2=ifelse(obj$vc.fix$tau2, obj$tau2, NA), rho=ifelse(obj$vc.fix$rho, obj$rho, NA), gamma2=ifelse(obj$vc.fix$gamma2, obj$gamma2, NA), phi=ifelse(obj$vc.fix$phi, obj$phi, NA), sparse=obj$sparse, dist=obj$dist, control=control, subset=!incl)), silent=TRUE)
+
+   } else {
+
+      ### set values of variance/correlation components to those from the 'full' model
+
+      res <- try(suppressWarnings(rma.mv(obj$yi, V=obj$V, W=obj$W, mods=obj$X, random=obj$random, struct=obj$struct, intercept=FALSE, data=obj$mf.r, method=obj$method, test=obj$test, dfs=obj$dfs, level=obj$level, R=obj$R, Rscale=obj$Rscale, sigma2=obj$sigma2, tau2=obj$tau2, rho=obj$rho, gamma2=obj$gamma2, phi=obj$phi, sparse=obj$sparse, dist=obj$dist, control=obj$control, subset=!incl)), silent=TRUE)
+
+   }
+
+   if (inherits(res, "try-error"))
+      return(list(cook.d = NA))
+
+   ### removing a cluster could lead to a model coefficient becoming inestimable
+
+   if (any(res$coef.na))
+      return(list(cook.d = NA))
+
+   ### compute dfbeta value(s) (including coefficients as specified via btt)
+
+   dfb <- obj$beta[btt] - res$beta[btt]
+
+   ### compute Cook's distance
+
+   return(list(cook.d = crossprod(dfb,svb) %*% dfb))
+
+}
+
+.rstudent.rma.mv <- function(i, obj, parallel, cluster, ids, reestimate) {
+
+   if (parallel == "snow")
+      library(metafor)
+
+   incl <- cluster %in% ids[i]
+
+   k.id <- sum(incl)
+
+   if (reestimate) {
+
+      ### set initial values to estimates from full model
+
+      control             <- obj$control
+      control$sigma2.init <- obj$sigma2
+      control$tau2.init   <- obj$tau2
+      control$rho.init    <- obj$rho
+      control$gamma2.init <- obj$gamma2
+      control$phi.init    <- obj$phi
+
+      ### fit model without data from ith cluster
+
+      res <- try(suppressWarnings(rma.mv(obj$yi, V=obj$V, W=obj$W, mods=obj$X, random=obj$random, struct=obj$struct, intercept=FALSE, data=obj$mf.r, method=obj$method, test=obj$test, dfs=obj$dfs, level=obj$level, R=obj$R, Rscale=obj$Rscale, sigma2=ifelse(obj$vc.fix$sigma2, obj$sigma2, NA), tau2=ifelse(obj$vc.fix$tau2, obj$tau2, NA), rho=ifelse(obj$vc.fix$rho, obj$rho, NA), gamma2=ifelse(obj$vc.fix$gamma2, obj$gamma2, NA), phi=ifelse(obj$vc.fix$phi, obj$phi, NA), sparse=obj$sparse, dist=obj$dist, control=control, subset=!incl)), silent=TRUE)
+
+   } else {
+
+      ### set values of variance/correlation components to those from the 'full' model
+
+      res <- try(suppressWarnings(rma.mv(obj$yi, V=obj$V, W=obj$W, mods=obj$X, random=obj$random, struct=obj$struct, intercept=FALSE, data=obj$mf.r, method=obj$method, test=obj$test, dfs=obj$dfs, level=obj$level, R=obj$R, Rscale=obj$Rscale, sigma2=obj$sigma2, tau2=obj$tau2, rho=obj$rho, gamma2=obj$gamma2, phi=obj$phi, sparse=obj$sparse, dist=obj$dist, control=obj$control, subset=!incl)), silent=TRUE)
+
+   }
+
+   if (inherits(res, "try-error"))
+      return(list(delresid = rep(NA, k.id), sedelresid = rep(NA, k.id), X2 = NA, k.id = NA, pos = which(incl)))
+
+   ### removing a cluster could lead to a model coefficient becoming inestimable
+
+   if (any(res$coef.na))
+      return(list(delresid = rep(NA, k.id), sedelresid = rep(NA, k.id), X2 = NA, k.id = NA, pos = which(incl)))
+
+   ### fit model based on all data but with var/cor components fixed to those from res
+
+   tmp <- try(suppressWarnings(rma.mv(obj$yi, V=obj$V, W=obj$W, mods=obj$X, random=obj$random, struct=obj$struct, intercept=FALSE, data=obj$mf.r, method=obj$method, test=obj$test, dfs=obj$dfs, level=obj$level, R=obj$R, Rscale=obj$Rscale, sigma2=res$sigma2, tau2=res$tau2, rho=res$rho, gamma2=res$gamma2, phi=res$phi, sparse=obj$sparse, dist=obj$dist, control=obj$control)), silent=TRUE)
+   #tmp <- try(rma.mv(obj$yi, V=obj$V, W=obj$W, mods=obj$X, random=obj$random, struct=obj$struct, intercept=FALSE, data=obj$mf.r, method=obj$method, test=obj$test, dfs=obj$dfs, level=obj$level, R=obj$R, Rscale=obj$Rscale, sigma2=res$sigma2, tau2=res$tau2, rho=res$rho, gamma2=res$gamma2, phi=res$phi, sparse=obj$sparse, dist=obj$dist, control=obj$control), silent=FALSE)
+
+   Xi <- obj$X[incl,,drop=FALSE]
+   delpred  <- Xi %*% res$beta
+   vdelpred <- Xi %*% res$vb %*% t(Xi)
+   delresid <- c(obj$yi[incl] - delpred)
+   sedelresid <- c(sqrt(diag(tmp$M[incl,incl,drop=FALSE] + vdelpred)))
+
+   sve <- try(chol2inv(chol(tmp$M[incl,incl,drop=FALSE] + vdelpred)), silent=TRUE)
+   #sve <- try(solve(tmp$M[incl,incl,drop=FALSE] + vdelpred), silent=TRUE)
+
+   if (inherits(sve, "try-error"))
+      return(list(delresid = delresid, sedelresid = sedelresid, X2 = NA, k.id = k.id, pos = which(incl)))
+
+   X2 <- c(rbind(delresid) %*% sve %*% cbind(delresid))
+
+   return(list(delresid = delresid, sedelresid = sedelresid, X2 = X2, k.id = k.id, pos = which(incl)))
+
+}
+
+.dfbetas.rma.mv <- function(i, obj, parallel, cluster, ids, reestimate) {
+
+   if (parallel == "snow")
+      library(metafor)
+
+   incl <- cluster %in% ids[i]
+
+   if (reestimate) {
+
+      ### set initial values to estimates from full model
+
+      control             <- obj$control
+      control$sigma2.init <- obj$sigma2
+      control$tau2.init   <- obj$tau2
+      control$rho.init    <- obj$rho
+      control$gamma2.init <- obj$gamma2
+      control$phi.init    <- obj$phi
+
+      ### fit model without data from ith cluster
+
+      res <- try(suppressWarnings(rma.mv(obj$yi, V=obj$V, W=obj$W, mods=obj$X, random=obj$random, struct=obj$struct, intercept=FALSE, data=obj$mf.r, method=obj$method, test=obj$test, dfs=obj$dfs, level=obj$level, R=obj$R, Rscale=obj$Rscale, sigma2=ifelse(obj$vc.fix$sigma2, obj$sigma2, NA), tau2=ifelse(obj$vc.fix$tau2, obj$tau2, NA), rho=ifelse(obj$vc.fix$rho, obj$rho, NA), gamma2=ifelse(obj$vc.fix$gamma2, obj$gamma2, NA), phi=ifelse(obj$vc.fix$phi, obj$phi, NA), sparse=obj$sparse, dist=obj$dist, control=control, subset=!incl)), silent=TRUE)
+
+   } else {
+
+      ### set values of variance/correlation components to those from the 'full' model
+
+      res <- try(suppressWarnings(rma.mv(obj$yi, V=obj$V, W=obj$W, mods=obj$X, random=obj$random, struct=obj$struct, intercept=FALSE, data=obj$mf.r, method=obj$method, test=obj$test, dfs=obj$dfs, level=obj$level, R=obj$R, Rscale=obj$Rscale, sigma2=obj$sigma2, tau2=obj$tau2, rho=obj$rho, gamma2=obj$gamma2, phi=obj$phi, sparse=obj$sparse, dist=obj$dist, control=obj$control, subset=!incl)), silent=TRUE)
+
+   }
+
+   if (inherits(res, "try-error"))
+      return(list(dfbs = NA))
+
+   ### removing a cluster could lead to a model coefficient becoming inestimable
+
+   if (any(res$coef.na))
+      return(list(dfbs = NA))
+
+   ### fit model based on all data but with var/cor components fixed to those from res
+
+   tmp <- try(suppressWarnings(rma.mv(obj$yi, V=obj$V, W=obj$W, mods=obj$X, random=obj$random, struct=obj$struct, intercept=FALSE, data=obj$mf.r, method=obj$method, test=obj$test, dfs=obj$dfs, level=obj$level, R=obj$R, Rscale=obj$Rscale, sigma2=res$sigma2, tau2=res$tau2, rho=res$rho, gamma2=res$gamma2, phi=res$phi, sparse=obj$sparse, dist=obj$dist, control=obj$control)), silent=TRUE)
+
+   ### compute dfbeta value(s)
+
+   dfb <- obj$beta - res$beta
+
+   ### compute dfbetas
+
+   dfbs <- c(dfb / sqrt(diag(tmp$vb)))
+
+   return(list(dfbs = dfbs))
+
+}
+
+############################################################################
+
+.ddf.calc <- function(dfs, X, k, p, mf.s=NULL, mf.g=NULL, mf.h=NULL, beta=TRUE) {
+
+   mstyle <- .get.mstyle("crayon" %in% .packages())
+
+   if (beta) {
+
+      if (is.numeric(dfs)) {
+         ddf <- dfs
+         if (length(ddf) == 1L)
+            ddf <- rep(ddf, p)
+         if (length(ddf) != p)
+            stop(mstyle$stop(paste0("Length of 'dfs' argument (", length(dfs), ") does not match the number of model coefficient (", p, ").")))
+      }
+
+      if (is.character(dfs) && dfs == "residual")
+         ddf <- rep(k-p, p)
+
+      if (is.character(dfs) && dfs == "contain") {
+
+         if (!is.null(mf.g))
+            mf.g <- cbind(inner=apply(mf.g, 1, paste, collapse=" + "), outer=mf.g[ncol(mf.g)])
+         if (!is.null(mf.h))
+            mf.h <- cbind(inner=apply(mf.h, 1, paste, collapse=" + "), outer=mf.h[ncol(mf.h)])
+
+         s.nlevels <- sapply(mf.s, function(x) length(unique(x))) # list() if no S
+         g.nlevels <- c(length(unique(mf.g[[1]])), length(unique(mf.g[[2]]))) # c(0,0) if no G
+         h.nlevels <- c(length(unique(mf.h[[1]])), length(unique(mf.h[[2]]))) # c(0,0) if no H
+
+         #print(list(s.nlevels, g.nlevels, h.nlevels))
+
+         s.ddf <- rep(k, p)
+         g.ddf <- rep(k, p)
+         h.ddf <- rep(k, p)
+
+         for (j in seq_len(p)) {
+            if (!is.null(mf.s)) {
+               s.lvl <- sapply(seq_along(mf.s), function(i) all(apply(table(X[,j], mf.s[[i]]) > 0, 2, sum) == 1))
+               if (any(s.lvl))
+                  s.ddf[j] <- min(s.nlevels[s.lvl])
+            }
+            if (!is.null(mf.g)) {
+               g.lvl <- sapply(seq_along(mf.g), function(i) all(apply(table(X[,j], mf.g[[i]]) > 0, 2, sum) == 1))
+               if (any(g.lvl))
+                  g.ddf[j] <- min(g.nlevels[g.lvl])
+            }
+            if (!is.null(mf.h)) {
+               h.lvl <- sapply(seq_along(mf.h), function(i) all(apply(table(X[,j], mf.h[[i]]) > 0, 2, sum) == 1))
+               if (any(h.lvl))
+                  h.ddf[j] <- min(h.nlevels[h.lvl])
+            }
+         }
+
+         #return(list(s.ddf, g.ddf, h.ddf))
+         ddf <- pmin(s.ddf, g.ddf, h.ddf)
+         ddf <- ddf - p
+
+      }
+
+      names(ddf) <- colnames(X)
+
+   } else {
+
+      if (is.numeric(dfs))
+         dfs <- "contain"
+
+      if (dfs == "residual")
+         ddf <- k-p
+
+      if (dfs == "contain") {
+
+         if (!is.null(mf.s))
+            ddf <- length(unique(mf.s))
+         if (!is.null(mf.g))
+            ddf <- length(unique(mf.g))
+         if (!is.null(mf.h))
+            ddf <- length(unique(mf.h))
+
+         ddf <- ddf - p
+
+      }
+
+   }
+
+   ddf[ddf < 1] <- 1
+
+   return(ddf)
+
+}
+
+############################################################################

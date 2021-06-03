@@ -2,12 +2,16 @@ print.list.rma <- function(x, digits=x$digits, ...) {
 
    mstyle <- .get.mstyle("crayon" %in% .packages())
 
-   if (!inherits(x, "list.rma"))
-      stop(mstyle$stop("Argument 'x' must be an object of class \"list.rma\"."))
+   .chkclass(class(x), must="list.rma")
 
    digits <- .get.digits(digits=digits, xdigits=x$digits, dmiss=FALSE)
 
    attr(x, "class") <- NULL
+
+   ### remove cr.lb and cr.ub elements (if they are there)
+
+   x$cr.lb <- NULL
+   x$cr.ub <- NULL
 
    ### turn all vectors before the slab vector into a data frame
 
@@ -44,7 +48,7 @@ print.list.rma <- function(x, digits=x$digits, ...) {
    ### leave element tau2.level, gamma2.level, and/or element X untouched
 
    if (exists("method", where=x, inherits=FALSE)) {
-      min.pos <- slab.pos - is.element("tau2.level", names(x)) - is.element("gamma2.level", names(x)) - is.element("X", names(x)) - transf.true
+      min.pos <- slab.pos - is.element("tau2.level", names(x)) - is.element("gamma2.level", names(x)) - is.element("X", names(x)) - is.element("Z", names(x)) - transf.true
    } else {
       min.pos <- slab.pos - transf.true
    }

@@ -20,6 +20,16 @@ ranktest.default <- function(x, vi, sei, subset, digits, ...) {
       digits <- .set.digits(digits, dmiss=FALSE)
    }
 
+   ddd <- list(...)
+
+   .chkdots(ddd, c("exact"))
+
+   if (is.null(ddd$exact)) {
+      exact <- TRUE
+   } else {
+      exact <- ddd$exact
+   }
+
    #########################################################################
 
    ### check if sampling variances and/or standard errors are available
@@ -36,15 +46,21 @@ ranktest.default <- function(x, vi, sei, subset, digits, ...) {
    }
 
    if (is.null(vi))
-      stop(mstyle$stop("Need to specify 'vi' or 'sei' argument."))
+      stop(mstyle$stop("Must specify 'vi' or 'sei' argument."))
 
    yi <- x
+
+   ### check length of yi and vi
+
+   if (length(yi) != length(vi))
+      stop(mstyle$stop("Length of 'yi' and 'vi' (or 'sei') is not the same."))
 
    #########################################################################
 
    ### if a subset of studies is specified
 
    if (!is.null(subset)) {
+      subset <- .setnafalse(subset, k=length(yi))
       yi <- yi[subset]
       vi <- vi[subset]
    }
@@ -61,7 +77,7 @@ ranktest.default <- function(x, vi, sei, subset, digits, ...) {
 
          yi <- yi[not.na]
          vi <- vi[not.na]
-         warning(mstyle$warning("Studies with NAs omitted from test."))
+         warning(mstyle$warning("Studies with NAs omitted from test."), call.=FALSE)
 
       }
 
@@ -78,14 +94,14 @@ ranktest.default <- function(x, vi, sei, subset, digits, ...) {
 
    vi.star <- vi - vb
    yi.star <- (yi - beta) / sqrt(vi.star)
-   res <- cor.test(yi.star, vi, method="kendall", exact=TRUE)
+   res <- cor.test(yi.star, vi, method="kendall", exact=exact)
 
    pval <- res$p.value
    tau  <- res$estimate
 
    res <- list(tau=tau, pval=pval, digits=digits)
 
-   class(res) <- "ranktest.rma"
+   class(res) <- "ranktest"
    return(res)
 
 }

@@ -1,13 +1,12 @@
 profile.rma.uni <- function(fitted,
-   xlim, ylim, steps=20, progbar=TRUE, parallel="no", ncpus=1, cl=NULL, plot=TRUE, pch=19, cline=FALSE, ...) {
+   xlim, ylim, steps=20, lltol=1e-03, progbar=TRUE, parallel="no", ncpus=1, cl=NULL, plot=TRUE, pch=19, cline=FALSE, ...) {
 
    mstyle <- .get.mstyle("crayon" %in% .packages())
 
-   if (!inherits(fitted, "rma.uni"))
-      stop(mstyle$stop("Argument 'fitted' must be an object of class \"rma.uni\"."))
+   .chkclass(class(fitted), must="rma.uni", notav="rma.uni.selmodel")
 
-   if (inherits(fitted, "rma.ls"))
-      stop(mstyle$stop("Method not available for objects of class \"rma.ls\"."))
+   if (is.element(fitted$method, c("FE","EE","CE")))
+      stop(mstyle$stop("Cannot profile tau2 parameter for fixed-effects models."))
 
    if (steps < 2)
       stop(mstyle$stop("Argument 'steps' must be >= 2."))
@@ -24,6 +23,26 @@ profile.rma.uni <- function(fitted,
       ncpus <- length(cl)
    }
 
+   if (parallel == "snow" && ncpus < 2)
+      parallel <- "no"
+
+   if (parallel == "snow" || parallel == "multicore") {
+
+      if (!requireNamespace("parallel", quietly=TRUE))
+         stop(mstyle$stop("Please install the 'parallel' package for parallel processing."))
+
+      ncpus <- as.integer(ncpus)
+
+      if (ncpus < 1L)
+         stop(mstyle$stop("Argument 'ncpus' must be >= 1."))
+
+   }
+
+   if (!progbar) {
+      pbo <- pbapply::pboptions(type="none")
+      on.exit(pbapply::pboptions(pbo))
+   }
+
    ddd <- list(...)
 
    if (.isTRUE(ddd$time))
@@ -33,7 +52,7 @@ profile.rma.uni <- function(fitted,
 
    if (missing(xlim)) {
 
-      ### if the user has not specified the xlim, get CI xlim for tau^2 (suppress warnings)
+      ### if the user has not specified xlim, try to get CI for tau^2
 
       vc.ci <- try(suppressWarnings(confint(x)), silent=TRUE)
 
@@ -54,10 +73,10 @@ profile.rma.uni <- function(fitted,
 
       if (is.na(vc.lb) || is.na(vc.ub)) {
 
-         ### if the profile method fails, try a Wald-type CI for tau^2
+         ### if the CI method fails, try a Wald-type CI for tau^2
 
-         vc.lb <- max( 0, x$tau2 - 1.96 * x$se.tau2)
-         vc.ub <- max(.1, x$tau2 + 1.96 * x$se.tau2)
+         vc.lb <- max( 0, x$tau2 - qnorm(.995) * x$se.tau2)
+         vc.ub <- max(.1, x$tau2 + qnorm(.995) * x$se.tau2)
 
       }
 
@@ -65,10 +84,8 @@ profile.rma.uni <- function(fitted,
 
          ### if this still results in NA bounds, use simple method
 
-         #vc.lb <- max(0, log(x$tau2)) ### old method
-         #vc.ub <- max(0, exp(x$tau2)) ### old method
-         vc.lb <- max( 0, x$tau2/4) ### new method
-         vc.ub <- max(.1, x$tau2*4) ### new method
+         vc.lb <- max( 0, x$tau2/4)
+         vc.ub <- max(.1, x$tau2*4)
 
       }
 
@@ -89,79 +106,47 @@ profile.rma.uni <- function(fitted,
    }
 
    vcs <- seq(xlim[1], xlim[2], length.out=steps)
+   #return(vcs)
 
    if (length(vcs) <= 1L)
       stop(mstyle$stop("Cannot set 'xlim' automatically. Please set this argument manually."))
 
-   if (parallel=="no") {
+   if (parallel == "no")
+      res <- pbapply::pblapply(vcs, .profile.rma.uni, obj=x, parallel=parallel, profile=TRUE)
 
-      lls   <- rep(NA_real_, length(vcs))
-      beta  <- matrix(NA_real_, nrow=length(vcs), ncol=x$p)
-      ci.lb <- matrix(NA_real_, nrow=length(vcs), ncol=x$p)
-      ci.ub <- matrix(NA_real_, nrow=length(vcs), ncol=x$p)
+   if (parallel == "multicore")
+      res <- pbapply::pblapply(vcs, .profile.rma.uni, obj=x, parallel=parallel, profile=TRUE, cl=ncpus)
+      #res <- parallel::mclapply(vcs, .profile.rma.uni, obj=x, parallel=parallel, profile=TRUE, mc.cores=ncpus)
 
-      if (progbar)
-         pbar <- txtProgressBar(min=0, max=steps, style=3)
-
-      for (i in seq_along(vcs)) {
-
-         res <- try(suppressWarnings(rma.uni(x$yi, x$vi, weights=x$weights, mods=x$X, intercept=FALSE, method=x$method, weighted=x$weighted, test=x$test, level=x$level, control=x$control, tau2=vcs[i])), silent=TRUE)
-
-         if (progbar)
-            setTxtProgressBar(pbar, i)
-
-         if (inherits(res, "try-error"))
-            next
-
-         lls[i] <- c(logLik(res))
-         beta[i,]  <- c(res$beta)
-         ci.lb[i,] <- c(res$ci.lb)
-         ci.ub[i,] <- c(res$ci.ub)
-
+   if (parallel == "snow") {
+      if (is.null(cl)) {
+         cl <- parallel::makePSOCKcluster(ncpus)
+         on.exit(parallel::stopCluster(cl), add=TRUE)
       }
-
-      if (progbar)
-         close(pbar)
-
+      if (.isTRUE(ddd$LB)) {
+         res <- parallel::parLapplyLB(cl, vcs, .profile.rma.uni, obj=x, parallel=parallel, profile=TRUE)
+         #res <- parallel::clusterApplyLB(cl, vcs, .profile.rma.uni, obj=x, parallel=parallel, profile=TRUE)
+         #res <- parallel::clusterMap(cl, .profile.rma.uni, vcs, MoreArgs=list(obj=x, parallel=parallel, profile=TRUE), .scheduling = "dynamic")
+      } else {
+         res <- pbapply::pblapply(vcs, .profile.rma.uni, obj=x, parallel=parallel, profile=TRUE, cl=cl)
+         #res <- parallel::parLapply(cl, vcs, .profile.rma.uni, obj=x, parallel=parallel, profile=TRUE)
+         #res <- parallel::clusterApply(cl, vcs, .profile.rma.uni, obj=x, parallel=parallel, profile=TRUE)
+         #res <- parallel::clusterMap(cl, .profile.rma.uni, vcs, MoreArgs=list(obj=x, parallel=parallel, profile=TRUE))
+      }
    }
 
-   if (parallel=="snow" || parallel == "multicore") {
-
-      if (!requireNamespace("parallel", quietly=TRUE))
-         stop(mstyle$stop("Please install the 'parallel' package for parallel processing."))
-
-      ncpus <- as.integer(ncpus)
-
-      if (ncpus < 1)
-         stop(mstyle$stop("Argument 'ncpus' must be >= 1."))
-
-      if (parallel == "multicore")
-         res <- parallel::mclapply(vcs, .profile.rma.uni, obj=x, mc.cores=ncpus, parallel=parallel, profile=TRUE)
-
-      if (parallel == "snow") {
-         if (is.null(cl)) {
-            cl <- parallel::makePSOCKcluster(ncpus)
-            on.exit(parallel::stopCluster(cl))
-         }
-         if (.isTRUE(ddd$LB)) {
-            res <- parallel::parLapplyLB(cl, vcs, .profile.rma.uni, obj=x, parallel=parallel, profile=TRUE)
-            #res <- parallel::clusterApplyLB(cl, vcs, .profile.rma.uni, obj=x, parallel=parallel, profile=TRUE)
-            #res <- parallel::clusterMap(cl, .profile.rma.uni, vcs, MoreArgs=list(obj=x, parallel=parallel, profile=TRUE), .scheduling = "dynamic")
-         } else {
-            res <- parallel::parLapply(cl, vcs, .profile.rma.uni, obj=x, parallel=parallel, profile=TRUE)
-            #res <- parallel::clusterApply(cl, vcs, .profile.rma.uni, obj=x, parallel=parallel, profile=TRUE)
-            #res <- parallel::clusterMap(cl, .profile.rma.uni, vcs, MoreArgs=list(obj=x, parallel=parallel, profile=TRUE))
-         }
-      }
-
-      lls <- sapply(res, function(x) x$ll)
-      beta  <- do.call("rbind", lapply(res, function(x) t(x$beta)))
-      ci.lb <- do.call("rbind", lapply(res, function(x) t(x$ci.lb)))
-      ci.ub <- do.call("rbind", lapply(res, function(x) t(x$ci.ub)))
-
-   }
+   lls <- sapply(res, function(x) x$ll)
+   beta  <- do.call("rbind", lapply(res, function(x) t(x$beta)))
+   ci.lb <- do.call("rbind", lapply(res, function(x) t(x$ci.lb)))
+   ci.ub <- do.call("rbind", lapply(res, function(x) t(x$ci.ub)))
 
    #########################################################################
+
+   if (x$method %in% c("ML", "REML") && any(lls >= logLik(x) + lltol, na.rm=TRUE))
+      warning(mstyle$warning("At least one profiled log-likelihood value is larger than the log-likelihood of the fitted model."), call.=FALSE)
+
+   if (all(is.na(lls)))
+      warning(mstyle$warning("All model fits failed. Cannot draw profile likelihood plot."), call.=FALSE)
 
    beta  <- data.frame(beta)
    ci.lb <- data.frame(ci.lb)
@@ -172,7 +157,15 @@ profile.rma.uni <- function(fitted,
 
    if (missing(ylim)) {
 
-      ylim <- range(lls, na.rm=TRUE)
+      if (any(!is.na(lls))) {
+         if (xlim[1] <= x$tau2 && xlim[2] >= x$tau2) {
+            ylim <- range(c(logLik(x),lls), na.rm=TRUE)
+         } else {
+            ylim <- range(lls, na.rm=TRUE)
+         }
+      } else {
+         ylim <- rep(logLik(x), 2)
+      }
       ylim[1] <- ylim[1] - .1
       ylim[2] <- ylim[2] + .1
 

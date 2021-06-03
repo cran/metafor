@@ -5,7 +5,7 @@
 \alias{leave1out.rma.peto}
 \title{Leave-One-Out Diagnostics for 'rma' Objects}
 \description{
-   The functions repeatedly fit the specified model, leaving out one observation/study at a time.
+   The functions repeatedly fit the specified model, leaving out one observation/study at a time. \loadmathjax
 }
 \usage{
 leave1out(x, \dots)
@@ -16,41 +16,43 @@ leave1out(x, \dots)
 }
 \arguments{
    \item{x}{an object of class \code{"rma.mh"}, \code{"rma.peto"}, or \code{"rma.uni"}.}
-   \item{digits}{integer specifying the number of decimal places to which the printed results should be rounded (if unspecified, the default is to take the value from the object).}
-   \item{transf}{an optional argument specifying the name of a function that should be used to transform the model coefficients and interval bounds (e.g., \code{transf=exp}; see also \link{transf}). If unspecified, no transformation is used.}
+   \item{digits}{integer to specify the number of decimal places to which the printed results should be rounded. If unspecified, the default is to take the value from the object.}
+   \item{transf}{an optional argument to specify a function that should be used to transform the model coefficients and interval bounds (e.g., \code{transf=exp}; see also \link{transf}). If unspecified, no transformation is used.}
    \item{targs}{optional arguments needed by the function specified under \code{transf}.}
-   \item{progbar}{logical indicating whether a progress bar should be shown (the default is \code{FALSE}).}
+   \item{progbar}{logical to specify whether a progress bar should be shown (the default is \code{FALSE}).}
    \item{\dots}{other arguments.}
 }
 \details{
-   The model specified via \code{x} must be a model without moderators (i.e., either a fixed- or a random-effects model and not a fixed-effects with moderators or mixed-effects model).
+   For \code{"rma.uni"} objects, the model specified via \code{x} must be a model without moderators (i.e., either a fixed- or a random-effects model).
 }
 \value{
    An object of class \code{"list.rma"}. The object is a list containing the following components:
-   \item{estimate}{estimated coefficients of the model.}
-   \item{se}{standard errors of the coefficients.}
-   \item{zval}{test statistics of the coefficients.}
-   \item{pval}{p-values for the test statistics.}
-   \item{ci.lb}{lower bounds of the confidence intervals for the coefficients.}
-   \item{ci.ub}{upper bounds of the confidence intervals for the coefficients.}
-   \item{Q}{test statistics for the tests of heterogeneity.}
-   \item{Qp}{p-values for the tests of heterogeneity.}
-   \item{tau2}{estimated amounts of (residual) heterogeneity (only for random-effects models).}
-   \item{I2}{values of \if{latex}{\eqn{I^2}}\if{html}{\eqn{I²}}\if{text}{\eqn{I^2}} (only for random-effects models).}
-   \item{H2}{values of \if{latex}{\eqn{H^2}}\if{html}{\eqn{H²}}\if{text}{\eqn{H^2}} (only for random-effects models).}
+   \item{estimate}{estimated (average) outcomes.}
+   \item{se}{corresponding standard errors.}
+   \item{zval}{corresponding test statistics.}
+   \item{pval}{corresponding p-values.}
+   \item{ci.lb}{lower bounds of the confidence intervals.}
+   \item{ci.ub}{upper bounds of the confidence intervals.}
+   \item{Q}{test statistics for the test of heterogeneity.}
+   \item{Qp}{corresponding p-values.}
+   \item{tau2}{estimated amount of heterogeneity (only for random-effects models).}
+   \item{I2}{values of \mjseqn{I^2}.}
+   \item{H2}{values of \mjseqn{H^2}.}
 
-   The \code{"list.rma"} object is formatted and printed with \code{\link{print.list.rma}}.
+   When the model was fitted with \code{test="t"} or \code{test="knha"}, then \code{zval} is called \code{tval} in the object that is returned by the function.
+
+   The object is formatted and printed with \code{\link{print.list.rma}}.
 }
 \note{
    When using the \code{transf} option, the transformation is applied to the estimated coefficients and the corresponding interval bounds. The standard errors are then set equal to \code{NA} and are omitted from the printed output.
 }
 \author{
-   Wolfgang Viechtbauer \email{wvb@metafor-project.org} \url{http://www.metafor-project.org/}
+   Wolfgang Viechtbauer \email{wvb@metafor-project.org} \url{https://www.metafor-project.org}
 }
 \references{
-   Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \url{https://www.jstatsoft.org/v036/i03}.
+   Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \verb{https://doi.org/10.18637/jss.v036.i03}
 
-   Viechtbauer, W., & Cheung, M. W.-L. (2010). Outlier and influence diagnostics for meta-analysis. \emph{Research Synthesis Methods}, \bold{1}, 112--125.
+   Viechtbauer, W., & Cheung, M. W.-L. (2010). Outlier and influence diagnostics for meta-analysis. \emph{Research Synthesis Methods}, \bold{1}(2), 112--125. \verb{https://doi.org/10.1002/jrsm.11}
 }
 \seealso{
    \code{\link{rma.uni}}, \code{\link{rma.mh}}, \code{\link{rma.peto}}

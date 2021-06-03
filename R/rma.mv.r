@@ -24,7 +24,7 @@
 ### - PHYBM/PHYPL/PHYPD (phylogenetic structures: Brownian motion, Pagel's lambda, Pagel's delta)
 
 rma.mv <- function(yi, V, W, mods, random, struct="CS", intercept=TRUE, data, slab, subset, ### add ni as argument in the future
-method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, rho, gamma2, phi, sparse=FALSE, verbose=FALSE, control, ...) {
+method="REML", test="z", dfs="residual", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, rho, gamma2, phi, sparse=FALSE, verbose=FALSE, control, ...) {
 
    #########################################################################
 
@@ -34,16 +34,17 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
 
    mstyle <- .get.mstyle("crayon" %in% .packages())
 
-   if (!is.element(method, c("FE","ML","REML")))
+   if (!is.element(method, c("FE","EE","CE","ML","REML")))
       stop(mstyle$stop("Unknown 'method' specified."))
 
-   if (any(!is.element(struct, c("CS","HCS","UN","AR","HAR","CAR","ID","DIAG","SPEXP","SPGAU","SPLIN","SPRAT","SPSPH","GEN")))) # "UNR", "PHYBM","PHYPL","PHYPD",
+   if (any(!is.element(struct, c("CS","HCS","UN","AR","HAR","CAR","ID","DIAG","SPEXP","SPGAU","SPLIN","SPRAT","SPSPH","GEN","GDIAG")))) # "UNR", "PHYBM","PHYPL","PHYPD"))))
       stop(mstyle$stop("Unknown 'struct' specified."))
 
    if (length(struct) == 1L)
       struct <- c(struct, struct)
 
    na.act <- getOption("na.action")
+   on.exit(options(na.action=na.act))
 
    if (!is.element(na.act, c("na.omit", "na.exclude", "na.fail", "na.pass")))
       stop(mstyle$stop("Unknown 'na.action' specified under options()."))
@@ -95,9 +96,11 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
    if (.isTRUE(ddd$tdist))
       test <- "t"
 
-   # if (!is.element(test, c("z", "t", "knha", "adhoc")))
    if (!is.element(test, c("z", "t")))
       stop(mstyle$stop("Invalid option selected for 'test' argument."))
+
+   if (is.character(dfs))
+      dfs <- match.arg(dfs, c("residual", "contain"))
 
    ### handle Rscale argument (either character, logical, or integer)
 
@@ -157,7 +160,7 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
 
    if (verbose > 2) {
       opwarn <- options(warn=1)
-      on.exit(options(warn=opwarn$warn))
+      on.exit(options(warn=opwarn$warn), add=TRUE)
    }
 
    #########################################################################
@@ -224,6 +227,7 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
       options(na.action = "na.pass")                   ### set na.action to na.pass, so that NAs are not filtered out (we'll do that later)
       mods <- model.matrix(yi, data=data)              ### extract model matrix (now mods is no longer a formula, so [a] further below is skipped)
       attr(mods, "assign") <- NULL                     ### strip assign attribute (not needed at the moment)
+      attr(mods, "contrasts") <- NULL                  ### strip contrasts attribute (not needed at the moment)
       yi <- model.response(model.frame(yi, data=data)) ### extract yi values from model frame
       options(na.action = na.act)                      ### set na.action back to na.act
       names(yi) <- NULL                                ### strip names (1:k) from yi (so res$yi is the same whether yi is a formula or not)
@@ -254,7 +258,7 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
    ### some checks on V (and turn V into a diagonal matrix if it is a column/row vector)
 
    if (is.null(V))
-      stop(mstyle$stop("Need to specify 'V' argument."))
+      stop(mstyle$stop("Must specify 'V' argument."))
 
    if (is.list(V) && !is.data.frame(V)) {
 
@@ -279,7 +283,7 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
 
    ### check if user constrained V to 0 (can skip a lot of the steps below then)
 
-   if (.is.vector(V) && length(V) == 1L && V == 0) {
+   if ((.is.vector(V) && length(V) == 1L && V == 0) || (.is.vector(V) && length(V) == k && !anyNA(V) && all(V == 0))) {
       V0 <- TRUE
    } else {
       V0 <- FALSE
@@ -319,7 +323,7 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
    ### check length of yi and V
 
    if (nrow(V) != k)
-      stop(mstyle$stop("Length of 'yi' and length/dimensions of 'V' is not the same."))
+      stop(mstyle$stop(paste0("Length of 'yi' (", k, ") and length/dimensions of 'V' (", nrow(V), ") is not the same.")))
 
    ### force V to be sparse when sparse=TRUE (and V is not yet sparse)
 
@@ -370,7 +374,7 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
       ### check length of yi and A
 
       if (nrow(A) != k)
-         stop(mstyle$stop("Length of 'yi' and length/dimensions of 'W' is not the same."))
+         stop(mstyle$stop(paste0("Length of 'yi' (", k, ") and length/dimensions of 'W' (", nrow(A), ") is not the same.")))
 
       ### force A to be sparse when sparse=TRUE (and A is not yet sparse)
 
@@ -414,6 +418,7 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
       options(na.action = "na.pass")        ### set na.action to na.pass, so that NAs are not filtered out (we'll do that later)
       mods <- model.matrix(mods, data=data) ### extract model matrix
       attr(mods, "assign") <- NULL          ### strip assign attribute (not needed at the moment)
+      attr(mods, "contrasts") <- NULL       ### strip contrasts attribute (not needed at the moment)
       options(na.action = na.act)           ### set na.action back to na.act
       intercept <- FALSE                    ### set to FALSE since formula now controls whether the intercept is included or not
    }                                        ### note: code further below ([b]) actually checks whether intercept is included or not
@@ -435,8 +440,8 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
 
    ### check if mods matrix has the right number of rows
 
-   if (!is.null(mods) && (nrow(mods) != k))
-      stop(mstyle$stop("Number of rows of the model matrix does not match length of the outcome vector."))
+   if (!is.null(mods) && nrow(mods) != k)
+      stop(mstyle$stop(paste0("Number of rows in the model matrix (", nrow(mods), ") does not match length of the outcome vector (", k, ").")))
 
    #########################################################################
    #########################################################################
@@ -444,7 +449,7 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
 
    ### process random argument
 
-   if (method != "FE" && !is.null(random)) {
+   if (!is.element(method, c("FE","EE","CE")) && !is.null(random)) {
 
       if (verbose > 1)
          message(mstyle$message("Processing 'random' argument ..."))
@@ -472,6 +477,21 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
 
       if (any(has.dollar))
          stop(mstyle$stop("Cannot use '$' notation in formulas in the 'random' argument (use the 'data' argument instead)."))
+
+      ### check which formulas have a ||
+
+      has.dblvbar <- sapply(random, function(f) grepl("||", paste0(f, collapse=""), fixed=TRUE))
+
+      ### replace || with |
+
+      random <- lapply(random, function(f) {
+         if (grepl("||", paste0(f, collapse=""), fixed=TRUE)) {
+            f <- paste0(f, collapse="")
+            f <- gsub("||", "|", f, fixed=TRUE)
+            f <- as.formula(f)
+         }
+         return(f)
+      })
 
       ### check which formulas in random are '~ inner | outer' formulas
 
@@ -525,7 +545,7 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
             ### for an '~ inner | outer' term with struct="GEN", expand the inner formula to the
             ### model matrix and re-combine this with the outer variable
 
-            if (struct[io] == "GEN") {
+            if (is.element(struct[io], c("GEN","GDIAG"))) {
 
                f.inner <- as.formula(strsplit(paste(random[[j]], collapse=""), " | ", fixed=TRUE)[[1]][1])
                f.outer <- as.formula(paste("~", strsplit(paste(random[[j]], collapse=""), " | ", fixed=TRUE)[[1]][2]))
@@ -535,6 +555,9 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
                is.int <- apply(X.inner, 2, .is.intercept)
                colnames(X.inner)[is.int] <- "intrcpt"
                mf.r[[j]] <- cbind(X.inner, model.frame(f.outer, data=data, na.action=na.pass))
+
+               if (has.dblvbar[j]) # change "GEN" to "GDIAG" if the formula had a ||
+                  struct[io] <- "GDIAG"
 
             } else {
 
@@ -637,7 +660,7 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
 
    } else {
 
-      ### set defaults for some elements when method="FE"
+      ### set defaults for some elements when method="FE/EE"
 
       formulas <- list(NULL, NULL)
       mf.r  <- NULL
@@ -654,7 +677,7 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
    ### from the default, but the model doesn't contain '~ inner | outer' terms
 
    if (!withG && struct[1] != "CS")
-      warning(mstyle$warning(paste0("Model does not contain an '~ inner | outer' term, so 'struct' argument is disregaded.")), call.=FALSE)
+      warning(mstyle$warning("Model does not contain an '~ inner | outer' term, so 'struct' argument is disregaded."), call.=FALSE)
 
    #return(list(mf.r=mf.r, mf.s=mf.s, mf.g=mf.g, mf.h=mf.h))
 
@@ -715,6 +738,8 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
       if (verbose > 1)
          message(mstyle$message("Subsetting ..."))
 
+      subset <- .setnafalse(subset, k=k)
+
       yi   <- yi[subset]
       V    <- V[subset,subset,drop=FALSE]
       A    <- A[subset,subset,drop=FALSE]
@@ -751,13 +776,13 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
    if (any(vi <= 0, na.rm=TRUE)) {
       allvipos <- FALSE
       if (!V0)
-         warning(mstyle$warning("There are outcomes with non-positive sampling variances."))
+         warning(mstyle$warning("There are outcomes with non-positive sampling variances."), call.=FALSE)
       vi.neg <- vi < 0
       if (any(vi.neg, na.rm=TRUE)) {
          V[vi.neg,] <- 0 ### note: entire row set to 0 (so covariances are also 0)
          V[,vi.neg] <- 0 ### note: entire col set to 0 (so covariances are also 0)
          vi[vi.neg] <- 0
-         warning(mstyle$warning("Negative sampling variances constrained to zero."))
+         warning(mstyle$warning("Negative sampling variances constrained to zero."), call.=FALSE)
       }
    } else {
       allvipos <- TRUE
@@ -856,7 +881,7 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
          ### check if R list has no names at all or some names are missing
          ### (if only some elements of R have names, then names(R) is "" for the unnamed elements, so use nchar()==0 to check for that)
 
-         if (is.null(names(R)) || any(nchar(names(R)) == 0))
+         if (is.null(names(R)) || any(nchar(names(R)) == 0L))
             stop(mstyle$stop("Argument 'R' must be a *named* list."))
 
          ### remove elements in R that are NULL (not sure why this is needed; why would anybody ever do this?)
@@ -964,7 +989,7 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
 
          } else {
 
-            warning(mstyle$warning("Argument 'R' specified, but list name(s) not in 'random'."))
+            warning(mstyle$warning("Argument 'R' specified, but list name(s) not in 'random'."), call.=FALSE)
 
             withR <- FALSE
             Rfix  <- rep(FALSE, sigma2s)
@@ -1126,7 +1151,7 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
          }
          Z.H2 <- Z.H2[not.na,,drop=FALSE]
          k    <- length(yi)
-         warning(mstyle$warning("Rows with NAs omitted from model fitting."))
+         warning(mstyle$warning("Rows with NAs omitted from model fitting."), call.=FALSE)
 
          attr(yi, "measure") <- measure ### add measure attribute back
          attr(yi, "ni")      <- ni      ### add ni attribute back
@@ -1150,7 +1175,7 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
    ### but at least issue a warning, since a fixed-effects model can then not be fitted and there is otherwise no indication why this is the case
 
    if (!V0 && any(eigen(V, symmetric=TRUE, only.values=TRUE)$values <= .Machine$double.eps)) ### any eigenvalue below double.eps is essentially 0
-      warning(mstyle$warning("'V' appears to be not positive definite."))
+      warning(mstyle$warning("'V' appears to be not positive definite."), call.=FALSE)
 
    ### check ratio of largest to smallest sampling variance
    ### note: need to exclude some special cases (0/0 = NaN, max(vi)/0 = Inf)
@@ -1159,12 +1184,12 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
    vimaxmin <- max(vi) / min(vi)
 
    if (!is.nan(vimaxmin) && !is.infinite(vimaxmin) && vimaxmin >= 1e7)
-      warning(mstyle$warning("Ratio of largest to smallest sampling variance extremely large. May not be able to obtain stable results."))
+      warning(mstyle$warning("Ratio of largest to smallest sampling variance extremely large. May not be able to obtain stable results."), call.=FALSE)
 
    ### make sure that there is at least one column in X ([b])
 
    if (is.null(mods) && !intercept) {
-      warning(mstyle$warning("Must either include an intercept and/or moderators in model.\n  Coerced intercept into the model."))
+      warning(mstyle$warning("Must either include an intercept and/or moderators in model.\n  Coerced intercept into the model."), call.=FALSE)
       intercept <- TRUE
    }
 
@@ -1185,7 +1210,7 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
    tmp <- lm(yi ~ X - 1)
    coef.na <- is.na(coef(tmp))
    if (any(coef.na)) {
-      warning(mstyle$warning("Redundant predictors dropped from the model."))
+      warning(mstyle$warning("Redundant predictors dropped from the model."), call.=FALSE)
       X   <- X[,!coef.na,drop=FALSE]
       X.f <- X.f[,!coef.na,drop=FALSE]
    }
@@ -1217,7 +1242,7 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
 
    ### set/check 'btt' argument
 
-   btt <- .set.btt(btt, p, int.incl, X)
+   btt <- .set.btt(btt, p, int.incl, colnames(X))
    m <- length(btt) ### number of betas to test (m = p if all betas are tested)
 
    #########################################################################
@@ -1244,7 +1269,7 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
 
       if (any(is.na(sigma2) & s.nlevels == 1)) {
          sigma2[is.na(sigma2) & s.nlevels == 1] <- 0
-         warning(mstyle$warning("Single-level factor(s) found in 'random' argument. Corresponding 'sigma2' value(s) fixed to 0."))
+         warning(mstyle$warning("Single-level factor(s) found in 'random' argument. Corresponding 'sigma2' value(s) fixed to 0."), call.=FALSE)
       }
 
       ### create model matrix for each element in mf.s
@@ -1452,6 +1477,9 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
 
       total <- sigma(lm(Y ~ X - 1))^2
 
+      if (is.na(total)) # if X is a saturated model, then sigma() yields NaN
+         stop(mstyle$stop("Cannot compute initial values."))
+
       QE  <- NA
       QEp <- NA
 
@@ -1496,7 +1524,7 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
    ### set default control parameters
 
    con <- list(verbose = FALSE,
-               optimizer = "nlminb",      # optimizer to use ("optim", "nlminb", "uobyqa", "newuoa", "bobyqa", "nloptr", "nlm", "hjk", "nmk", "ucminf", "optimParallel")
+               optimizer = "nlminb",      # optimizer to use ("optim", "nlminb", "uobyqa", "newuoa", "bobyqa", "nloptr", "nlm", "hjk", "nmk", "mads", "ucminf", "optimParallel")
                optmethod = "BFGS",        # argument 'method' for optim() ("Nelder-Mead" and "BFGS" are sensible options)
                parallel = list(),         # parallel argument for optimParallel() (note: 'cl' argument in parallel is not passed; this is directly specified via 'cl')
                cl = NULL,                 # arguments for optimParallel()
@@ -1524,6 +1552,19 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
       con$verbose <- verbose
 
    verbose <- con$verbose
+
+   ### check for missings in initial values
+
+   if (anyNA(con$sigma2.init))
+      stop(mstyle$stop(paste0("No missing values allowed in 'sigma2.init'.")))
+   if (anyNA(con$tau2.init))
+      stop(mstyle$stop(paste0("No missing values allowed in 'tau2.init'.")))
+   if (anyNA(con$rho.init))
+      stop(mstyle$stop(paste0("No missing values allowed in 'rho.init'.")))
+   if (anyNA(con$gamma2.init))
+      stop(mstyle$stop(paste0("No missing values allowed in 'gamma2.init'.")))
+   if (anyNA(con$phi.init))
+      stop(mstyle$stop(paste0("No missing values allowed in 'phi.init'.")))
 
    ### expand initial values to correct length
 
@@ -1648,7 +1689,7 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
          con$phi.init  <- atanh(phi.init)
    }
 
-   optimizer  <- match.arg(con$optimizer, c("optim","nlminb","uobyqa","newuoa","bobyqa","nloptr","nlm","hjk","nmk","ucminf","optimParallel"))
+   optimizer  <- match.arg(con$optimizer, c("optim","nlminb","uobyqa","newuoa","bobyqa","nloptr","nlm","hjk","nmk","mads","ucminf","optimParallel"))
    optmethod  <- match.arg(con$optmethod, c("Nelder-Mead","BFGS","CG","L-BFGS-B","SANN","Brent"))
    evtol      <- con$evtol
    posdefify  <- con$posdefify
@@ -1658,14 +1699,13 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
    ncpus      <- con$ncpus
    optcontrol <- control[is.na(con.pos)] ### get arguments that are control arguments for optimizer
 
-   ### if control argument 'ncpus' is larger than 1, automatically switch to optimParallel optimizer
-   if (ncpus > 1L) {
-      con$optimizer <- "optimParallel"
-      optimizer <- "optimParallel"
-   }
-
    if (length(optcontrol) == 0L)
       optcontrol <- list()
+
+   ### if control argument 'ncpus' is larger than 1, automatically switch to optimParallel optimizer
+
+   if (ncpus > 1L)
+      optimizer <- "optimParallel"
 
    reml <- ifelse(method=="REML", TRUE, FALSE)
 
@@ -1678,7 +1718,17 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
    if (optimizer=="nloptr" && !is.element("ftol_rel", names(optcontrol)))
       optcontrol$ftol_rel <- 1e-8
 
+   ### for mads, set trace=FALSE and tol=1e-6 by default
+
+   if (optimizer=="mads" && !is.element("trace", names(optcontrol)))
+      optcontrol$trace <- FALSE
+
+   if (optimizer=="mads" && !is.element("tol", names(optcontrol)))
+      optcontrol$tol <- 1e-6
+
    #return(list(con=con, optimizer=optimizer, optmethod=optmethod, parallel=parallel, cl=cl, ncpus=ncpus, evtol=evtol, posdefify=posdefify, optcontrol=optcontrol))
+
+   ### check that the required packages are installed
 
    if (is.element(optimizer, c("uobyqa","newuoa","bobyqa"))) {
       if (!requireNamespace("minqa", quietly=TRUE))
@@ -1690,7 +1740,7 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
          stop(mstyle$stop("Please install the 'nloptr' package to use this optimizer."))
    }
 
-   if (is.element(optimizer, c("hjk","nmk"))) {
+   if (is.element(optimizer, c("hjk","nmk","mads"))) {
       if (!requireNamespace("dfoptim", quietly=TRUE))
          stop(mstyle$stop("Please install the 'dfoptim' package to use this optimizer."))
    }
@@ -1704,6 +1754,9 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
       if (!requireNamespace("optimParallel", quietly=TRUE))
          stop(mstyle$stop("Please install the 'optimParallel' package to use this optimizer."))
    }
+
+   if (con$hessian && !requireNamespace("numDeriv", quietly=TRUE))
+      stop(mstyle$stop("Please install the 'numDeriv' package to compute the Hessian."))
 
    ### check if length of sigma2.init, tau2.init, rho.init, gamma2.init, and phi.init matches number of variance components
    ### note: if a particular component is not included, reset (transformed) initial values (in case the user still specifies multiple initial values)
@@ -1784,16 +1837,16 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
          cat("\n\n")
       } else {
          cat("\n\n")
-         vcs <- rbind(c("sigma2" = if (withS) round(sigma2.init, digits=digits[["var"]]) else NA,
-                        "tau2"   = if (withG) round(tau2.init, digits=digits[["var"]]) else NA,
-                        "rho"    = if (withG) round(rho.init, digits=digits[["var"]]) else NA,
-                        "gamma2" = if (withH) round(gamma2.init, digits=digits[["var"]]) else NA,
-                        "phi"    = if (withH) round(phi.init, digits=digits[["var"]]) else NA),
+         vcs <- rbind(c("sigma2" = if (withS) round(sigma2.init, digits[["var"]]) else NA,
+                        "tau2"   = if (withG) round(tau2.init, digits[["var"]]) else NA,
+                        "rho"    = if (withG) round(rho.init, digits[["var"]]) else NA,
+                        "gamma2" = if (withH) round(gamma2.init, digits[["var"]]) else NA,
+                        "phi"    = if (withH) round(phi.init, digits[["var"]]) else NA),
                         round(c(   if (withS) sigma2 else NA,
                                    if (withG) tau2 else NA,
                                    if (withG) rho else NA,
                                    if (withH) gamma2 else NA,
-                                   if (withH) phi else NA), digits=digits[["var"]]))
+                                   if (withH) phi else NA), digits[["var"]]))
          vcs <- data.frame(vcs, stringsAsFactors=FALSE)
          rownames(vcs) <- c("initial", "specified")
          vcs <- rbind(included=ifelse(c(rep(withS, sigma2s), rep(withG, tau2s), rep(withG, rhos), rep(withH, gamma2s), rep(withH, phis)), "Yes", "No"), fixed=unlist(vc.fix), vcs)
@@ -1839,10 +1892,10 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
    if (optimizer=="nlm") {
       par.arg <- "p" ### because of this, must use argument name pX for p (number of columns in X matrix)
       ctrl.arg <- paste(names(optcontrol), unlist(optcontrol), sep="=", collapse=", ")
-      if (nchar(ctrl.arg) != 0)
+      if (nchar(ctrl.arg) != 0L)
          ctrl.arg <- paste0(", ", ctrl.arg)
    }
-   if (is.element(optimizer, c("hjk","nmk"))) {
+   if (is.element(optimizer, c("hjk","nmk","mads"))) {
       par.arg <- "par"
       optimizer <- paste0("dfoptim::", optimizer) ### need to use this so that the optimizers can be found
       ctrl.arg <- ", control=optcontrol"
@@ -1864,7 +1917,7 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
 
          ncpus <- as.integer(ncpus)
 
-         if (ncpus < 1)
+         if (ncpus < 1L)
             stop(mstyle$stop("Control argument 'ncpus' must be >= 1."))
 
          cl <- parallel::makePSOCKcluster(ncpus)
@@ -1892,11 +1945,11 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
 
    }
 
-   if (method != "FE" && !is.null(random)) {
+   if (!is.element(method, c("FE","EE","CE")) && !is.null(random)) {
 
       ### if at least one parameter needs to be estimated
 
-      if (any(is.na(c(sigma2, tau2, rho, gamma2, phi)))) {
+      if (anyNA(c(sigma2, tau2, rho, gamma2, phi))) {
 
          optcall <- paste(optimizer, "(", par.arg, "=c(con$sigma2.init, con$tau2.init, con$rho.init, con$gamma2.init, con$phi.init),
             .ll.rma.mv, reml=reml, ", ifelse(optimizer=="optim", "method=optmethod, ", ""), "Y=Y, M=V, A=NULL, X.fit=X, k=k, pX=p,
@@ -1909,7 +1962,11 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
             verbose=verbose, digits=digits, REMLf=con$REMLf, dofit=FALSE", ctrl.arg, ")\n", sep="")
 
          #return(optcall)
-         opt.res <- try(eval(parse(text=optcall)), silent=!verbose)
+         if (verbose) {
+            opt.res <- try(eval(parse(text=optcall)), silent=!verbose)
+         } else {
+            opt.res <- try(suppressWarnings(eval(parse(text=optcall))), silent=!verbose)
+         }
          #return(opt.res)
 
          if (optimizer == "optimParallel::optimParallel" && verbose) {
@@ -1918,11 +1975,14 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
          }
 
          if (inherits(opt.res, "try-error"))
-            stop(mstyle$stop("Error during optimization."))
+            stop(mstyle$stop("Error during the optimization. Use verbose=TRUE and see help(rma.mv) for more details on the optimization routines."))
 
          ### convergence checks
 
          if (is.element(optimizer, c("optim","nlminb","dfoptim::hjk","dfoptim::nmk","optimParallel::optimParallel")) && opt.res$convergence != 0)
+            stop(mstyle$stop(paste0("Optimizer (", optimizer, ") did not achieve convergence (convergence = ", opt.res$convergence, ").")))
+
+         if (is.element(optimizer, c("dfoptim::mads")) && opt.res$convergence > optcontrol$tol)
             stop(mstyle$stop(paste0("Optimizer (", optimizer, ") did not achieve convergence (convergence = ", opt.res$convergence, ").")))
 
          if (is.element(optimizer, c("minqa::uobyqa","minqa::newuoa","minqa::bobyqa")) && opt.res$ierr != 0)
@@ -2009,7 +2069,7 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
          colnames(G) <- rownames(G) <- seq_len(nrow(G))
       if (is.element(struct[1], c("CS","HCS","UN","UNR","AR","HAR","CAR","ID","DIAG")))
          colnames(G) <- rownames(G) <- g.levels.f[[1]]
-      if (is.element(struct[1], c("GEN")))
+      if (is.element(struct[1], c("GEN","GDIAG")))
          colnames(G) <- rownames(G) <- g.names[-length(g.names)]
       tau2 <- fitcall$tau2
       rho  <- fitcall$rho
@@ -2021,7 +2081,7 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
          colnames(H) <- rownames(H) <- seq_len(nrow(H))
       if (is.element(struct[2], c("CS","HCS","UN","UNR","AR","HAR","CAR","ID","DIAG")))
          colnames(H) <- rownames(H) <- h.levels.f[[1]]
-      if (is.element(struct[2], c("GEN")))
+      if (is.element(struct[2], c("GEN","GDIAG")))
          colnames(H) <- rownames(H) <- h.names[-length(h.names)]
       gamma2 <- fitcall$gamma2
       phi    <- fitcall$phi
@@ -2037,6 +2097,17 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
 
    #print(M[1:8,1:8])
 
+   if (verbose > 1)
+      message(mstyle$message("Conducting tests of the fixed effects ..."))
+
+   ### ddf calculation
+
+   if (test == "t") {
+      ddf <- .ddf.calc(dfs, X=X, k=k, p=p, mf.s=mf.s, mf.g=mf.g, mf.h=mf.h)
+   } else {
+      ddf <- rep(NA, p)
+   }
+
    ### QM calculation
 
    QM <- try(as.vector(t(beta)[btt] %*% chol2inv(chol(vb[btt,btt])) %*% beta[btt]), silent=TRUE)
@@ -2050,21 +2121,15 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
    names(se) <- NULL
    zval <- c(beta/se)
 
-   if (is.element(test, c("t"))) {
-      dfs <- k-p
-      QM  <- QM / m
-      if (dfs > 0) {
-         QMp  <- pf(QM, df1=m, df2=dfs, lower.tail=FALSE)
-         pval <- 2*pt(abs(zval), df=dfs, lower.tail=FALSE)
-         crit <- qt(level/2, df=dfs, lower.tail=FALSE)
-      } else {
-         QMp  <- NaN
-         pval <- NaN
-         crit <- NaN
-      }
+   if (test == "t") {
+      QM   <- QM / m
+      QMdf <- c(m, min(ddf[btt]))
+      QMp  <- if (QMdf[2] > 0) pf(QM, df1=QMdf[1], df2=QMdf[2], lower.tail=FALSE) else NA
+      pval <- sapply(seq_along(ddf), function(j) if (ddf[j] > 0) 2*pt(abs(zval[j]), df=ddf[j], lower.tail=FALSE) else NA)
+      crit <- sapply(seq_along(ddf), function(j) if (ddf[j] > 0) qt(level/2, df=ddf[j], lower.tail=FALSE) else NA)
    } else {
-      dfs  <- NA
-      QMp  <- pchisq(QM, df=m, lower.tail=FALSE)
+      QMdf <- c(m, NA)
+      QMp  <- pchisq(QM, df=QMdf[1], lower.tail=FALSE)
       pval <- 2*pnorm(abs(zval), lower.tail=FALSE)
       crit <- qnorm(level/2, lower.tail=FALSE)
    }
@@ -2077,7 +2142,7 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
    ### heterogeneity test (Wald-type test of the extra coefficients in the saturated model)
 
    if (verbose > 1)
-      message(mstyle$message("\nHeterogeneity testing ..."))
+      message(mstyle$message("\nConducting heterogeneity test ..."))
 
    QE.df <- k-p
 
@@ -2116,9 +2181,6 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
       if (verbose > 1)
          message(mstyle$message("Computing Hessian ..."))
 
-      if (!requireNamespace("numDeriv", quietly=TRUE))
-         stop(mstyle$stop("Please install the 'numDeriv' package for Hessian computation."))
-
       hessian <- try(numDeriv::hessian(func=.ll.rma.mv, x = if (con$vctransf) opt.res$par else c(sigma2, tau2, rho, gamma2, phi),
          method.args=con$hessianCtrl, reml=reml, Y=Y, M=V, A=NULL, X.fit=X, k=k, pX=p,
          D.S=D.S, Z.G1=Z.G1, Z.G2=Z.G2, Z.H1=Z.H1, Z.H2=Z.H2, g.Dmat=g.Dmat, h.Dmat=h.Dmat,
@@ -2131,7 +2193,7 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
 
       if (inherits(hessian, "try-error")) {
 
-         warning(mstyle$warning("Error when trying to compute Hessian."))
+         warning(mstyle$warning("Error when trying to compute Hessian."), call.=FALSE)
 
       } else {
 
@@ -2240,12 +2302,14 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
 
       res <- list(b=beta, beta=beta, se=se, zval=zval, pval=pval, ci.lb=ci.lb, ci.ub=ci.ub, vb=vb,
                   sigma2=sigma2, tau2=tau2, rho=rho, gamma2=gamma2, phi=phi,
-                  k=k, k.f=k.f, k.eff=k.eff, k.all=k.all, p=p, p.eff=p.eff, parms=parms, m=m,
-                  QE=QE, QEp=QEp, QM=QM, QMp=QMp,
-                  int.only=int.only, int.incl=int.incl, allvipos=allvipos, coef.na=coef.na,
+                  QE=QE, QEp=QEp, QM=QM, QMdf=QMdf, QMp=QMp,
+                  k=k, k.f=k.f, k.eff=k.eff, k.all=k.all, p=p, p.eff=p.eff, parms=parms,
+                  int.only=int.only, int.incl=int.incl, intercept=intercept, allvipos=allvipos, coef.na=coef.na,
                   yi=yi, vi=vi, V=V, W=A, X=X, yi.f=yi.f, vi.f=vi.f, V.f=V.f, X.f=X.f, W.f=W.f, ni=ni, ni.f=ni.f, M=M, G=G, H=H, hessian=hessian,
                   ids=ids, not.na=not.na, subset=subset, slab=slab, slab.null=slab.null,
-                  measure=measure, method=method, weighted=weighted, test=test, dfs=dfs, btt=btt, intercept=intercept, digits=digits, level=level, sparse=sparse, dist=ddd$dist, control=control,
+                  measure=measure, method=method, weighted=weighted,
+                  test=test, dfs=dfs, ddf=ddf, btt=btt, m=m,
+                  digits=digits, level=level, sparse=sparse, dist=ddd$dist, control=control, verbose=verbose,
                   fit.stats=fit.stats,
                   vc.fix=vc.fix,
                   withS=withS, withG=withG, withH=withH, withR=withR, formulas=formulas,
@@ -2258,9 +2322,35 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
                   g.levels.f=g.levels.f, g.levels.k=g.levels.k, g.levels.comb.k=g.levels.comb.k,
                   h.levels.f=h.levels.f, h.levels.k=h.levels.k, h.levels.comb.k=h.levels.comb.k,
                   struct=struct, Rfix=Rfix, R=R, Rscale=Rscale,
-                  mf.r=mf.r, mf.g=mf.g, mf.g.f=mf.g.f, mf.h=mf.h, mf.h.f=mf.h.f, Z.S=Z.S, Z.G1=Z.G1, Z.G2=Z.G2, Z.H1=Z.H1, Z.H2=Z.H2,
-                  random=random, formula.yi=formula.yi, formula.mods=formula.mods, version=packageVersion("metafor"), call=mf)
+                  mf.r=mf.r, mf.s=mf.s, mf.g=mf.g, mf.g.f=mf.g.f, mf.h=mf.h, mf.h.f=mf.h.f, Z.S=Z.S, Z.G1=Z.G1, Z.G2=Z.G2, Z.H1=Z.H1, Z.H2=Z.H2,
+                  formula.yi=formula.yi, formula.mods=formula.mods, random=random,
+                  version=packageVersion("metafor"), call=mf)
 
+   }
+
+   if (!is.null(ddd$outlist)) {
+      if (ddd$outlist == "minimal") {
+         res <- list(b=beta, beta=beta, se=se, zval=zval, pval=pval, ci.lb=ci.lb, ci.ub=ci.ub, vb=vb,
+                     sigma2=sigma2, tau2=tau2, rho=rho, gamma2=gamma2, phi=phi,
+                     QE=QE, QEp=QEp, QM=QM, QMdf=QMdf, QMp=QMp,
+                     k=k, k.eff=k.eff, k.all=k.all, p=p, p.eff=p.eff, parms=parms,
+                     int.only=int.only,
+                     measure=measure, method=method,
+                     test=test, dfs=dfs, ddf=ddf, btt=btt, m=m,
+                     digits=digits,
+                     fit.stats=fit.stats,
+                     vc.fix=vc.fix,
+                     withS=withS, withG=withG, withH=withH, withR=withR,
+                     s.names=s.names, g.names=g.names, h.names=h.names,
+                     s.nlevels=s.nlevels,
+                     g.nlevels.f=g.nlevels.f, g.nlevels=g.nlevels,
+                     h.nlevels.f=h.nlevels.f, h.nlevels=h.nlevels,
+                     g.levels.f=g.levels.f, g.levels.k=g.levels.k, g.levels.comb.k=g.levels.comb.k,
+                     h.levels.f=h.levels.f, h.levels.k=h.levels.k, h.levels.comb.k=h.levels.comb.k,
+                     struct=struct, Rfix=Rfix)
+      } else {
+         res <- eval(parse(text=paste0("list(", ddd$outlist, ")")))
+      }
    }
 
    time.end <- proc.time()
@@ -2271,14 +2361,6 @@ method="REML", test="z", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, r
 
    if (verbose || .isTRUE(ddd$time))
       cat("\n")
-
-   if (!is.null(ddd$outlist)) {
-      if (ddd$outlist == "minimal") {
-         res <- list(b=beta, beta=beta, se=se, zval=zval, pval=pval, ci.lb=ci.lb, ci.ub=ci.ub, vb=vb, int.only=int.only, digits=digits, k=k, k.eff=k.eff, k.all=k.all, p=p, p.eff=p.eff, parms=parms, m=m, sigma2=sigma2, tau2=tau2, rho=rho, gamma2=gamma2, phi=phi, withR=withR, withS=withS, withG=withG, withH=withH, s.nlevels=s.nlevels, vc.fix=vc.fix, s.names=s.names, Rfix=Rfix, g.names=g.names, g.nlevels=g.nlevels, g.nlevels.f=g.nlevels.f, g.levels.k=g.levels.k, g.levels.f=g.levels.f, g.levels.comb.k=g.levels.comb.k, h.names=h.names, h.nlevels=h.nlevels, h.levels.k=h.levels.k, h.levels.f=h.levels.f, h.nlevels.f=h.nlevels.f, h.levels.comb.k=h.levels.comb.k, struct=struct, method=method, fit.stats=fit.stats, QE=QE, QEp=QEp, QM=QM, QMp=QMp, btt=btt, test=test, dfs=dfs)
-      } else {
-         res <- eval(parse(text=paste0("list(", ddd$outlist, ")")))
-      }
-   }
 
    class(res) <- c("rma.mv", "rma")
    return(res)

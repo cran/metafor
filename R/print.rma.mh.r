@@ -2,8 +2,7 @@ print.rma.mh <- function(x, digits, showfit=FALSE, ...) {
 
    mstyle <- .get.mstyle("crayon" %in% .packages())
 
-   if (!inherits(x, "rma.mh"))
-      stop(mstyle$stop("Argument 'x' must be an object of class \"rma.mh\"."))
+   .chkclass(class(x), must="rma.mh")
 
    if (missing(digits)) {
       digits <- .get.digits(xdigits=x$digits, dmiss=TRUE)
@@ -43,15 +42,17 @@ print.rma.mh <- function(x, digits, showfit=FALSE, ...) {
    if (!is.na(x$QE)) {
       cat("\n")
       cat(mstyle$section("Test for Heterogeneity:"), "\n")
-      cat(mstyle$result(paste0("Q(df = ", ifelse(x$k.yi-1 >= 0, x$k.yi-1, 0), ") = ", .fcf(x$QE, digits[["test"]]), ", p-val ", .pval(x$QEp, digits=digits[["pval"]], showeq=TRUE, sep=" "))))
+      cat(mstyle$result(paste0("Q(df = ", ifelse(x$k.yi-1 >= 0, x$k.yi-1, 0), ") = ", .fcf(x$QE, digits[["test"]]), ", p-val ", .pval(x$QEp, digits[["pval"]], showeq=TRUE, sep=" "))))
    }
+
+   if (any(!is.na(c(x$I2, x$H2, x$QE))))
+      cat("\n\n")
 
    if (is.element(x$measure, c("OR","RR","IRR"))) {
 
       res.table <- c(estimate=.fcf(unname(x$beta), digits[["est"]]), se=.fcf(x$se, digits[["se"]]), zval=.fcf(x$zval, digits[["test"]]), pval=.pval(x$pval, digits[["pval"]]), ci.lb=.fcf(x$ci.lb, digits[["ci"]]), ci.ub=.fcf(x$ci.ub, digits[["ci"]]))
       res.table.exp <- c(estimate=.fcf(exp(unname(x$beta)), digits[["est"]]), ci.lb=.fcf(exp(x$ci.lb), digits[["ci"]]), ci.ub=.fcf(exp(x$ci.ub), digits[["ci"]]))
 
-      cat("\n\n")
       cat(mstyle$section("Model Results (log scale):"))
       cat("\n\n")
       tmp <- capture.output(.print.vector(res.table))
@@ -77,14 +78,14 @@ print.rma.mh <- function(x, digits, showfit=FALSE, ...) {
             cat(mstyle$result("test value not computable for these data"))
             cat("\n")
          } else {
-            cat(mstyle$result(paste0("CMH = ", formatC(MH, width=width), ", df = 1,", paste(rep(" ", nchar(x$k.pos)-1, collapse="")), " p-val ", .pval(x$MHp, digits=digits[["pval"]], showeq=TRUE, sep=" ", add0=TRUE))))
+            cat(mstyle$result(paste0("CMH = ", formatC(MH, width=width), ", df = 1,", paste(rep(" ", nchar(x$k.pos)-1, collapse="")), " p-val ", .pval(x$MHp, digits[["pval"]], showeq=TRUE, sep=" ", add0=TRUE))))
             cat("\n")
          }
          cat(mstyle$text("Tarone's Test for Heterogeneity: "))
          if (is.na(TA)) {
             cat(mstyle$result("test value not computable for these data"))
          } else {
-            cat(mstyle$result(paste0("X^2 = ", formatC(TA, width=width), ", df = ", x$k.pos-1, ", p-val ", .pval(x$TAp, digits=digits[["pval"]], showeq=TRUE, sep=" ", add0=TRUE))))
+            cat(mstyle$result(paste0("X^2 = ", formatC(TA, width=width), ", df = ", x$k.pos-1, ", p-val ", .pval(x$TAp, digits[["pval"]], showeq=TRUE, sep=" ", add0=TRUE))))
          }
          cat("\n")
       }
@@ -95,7 +96,7 @@ print.rma.mh <- function(x, digits, showfit=FALSE, ...) {
          if (is.na(x$MH)) {
             cat(mstyle$result("test value not computable for these data"))
          } else {
-            cat(mstyle$result(paste0("MH = ", .fcf(x$MH, digits[["test"]]), ", df = 1, p-val ", .pval(x$MHp, digits=digits[["pval"]], showeq=TRUE, sep=" "))))
+            cat(mstyle$result(paste0("MH = ", .fcf(x$MH, digits[["test"]]), ", df = 1, p-val ", .pval(x$MHp, digits[["pval"]], showeq=TRUE, sep=" "))))
          }
          cat("\n")
       }
@@ -104,7 +105,6 @@ print.rma.mh <- function(x, digits, showfit=FALSE, ...) {
 
       res.table <- c(estimate=.fcf(unname(x$beta), digits[["est"]]), se=.fcf(x$se, digits[["se"]]), zval=.fcf(x$zval, digits[["test"]]), pval=.pval(x$pval, digits[["pval"]]), ci.lb=.fcf(x$ci.lb, digits[["ci"]]), ci.ub=.fcf(x$ci.ub, digits[["ci"]]))
 
-      cat("\n\n")
       cat(mstyle$section("Model Results:"))
       cat("\n\n")
       tmp <- capture.output(.print.vector(res.table))

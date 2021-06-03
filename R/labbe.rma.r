@@ -1,21 +1,18 @@
 labbe.rma <- function(x, xlim, ylim, xlab, ylab,
-add=x$add, to=x$to, transf, targs, pch=21, psize, bg="gray", grid=FALSE, lty, ...) {
+add=x$add, to=x$to, transf, targs, pch=21, psize, plim=c(0.5,3.5), col, bg, grid=FALSE, lty, ...) {
 
    mstyle <- .get.mstyle("crayon" %in% .packages())
 
-   if (!inherits(x, "rma"))
-      stop(mstyle$stop("Argument 'x' must be an object of class \"rma\"."))
-
-   if (inherits(x, "rma.ls"))
-      stop(mstyle$stop("Method not available for objects of class \"rma.ls\"."))
+   .chkclass(class(x), must="rma", notav=c("rma.ls", "rma.uni.selmodel"))
 
    if (!x$int.only)
-      stop(mstyle$stop("L'Abbe plot only applicable for models without moderators."))
+      stop(mstyle$stop("L'Abbe plots can only be drawn for models without moderators."))
 
    if (!is.element(x$measure, c("RR","OR","RD","AS","IRR","IRD","IRSD")))
-      stop(mstyle$stop("Argument 'measure' must be one of the following: 'RR','OR','RD','AS','IRR','IRD','IRSD'."))
+      stop(mstyle$stop("Argument 'measure' must have been one of the following: 'RR','OR','RD','AS','IRR','IRD','IRSD'."))
 
    na.act <- getOption("na.action")
+   on.exit(options(na.action=na.act))
 
    if (!is.element(na.act, c("na.omit", "na.exclude", "na.fail", "na.pass")))
       stop(mstyle$stop("Unknown 'na.action' specified under options()."))
@@ -56,30 +53,64 @@ add=x$add, to=x$to, transf, targs, pch=21, psize, bg="gray", grid=FALSE, lty, ..
    addyi <- ifelse(is.null(ddd$addyi), TRUE, ddd$addyi)
    addvi <- ifelse(is.null(ddd$addvi), TRUE, ddd$addvi)
 
+   ### grid argument can either be a logical or a color
+
+   if (is.logical(grid))
+      gridcol <- "lightgray"
+   if (is.character(grid)) {
+      gridcol <- grid
+      grid <- TRUE
+   }
+
    #########################################################################
 
-   k <- x$k.f
+   ### note: 'pch', 'psize', 'col', and 'bg' must be of the same length as the original data passed to rma()
+   ###       so we have to apply the same subsetting (if necessary) and removing of NAs as done during the
+   ###       model fitting (note: NAs are removed further below)
 
-   if (length(pch) == 1L)                       ### note: pch must have same length as number of tables (including NAs)
-      pch <- rep(pch, k)                        ### or be equal to a single value (which is then repeated)
+   if (length(pch) == 1L)
+      pch <- rep(pch, x$k.all)
 
-   if (length(pch) != k)
-      stop(mstyle$stop("Number of tables does not correspond to the length of the 'pch' argument."))
+   if (length(pch) != x$k.all)
+      stop(mstyle$stop(paste0("Length of the 'pch' argument (", length(pch), ") does not correspond to the size of the original dataset (", x$k.all, ").")))
+
+   if (!is.null(x$subset))
+      pch <- pch[x$subset]
 
    ### if user has set the point sizes
 
-   if (!is.null(psize)) {                       ### note: psize must have same length as number of tables (including NAs)
-      if (length(psize) == 1L)                  ### or be equal to a single value (which is then repeated)
-         psize <- rep(psize, k)
-      if (length(psize) != k)
-         stop(mstyle$stop("Number of tables does not correspond to the length of the 'psize' argument."))
+   if (!is.null(psize)) {
+      if (length(psize) == 1L)
+         psize <- rep(psize, x$k.all)
+      if (length(psize) != x$k.all)
+         stop(mstyle$stop(paste0("Length of the 'psize' argument (", length(psize), ") does not correspond to the size of the original dataset (", x$k.all, ").")))
+      if (!is.null(x$subset))
+         psize <- psize[x$subset]
    }
 
-   if (length(bg) == 1L)                        ### note: bg must have same length as number of tables (including NAs)
-      bg <- rep(bg, k)                          ### or be equal to a single value (which is then repeated)
+   if (missing(col))
+      col <- "black"
 
-   if (length(bg) != k)
-      stop(mstyle$stop("Number of tables does not correspond to the length of the 'bg' argument."))
+   if (length(col) == 1L)
+      col <- rep(col, x$k.all)
+
+   if (length(col) != x$k.all)
+      stop(mstyle$stop(paste0("Length of the 'col' argument (", length(col), ") does not correspond to the size of the original dataset (", x$k.all, ").")))
+
+   if (!is.null(x$subset))
+      col <- col[x$subset]
+
+   if (missing(bg))
+      bg <- "gray"
+
+   if (length(bg) == 1L)
+      bg <- rep(bg, x$k.all)
+
+   if (length(bg) != x$k.all)
+      stop(mstyle$stop(paste0("Length of the 'bg' argument (", length(bg), ") does not correspond to the size of the original dataset (", x$k.all, ").")))
+
+   if (!is.null(x$subset))
+      bg <- bg[x$subset]
 
    #########################################################################
 
@@ -156,13 +187,18 @@ add=x$add, to=x$to, transf, targs, pch=21, psize, bg="gray", grid=FALSE, lty, ..
    ### check for NAs in yi/vi pairs and filter out
 
    has.na <- apply(is.na(dat.t), 1, any) | apply(is.na(dat.c), 1, any)
+   not.na <- !has.na
 
    if (any(has.na)) {
 
-      not.na <- !has.na
-
       dat.t <- dat.t[not.na,]
       dat.c <- dat.c[not.na,]
+      pch   <- pch[not.na]
+      col   <- col[not.na]
+      bg    <- bg[not.na]
+
+      if (is.null(psize))
+         psize <- psize[not.na]
 
    }
 
@@ -173,15 +209,35 @@ add=x$add, to=x$to, transf, targs, pch=21, psize, bg="gray", grid=FALSE, lty, ..
 
    ### determine point sizes
 
+   vi <- dat.t$vi + dat.c$vi
+
+   k <- length(vi)
+
    if (is.null(psize)) {
-      vi <- dat.t$vi + dat.c$vi
-      wi <- 1/sqrt(vi)
-      rng <- max(wi) - min(wi)
-      if (rng <= .Machine$double.eps^0.5) {
-         psize <- rep(1, length(wi))
-      } else {
-         psize <- 0.5 + 3 * (wi - min(wi))/rng
+      if (length(plim) < 2L)
+         stop(mstyle$stop("Argument 'plim' must be of length 2 or 3."))
+      wi <- sqrt(1/vi)
+      if (!is.na(plim[1]) && !is.na(plim[2])) {
+         rng <- max(wi, na.rm=TRUE) - min(wi, na.rm=TRUE)
+         if (rng <= .Machine$double.eps^0.5) {
+            psize <- rep(1, k)
+         } else {
+            psize <- (wi - min(wi, na.rm=TRUE)) / rng
+            psize <- (psize * (plim[2] - plim[1])) + plim[1]
+         }
       }
+      if (is.na(plim[1]) && !is.na(plim[2])) {
+         psize <- wi / max(wi, na.rm=TRUE) * plim[2]
+         if (length(plim) == 3L)
+            psize[psize <= plim[3]] <- plim[3]
+      }
+      if (!is.na(plim[1]) && is.na(plim[2])) {
+         psize <- wi / min(wi, na.rm=TRUE) * plim[1]
+         if (length(plim) == 3L)
+            psize[psize >= plim[3]] <- plim[3]
+      }
+      if (all(is.na(psize)))
+         psize <- rep(1, k)
    }
 
    ### determine x/y values for line that indicates the estimated effect
@@ -192,7 +248,7 @@ add=x$add, to=x$to, transf, targs, pch=21, psize, bg="gray", grid=FALSE, lty, ..
 
    len <- 1000
 
-   intrcpt <- c(x$beta)
+   intrcpt <- x$beta[1]
 
    if (x$measure == "RD")
       c.vals <- seq(ifelse(intrcpt>0, 0, -intrcpt), ifelse(intrcpt>0, 1-intrcpt, 1), length.out=len)
@@ -240,18 +296,19 @@ add=x$add, to=x$to, transf, targs, pch=21, psize, bg="gray", grid=FALSE, lty, ..
 
    dat.t$yi.o  <- dat.t$yi[order.vec]
    dat.c$yi.o  <- dat.c$yi[order.vec]
-   psize.o     <- psize[order.vec]
    pch.o       <- pch[order.vec]
+   col.o       <- col[order.vec]
    bg.o        <- bg[order.vec]
+   psize.o     <- psize[order.vec]
 
-   ### add x axis label
+   ### add x-axis label
 
    if (missing(xlab)) {
       xlab <- .setlab(measure, transf.char, atransf.char="FALSE", gentype=1)
       xlab <- paste(xlab, "(Group 1)")
    }
 
-   ### add y axis label
+   ### add y-axis label
 
    if (missing(ylab)) {
       ylab <- .setlab(measure, transf.char, atransf.char="FALSE", gentype=1)
@@ -262,19 +319,24 @@ add=x$add, to=x$to, transf, targs, pch=21, psize, bg="gray", grid=FALSE, lty, ..
 
    ### add grid (and redraw box)
 
-   if (grid) {
-      grid()
+   if (.isTRUE(grid)) {
+      grid(col=gridcol)
       box(...)
    }
 
+   ### add diagonal and estimated effects lines
+
    abline(a=0, b=1, lty=lty[1], ...)
    lines(c.vals, t.vals, lty=lty[2], ...)
-   points(dat.c$yi.o, dat.t$yi.o, cex=psize.o, pch=pch.o, bg=bg.o, ...)
+
+   ### add points
+
+   points(x=dat.c$yi.o, y=dat.t$yi.o, cex=psize.o, pch=pch.o, col=col.o, bg=bg.o, ...)
 
    #########################################################################
 
    ### prepare data frame to return
-   sav <- data.frame(x=dat.c$yi, y=dat.t$yi, cex=psize, pch=pch, bg=bg, stringsAsFactors=FALSE)
+   sav <- data.frame(x=dat.c$yi, y=dat.t$yi, cex=psize, pch=pch, col=col, bg=bg, ids=x$ids[not.na], slab=x$slab[not.na], stringsAsFactors=FALSE)
 
    invisible(sav)
 

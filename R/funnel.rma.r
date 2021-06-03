@@ -1,16 +1,17 @@
 funnel.rma <- function(x, yaxis="sei", xlim, ylim, xlab, ylab,
 steps=5, at, atransf, targs, digits, level=x$level, addtau2=FALSE,
 type="rstandard", back="lightgray", shade="white", hlines="white",
-refline, pch=19, pch.fill=21, col, bg, legend=FALSE, ci.res=1000, ...) {
+refline, lty=3, pch=19, pch.fill=21, col, bg,
+label=FALSE, offset=0.4, legend=FALSE, ci.res=1000, ...) {
 
    #########################################################################
 
    mstyle <- .get.mstyle("crayon" %in% .packages())
 
-   if (!inherits(x, "rma"))
-      stop(mstyle$stop("Argument 'x' must be an object of class \"rma\"."))
+   .chkclass(class(x), must="rma")
 
    na.act <- getOption("na.action")
+   on.exit(options(na.action=na.act))
 
    yaxis <- match.arg(yaxis, c("sei", "vi", "seinv", "vinv", "ni", "ninv", "sqrtni", "sqrtninv", "lni", "wi"))
    type  <- match.arg(type,  c("rstandard", "rstudent"))
@@ -20,37 +21,37 @@ refline, pch=19, pch.fill=21, col, bg, legend=FALSE, ci.res=1000, ...) {
 
    atransf.char <- deparse(substitute(atransf))
 
-   ### check if sample size information is available if plotting (some function of) sample sizes
+   ### check if sample size information is available if plotting (some function of) the sample sizes on the y-axis
 
    if (is.element(yaxis, c("ni", "ninv", "sqrtni", "sqrtninv", "lni"))) {
       if (is.null(x$ni))
          stop(mstyle$stop("No sample size information stored in model object."))
       if (anyNA(x$ni))
-         warning(mstyle$warning("Sample size information stored in model object \n  contains NAs. Not all studies will be plotted."))
+         warning(mstyle$warning("Sample size information stored in model object \n  contains NAs. Not all studies will be plotted."), call.=FALSE)
    }
 
    ### set y-axis label if not specified
 
    if (missing(ylab)) {
-      if(yaxis == "sei")
+      if (yaxis == "sei")
          ylab <- "Standard Error"
-      if(yaxis == "vi")
+      if (yaxis == "vi")
          ylab <- "Variance"
-      if(yaxis == "seinv")
+      if (yaxis == "seinv")
          ylab <- "Inverse Standard Error"
-      if(yaxis == "vinv")
+      if (yaxis == "vinv")
          ylab <- "Inverse Variance"
-      if(yaxis == "ni")
+      if (yaxis == "ni")
          ylab <- "Sample Size"
-      if(yaxis == "ninv")
+      if (yaxis == "ninv")
          ylab <- "Inverse Sample Size"
-      if(yaxis == "sqrtni")
+      if (yaxis == "sqrtni")
          ylab <- "Square Root Sample Size"
-      if(yaxis == "sqrtninv")
+      if (yaxis == "sqrtninv")
          ylab <- "Inverse Square Root Sample Size"
-      if(yaxis == "lni")
+      if (yaxis == "lni")
          ylab <- "Log Sample Size"
-      if(yaxis == "wi")
+      if (yaxis == "wi")
          ylab <- "Weight (in %)"
    }
 
@@ -63,36 +64,39 @@ refline, pch=19, pch.fill=21, col, bg, legend=FALSE, ci.res=1000, ...) {
    ### default number of digits (if not specified)
 
    if (missing(digits)) {
-      if(yaxis == "sei")
+      if (yaxis == "sei")
          digits <- c(2L,3L)
-      if(yaxis == "vi")
+      if (yaxis == "vi")
          digits <- c(2L,3L)
-      if(yaxis == "seinv")
+      if (yaxis == "seinv")
          digits <- c(2L,3L)
-      if(yaxis == "vinv")
+      if (yaxis == "vinv")
          digits <- c(2L,3L)
-      if(yaxis == "ni")
+      if (yaxis == "ni")
          digits <- c(2L,0L)
-      if(yaxis == "ninv")
+      if (yaxis == "ninv")
          digits <- c(2L,3L)
-      if(yaxis == "sqrtni")
+      if (yaxis == "sqrtni")
          digits <- c(2L,3L)
-      if(yaxis == "sqrtninv")
+      if (yaxis == "sqrtninv")
          digits <- c(2L,3L)
-      if(yaxis == "lni")
+      if (yaxis == "lni")
          digits <- c(2L,3L)
-      if(yaxis == "wi")
+      if (yaxis == "wi")
          digits <- c(2L,2L)
    } else {
       if (length(digits) == 1L)     ### digits[1] for x-axis labels
          digits <- c(digits,digits) ### digits[2] for y-axis labels
    }
 
-   ### note: digits can also be a list (e.g., digits=list(2L,3))
+   ### note: digits can also be a list (e.g., digits=list(2L,3)); trailing 0's are dropped for intergers
 
-   ### note: 'pch', 'col', and 'bg' are assumed to be of the same length as the original data passed to rma()
-   ###       so we have to apply the same subsetting (if necessary) and removing of NAs as done during the
-   ###       model fitting (note: NAs are removed further below)
+   if (length(lty) == 1L)
+      lty <- rep(lty, 2) ### 1st value = funnel lines, 2nd value = reference line
+
+   ### note: pch, col, and bg must be of the same length as the original data passed to rma()
+   ###       so we have to apply the same subsetting (if necessary) and removing of NAs as was
+   ###       done during the model fitting (note: NAs are removed further below)
 
    if (length(pch) == 1L) {
       pch.vec <- FALSE
@@ -101,7 +105,7 @@ refline, pch=19, pch.fill=21, col, bg, legend=FALSE, ci.res=1000, ...) {
       pch.vec <- TRUE
    }
    if (length(pch) != x$k.all)
-      stop(mstyle$stop("Number of outcomes does not correspond to the length of the 'pch' argument."))
+      stop(mstyle$stop(paste0("Length of the 'pch' argument (", length(pch), ") does not correspond to the size of the original dataset (", x$k.all, ").")))
 
    if (!is.null(x$subset))
       pch <- pch[x$subset]
@@ -117,7 +121,7 @@ refline, pch=19, pch.fill=21, col, bg, legend=FALSE, ci.res=1000, ...) {
          col.vec <- TRUE
       }
       if (length(col) != x$k.all)
-         stop(mstyle$stop("Number of outcomes does not correspond to the length of the 'col' argument."))
+         stop(mstyle$stop(paste0("Length of the 'col' argument (", length(col), ") does not correspond to the size of the original dataset (", x$k.all, ").")))
 
       if (!is.null(x$subset))
          col <- col[x$subset]
@@ -131,7 +135,7 @@ refline, pch=19, pch.fill=21, col, bg, legend=FALSE, ci.res=1000, ...) {
          bg.vec <- TRUE
       }
       if (length(bg) != x$k.all)
-         stop(mstyle$stop("Number of outcomes does not correspond to the length of the 'bg' argument."))
+         stop(mstyle$stop(paste0("Length of the 'bg' argument (", length(bg), ") does not correspond to the size of the original dataset (", x$k.all, ").")))
 
       if (!is.null(x$subset))
          bg <- bg[x$subset]
@@ -154,6 +158,41 @@ refline, pch=19, pch.fill=21, col, bg, legend=FALSE, ci.res=1000, ...) {
 
    }
 
+   if (length(label) != 1L)
+      stop(mstyle$stop("Argument 'label' should be of length 1."))
+
+   ddd <- list(...)
+
+   lplot     <- function(..., refline2, level2, lty2) plot(...)
+   labline   <- function(..., refline2, level2, lty2) abline(...)
+   lsegments <- function(..., refline2, level2, lty2) segments(...)
+   laxis     <- function(..., refline2, level2, lty2) axis(...)
+   lpolygon  <- function(..., refline2, level2, lty2) polygon(...)
+   llines    <- function(..., refline2, level2, lty2) lines(...)
+   lpoints   <- function(..., refline2, level2, lty2) points(...)
+   lrect     <- function(..., refline2, level2, lty2) rect(...)
+   ltext     <- function(..., refline2, level2, lty2) text(...)
+
+   ### refline2, level2, and lty2 for adding a second reference line / funnel
+
+   if (!is.null(ddd$refline2)) {
+      refline2 <- ddd$refline2
+   } else {
+      refline2 <- NULL
+   }
+
+   if (!is.null(ddd$level2)) {
+      level2 <- ddd$level2
+   } else {
+      level2 <- x$level
+   }
+
+   if (!is.null(ddd$lty2)) {
+      lty2 <- ddd$lty2
+   } else {
+      lty2 <- 3
+   }
+
    #########################################################################
 
    ### get values for the x-axis (and corresponding vi, sei, and ni values)
@@ -165,14 +204,16 @@ refline, pch=19, pch.fill=21, col, bg, legend=FALSE, ci.res=1000, ...) {
          refline <- c(x$beta)
 
       if (inherits(x, "rma.mv") && addtau2) {
-         warning(mstyle$warning("Argument 'addtau2' ignored for 'rma.mv' models."))
+         warning(mstyle$warning("Argument 'addtau2' ignored for 'rma.mv' models."), call.=FALSE)
          addtau2 <- FALSE
       }
 
-      yi   <- x$yi             ### yi/vi/ni is already subsetted and NAs are removed
-      vi   <- x$vi
-      ni   <- x$ni             ### ni can be NULL (and there may be 'additional' NAs)
-      sei  <- sqrt(vi)
+      yi  <- x$yi              ### yi/vi/ni is already subsetted and NAs are removed
+      vi  <- x$vi
+      ni  <- x$ni              ### ni can be NULL (and there may be 'additional' NAs)
+      sei <- sqrt(vi)
+      if (!is.null(x$not.na.yivi))
+         x$not.na <- x$not.na.yivi
       slab <- x$slab[x$not.na] ### slab is subsetted but NAs are not removed, so still need to do this here
       pch  <- pch[x$not.na]    ### same for pch
 
@@ -192,7 +233,7 @@ refline, pch=19, pch.fill=21, col, bg, legend=FALSE, ci.res=1000, ...) {
          refline <- 0
 
       if (addtau2) {
-         warning(mstyle$warning("Argument 'addtau2' ignored for models that contain moderators."))
+         warning(mstyle$warning("Argument 'addtau2' ignored for models that contain moderators."), call.=FALSE)
          addtau2 <- FALSE
       }
 
@@ -221,6 +262,11 @@ refline, pch=19, pch.fill=21, col, bg, legend=FALSE, ci.res=1000, ...) {
       if (missing(xlab))
          xlab <- "Residual Value"
 
+   }
+
+   if (inherits(x, "rma.ls") && addtau2) {
+      warning(mstyle$warning("Argument 'addtau2' ignored for 'rma.ls' models."), call.=FALSE)
+      addtau2 <- FALSE
    }
 
    tau2 <- ifelse(addtau2, x$tau2, 0)
@@ -282,17 +328,17 @@ refline, pch=19, pch.fill=21, col, bg, legend=FALSE, ci.res=1000, ...) {
 
       if (is.element(yaxis, c("sei", "vi", "ni", "ninv", "sqrtni", "sqrtninv", "lni"))) {
          if (ylim[1] < 0 || ylim[2] < 0)
-            stop(mstyle$stop("Both limits for the y axis must be >= 0."))
+            stop(mstyle$stop("Both y-axis limits must be >= 0."))
       }
 
       if (is.element(yaxis, c("seinv", "vinv"))) {
          if (ylim[1] <= 0 || ylim[2] <= 0)
-            stop(mstyle$stop("Both limits for the y axis must be > 0."))
+            stop(mstyle$stop("Both y-axis limits must be > 0."))
       }
 
       if (is.element(yaxis, c("wi"))) {
          if (ylim[1] < 0 || ylim[2] < 0)
-            stop(mstyle$stop("Both limits for the y axis must be >= 0."))
+            stop(mstyle$stop("Both y-axis limits must be >= 0."))
       }
 
    }
@@ -304,6 +350,7 @@ refline, pch=19, pch.fill=21, col, bg, legend=FALSE, ci.res=1000, ...) {
    if (is.element(yaxis, c("sei", "vi", "seinv", "vinv"))) {
 
       level     <- ifelse(level == 0, 1, ifelse(level >= 1, (100-level)/100, ifelse(level > .5, 1-level, level)))
+      level2    <- ifelse(level2 == 0, 1, ifelse(level2 >= 1, (100-level2)/100, ifelse(level2 > .5, 1-level2, level2)))
       #level    <- ifelse(level >= 1, (100-level)/100, ifelse(level > .5, 1-level, level)) ### note: there may be multiple level values
       level.min <- min(level)                                                              ### note: smallest level is the widest CI
       lvals     <- length(level)
@@ -329,7 +376,7 @@ refline, pch=19, pch.fill=21, col, bg, legend=FALSE, ci.res=1000, ...) {
 
       if (missing(xlim)) {
          xlim    <- c(min(x.lb.bot,min(yi)), max(x.ub.bot,max(yi))) ### make sure x-axis not only includes widest CI, but also all yi values
-         rxlim   <- xlim[2] - xlim[1]        ### calculate range of the x axis limits
+         rxlim   <- xlim[2] - xlim[1]        ### calculate range of the x-axis limits
          xlim[1] <- xlim[1] - (rxlim * 0.10) ### subtract 10% of range from lower x-axis bound
          xlim[2] <- xlim[2] + (rxlim * 0.10) ### add      10% of range to   upper x-axis bound
       } else {
@@ -342,7 +389,7 @@ refline, pch=19, pch.fill=21, col, bg, legend=FALSE, ci.res=1000, ...) {
 
       if (missing(xlim)) {
          xlim    <- c(min(yi), max(yi))
-         rxlim   <- xlim[2] - xlim[1]        ### calculate range of the x axis limits
+         rxlim   <- xlim[2] - xlim[1]        ### calculate range of the x-axis limits
          xlim[1] <- xlim[1] - (rxlim * 0.10) ### subtract 10% of range from lower x-axis bound
          xlim[2] <- xlim[2] + (rxlim * 0.10) ### add      10% of range to   upper x-axis bound
       } else {
@@ -362,20 +409,20 @@ refline, pch=19, pch.fill=21, col, bg, legend=FALSE, ci.res=1000, ...) {
 
    ### set up plot
 
-   plot(NA, NA, xlim=xlim, ylim=ylim, xlab=xlab, ylab=ylab, xaxt="n", yaxt="n", bty="n", ...)
+   lplot(NA, NA, xlim=xlim, ylim=ylim, xlab=xlab, ylab=ylab, xaxt="n", yaxt="n", bty="n", ...)
 
    ### add background shading
 
    par.usr <- par("usr")
-   rect(par.usr[1], par.usr[3], par.usr[2], par.usr[4], col=back, border=NA, ...)
+   lrect(par.usr[1], par.usr[3], par.usr[2], par.usr[4], col=back, border=NA, ...)
 
    ### add y-axis
 
-   axis(side=2, at=seq(from=ylim[1], to=ylim[2], length.out=steps), labels=formatC(seq(from=ylim[1], to=ylim[2], length.out=steps), digits=digits[[2]], format="f", drop0trailing=ifelse(class(digits[[2]]) == "integer", TRUE, FALSE)), ...)
+   laxis(side=2, at=seq(from=ylim[1], to=ylim[2], length.out=steps), labels=formatC(seq(from=ylim[1], to=ylim[2], length.out=steps), digits=digits[[2]], format="f", drop0trailing=is.integer(digits[[2]])), ...)
 
    ### add horizontal lines
 
-   abline(h=seq(from=ylim[1], to=ylim[2], length.out=steps), col=hlines, ...)
+   labline(h=seq(from=ylim[1], to=ylim[2], length.out=steps), col=hlines, ...)
 
    #########################################################################
 
@@ -428,9 +475,18 @@ refline, pch=19, pch.fill=21, col, bg, legend=FALSE, ci.res=1000, ...) {
          ci.left  <- refline - qnorm(level[m]/2, lower.tail=FALSE) * sqrt(vi.vals + tau2)
          ci.right <- refline + qnorm(level[m]/2, lower.tail=FALSE) * sqrt(vi.vals + tau2)
 
-         polygon(c(ci.left,ci.right[ci.res:1]), c(yi.vals,yi.vals[ci.res:1]), border=NA, col=shade[m], ...)
-         lines(ci.left,  yi.vals, lty="dotted", ...)
-         lines(ci.right, yi.vals, lty="dotted", ...)
+         lpolygon(c(ci.left,ci.right[ci.res:1]), c(yi.vals,yi.vals[ci.res:1]), border=NA, col=shade[m], ...)
+         llines(ci.left,  yi.vals, lty=lty[1], ...)
+         llines(ci.right, yi.vals, lty=lty[1], ...)
+
+      }
+
+      if (!is.null(refline2)) {
+
+         ci.left  <- refline2 - qnorm(level2/2, lower.tail=FALSE) * sqrt(vi.vals + tau2)
+         ci.right <- refline2 + qnorm(level2/2, lower.tail=FALSE) * sqrt(vi.vals + tau2)
+         llines(ci.left,  yi.vals, lty=lty2, ...)
+         llines(ci.right, yi.vals, lty=lty2, ...)
 
       }
 
@@ -440,10 +496,20 @@ refline, pch=19, pch.fill=21, col, bg, legend=FALSE, ci.res=1000, ...) {
    ### use segments so that line does not extent beyond tip of CI region
 
    if (is.element(yaxis, c("sei", "vi", "seinv", "vinv")))
-      segments(refline, ylim[1], refline, ylim[2], ...)
+      lsegments(refline, ylim[1], refline, ylim[2], lty=lty[2], ...)
 
    if (is.element(yaxis, c("ni", "ninv", "sqrtni", "sqrtninv", "lni", "wi")))
-      abline(v=refline, ...)
+      labline(v=refline, lty=lty[2], ...)
+
+   if (!is.null(refline2)) {
+
+      if (is.element(yaxis, c("sei", "vi", "seinv", "vinv")))
+         lsegments(refline2, ylim[1], refline2, ylim[2], lty=lty2, ...)
+
+      if (is.element(yaxis, c("ni", "ninv", "sqrtni", "sqrtninv", "lni", "wi")))
+         labline(v=refline2, lty=lty2, ...)
+
+   }
 
    #########################################################################
 
@@ -483,12 +549,12 @@ refline, pch=19, pch.fill=21, col, bg, legend=FALSE, ci.res=1000, ...) {
 
    if (!inherits(x, "rma.uni.trimfill")) {
 
-      points(xaxis.vals, yaxis.vals, pch=pch, col=col, bg=bg, ...)
+      lpoints(x=xaxis.vals, y=yaxis.vals, pch=pch, col=col, bg=bg, ...)
 
    } else {
 
-      points(xaxis.vals[!fill], yaxis.vals[!fill], pch=pch,      col=col[1], bg=bg[1], ...)
-      points(xaxis.vals[fill],  yaxis.vals[fill],  pch=pch.fill, col=col[2], bg=bg[2], ...)
+      lpoints(x=xaxis.vals[!fill], y=yaxis.vals[!fill], pch=pch,      col=col[1], bg=bg[1], ...)
+      lpoints(x=xaxis.vals[fill],  y=yaxis.vals[fill],  pch=pch.fill, col=col[2], bg=bg[2], ...)
 
    }
 
@@ -498,7 +564,7 @@ refline, pch=19, pch.fill=21, col, bg, legend=FALSE, ci.res=1000, ...) {
 
    box(bty="l")
 
-   ### generate x axis positions if none are specified
+   ### generate x-axis positions if none are specified
 
    if (is.null(at)) {
       at <- axTicks(side=1)
@@ -513,19 +579,51 @@ refline, pch=19, pch.fill=21, col, bg, legend=FALSE, ci.res=1000, ...) {
 
    if (is.function(atransf)) {
       if (is.null(targs)) {
-         at.lab <- formatC(sapply(at.lab, atransf), digits=digits[[1]], format="f", drop0trailing=ifelse(class(digits[[1]]) == "integer", TRUE, FALSE))
+         at.lab <- formatC(sapply(at.lab, atransf), digits=digits[[1]], format="f", drop0trailing=is.integer(digits[[1]]))
       } else {
-         at.lab <- formatC(sapply(at.lab, atransf, targs), digits=digits[[1]], format="f", drop0trailing=ifelse(class(digits[[1]]) == "integer", TRUE, FALSE))
+         at.lab <- formatC(sapply(at.lab, atransf, targs), digits=digits[[1]], format="f", drop0trailing=is.integer(digits[[1]]))
       }
    } else {
-      at.lab <- formatC(at.lab, digits=digits[[1]], format="f", drop0trailing=ifelse(class(digits[[1]]) == "integer", TRUE, FALSE))
+      at.lab <- formatC(at.lab, digits=digits[[1]], format="f", drop0trailing=is.integer(digits[[1]]))
    }
 
    ### add x-axis
 
-   axis(side=1, at=at, labels=at.lab, ...)
+   laxis(side=1, at=at, labels=at.lab, ...)
 
    ############################################################################
+
+   ### labeling of points
+
+   k <- length(yi)
+
+   if (is.numeric(label) || is.character(label) || .isTRUE(label)) {
+
+      if (is.numeric(label)) {
+         label <- round(label)
+         if (label < 0)
+            label <- 0
+         if (label > k)
+            label <- k
+         label <- order(abs(yi - refline), decreasing=TRUE)[seq_len(label)]
+      } else if ((is.character(label) && label == "all") || .isTRUE(label)) {
+         label <- seq_len(k)
+      } else if ((is.character(label) && label == "out")) {
+         if (!is.element(yaxis, c("sei", "vi", "seinv", "vinv"))) {
+            label <- seq_len(k)
+         } else {
+            label <- which(abs(yi - refline) / sqrt(vi + tau2) >= qnorm(level.min/2, lower.tail=FALSE))
+         }
+      } else {
+         label <- NULL
+      }
+
+      for (i in label)
+            ltext(yi[i], yaxis.vals[i], slab[i], pos=ifelse(yi[i]-refline >= 0, 4, 2), offset=offset, ...)
+
+   }
+
+   #########################################################################
 
    ### add legend (if requested)
 
@@ -539,7 +637,7 @@ refline, pch=19, pch.fill=21, col, bg, legend=FALSE, ci.res=1000, ...) {
 
    if (legend && !is.element(yaxis, c("sei", "vi", "seinv", "vinv"))) {
       legend <- FALSE
-      warning(mstyle$warning("Argument 'legend' only applicable if 'yaxis' is 'sei', 'vi', 'seinv', or 'vinv'."))
+      warning(mstyle$warning("Argument 'legend' only applicable if 'yaxis' is 'sei', 'vi', 'seinv', or 'vinv'."), call.=FALSE)
    }
 
    if (legend) {
@@ -553,7 +651,11 @@ refline, pch=19, pch.fill=21, col, bg, legend=FALSE, ci.res=1000, ...) {
       lchars <- max(nchar(level))-2
       options(scipen=scipen$scipen)
 
-      ltext <- sapply(1:lvals, function(i) {
+      pval1 <- NULL
+      pval2 <- NULL
+      phantom <- NULL
+
+      ltxt <- sapply(1:lvals, function(i) {
          if (i == 1)
             return(as.expression(bquote(paste(.(pval1) < p, phantom() <= .(pval2)), list(pval1=.fcf(level[i], lchars), pval2=.fcf(1, lchars)))))
             #return(as.expression(bquote(p > .(pval), list(pval=.fcf(level[i], lchars)))))
@@ -569,7 +671,7 @@ refline, pch=19, pch.fill=21, col, bg, legend=FALSE, ci.res=1000, ...) {
       pt.bg  <- c(shade, back)
 
       if (add.studies) {
-         ltext  <- c(ltext, expression(plain(Studies)))
+         ltxt   <- c(ltxt, expression(plain(Studies)))
          pch.l  <- c(pch.l, pch[1])
          col.l  <- c(col.l, col[1])
          pt.cex <- c(pt.cex, 1)
@@ -577,14 +679,14 @@ refline, pch=19, pch.fill=21, col, bg, legend=FALSE, ci.res=1000, ...) {
       }
 
       if (inherits(x, "rma.uni.trimfill")) {
-         ltext  <- c(ltext, expression(plain(Filled~Studies)))
+         ltxt   <- c(ltxt, expression(plain(Filled~Studies)))
          pch.l  <- c(pch.l, pch.fill[1])
          col.l  <- c(col.l, col[2])
          pt.cex <- c(pt.cex, 1)
          pt.bg  <- c(pt.bg, bg[2])
       }
 
-      legend(lpos, inset=.01, bg="white", pch=pch.l, col=col.l, pt.cex=pt.cex, pt.bg=pt.bg, legend=ltext)
+      legend(lpos, inset=.01, bg="white", pch=pch.l, col=col.l, pt.cex=pt.cex, pt.bg=pt.bg, legend=ltxt)
 
    }
 

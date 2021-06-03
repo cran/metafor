@@ -1,26 +1,20 @@
-### Note: There is code below to obtain a profile likelihood CI for tau^2, but then
-### I may have to introduce a 'type' argument to specify which type of CI to obtain.
-### Actually, what would be most consistent is this:
-### if method='ML/REML':    profile likelihood (PL) CI (based on the ML/REML likelihood)
-### if method='EB/PM/PMM':  Q-profile (QP) CI
-### if method='GENQ/GENQM': generalized Q-statistic (GENQ) CI (which also covers method='DL/HE' as special cases)
-### if method='SJ':         method by Sidik & Jonkman (2005) (but this performs poorly, except if tau^2 is very large)
-### if method='HS':         not sure since this is an ad-hoc estimator with no obvious underlying statistical principle
-### Also could in principle compute Wald-type CIs (but those perform poorly except when k is very large).
-### But it may be a bit late to change how the function works (right now, type="GENQ" if method="GENQ/GENQM" and type="QP" otherwise).
+# What would be most consistent is this:
+# if method='ML/REML':    profile likelihood (PL) CI (based on the ML/REML likelihood)
+# if method='EB/PM/PMM':  Q-profile (QP) CI
+# if method='GENQ/GENQM': generalized Q-statistic (GENQ) CI (which also covers method='DL/HE' as special cases)
+# if method='SJ':         method by Sidik & Jonkman (2005) (but this performs poorly, except if tau^2 is very large)
+# if method='HS':         not sure since this is an ad-hoc estimator with no obvious underlying statistical principle
+# Also could in principle compute Wald-type CIs (but those perform poorly except when k is very large).
+# Too late to change how the function works (right now, type="GENQ" if method="GENQ/GENQM" and type="QP" otherwise).
 
-confint.rma.uni <- function(object, parm, level, fixed=FALSE, random=TRUE, digits, transf, targs, verbose=FALSE, control, ...) {
+confint.rma.uni <- function(object, parm, level, fixed=FALSE, random=TRUE, type, digits, transf, targs, verbose=FALSE, control, ...) {
 
    mstyle <- .get.mstyle("crayon" %in% .packages())
 
-   if (!inherits(object, "rma.uni"))
-      stop(mstyle$stop("Argument 'object' must be an object of class \"rma.uni\"."))
+   .chkclass(class(object), must="rma.uni", notav=c("robust.rma", "rma.ls"))
 
-   if (inherits(object, "robust.rma"))
-      stop(mstyle$stop("Method not available for objects of class \"robust.rma\"."))
-
-   if (inherits(object, "rma.ls"))
-      stop(mstyle$stop("Method not available for objects of class \"rma.ls\"."))
+   if (!missing(parm))
+      warning(mstyle$warning("Argument 'parm' (currently) ignored."), call.=FALSE)
 
    x <- object
 
@@ -53,28 +47,33 @@ confint.rma.uni <- function(object, parm, level, fixed=FALSE, random=TRUE, digit
    if (!fixed && !random)
       stop(mstyle$stop("At least one of the arguments 'fixed' and 'random' must be TRUE."))
 
-   if (x$method == "GENQ" || x$method == "GENQM") {
-      type <- "GENQ"
-   } else {
-      type <- "QP"
-   }
-
-   #if (missing(type)) {
-   #   if (x$method == "GENQ" || x$method == "GENQM") {
-   #      type <- "GENQ"
-   #   } else {
-   #      type <- "QP"
-   #   }
-   #} else {
-   #   type <- match.arg(type, c("QP", "GENQ", "PL"))
-   #}
-
    level <- ifelse(level == 0, 1, ifelse(level >= 1, (100-level)/100, ifelse(level > .5, 1-level, level)))
 
    ddd <- list(...)
 
+   .chkdots(ddd, c("time", "xlim", "extint"))
+
    if (.isTRUE(ddd$time))
       time.start <- proc.time()
+
+   if (!is.null(ddd$xlim)) {
+      if (length(ddd$xlim) != 2L)
+         stop(mstyle$stop("Argument 'xlim' should be a vector of length 2."))
+      control$tau2.min <- ddd$xlim[1]
+      control$tau2.max <- ddd$xlim[2]
+   }
+
+   if (missing(type)) {
+      if (x$method == "GENQ" || x$method == "GENQM") {
+         type <- "GENQ"
+      } else {
+         type <- "QP"
+      }
+   } else {
+      #type <- match.arg(type, c("QP", "GENQ", "PL"))
+      if (!is.element(type, c("QP", "GENQ", "PL")))
+         stop(mstyle$stop("Unknown 'type' specified."))
+   }
 
    #########################################################################
    #########################################################################
@@ -85,14 +84,14 @@ confint.rma.uni <- function(object, parm, level, fixed=FALSE, random=TRUE, digit
       if (k == 1)
          stop(mstyle$stop("Stopped because k = 1."))
 
-      if (x$method == "FE")
+      if (is.element(x$method, c("FE","EE","CE")))
          stop(mstyle$stop("Model does not contain a random-effects component."))
 
       if (x$tau2.fix)
          stop(mstyle$stop("Model does not contain an estimated random-effects component."))
 
       if (type == "GENQ" && !(is.element(x$method, c("GENQ","GENQM"))))
-         stop(mstyle$stop("Model must be fitted with 'method=\"GENQ\" or 'method=\"GENQM\" to use this option."))
+         stop(mstyle$stop("Model must be fitted with method=\"GENQ\" or method=\"GENQM\" to use this option."))
 
       ######################################################################
 
@@ -108,7 +107,8 @@ confint.rma.uni <- function(object, parm, level, fixed=FALSE, random=TRUE, digit
 
       con <- list(tol=.Machine$double.eps^0.25, maxiter=1000, tau2.min=tau2.min, tau2.max=tau2.max, verbose=FALSE)
 
-      con[pmatch(names(control), names(con))] <- control
+      con.pos <- pmatch(names(control), names(con))
+      con[c(na.omit(con.pos))] <- control[!is.na(con.pos)]
 
       if (verbose)
          con$verbose <- verbose
@@ -390,9 +390,9 @@ confint.rma.uni <- function(object, parm, level, fixed=FALSE, random=TRUE, digit
          ### get diff value when setting component to tau2.min; this value should be positive (i.e., discrepancy must be larger than critical value)
          ### if it is not, then the lower bound must be below tau2.min
 
-         res <- try(.profile.rma.uni(val = con$tau2.min, obj=x, CI=TRUE, objective=objective, verbose=verbose), silent=TRUE)
+         res <- try(.profile.rma.uni(con$tau2.min, obj=x, confint=TRUE, objective=objective, verbose=verbose), silent=TRUE)
 
-         if (!inherits(res, "try-error")) {
+         if (!inherits(res, "try-error") && !is.na(res)) {
 
             if (res < 0) {
 
@@ -404,7 +404,11 @@ confint.rma.uni <- function(object, parm, level, fixed=FALSE, random=TRUE, digit
 
             } else {
 
-               res <- try(uniroot(.profile.rma.uni, interval=c(con$tau2.min, x$tau2), tol=con$tol, maxiter=con$maxiter, obj=x, CI=TRUE, objective=objective, verbose=verbose, check.conv=TRUE)$root, silent=TRUE)
+               if (.isTRUE(ddd$extint)) {
+                  res <- try(uniroot(.profile.rma.uni, interval=c(con$tau2.min, x$tau2), tol=con$tol, maxiter=con$maxiter, extendInt="downX", obj=x, confint=TRUE, objective=objective, verbose=verbose, check.conv=TRUE)$root, silent=TRUE)
+               } else {
+                  res <- try(uniroot(.profile.rma.uni, interval=c(con$tau2.min, x$tau2), tol=con$tol, maxiter=con$maxiter, obj=x, confint=TRUE, objective=objective, verbose=verbose, check.conv=TRUE)$root, silent=TRUE)
+               }
 
                ### check if uniroot method converged
 
@@ -426,11 +430,11 @@ confint.rma.uni <- function(object, parm, level, fixed=FALSE, random=TRUE, digit
          ### get diff value when setting component to tau2.max; this value should be positive (i.e., discrepancy must be larger than critical value)
          ### if it is not, then the upper bound must be above tau2.max
 
-         res <- try(.profile.rma.uni(val = con$tau2.max, obj=x, CI=TRUE, objective=objective, verbose=verbose), silent=TRUE)
+         res <- try(.profile.rma.uni(con$tau2.max, obj=x, confint=TRUE, objective=objective, verbose=verbose), silent=TRUE)
 
-         if (!inherits(res, "try-error")) {
+         if (!inherits(res, "try-error") && !is.na(res)) {
 
-            if (res < 0) {
+            if (!.isTRUE(ddd$extint) && res < 0) {
 
                tau2.ub <- con$tau2.max
                ub.conv <- TRUE
@@ -438,7 +442,11 @@ confint.rma.uni <- function(object, parm, level, fixed=FALSE, random=TRUE, digit
 
             } else {
 
-               res <- try(uniroot(.profile.rma.uni, interval=c(x$tau2, con$tau2.max), tol=con$tol, maxiter=con$maxiter, obj=x, CI=TRUE, objective=objective, verbose=verbose, check.conv=TRUE)$root, silent=TRUE)
+               if (.isTRUE(ddd$extint)) {
+                  res <- try(uniroot(.profile.rma.uni, interval=c(x$tau2, con$tau2.max), tol=con$tol, maxiter=con$maxiter, extendInt="upX", obj=x, confint=TRUE, objective=objective, verbose=verbose, check.conv=TRUE)$root, silent=TRUE)
+               } else {
+                  res <- try(uniroot(.profile.rma.uni, interval=c(x$tau2, con$tau2.max), tol=con$tol, maxiter=con$maxiter, obj=x, confint=TRUE, objective=objective, verbose=verbose, check.conv=TRUE)$root, silent=TRUE)
+               }
 
                ### check if uniroot method converged
 
@@ -460,15 +468,15 @@ confint.rma.uni <- function(object, parm, level, fixed=FALSE, random=TRUE, digit
       ######################################################################
 
       if (!lb.conv)
-         warning(mstyle$warning("Error in iterative search for the lower bound."))
+         warning(mstyle$warning("Error in iterative search for the lower bound."), call.=FALSE)
 
       if (!ub.conv)
-         warning(mstyle$warning("Error in iterative search for the upper bound."))
+         warning(mstyle$warning("Error in iterative search for the upper bound."), call.=FALSE)
 
       #if (lb.sign == "<" && con$tau2.min > 0)
-      #   warning(mstyle$warning("Lower bound < tau2.min. Try decreasing tau2.min (via the 'control' argument)."))
+      #   warning(mstyle$warning("Lower bound < tau2.min. Try decreasing tau2.min (via the 'control' argument)."), call.=FALSE)
       #if (ub.sign == ">")
-      #   warning(mstyle$warning("Upper bound > tau2.max. Try increasing tau2.max (via the 'control' argument)."))
+      #   warning(mstyle$warning("Upper bound > tau2.max. Try increasing tau2.max (via the 'control' argument)."), call.=FALSE)
 
       ######################################################################
 
@@ -494,7 +502,7 @@ confint.rma.uni <- function(object, parm, level, fixed=FALSE, random=TRUE, digit
    if (fixed) {
 
       if (is.element(x$test, c("knha","adhoc","t"))) {
-         crit <- qt(level/2, df=x$dfs, lower.tail=FALSE)
+         crit <- qt(level/2, df=x$ddf, lower.tail=FALSE)
       } else {
          crit <- qnorm(level/2, lower.tail=FALSE)
       }
@@ -514,6 +522,12 @@ confint.rma.uni <- function(object, parm, level, fixed=FALSE, random=TRUE, digit
             ci.ub <- sapply(ci.ub, transf, targs)
          }
       }
+
+      ### make sure order of intervals is always increasing
+
+      tmp <- .psort(ci.lb, ci.ub)
+      ci.lb <- tmp[,1]
+      ci.ub <- tmp[,2]
 
       res.fixed <- cbind(estimate=beta, ci.lb=ci.lb, ci.ub=ci.ub)
       rownames(res.fixed) <- rownames(x$beta)

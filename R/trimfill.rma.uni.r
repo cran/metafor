@@ -4,14 +4,7 @@ trimfill.rma.uni <- function(x, side, estimator="L0", maxiter=100, verbose=FALSE
 
    mstyle <- .get.mstyle("crayon" %in% .packages())
 
-   if (!inherits(x, "rma.uni"))
-      stop(mstyle$stop("Argument 'x' must be an object of class \"rma.uni\"."))
-
-   if (inherits(x, "robust.rma"))
-      stop(mstyle$stop("Method not available for objects of class \"robust.rma\"."))
-
-   if (inherits(x, "rma.ls"))
-      stop(mstyle$stop("Method not available for objects of class \"rma.ls\"."))
+   .chkclass(class(x), must="rma.uni", notav=c("robust.rma", "rma.ls", "rma.uni.selmodel"))
 
    if (!x$int.only)
       stop(mstyle$stop("Trim-and-fill method only applicable for models without moderators."))
@@ -169,7 +162,7 @@ trimfill.rma.uni <- function(x, side, estimator="L0", maxiter=100, verbose=FALSE
 
       ### fit model with imputed data
 
-      res <- suppressWarnings(rma.uni(yi.fill, vi.fill, weights=wi.fill, ni=ni.fill, method=x$method, weighted=x$weighted, ...))
+      res <- suppressWarnings(rma.uni(yi.fill, vi.fill, weights=wi.fill, ni=ni.fill, method=x$method, weighted=x$weighted, digits=x$digits, ...))
 
       ### fill, ids, and slab are of length 'k.f + k0' (i.e., subsetted but with NAs)
 

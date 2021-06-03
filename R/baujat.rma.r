@@ -1,23 +1,11 @@
-baujat.rma <- function(x, xlim, ylim, xlab, ylab, cex, symbol, grid=TRUE, progbar=FALSE, ...) {
+baujat.rma <- function(x, xlim, ylim, xlab, ylab, cex, symbol="ids", grid=TRUE, progbar=FALSE, ...) {
 
    mstyle <- .get.mstyle("crayon" %in% .packages())
 
-   if (!inherits(x, "rma"))
-      stop(mstyle$stop("Argument 'x' must be an object of class \"rma\"."))
-
-   if (inherits(x, "rma.glmm"))
-      stop(mstyle$stop("Method not available for objects of class \"rma.glmm\"."))
-
-   if (inherits(x, "rma.mv"))
-      stop(mstyle$stop("Method not available for objects of class \"rma.mv\"."))
-
-   if (inherits(x, "robust.rma"))
-      stop(mstyle$stop("Method not available for objects of class \"robust.rma\"."))
-
-   if (inherits(x, "rma.ls"))
-      stop(mstyle$stop("Method not available for objects of class \"rma.ls\"."))
+   .chkclass(class(x), must="rma", notav=c("rma.glmm", "rma.mv", "robust.rma", "rma.ls", "rma.uni.selmodel"))
 
    na.act <- getOption("na.action")
+   on.exit(options(na.action=na.act))
 
    if (!is.element(na.act, c("na.omit", "na.exclude", "na.fail", "na.pass")))
       stop(mstyle$stop("Unknown 'na.action' specified under options()."))
@@ -49,29 +37,29 @@ baujat.rma <- function(x, xlim, ylim, xlab, ylab, cex, symbol, grid=TRUE, progba
    ### also: it is possible that model fitting fails, so that generates more NAs (these NAs will always be shown in output)
 
    if (progbar)
-      pbar <- txtProgressBar(min=0, max=x$k.f, style=3)
+      pbar <- pbapply::startpb(min=0, max=x$k.f)
 
    for (i in seq_len(x$k.f)) {
 
       if (progbar)
-         setTxtProgressBar(pbar, i)
+         pbapply::setpb(pbar, i)
 
       if (!x$not.na[i])
          next
 
       if (inherits(x, "rma.uni"))
-         res <- try(suppressWarnings(rma.uni(x$yi.f, x$vi.f, weights=x$weights.f, mods=x$X.f, intercept=FALSE, method=x$method, weighted=x$weighted, test=x$test, tau2=ifelse(x$tau2.fix, x$tau2, NA), control=x$control, subset=-i)), silent=TRUE)
+         res <- try(suppressWarnings(rma.uni(x$yi.f, x$vi.f, weights=x$weights.f, mods=x$X.f, intercept=FALSE, method=x$method, weighted=x$weighted, test=x$test, level=x$level, tau2=ifelse(x$tau2.fix, x$tau2, NA), control=x$control, subset=-i, skipr2=TRUE)), silent=TRUE)
 
       if (inherits(x, "rma.mh")) {
          if (is.element(x$measure, c("RR","OR","RD"))) {
-            res <- try(suppressWarnings(rma.mh(ai=x$ai.f, bi=x$bi.f, ci=x$ci.f, di=x$di.f, measure=x$measure, add=x$add, to=x$to, drop00=x$drop00, correct=x$correct, subset=-i)), silent=TRUE)
+            res <- try(suppressWarnings(rma.mh(ai=x$ai.f, bi=x$bi.f, ci=x$ci.f, di=x$di.f, measure=x$measure, add=x$add, to=x$to, drop00=x$drop00, correct=x$correct, level=x$level, subset=-i)), silent=TRUE)
          } else {
-            res <- try(suppressWarnings(rma.mh(x1i=x$x1i.f, x2i=x$x2i.f, t1i=x$t1i.f, t2i=x$t2i.f, measure=x$measure, add=x$add, to=x$to, drop00=x$drop00, correct=x$correct, subset=-i)), silent=TRUE)
+            res <- try(suppressWarnings(rma.mh(x1i=x$x1i.f, x2i=x$x2i.f, t1i=x$t1i.f, t2i=x$t2i.f, measure=x$measure, add=x$add, to=x$to, drop00=x$drop00, correct=x$correct, level=x$level, subset=-i)), silent=TRUE)
          }
       }
 
       if (inherits(x, "rma.peto"))
-         res <- try(suppressWarnings(rma.peto(ai=x$ai.f, bi=x$bi.f, ci=x$ci.f, di=x$di.f, add=x$add, to=x$to, drop00=x$drop00, subset=-i)), silent=TRUE)
+         res <- try(suppressWarnings(rma.peto(ai=x$ai.f, bi=x$bi.f, ci=x$ci.f, di=x$di.f, add=x$add, to=x$to, drop00=x$drop00, level=x$level, subset=-i)), silent=TRUE)
 
       if (inherits(res, "try-error"))
          next
@@ -88,7 +76,7 @@ baujat.rma <- function(x, xlim, ylim, xlab, ylab, cex, symbol, grid=TRUE, progba
    }
 
    if (progbar)
-      close(pbar)
+      pbapply::closepb(pbar)
 
    yhati <- (delpred - pred.full)^2 / vdelpred
 
@@ -97,7 +85,7 @@ baujat.rma <- function(x, xlim, ylim, xlab, ylab, cex, symbol, grid=TRUE, progba
    ### x-axis values (use 'na.pass' to make sure we get a vector of length k.f)
 
    options(na.action = "na.pass")
-   xhati <- 1/(x$tau2.f + x$vi.f) * resid(x)^2
+   xhati <- resid(x)^2 / (x$tau2.f + x$vi.f)
    options(na.action = na.act)
 
    #########################################################################
@@ -108,7 +96,7 @@ baujat.rma <- function(x, xlim, ylim, xlab, ylab, cex, symbol, grid=TRUE, progba
       cex <- 0.8
 
    if (missing(xlab)) {
-      if (x$method == "FE") {
+      if (is.element(x$method, c("FE","EE","CE"))) {
          xlab <- ifelse(x$int.only, "Contribution to Overall Heterogeneity", "Contribution to Residual Heterogeneity")
       } else {
          xlab <- "Squared Pearson Residual"
@@ -137,22 +125,31 @@ baujat.rma <- function(x, xlim, ylim, xlab, ylab, cex, symbol, grid=TRUE, progba
       box(...)
    }
 
-   ### add points/symbols
+   if (is.numeric(symbol)) {
 
-   if (missing(symbol))
-      symbol <- "ids"
+      if (length(symbol) == 1L)
+         symbol <- rep(symbol, x$k.all)
 
-   if (is.numeric(symbol))
-      points(xhati, yhati, cex=cex, pch=symbol, ...)
+      if (length(symbol) != x$k.all)
+         stop(mstyle$stop(paste0("Length of the 'symbol' argument (", length(symbol), ") does not correspond to the size of the original dataset (", x$k.all, ").")))
 
-   if (is.character(symbol) && symbol == "ids")
+      if (!is.null(x$subset))
+         symbol <- symbol[x$subset]
+
+      points(x=xhati, y=yhati, cex=cex, pch=symbol, ...)
+
+   }
+
+   if (is.character(symbol) && symbol=="ids")
       text(xhati, yhati, x$ids, cex=cex, ...)
 
-   if (is.character(symbol) && symbol == "slab")
+   if (is.character(symbol) && symbol=="slab")
       text(xhati, yhati, x$slab, cex=cex, ...)
 
    #########################################################################
 
-   invisible(data.frame(x=xhati[x$not.na], y=yhati[x$not.na], ids=x$ids[x$not.na], slab=x$slab[x$not.na], stringsAsFactors=FALSE))
+   sav <- data.frame(x=xhati[x$not.na], y=yhati[x$not.na], ids=x$ids[x$not.na], slab=x$slab[x$not.na], stringsAsFactors=FALSE)
+
+   invisible(sav)
 
 }

@@ -1,6 +1,6 @@
 ### library(metafor); library(testthat); Sys.setenv(NOT_CRAN="true")
 
-### see also: http://www.metafor-project.org/doku.php/plots:plot_of_cumulative_results
+### see also: https://www.metafor-project.org/doku.php/plots:plot_of_cumulative_results
 
 context("Checking plots example: plot of cumulative results")
 
@@ -25,7 +25,7 @@ test_that("plot can be drawn.", {
    res <- rma(yi, vi, data=dat)
 
    ### cumulative meta-analysis (in the order of publication year)
-   tmp <- cumul(res, order=order(dat$year))
+   tmp <- cumul(res, order=dat$year)
 
    ### plot of cumulative results
    plot(tmp, transf=exp, xlim=c(.25,.5), lwd=3, cex=1.3)

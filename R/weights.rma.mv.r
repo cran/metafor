@@ -2,15 +2,14 @@ weights.rma.mv <- function(object, type="diagonal", ...) {
 
    mstyle <- .get.mstyle("crayon" %in% .packages())
 
-   if (!inherits(object, "rma.mv"))
-      stop(mstyle$stop("Argument 'object' must be an object of class \"rma.mv\"."))
+   .chkclass(class(object), must="rma.mv")
 
    na.act <- getOption("na.action")
 
    if (!is.element(na.act, c("na.omit", "na.exclude", "na.fail", "na.pass")))
       stop(mstyle$stop("Unknown 'na.action' specified under options()."))
 
-   type <- match.arg(type, c("diagonal", "matrix"))
+   type <- match.arg(type, c("diagonal", "matrix", "rowsum"))
 
    x <- object
 
@@ -28,7 +27,7 @@ weights.rma.mv <- function(object, type="diagonal", ...) {
 
       wi <- as.vector(diag(W))
       weight <- rep(NA_real_, x$k.f)
-      weight[x$not.na] <- wi/sum(wi) * 100
+      weight[x$not.na] <- wi / sum(wi) * 100
       names(weight) <- x$slab
 
       if (na.act == "na.omit")
@@ -56,6 +55,26 @@ weights.rma.mv <- function(object, type="diagonal", ...) {
          stop(mstyle$stop("Missing values in results."))
 
       return(Wfull)
+
+   }
+
+   if (type == "rowsum") {
+
+      if (!x$int.only)
+         stop("Row-sum weights are only meaningful for intercept-only models.")
+
+      wi <- rowSums(W)
+      weight <- rep(NA_real_, x$k.f)
+      weight[x$not.na] <- wi / sum(wi) * 100
+      names(weight) <- x$slab
+
+      if (na.act == "na.omit")
+         weight <- weight[x$not.na]
+
+      if (na.act == "na.fail" && any(!x$not.na))
+         stop(mstyle$stop("Missing values in weights."))
+
+      return(weight)
 
    }
 

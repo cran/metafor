@@ -159,6 +159,8 @@ correct=TRUE, level=95, digits, verbose=FALSE, ...) {
          if (verbose)
             message(mstyle$message("Subsetting ..."))
 
+         subset <- .setnafalse(subset, k=k)
+
          ai   <- ai[subset]
          bi   <- bi[subset]
          ci   <- ci[subset]
@@ -220,7 +222,7 @@ correct=TRUE, level=95, digits, verbose=FALSE, ...) {
             ci <- ci[not.na]
             di <- di[not.na]
             k  <- length(ai)
-            warning(mstyle$warning("Tables with NAs omitted from model fitting."))
+            warning(mstyle$warning("Tables with NAs omitted from model fitting."), call.=FALSE)
          }
 
          if (na.act == "na.fail")
@@ -248,7 +250,7 @@ correct=TRUE, level=95, digits, verbose=FALSE, ...) {
             yi <- yi[not.na.yivi]
             vi <- vi[not.na.yivi]
             ni <- ni[not.na.yivi]
-            warning(mstyle$warning("Some yi/vi values are NA."))
+            warning(mstyle$warning("Some yi/vi values are NA."), call.=FALSE)
 
             attr(yi, "measure") <- measure ### add measure attribute back
             attr(yi, "ni")      <- ni      ### add ni attribute back
@@ -364,6 +366,8 @@ correct=TRUE, level=95, digits, verbose=FALSE, ...) {
          if (verbose)
             message(mstyle$message("Subsetting ..."))
 
+         subset <- .setnafalse(subset, k=k)
+
          x1i  <- x1i[subset]
          x2i  <- x2i[subset]
          t1i  <- t1i[subset]
@@ -423,7 +427,7 @@ correct=TRUE, level=95, digits, verbose=FALSE, ...) {
             t1i  <- t1i[not.na]
             t2i  <- t2i[not.na]
             k    <- length(x1i)
-            warning(mstyle$warning("Tables with NAs omitted from model fitting."))
+            warning(mstyle$warning("Tables with NAs omitted from model fitting."), call.=FALSE)
          }
 
          if (na.act == "na.fail")
@@ -451,7 +455,7 @@ correct=TRUE, level=95, digits, verbose=FALSE, ...) {
             yi <- yi[not.na.yivi]
             vi <- vi[not.na.yivi]
             ni <- ni[not.na.yivi]
-            warning(mstyle$warning("Some yi/vi values are NA."))
+            warning(mstyle$warning("Some yi/vi values are NA."), call.=FALSE)
 
             attr(yi, "measure") <- measure ### add measure attribute back
             attr(yi, "ni")      <- ni      ### add ni attribute back
@@ -527,7 +531,7 @@ correct=TRUE, level=95, digits, verbose=FALSE, ...) {
       R  <- sum(Ri)
       S  <- sum(Si)
 
-      if (identical(R,0) || identical(S,0)) {
+      if (identical(R,0) || identical(S,0) || identical(R,0L) || identical(S,0L)) {
          beta.exp <- NA
          beta     <- NA
          se       <- NA
@@ -553,7 +557,7 @@ correct=TRUE, level=95, digits, verbose=FALSE, ...) {
       xt <- ai + ci
       yt <- bi + di
 
-      if (identical(sum(xt),0) || identical(sum(yt),0)) {
+      if (identical(sum(xt),0) || identical(sum(yt),0) || identical(sum(xt),0L) || identical(sum(yt),0L)) {
          CO  <- NA
          COp <- NA
          MH  <- NA
@@ -574,7 +578,7 @@ correct=TRUE, level=95, digits, verbose=FALSE, ...) {
          TAp   <- NA
          k.pos <- 0
       } else {
-         if (identical(beta.exp,1)) {
+         if (identical(beta.exp,1) || identical(beta.exp,1L)) {
             N11 <- (n1i/Ni)*xt
          } else {
             A   <- beta.exp * (n1i + xt) + (n2i - xt)
@@ -605,7 +609,7 @@ correct=TRUE, level=95, digits, verbose=FALSE, ...) {
       R <- sum(ai * (n2i/Ni))
       S <- sum(ci * (n1i/Ni))
 
-      if (identical(sum(ai),0) || identical(sum(ci),0)) {
+      if (identical(sum(ai),0) || identical(sum(ci),0) || identical(sum(ai),0L) || identical(sum(ci),0L)) {
          beta.exp <- NA
          beta     <- NA
          se       <- NA
@@ -648,7 +652,7 @@ correct=TRUE, level=95, digits, verbose=FALSE, ...) {
       R <- sum(x1i * (t2i/Ti))
       S <- sum(x2i * (t1i/Ti))
 
-      if (identical(sum(x1i),0) || identical(sum(x2i),0)) {
+      if (identical(sum(x1i),0) || identical(sum(x2i),0) || identical(sum(x1i),0L) || identical(sum(x2i),0L)) {
          beta.exp <- NA
          beta     <- NA
          se       <- NA
@@ -672,7 +676,7 @@ correct=TRUE, level=95, digits, verbose=FALSE, ...) {
       ### Mantel-Haenszel Statistic
 
       xt <- x1i + x2i
-      if (identical(sum(xt),0)) {
+      if (identical(sum(xt),0) || identical(sum(xt),0L)) {
          MH  <- NA
          MHp <- NA
       } else {
@@ -705,16 +709,16 @@ correct=TRUE, level=95, digits, verbose=FALSE, ...) {
 
    wi <- 1/vi
 
-   QE <- max(0, sum(wi*(yi-beta)^2))
-
    if (k.yi > 1) {
+      QE  <- max(0, sum(wi*(yi-beta)^2))
       QEp <- pchisq(QE, df=k.yi-1, lower.tail=FALSE)
-      I2 <- max(0, 100 * (QE - (k.yi-1)) / QE)
-      H2 <- QE / (k.yi-1)
+      I2  <- max(0, 100 * (QE - (k.yi-1)) / QE)
+      H2  <- QE / (k.yi-1)
    } else {
+      QE  <- 0
       QEp <- 1
-      I2 <- 0
-      H2 <- 1
+      I2  <- 0
+      H2  <- 1
    }
 
    #########################################################################
@@ -761,27 +765,51 @@ correct=TRUE, level=95, digits, verbose=FALSE, ...) {
    X.f       <- cbind(rep(1,k.f))
    intercept <- TRUE
    int.only  <- TRUE
+   btt       <- 1
+   m         <- 1
+   coef.na   <- c(X=FALSE)
 
    method    <- "FE"
    weighted  <- TRUE
    test      <- "z"
-   dfs       <- NA
+   ddf       <- NA
 
    if (is.null(ddd$outlist)) {
 
       res <- list(b=beta, beta=beta, se=se, zval=zval, pval=pval, ci.lb=ci.lb, ci.ub=ci.ub, vb=vb,
-                  tau2=tau2,
-                  k=k, k.f=k.f, k.yi=k.yi, k.pos=k.pos, k.eff=k.eff, k.all=k.all, p=p, parms=parms,
-                  QE=QE, QEp=QEp, CO=CO, COp=COp, MH=MH, MHp=MHp, BD=BD, BDp=BDp, TA=TA, TAp=TAp, I2=I2, H2=H2,
-                  int.only=int.only,
+                  tau2=tau2, tau2.f=tau2,
+                  I2=I2, H2=H2,
+                  QE=QE, QEp=QEp, CO=CO, COp=COp, MH=MH, MHp=MHp, BD=BD, BDp=BDp, TA=TA, TAp=TAp,
+                  k=k, k.f=k.f, k.yi=k.yi, k.pos=k.pos, k.eff=k.eff, k.all=k.all, p=p, p.eff=p.eff, parms=parms,
+                  int.only=int.only, intercept=intercept, coef.na=coef.na,
                   yi=yi, vi=vi, yi.f=yi.f, vi.f=vi.f, X.f=X.f,
                   ai=ai, bi=bi, ci=ci, di=di, ai.f=ai.f, bi.f=bi.f, ci.f=ci.f, di.f=di.f,
                   x1i=x1i, x2i=x2i, t1i=t1i, t2i=t2i, x1i.f=x1i.f, x2i.f=x2i.f, t1i.f=t1i.f, t2i.f=t2i.f, ni=ni, ni.f=ni.f,
                   ids=ids, not.na=not.na, subset=subset, not.na.yivi=not.na.yivi, slab=slab, slab.null=slab.null,
-                  measure=measure, method=method, weighted=weighted, test=test, dfs=dfs, intercept=intercept, digits=digits, level=level,
+                  measure=measure, method=method, weighted=weighted,
+                  test=test, ddf=ddf, dfs=ddf, btt=btt, m=m,
+                  digits=digits, level=level,
                   add=add, to=to, drop00=drop00, correct=correct,
-                  fit.stats=fit.stats, formula.yi=NULL, formula.mods=NULL, version=packageVersion("metafor"), call=mf)
+                  fit.stats=fit.stats,
+                  formula.yi=NULL, formula.mods=NULL, version=packageVersion("metafor"), call=mf)
 
+   }
+
+   if (!is.null(ddd$outlist)) {
+      if (ddd$outlist == "minimal") {
+         res <- list(b=beta, beta=beta, se=se, zval=zval, pval=pval, ci.lb=ci.lb, ci.ub=ci.ub, vb=vb,
+                     tau2=tau2,
+                     I2=I2, H2=H2,
+                     QE=QE, QEp=QEp, CO=CO, COp=COp, MH=MH, MHp=MHp, BD=BD, BDp=BDp, TA=TA, TAp=TAp,
+                     k=k, k.yi=k.yi, k.pos=k.pos, k.eff=k.eff, p=p, p.eff=p.eff, parms=parms,
+                     int.only=int.only,
+                     measure=measure, method=method,
+                     test=test, ddf=ddf, dfs=ddf, btt=btt, m=m,
+                     digits=digits,
+                     fit.stats=fit.stats)
+      } else {
+         res <- eval(parse(text=paste0("list(", ddd$outlist, ")")))
+      }
    }
 
    time.end <- proc.time()
@@ -792,14 +820,6 @@ correct=TRUE, level=95, digits, verbose=FALSE, ...) {
 
    if (verbose || .isTRUE(ddd$time))
       cat("\n")
-
-   if (!is.null(ddd$outlist)) {
-      if (ddd$outlist == "minimal") {
-         res <- list(b=beta, beta=beta, se=se, zval=zval, pval=pval, ci.lb=ci.lb, ci.ub=ci.ub, vb=vb, digits=digits, k=k, k.yi=k.yi, k.pos=k.pos, k.eff=k.eff, p=p, parms=parms, fit.stats=fit.stats, QE=QE, QEp=QEp, MH=MH, MHp=MHp, TA=TA, TAp=TAp, measure=measure)
-      } else {
-         res <- eval(parse(text=paste0("list(", ddd$outlist, ")")))
-      }
-   }
 
    class(res) <- c("rma.mh", "rma")
    return(res)

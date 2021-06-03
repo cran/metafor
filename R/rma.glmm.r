@@ -15,12 +15,12 @@ level=95, digits, btt, nAGQ=7, verbose=FALSE, control, ...) { # tau2,
    ### (arguments "to" and "vtype" are checked inside escalc function)
 
    if (missing(measure))
-      stop(mstyle$stop("Need to specify 'measure' argument."))
+      stop(mstyle$stop("Must specify 'measure' argument."))
 
    if (!is.element(measure, c("OR","IRR","PLO","IRLN")))
       stop(mstyle$stop("Unknown 'measure' specified."))
 
-   if (!is.element(method, c("FE","ML")))
+   if (!is.element(method, c("FE","EE","CE","ML")))
       stop(mstyle$stop("Unknown 'method' specified."))
 
    ### in case user specifies more than one add/to value (as one can do with rma.mh() and rma.peto())
@@ -46,6 +46,7 @@ level=95, digits, btt, nAGQ=7, verbose=FALSE, control, ...) { # tau2,
       model <- "CM.EL"
 
    na.act <- getOption("na.action")
+   on.exit(options(na.action=na.act))
 
    if (!is.element(na.act, c("na.omit", "na.exclude", "na.fail", "na.pass")))
       stop(mstyle$stop("Unknown 'na.action' specified under options()."))
@@ -59,7 +60,7 @@ level=95, digits, btt, nAGQ=7, verbose=FALSE, control, ...) { # tau2,
 
    ddd <- list(...)
 
-   .chkdots(ddd, c("tdist", "outlist", "onlyo1", "addyi", "addvi", "time", "retdat", "family"))
+   .chkdots(ddd, c("tdist", "outlist", "onlyo1", "addyi", "addvi", "time", "retdat", "family", "retfit"))
 
    ### handle 'tdist' argument from ... (note: overrides test argument)
 
@@ -93,7 +94,7 @@ level=95, digits, btt, nAGQ=7, verbose=FALSE, control, ...) { # tau2,
 
    if (verbose > 2) {
       opwarn <- options(warn=1)
-      on.exit(options(warn=opwarn$warn))
+      on.exit(options(warn=opwarn$warn), add=TRUE)
    }
 
    #########################################################################
@@ -152,6 +153,7 @@ level=95, digits, btt, nAGQ=7, verbose=FALSE, control, ...) { # tau2,
       k.all <- k
 
       if (!is.null(subset)) {
+         subset <- .setnafalse(subset, k=k)
          ai <- ai[subset]
          bi <- bi[subset]
          ci <- ci[subset]
@@ -177,6 +179,7 @@ level=95, digits, btt, nAGQ=7, verbose=FALSE, control, ...) { # tau2,
       k.all <- k
 
       if (!is.null(subset)) {
+         subset <- .setnafalse(subset, k=k)
          x1i <- x1i[subset]
          x2i <- x2i[subset]
          t1i <- t1i[subset]
@@ -201,6 +204,7 @@ level=95, digits, btt, nAGQ=7, verbose=FALSE, control, ...) { # tau2,
       k.all <- k
 
       if (!is.null(subset)) {
+         subset <- .setnafalse(subset, k=k)
          xi <- xi[subset]
          mi <- mi[subset]
       }
@@ -220,6 +224,7 @@ level=95, digits, btt, nAGQ=7, verbose=FALSE, control, ...) { # tau2,
       k.all <- k
 
       if (!is.null(subset)) {
+         subset <- .setnafalse(subset, k=k)
          xi <- xi[subset]
          ti <- ti[subset]
       }
@@ -269,8 +274,8 @@ level=95, digits, btt, nAGQ=7, verbose=FALSE, control, ...) { # tau2,
 
    ### check if mods matrix has the right number of rows
 
-   if (!is.null(mods) && (nrow(mods) != k))
-      stop(mstyle$stop("Number of rows of the model matrix does not match length of the outcome vector."))
+   if (!is.null(mods) && nrow(mods) != k)
+      stop(mstyle$stop(paste0("Number of rows in the model matrix (", nrow(mods), ") does not match length of the outcome vector (", k, ").")))
 
    ### generate study labels if none are specified
 
@@ -382,7 +387,7 @@ level=95, digits, btt, nAGQ=7, verbose=FALSE, control, ...) { # tau2,
             di   <- di[not.na]
             mods <- mods[not.na,,drop=FALSE]
             k    <- length(ai)
-            warning(mstyle$warning("Studies with NAs omitted from model fitting."))
+            warning(mstyle$warning("Studies with NAs omitted from model fitting."), call.=FALSE)
          }
 
          if (na.act == "na.fail")
@@ -409,7 +414,7 @@ level=95, digits, btt, nAGQ=7, verbose=FALSE, control, ...) { # tau2,
             t2i  <- t2i[not.na]
             mods <- mods[not.na,,drop=FALSE]
             k    <- length(x1i)
-            warning(mstyle$warning("Studies with NAs omitted from model fitting."))
+            warning(mstyle$warning("Studies with NAs omitted from model fitting."), call.=FALSE)
          }
 
          if (na.act == "na.fail")
@@ -434,7 +439,7 @@ level=95, digits, btt, nAGQ=7, verbose=FALSE, control, ...) { # tau2,
             mi   <- mi[not.na]
             mods <- mods[not.na,,drop=FALSE]
             k    <- length(xi)
-            warning(mstyle$warning("Studies with NAs omitted from model fitting."))
+            warning(mstyle$warning("Studies with NAs omitted from model fitting."), call.=FALSE)
          }
 
          if (na.act == "na.fail")
@@ -459,7 +464,7 @@ level=95, digits, btt, nAGQ=7, verbose=FALSE, control, ...) { # tau2,
             ti   <- ti[not.na]
             mods <- mods[not.na,,drop=FALSE]
             k    <- length(xi)
-            warning(mstyle$warning("Studies with NAs omitted from model fitting."))
+            warning(mstyle$warning("Studies with NAs omitted from model fitting."), call.=FALSE)
          }
 
          if (na.act == "na.fail")
@@ -497,7 +502,7 @@ level=95, digits, btt, nAGQ=7, verbose=FALSE, control, ...) { # tau2,
          ni <- ni[not.na.yivi]
          vi <- vi[not.na.yivi]
          mods.yi <- mods.f[not.na.yivi,,drop=FALSE]
-         warning(mstyle$warning("Some yi/vi values are NA."))
+         warning(mstyle$warning("Some yi/vi values are NA."), call.=FALSE)
 
          attr(yi, "measure") <- measure ### add measure attribute back
          attr(yi, "ni")      <- ni      ### add ni attribute back
@@ -514,7 +519,7 @@ level=95, digits, btt, nAGQ=7, verbose=FALSE, control, ...) { # tau2,
    ### make sure that there is at least one column in X
 
    if (is.null(mods) && !intercept) {
-      warning(mstyle$warning("Must either include an intercept and/or moderators in model.\n  Coerced intercept into the model."))
+      warning(mstyle$warning("Must either include an intercept and/or moderators in model.\n  Coerced intercept into the model."), call.=FALSE)
       intercept <- TRUE
    }
 
@@ -536,7 +541,7 @@ level=95, digits, btt, nAGQ=7, verbose=FALSE, control, ...) { # tau2,
    tmp <- lm(rep(0,k) ~ X - 1)
    coef.na <- is.na(coef(tmp))
    if (any(coef.na)) {
-      warning(mstyle$warning("Redundant predictors dropped from the model."))
+      warning(mstyle$warning("Redundant predictors dropped from the model."), call.=FALSE)
       X    <- X[,!coef.na,drop=FALSE]
       X.f  <- X.f[,!coef.na,drop=FALSE]
    }
@@ -583,14 +588,14 @@ level=95, digits, btt, nAGQ=7, verbose=FALSE, control, ...) { # tau2,
 
    ### check if there are too many parameters for given k
 
-   if (method == "FE" && p > k)
+   if (is.element(method, c("FE","EE","CE")) && p > k)
       stop(mstyle$stop("Number of parameters to be estimated is larger than the number of observations."))
-   if (method != "FE" && (p+1) > k)
+   if (!is.element(method, c("FE","EE","CE")) && (p+1) > k)
       stop(mstyle$stop("Number of parameters to be estimated is larger than the number of observations."))
 
    ### set/check 'btt' argument
 
-   btt <- .set.btt(btt, p, int.incl, X)
+   btt <- .set.btt(btt, p, int.incl, colnames(X))
    m <- length(btt) ### number of betas to test (m = p if all betas are tested)
 
    #########################################################################
@@ -601,7 +606,7 @@ level=95, digits, btt, nAGQ=7, verbose=FALSE, control, ...) { # tau2,
                package="lme4",             # package for fitting logistic mixed-effects models ("lme4" or "GLMMadaptive")
                optimizer = "optim",        # optimizer to use for CM.EL+OR ("optim", "nlminb", "uobyqa", "newuoa", "bobyqa", "clogit", "clogistic")
                optmethod = "BFGS",         # argument 'method' for optim() ("Nelder-Mead" and "BFGS" are sensible options)
-               scale = TRUE,               # should non-dummy variables in the X matrix be rescaled before model fitting?
+               scaleX = TRUE,              # whether non-dummy variables in the X matrix should be rescaled before model fitting
                evtol = 1e-07,              # lower bound for eigenvalues to determine if model matrix is positive definite
                dnchgcalc = "dFNCHypergeo", # method for calculating dnchg ("dFNCHypergeo" from BiasedUrn package or "dnoncenhypergeom")
                dnchgprec = 1e-10)          # precision for dFNCHypergeo()
@@ -728,13 +733,13 @@ level=95, digits, btt, nAGQ=7, verbose=FALSE, control, ...) { # tau2,
       stop(mstyle$stop("Cannot use 'clogit' or 'clogistic' with method='ML'."))
 
    if (con$package == "lme4" && is.element(measure, c("OR","IRR")) && model == "UM.RS" && method == "ML" && nAGQ > 1) {
-      warning(mstyle$warning("Currently not possible to fit RE/ME model='UM.RS' with nAGQ > 1. nAGQ automatically set to 1."))
+      warning(mstyle$warning("Currently not possible to fit RE/ME model='UM.RS' with nAGQ > 1. nAGQ automatically set to 1."), call.=FALSE)
       nAGQ <- 1
    }
 
    #########################################################################
 
-   ### check that required packages are available
+   ### check that the required packages are installed
 
    if (is.element(measure, c("OR","IRR"))) {
       if ((model == "UM.FS" && method == "ML") || (model == "UM.RS") || (model == "CM.AL" && method == "ML") || (model == "CM.EL" && method == "ML")) {
@@ -792,12 +797,12 @@ level=95, digits, btt, nAGQ=7, verbose=FALSE, control, ...) { # tau2,
 
    ### upgrade warnings to errors (for some testing)
    #o.warn <- getOption("warn")
-   #on.exit(options(warn = o.warn))
+   #on.exit(options(warn = o.warn), add=TRUE)
    #options(warn = 2)
 
    ### rescale X matrix (only for models with moderators and models including an intercept term)
 
-   if (!int.only && int.incl && con$scale) {
+   if (!int.only && int.incl && con$scaleX) {
       Xsave <- X
       meanX <- colMeans(X[, 2:p, drop=FALSE])
       sdX   <- apply(X[, 2:p, drop=FALSE], 2, sd) ### consider using colSds() from matrixStats package
@@ -897,7 +902,7 @@ level=95, digits, btt, nAGQ=7, verbose=FALSE, control, ...) { # tau2,
 
             if (inherits(res.QE, "try-error")) {
 
-               warning(mstyle$warning("Cannot fit saturated model."))
+               warning(mstyle$warning("Cannot fit saturated model."), call.=FALSE)
                QEconv <- FALSE
                ll.QE <- NA
 
@@ -966,7 +971,7 @@ level=95, digits, btt, nAGQ=7, verbose=FALSE, control, ...) { # tau2,
             #return(list(res.FE, res.QE, res.ML, ll.FE=ll.FE, ll.QE=ll.QE, ll.ML=ll.ML))
             #res.FE <- res[[1]]; res.QE <- res[[2]]; res.ML <- res[[3]]
 
-            if (method == "FE") {
+            if (is.element(method, c("FE","EE","CE"))) {
                beta   <- cbind(coef(res.FE)[seq_len(p)])
                vb     <- vcov(res.FE)[seq_len(p),seq_len(p),drop=FALSE]
                tau2   <- 0
@@ -1077,7 +1082,7 @@ level=95, digits, btt, nAGQ=7, verbose=FALSE, control, ...) { # tau2,
 
             if (inherits(res.QE, "try-error")) {
 
-               warning(mstyle$warning("Cannot fit saturated model."))
+               warning(mstyle$warning("Cannot fit saturated model."), call.=FALSE)
                QEconv <- FALSE
                ll.QE <- NA
 
@@ -1148,7 +1153,7 @@ level=95, digits, btt, nAGQ=7, verbose=FALSE, control, ...) { # tau2,
             #return(list(res.FE, res.QE, res.ML, ll.FE=ll.FE, ll.QE=ll.QE, ll.ML=ll.ML))
             #res.FE <- res[[1]]; res.QE <- res[[2]]; res.ML <- res[[3]]
 
-            if (method == "FE") {
+            if (is.element(method, c("FE","EE","CE"))) {
 
                if (con$package == "lme4") {
                   beta   <- cbind(lme4::fixef(res.FE)[seq_len(p)])
@@ -1257,7 +1262,7 @@ level=95, digits, btt, nAGQ=7, verbose=FALSE, control, ...) { # tau2,
 
          if (inherits(res.QE, "try-error")) {
 
-            warning(mstyle$warning("Cannot fit saturated model."))
+            warning(mstyle$warning("Cannot fit saturated model."), call.=FALSE)
             QEconv <- FALSE
             ll.QE <- NA
 
@@ -1320,7 +1325,7 @@ level=95, digits, btt, nAGQ=7, verbose=FALSE, control, ...) { # tau2,
          #return(list(res.FE, res.QE, res.ML, ll.FE=ll.FE, ll.QE=ll.QE, ll.ML=ll.ML))
          #res.FE <- res[[1]]; res.QE <- res[[2]]; res.ML <- res[[3]]
 
-         if (method == "FE") {
+         if (is.element(method, c("FE","EE","CE"))) {
             beta   <- cbind(coef(res.FE)[seq_len(p)])
             vb     <- vcov(res.FE)[seq_len(p),seq_len(p),drop=FALSE]
             tau2   <- 0
@@ -1442,14 +1447,14 @@ level=95, digits, btt, nAGQ=7, verbose=FALSE, control, ...) { # tau2,
 
                   if (con$optimizer == "optim" || con$optimizer == "nlminb") {
                      if (inherits(res.QE, "try-error") || res.QE$convergence != 0) {
-                        warning(mstyle$warning("Cannot fit saturated model."))
+                        warning(mstyle$warning("Cannot fit saturated model."), call.=FALSE)
                         QEconv <- FALSE
                         ll.QE <- NA
                      }
                   }
                   if (con$optimizer == "minqa") {
                      if (inherits(res.QE, "try-error") || res.QE$ierr != 0) {
-                        warning(mstyle$warning("Cannot fit saturated model."))
+                        warning(mstyle$warning("Cannot fit saturated model."), call.=FALSE)
                         QEconv <- FALSE
                         ll.QE <- NA
                      }
@@ -1501,12 +1506,12 @@ level=95, digits, btt, nAGQ=7, verbose=FALSE, control, ...) { # tau2,
                h.D      <- hessian[-seq_len(p),-seq_len(p),drop=FALSE] ### lower right part of hessian (of which we need the inverse)
                chol.h.A <- try(chol(h.A), silent=!verbose)             ### see if h.A can be inverted with chol()
                if (inherits(chol.h.A, "try-error")) {
-                  warning(mstyle$warning("Cannot invert Hessian for saturated model."))
+                  warning(mstyle$warning("Cannot invert Hessian for saturated model."), call.=FALSE)
                   QE.Wld <- NA
                } else {
                   Ivb2.QE  <- h.D-h.C%*%chol2inv(chol.h.A)%*%h.B       ### inverse of the inverse of the lower right part
                   QE.Wld   <- c(t(b2.QE) %*% Ivb2.QE %*% b2.QE)        ### Wald statistic (note: this approach only requires taking the inverse of h.A)
-               }                                                       ### see: http://en.wikipedia.org/wiki/Invertible_matrix#Blockwise_inversion
+               }                                                       ### see: https://en.wikipedia.org/wiki/Invertible_matrix#Blockwise_inversion
 
                #vb2.QE <- chol2inv(chol(hessian))[-seq_len(p),-seq_len(p),drop=FALSE] ### take inverse, then take part relevant for QE test
                #QE.Wld <- c(t(b2.QE) %*% chol2inv(chol(vb2.QE)) %*% b2.QE)
@@ -1663,12 +1668,12 @@ level=95, digits, btt, nAGQ=7, verbose=FALSE, control, ...) { # tau2,
          #return(list(res.FE, res.QE, res.ML, ll.FE=ll.FE, ll.QE=ll.QE, ll.ML=ll.ML))
          #res.FE <- res[[1]]; res.QE <- res[[2]]; res.ML <- res[[3]]
 
-         if (method == "FE") {
+         if (is.element(method, c("FE","EE","CE"))) {
             if (con$optimizer == "optim" || con$optimizer == "nlminb" || con$optimizer == "minqa") {
                beta <- cbind(res.FE$par[seq_len(p)])
                chol.h <- try(chol(h.FE[seq_len(p),seq_len(p)]), silent=!verbose) ### see if Hessian can be inverted with chol()
                if (inherits(chol.h, "try-error")) {
-                  warning(mstyle$warning("Choleski factorization of Hessian failed. Trying inversion via QR decomposition."))
+                  warning(mstyle$warning("Choleski factorization of Hessian failed. Trying inversion via QR decomposition."), call.=FALSE)
                   vb <- try(qr.solve(h.FE[seq_len(p),seq_len(p)]), silent=!verbose) ### see if Hessian can be inverted with qr.solve()
                   if (inherits(vb, "try-error"))
                      stop(mstyle$stop("Cannot invert Hessian for ML model."))
@@ -1691,7 +1696,7 @@ level=95, digits, btt, nAGQ=7, verbose=FALSE, control, ...) { # tau2,
             beta <- cbind(res.ML$par[seq_len(p)])
             chol.h <- try(chol(h.ML), silent=!verbose) ### see if Hessian can be inverted with chol()
             if (inherits(chol.h, "try-error")) {
-               warning(mstyle$warning("Choleski factorization of Hessian failed. Trying inversion via QR decomposition."))
+               warning(mstyle$warning("Choleski factorization of Hessian failed. Trying inversion via QR decomposition."), call.=FALSE)
                vb.f <- try(qr.solve(h.ML), silent=!verbose) ### see if Hessian can be inverted with qr.solve()
                if (inherits(vb.f, "try-error"))
                   stop(mstyle$stop("Cannot invert Hessian for ML model."))
@@ -1788,7 +1793,7 @@ level=95, digits, btt, nAGQ=7, verbose=FALSE, control, ...) { # tau2,
 
       if (inherits(res.QE, "try-error")) {
 
-         warning(mstyle$warning("Cannot fit saturated model."))
+         warning(mstyle$warning("Cannot fit saturated model."), call.=FALSE)
          QEconv <- FALSE
          ll.QE <- NA
 
@@ -1858,7 +1863,7 @@ level=95, digits, btt, nAGQ=7, verbose=FALSE, control, ...) { # tau2,
       #return(list(res.FE, res.QE, res.ML, ll.FE=ll.FE, ll.QE=ll.QE, ll.ML=ll.ML))
       #res.FE <- res[[1]]; res.QE <- res[[2]]; res.ML <- res[[3]]
 
-      if (method == "FE") {
+      if (is.element(method, c("FE","EE","CE"))) {
          beta   <- cbind(coef(res.FE)[seq_len(p)])
          vb     <- vcov(res.FE)[seq_len(p),seq_len(p),drop=FALSE]
          tau2   <- 0
@@ -1900,7 +1905,7 @@ level=95, digits, btt, nAGQ=7, verbose=FALSE, control, ...) { # tau2,
    ### heterogeneity tests (Wald-type and likelihood ratio tests of the extra coefficients in the saturated model)
 
    if (verbose > 1)
-      message(mstyle$message("Heterogeneity testing ..."))
+      message(mstyle$message("Conducting heterogeneity tests ..."))
 
    if (QEconv) {
 
@@ -1913,12 +1918,12 @@ level=95, digits, btt, nAGQ=7, verbose=FALSE, control, ...) { # tau2,
             chol.h <- try(chol(vb2.QE), silent=!verbose) ### see if Hessian can be inverted with chol()
 
             if (inherits(chol.h, "try-error")) {
-               warning(mstyle$warning("Cannot invert Hessian for saturated model."))
+               warning(mstyle$warning("Cannot invert Hessian for saturated model."), call.=FALSE)
                QE.Wld <- NA
             } else {
                QE.Wld <- try(c(t(b2.QE) %*% chol2inv(chol.h) %*% b2.QE), silent=!verbose)
                if (inherits(QE.Wld, "try-error")) {
-                  warning(mstyle$warning("Cannot invert Hessian for saturated model."))
+                  warning(mstyle$warning("Cannot invert Hessian for saturated model."), call.=FALSE)
                   QE.Wld <- NA
                }
             }
@@ -1968,10 +1973,15 @@ level=95, digits, btt, nAGQ=7, verbose=FALSE, control, ...) { # tau2,
    I2    <- 100 * tau2 / (vt + tau2)
    H2    <- tau2 / vt + 1
 
+   ### testing of the fixed effects in the model
+
+   if (verbose > 1)
+      message(mstyle$message("Conducting tests of the fixed effects ..."))
+
    chol.h <- try(chol(vb[btt,btt]), silent=!verbose) ### see if Hessian can be inverted with chol()
 
    if (inherits(chol.h, "try-error")) {
-      warning(mstyle$warning("Cannot invert Hessian for QM test."))
+      warning(mstyle$warning("Cannot invert Hessian for QM test."), call.=FALSE)
       QM <- NA
    } else {
       QM <- as.vector(t(beta)[btt] %*% chol2inv(chol.h) %*% beta[btt])
@@ -1979,11 +1989,19 @@ level=95, digits, btt, nAGQ=7, verbose=FALSE, control, ...) { # tau2,
 
    ### scale back beta and vb
 
-   if (!int.only && int.incl && con$scale) {
-      mX <- rbind(c(1, -1*ifelse(is.d[-1], 0, meanX/sdX)), cbind(0, diag(ifelse(is.d[-1], 1, 1/sdX), nrow=length(is.d)-1, ncol=length(is.d)-1)))
+   if (!int.only && int.incl && con$scaleX) {
+      mX <- rbind(c(intrcpt=1, -1*ifelse(is.d[-1], 0, meanX/sdX)), cbind(0, diag(ifelse(is.d[-1], 1, 1/sdX), nrow=length(is.d)-1, ncol=length(is.d)-1)))
       beta <- mX %*% beta
       vb <- mX %*% vb %*% t(mX)
-      X  <- Xsave
+      X <- Xsave
+   }
+
+   ### ddf calculation
+
+   if (test == "t") {
+      ddf <- k-p
+   } else {
+      ddf <- NA
    }
 
    rownames(beta) <- rownames(vb) <- colnames(vb) <- colnames(X)
@@ -1993,21 +2011,15 @@ level=95, digits, btt, nAGQ=7, verbose=FALSE, control, ...) { # tau2,
    names(se) <- NULL
    zval <- c(beta/se)
 
-   if (is.element(test, c("t"))) {
-      dfs <- k-p
-      QM  <- QM / m
-      if (dfs > 0) {
-         QMp  <- pf(QM, df1=m, df2=dfs, lower.tail=FALSE)
-         pval <- 2*pt(abs(zval), df=dfs, lower.tail=FALSE)
-         crit <- qt(level/2, df=dfs, lower.tail=FALSE)
-      } else {
-         QMp  <- NaN
-         pval <- NaN
-         crit <- NaN
-      }
+   if (test == "t") {
+      QM   <- QM / m
+      QMdf <- c(m, k-p)
+      QMp  <- if (QMdf[2] > 0) pf(QM, df1=QMdf[1], df2=QMdf[2], lower.tail=FALSE) else NA
+      pval <- if (ddf > 0) 2*pt(abs(zval), df=ddf, lower.tail=FALSE) else rep(NA,p)
+      crit <- if (ddf > 0) qt(level/2, df=ddf, lower.tail=FALSE) else rep(NA,p)
    } else {
-      dfs  <- NA
-      QMp  <- pchisq(QM, df=m, lower.tail=FALSE)
+      QMdf <- c(m, NA)
+      QMp  <- pchisq(QM, df=QMdf[1], lower.tail=FALSE)
       pval <- 2*pnorm(abs(zval), lower.tail=FALSE)
       crit <- qnorm(level/2, lower.tail=FALSE)
    }
@@ -2024,7 +2036,7 @@ level=95, digits, btt, nAGQ=7, verbose=FALSE, control, ...) { # tau2,
    if (verbose > 1)
       message(mstyle$message("Computing fit statistics and log likelihood ..."))
 
-   ll.ML     <- ifelse(method == "FE", ll.FE, ll.ML)
+   ll.ML     <- ifelse(is.element(method, c("FE","EE","CE")), ll.FE, ll.ML)
    ll.REML   <- NA
    dev.ML    <- -2 * (ll.ML - ll.QE)
    AIC.ML    <- -2 * ll.ML + 2*parms
@@ -2052,18 +2064,46 @@ level=95, digits, btt, nAGQ=7, verbose=FALSE, control, ...) { # tau2,
 
       res <- list(b=beta, beta=beta, se=se, zval=zval, pval=pval, ci.lb=ci.lb, ci.ub=ci.ub, vb=vb,
                   tau2=tau2, se.tau2=se.tau2, sigma2=sigma2,
-                  k=k, k.f=k.f, k.yi=k.yi, k.eff=k.eff, k.all=k.all, p=p, p.eff=p.eff, parms=parms, m=m,
-                  QE.Wld=QE.Wld, QEp.Wld=QEp.Wld, QE.LRT=QE.LRT, QEp.LRT=QEp.LRT, QE.df=QE.df, QM=QM, QMp=QMp, I2=I2, H2=H2, vt=vt,
-                  int.only=int.only, int.incl=int.incl,
+                  I2=I2, H2=H2, vt=vt,
+                  QE.Wld=QE.Wld, QEp.Wld=QEp.Wld, QE.LRT=QE.LRT, QEp.LRT=QEp.LRT, QE.df=QE.df, QM=QM, QMdf=QMdf, QMp=QMp,
+                  k=k, k.f=k.f, k.yi=k.yi, k.eff=k.eff, k.all=k.all, p=p, p.eff=p.eff, parms=parms,
+                  int.only=int.only, int.incl=int.incl, intercept=intercept,
                   yi=yi, vi=vi, X=X, yi.f=yi.f, vi.f=vi.f, X.f=X.f,
                   ai=ai, bi=bi, ci=ci, di=di, ai.f=ai.f, bi.f=bi.f, ci.f=ci.f, di.f=di.f,
                   x1i=x1i, x2i=x2i, t1i=t1i, t2i=t2i, x1i.f=x1i.f, x2i.f=x2i.f, t1i.f=t1i.f, t2i.f=t2i.f,
                   xi=xi, mi=mi, ti=ti, xi.f=xi.f, mi.f=mi.f, ti.f=ti.f, ni=ni, ni.f=ni.f,
                   ids=ids, not.na=not.na, subset=subset, not.na.yivi=not.na.yivi, slab=slab, slab.null=slab.null,
-                  measure=measure, method=method, model=model, weighted=weighted, test=test, dfs=dfs, btt=btt, intercept=intercept, digits=digits, level=level, control=control, verbose=verbose,
+                  measure=measure, method=method, model=model, weighted=weighted,
+                  test=test, dfs=ddf, ddf=ddf, btt=btt, m=m,
+                  digits=digits, level=level, control=control, verbose=verbose,
                   add=add, to=to, drop00=drop00,
-                  fit.stats=fit.stats, formula.yi=NULL, formula.mods=formula.mods, version=packageVersion("metafor"), call=mf)
+                  fit.stats=fit.stats,
+                  formula.yi=NULL, formula.mods=formula.mods, version=packageVersion("metafor"), call=mf)
 
+   }
+
+   if (!is.null(ddd$outlist)) {
+      if (ddd$outlist == "minimal") {
+         res <- list(b=beta, beta=beta, se=se, zval=zval, pval=pval, ci.lb=ci.lb, ci.ub=ci.ub, vb=vb,
+                     tau2=tau2, se.tau2=se.tau2, sigma2=sigma2,
+                     I2=I2, H2=H2,
+                     QE.Wld=QE.Wld, QEp.Wld=QEp.Wld, QE.LRT=QE.LRT, QEp.LRT=QEp.LRT, QE.df=QE.df, QEp=QEp, QM=QM, QMdf=QMdf, QMp=QMp,
+                     k=k, k.eff=k.eff, p=p, p.eff=p.eff, parms=parms,
+                     int.only=int.only,
+                     measure=measure, method=method, model=model,
+                     test=test, dfs=ddf, ddf=ddf, btt=btt, m=m,
+                     digits=digits,
+                     fit.stats=fit.stats)
+      } else {
+         res <- eval(parse(text=paste0("list(", ddd$outlist, ")")))
+      }
+   }
+
+   if (.isTRUE(ddd$retfit)) {
+      res$res.FE <- res.FE
+      res$res.QE <- res.QE
+      if (method == "ML")
+         res$res.ML <- res.ML
    }
 
    time.end <- proc.time()
@@ -2074,14 +2114,6 @@ level=95, digits, btt, nAGQ=7, verbose=FALSE, control, ...) { # tau2,
 
    if (verbose || .isTRUE(ddd$time))
       cat("\n")
-
-   if (!is.null(ddd$outlist)) {
-      if (ddd$outlist == "minimal") {
-         res <- list(b=beta, beta=beta, se=se, zval=zval, pval=pval, ci.lb=ci.lb, ci.ub=ci.ub, vb=vb, int.only=int.only, digits=digits, k=k, k.eff=k.eff, p=p, p.eff=p.eff, parms=parms, m=m, tau2=tau2, se.tau2=se.tau2, sigma2=sigma2, method=method, fit.stats=fit.stats, model=model, QE.Wld=QE.Wld, QEp.Wld=QEp.Wld, QE.LRT=QE.LRT, QEp.LRT=QEp.LRT, QE.df=QE.df, QEp=QEp, QM=QM, QMp=QMp, I2=I2, H2=H2, btt=btt, test=test, dfs=dfs, measure=measure)
-      } else {
-         res <- eval(parse(text=paste0("list(", ddd$outlist, ")")))
-      }
-   }
 
    class(res) <- c("rma.glmm", "rma")
    return(res)

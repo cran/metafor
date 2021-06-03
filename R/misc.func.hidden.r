@@ -2,13 +2,13 @@
 
 ### function to set default 'btt' value(s) or check specified 'btt' values
 
-.set.btt <- function(btt, p, int.incl, X) {
+.set.btt <- function(btt, p, int.incl, Xnames) {
 
    mstyle <- .get.mstyle("crayon" %in% .packages())
 
    if (missing(btt) || is.null(btt)) {
 
-      if (p > 1) {                        ### if the model matrix has more than one column
+      if (p > 1L) {                       ### if the model matrix has more than one column
          if (int.incl) {
             btt <- seq.int(from=2, to=p)     ### and the model has an intercept term, test all coefficients except the intercept
          } else {
@@ -22,7 +22,7 @@
 
       if (is.character(btt)) {
 
-         btt <- grep(btt, colnames(X))
+         btt <- grep(btt, Xnames)
 
          if (length(btt) == 0L)
             stop(mstyle$stop("Cannot identify coefficient(s) corresponding to the specified 'btt' string."))
@@ -69,7 +69,8 @@
          if (x$values[1] == 1 && length(x$values) != 0L) {
             sav <- c(sav, c(btt[1], ":", btt[x$lengths[1] + 1]))
             btt <- btt[-c(1:(x$lengths[1] + 1))]
-            sav <- c(sav, ", ")
+            #sav <- c(sav, ", ") # this adds a space between multiple a:b sets
+            sav <- c(sav, ",")
          } else {
             sav <- c(sav, btt[1], ",")
             btt <- btt[-1]
@@ -167,7 +168,7 @@
 
 .pval <- function(p, digits=4, showeq=FALSE, sep="", add0=FALSE) {
 
-   digits <- max(digits, 1)
+   digits  <- max(digits, 1)
    cutoff  <- paste(c(".", rep(0,digits-1),1), collapse="")
    ncutoff <- as.numeric(cutoff)
 
@@ -184,7 +185,7 @@
    if (all(is.na(x))) { # since formatC(NA, format="f", digits=2) fails
       x
    } else {
-      formatC(x, format="f", digits=digits)
+      trimws(formatC(x, format="f", digits=digits))
    }
 
 }
@@ -200,7 +201,7 @@
       names(x) <- seq_along(x)
 
    len.n   <- nchar(names(x))
-   len.x   <- nchar(x)
+   len.x   <- nchar(x, keepNA=FALSE)
    len.max <- pmax(len.n, len.x)
    format  <- sapply(len.max, function(x) paste("%", x, "s", sep=""))
 
@@ -208,6 +209,24 @@
    row.x <- paste(sprintf(format, x), collapse="  ")
 
    cat(row.n, "\n", row.x, "\n", sep="")
+
+}
+
+############################################################################
+
+### function that prints the model fitting time
+
+.print.time <- function(x) {
+
+   mstyle <- .get.mstyle("crayon" %in% .packages())
+
+   hours   <- floor(x/60/60)
+   minutes <- floor(x/60) - hours*60
+   seconds <- round(x - minutes*60 - hours*60*60, ifelse(x > 60, 0, 2))
+
+   cat("\n")
+   cat(mstyle$message(paste("Processing time:", hours, ifelse(hours == 0 || hours > 1, "hours,", "hour,"), minutes, ifelse(minutes == 0 || minutes > 1, "minutes,", "minute,"), seconds, ifelse(x < 60 || seconds == 0 || seconds > 1, "seconds", "second"))))
+   cat("\n")
 
 }
 
@@ -246,6 +265,28 @@
 
    if (length(ddd) > 0L)
       warning(mstyle$warning(paste0("Extra argument", ifelse(length(ddd) > 1L, "s ", " "), "(", paste0("'", names(ddd), "'", collapse=", "), ") disregarded.")), call.=FALSE)
+
+}
+
+############################################################################
+
+.chkclass <- function(class, must, notap, notav, type="Method") {
+
+   mstyle <- .get.mstyle("crayon" %in% .packages())
+
+   obj <- as.character(match.call()[2])
+   obj <- substr(obj, 7, nchar(obj)-1)
+
+   if (!missing(must) && !is.element(must, class))
+      stop(mstyle$stop(paste0("Argument '", obj, "' must be an object of class \"", must, "\".")), call.=FALSE)
+
+   if (!missing(notap) && any(is.element(notap, class)))
+      stop(mstyle$stop(paste0(type, " not applicable to objects of class \"", class[1], "\".")), call.=FALSE)
+      #stop(mstyle$stop(paste0("Method not applicable to objects of class \"", paste0(class, collapse=", "), "\".")), call.=FALSE)
+
+   if (!missing(notav) && any(is.element(notav, class)))
+      stop(mstyle$stop(paste0(type, " not available for objects of class \"", class[1], "\".")), call.=FALSE)
+      #stop(mstyle$stop(paste0("Method not available for objects of class \"", paste0(class, collapse=", "), "\".")), call.=FALSE)
 
 }
 
@@ -358,7 +399,7 @@
             lab <- ifelse(short, lab, "Transformed Mean Difference")
          }
       }
-      if (is.element(measure, c("SMD","SMDH","PBIT","OR2D","OR2DN","OR2DL"))) {
+      if (is.element(measure, c("SMD","SMDH","PBIT","OR2D","OR2DN","OR2DL","SMD1"))) {
          if (transf.char == "FALSE" && atransf.char == "FALSE") {
             lab <- ifelse(short, "SMD", "Standardized Mean Difference")
          } else {
@@ -787,6 +828,9 @@
 
 }
 
+#.set.mstyle.1 <- parse(text=".mstyle <- list(section=make_style(\"gray90\")$bold, header=make_style(\"skyblue1\")$bold$underline, body=make_style(\"skyblue2\"), text=make_style(\"slateblue3\"), result=make_style(\"slateblue1\"))")
+#eval(metafor:::.set.mstyle.1)
+
 ############################################################################
 
 .set.digits <- function(digits, dmiss) {
@@ -819,6 +863,10 @@
       }
    }
 
+   ### p-values are always given to at least 2 digits
+   if (res["pval"] <= 1)
+      res["pval"] <- 2
+
    res
 
 }
@@ -842,11 +890,16 @@
       }
    }
 
-   ### so we can still print objects created with older metafor versions (where xdigit will be just an unnamed scalar)
+   ### so we can still print objects created with older metafor versions (where xdigit is just an unnamed scalar)
    if (length(res) == 1L && is.null(names(res)))
       res <- c(est=res[[1]], se=res[[1]], test=res[[1]], pval=res[[1]], ci=res[[1]], var=res[[1]], sevar=res[[1]], fit=res[[1]], het=res[[1]])
 
+   ### p-values are always given to at least 2 digits
+   if (!is.null(res["pval"]) && res["pval"] <= 1)
+      res["pval"] <- 2
+
    res
+
 }
 
 ############################################################################
@@ -866,7 +919,7 @@
 .glmulti <- parse(text="
 
 if (!(\"glmulti\" %in% .packages()))
-   stop(\"Need to load the 'glmulti' package first to use this code.\")
+   stop(\"Must load the 'glmulti' package first to use this code.\")
 
 setOldClass(\"rma.uni\")
 
@@ -916,7 +969,8 @@ coefTable.rma <- function (model, ...) {
 
 ")
 
-### helper functions to make mice work together with metafor
+### helper functions to make mice work together with metafor (note: no longer
+### needed, as there are glance and tidy methods for rma objects in broom now)
 
 .mice <- parse(text="
 
@@ -977,6 +1031,137 @@ tidy.rma <- function (x, ...) {
    Y <- sweep(Y, 2, mu, "+")
 
    return(Y)
+
+}
+
+############################################################################
+
+.setnafalse <- function(x, arg="subset", k, stoponk0=TRUE) {
+
+   mstyle <- .get.mstyle("crayon" %in% .packages())
+
+   if (is.logical(x)) {
+      if (anyNA(x))
+         x[is.na(x)] <- FALSE
+   }
+
+   if (is.numeric(x)) {
+      if (anyNA(x))
+         x <- x[!is.na(x)]
+      x <- as.integer(round(x))
+      x <- x[x != 0L]
+      if (any(x > 0L) && any(x < 0L))
+         stop(mstyle$stop(paste0("Cannot mix positive and negative values for subsetting.")), call.=FALSE)
+      if (all(x > 0L))
+         x <- is.element(seq_len(k), x)
+      if (all(x < 0L))
+         x <- !is.element(seq_len(k), abs(x))
+   }
+
+   if (stoponk0 && !any(x))
+      stop(mstyle$stop(paste0("Stopped because k = 0 after subsetting.")), call.=FALSE)
+
+   #if (anyNA(x)) {
+   #   if (is.logical(x))
+   #      x[is.na(x)] <- FALSE
+   #   if (is.numeric(x))
+   #      x <- x[!is.na(x)]
+   #   #warning(mstyle$warning(paste0("Missing values in '", arg, "' argument treated as non-selected.")), call.=FALSE)
+   #}
+
+   return(x)
+
+}
+
+############################################################################
+
+# function to compute a weighted mean (this one works a bit different than
+# stats:::weighted.mean.default)
+
+.wmean <- function (x, w, na.rm=FALSE) {
+   if (na.rm) {
+      i <- !(is.na(x) | is.na(w))
+      x <- x[i]
+      w <- w[i]
+   }
+   sum(x*w) / sum(w)
+}
+
+############################################################################
+
+.tes.intfun <- function(x, theta, tau, sei, H0, alternative, crit) {
+   if (alternative == "two.sided")
+      pow <- (pnorm(crit, mean=(x-H0)/sei, 1, lower.tail=FALSE) + pnorm(-crit, mean=(x-H0)/sei, 1, lower.tail=TRUE))
+   if (alternative == "greater")
+      pow <- pnorm(crit, mean=(x-H0)/sei, 1, lower.tail=FALSE)
+   if (alternative == "less")
+      pow <- pnorm(crit, mean=(x-H0)/sei, 1, lower.tail=TRUE)
+   res <- pow * dnorm(x, theta, tau)
+   return(res)
+}
+
+.tes.lim <- function(theta, yi, vi, H0, alternative, alpha, tau2, test, tes.alternative, progbar, tes.alpha, correct, rel.tol, subdivisions, tau2.lb) {
+   pval <- tes.default(x=yi, vi=vi, H0=H0, alternative=alternative, alpha=alpha, theta=theta, tau2=tau2, test=test, tes.alternative=tes.alternative, progbar=progbar,
+                       tes.alpha=tes.alpha, correct=correct, rel.tol=rel.tol, subdivisions=subdivisions, tau2.lb=tau2.lb, find.lim=FALSE)$pval
+   #cat("theta = ", theta, " pval = ", pval, "\n")
+   return(pval - tes.alpha)
+}
+
+############################################################################
+
+.fsn.fisher <- function(fsnum, pi, alpha) {
+   k <- length(pi)
+   X2 <- -2*sum(log(c(pi, rep(0.5, fsnum))))
+   return(pchisq(X2, df=2*(k+fsnum), lower.tail=FALSE) - alpha)
+}
+
+.fsn.fitre <- function(yi, vi) {
+
+   k     <- length(yi)
+   wi    <- 1/vi
+   sumwi <- sum(wi)
+   est   <- sum(wi*yi)/sumwi
+   Q     <- sum(wi * (yi - est)^2)
+   tau2  <- max(0, (Q - (k-1)) / (sumwi - sum(wi^2)/sumwi))
+   wi    <- 1 / (vi + tau2)
+   sumwi <- sum(wi)
+   est   <- sum(wi*yi)/sumwi
+   se    <- sqrt(1 / sumwi)
+   zval  <- est / se
+   pval  <- 2*pnorm(abs(zval), lower.tail=FALSE)
+
+   return(list(est=est, se=se, zval=zval, pval=pval, tau2=tau2))
+
+}
+
+.fsn.fitnew <- function(new, yi, vi, vnew, tau2, alpha, iters) {
+
+   new <- ceiling(new)
+
+   mus   <- rep(NA_real_, iters)
+   pvals <- rep(NA_real_, iters)
+
+   for (j in 1:iters) {
+      yinew <- c(yi, rnorm(new, 0, sqrt(vnew+tau2)))
+      vinew <- c(vi, rep(vnew, new))
+      tmp <- .fsn.fitre(yinew, vinew)
+      mus[j] <- tmp$est
+      pvals[j] <- tmp$pval
+   }
+
+   return(list(mean = mean(mus), rejrate = mean(pvals <= alpha)))
+
+}
+
+.fsn.re <- function(fsnum, yi, vi, vnew, tau2, target, alpha, iters, verbose=FALSE) {
+
+   fsnum <- ceiling(fsnum)
+   tmp <- .fsn.fitnew(fsnum, yi, vi, vnew, tau2, alpha, iters)
+   est <- tmp$mean
+   diff <- est - target
+   if (verbose)
+      cat("fsnum =", formatC(fsnum, width=4, format="d"), "  est =", .fcf(est, 4), "  target =", .fcf(target, 4),  "  diff =", formatC(diff, format="f", digits=4, flag=" "), "\n")
+   return(diff)
 
 }
 
