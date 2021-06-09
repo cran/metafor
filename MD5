@@ -1,7 +1,7 @@
-341a0a17608c5263fd38bf74548c1f71 *DESCRIPTION
+cb933699e0c853bf4b5232a9b7b5cc62 *DESCRIPTION
 5de3c89c018ee97081f6c6fadab2d81b *NAMESPACE
-cbb90597c10b0377de679af24d73263b *NEWS
-3c6f1ce4a318c9c0bfbf9118d8a68a26 *NEWS.md
+dc676128184b64278c8d08deb1a19006 *NEWS
+d3917c7aba0dede28443ebe5d88ca5d2 *NEWS.md
 24db85dd05c8e7120c6ac0f0308bb1f5 *R/AIC.rma.r
 7a4e9b442e8435829bda5c163d6d0eff *R/BIC.rma.r
 bb33d1a9016dc0fffd29963abeee97bc *R/addpoly.default.r
@@ -161,7 +161,7 @@ d31b9a1f07c093dac4a38e92edb83040 *R/selmodel.r
 cd71bc3f3bc64f0d15c72447101d6601 *R/simulate.rma.r
 35e60bbab097df845353953868adc295 *R/summary.escalc.r
 34f5310ec657b5921f3189a0502dfedc *R/summary.rma.r
-75e932dcb317be5407d254c64e10bd2c *R/tes.default.r
+d7b80c1abe139f2f09ba20122d530a40 *R/tes.default.r
 b856894dd0f3b8544da2e792c67f7972 *R/tes.r
 bff05570717a66d5a20eaa2a4c4450e0 *R/tes.rma.r
 c5870901d4becdd94aab9aaed0744618 *R/to.long.r
@@ -180,9 +180,9 @@ dfba25eb0963fa8436fefea495dea5ba *R/vif.rma.r
 c73b0df95078d79384e654a3d95834b2 *R/weights.rma.mv.r
 a7680815a5a067253553798438b373f2 *R/weights.rma.peto.r
 7f35d6989e6eb6de2fc2ce07ef7c85a5 *R/weights.rma.uni.r
-a9b50a7ebe385dab103c7af807f5e9e2 *R/zzz.r
-e2855eb5fb2b7551d2802296bd1b7ab4 *README.md
-7f0663cd8148dd13f83d1a1fc7131720 *build/metafor.pdf
+71d856125236a2aa758ab6389d4de387 *R/zzz.r
+2241b8fb61a8e33ccf518633b2089f50 *README.md
+59718df4efb83367bf336cd750b205a7 *build/metafor.pdf
 ad9cf7617939cc3d99cb224f7b6f712d *build/vignette.rds
 b11613383c43f425a404d823b053a8d0 *data/dat.anand1999.rda
 121b1a714b4808161baa741dacd991cf *data/dat.assink2016.rda
@@ -464,7 +464,7 @@ c466bfebd65e138038d0ea6e08540592 *tests/testthat/test_misc_metan_vs_rma.peto_wit
 008ebc2e130492758c217d3fa3a5f017 *tests/testthat/test_misc_predict.r
 e3929b37c1f8f8cf1e6a72329219ec1a *tests/testthat/test_misc_pub_bias.r
 53dc7172661268681b8d3a9f8f497acc *tests/testthat/test_misc_replmiss.r
-8c1fc9857f4e683b03ee2526215d0540 *tests/testthat/test_misc_reporter.r
+8b3d2d23a0d836c004315701aab2a1e5 *tests/testthat/test_misc_reporter.r
 2b805e660496f2a91055ad81d1c7264f *tests/testthat/test_misc_residuals.r
 390854f70a9949e7e3e3c833ddb36173 *tests/testthat/test_misc_rma_error_handling.r
 221426dde02a528074f2e419a8335687 *tests/testthat/test_misc_rma_glmm.r
