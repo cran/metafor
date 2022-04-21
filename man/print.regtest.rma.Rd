@@ -8,7 +8,7 @@
 \method{print}{regtest}(x, digits=x$digits, ret.fit=x$ret.fit, \dots)
 }
 \arguments{
-   \item{x}{an object of class \code{"regtest"}.}
+   \item{x}{an object of class \code{"regtest"} obtained with \code{\link{regtest}}.}
    \item{digits}{integer to specify the number of decimal places to which the printed results should be rounded (the default is to take the value from the object).}
    \item{ret.fit}{logical to specify whether the full results from the fitted model should also be returned. If unspecified, the default is to take the value from the object.}
    \item{\dots}{other arguments.}
@@ -35,6 +35,6 @@
    Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \verb{https://doi.org/10.18637/jss.v036.i03}
 }
 \seealso{
-   \code{\link{regtest}}
+   \code{\link{regtest}} for the function to create \code{regtest} objects.
 }
 \keyword{print}

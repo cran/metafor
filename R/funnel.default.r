@@ -1,8 +1,8 @@
 funnel.default <- function(x, vi, sei, ni, subset, yaxis="sei", xlim, ylim, xlab, ylab,
 steps=5, at, atransf, targs, digits, level=95,
 back="lightgray", shade="white", hlines="white",
-refline=0, lty=3, pch=19, col, bg,
-label=FALSE, offset=0.4, legend=FALSE, ci.res=1000, ...) {
+refline=0, lty=3, pch, col, bg,
+label=FALSE, offset=0.4, legend=FALSE, ...) {
 
    #########################################################################
 
@@ -21,13 +21,16 @@ label=FALSE, offset=0.4, legend=FALSE, ci.res=1000, ...) {
    if (missing(atransf))
       atransf <- FALSE
 
-   atransf.char <- deparse(substitute(atransf))
+   atransf.char <- deparse(atransf)
+
+   if (missing(pch))
+      pch <- 19
 
    yi <- x
 
    k <- length(yi)
 
-   ### check if sample size information is available if plotting (some function of) of the the sample sizes on the y-axis
+   ### check if sample size information is available if plotting (some function of) of the sample sizes on the y-axis
 
    if (missing(ni))
       ni <- NULL
@@ -45,6 +48,9 @@ label=FALSE, offset=0.4, legend=FALSE, ci.res=1000, ...) {
 
    if (missing(vi))
       vi <- NULL
+
+   if (is.function(vi)) # if vi is utils::vi()
+      stop(mstyle$stop("Cannot find variable specified for 'vi' argument."), call.=FALSE)
 
    if (missing(sei))
       sei <- NULL
@@ -141,7 +147,7 @@ label=FALSE, offset=0.4, legend=FALSE, ci.res=1000, ...) {
    ### note: digits can also be a list (e.g., digits=list(2L,3)); trailing 0's are dropped for intergers
 
    if (length(lty) == 1L)
-      lty <- rep(lty, 2) ### 1st value = funnel lines, 2nd value = reference line
+      lty <- rep(lty, 2L) ### 1st value = funnel lines, 2nd value = reference line
 
    if (length(pch) == 1L) {
       pch.vec <- FALSE
@@ -179,15 +185,18 @@ label=FALSE, offset=0.4, legend=FALSE, ci.res=1000, ...) {
 
    ddd <- list(...)
 
-   lplot     <- function(..., refline2, level2, lty2) plot(...)
-   labline   <- function(..., refline2, level2, lty2) abline(...)
-   lsegments <- function(..., refline2, level2, lty2) segments(...)
-   laxis     <- function(..., refline2, level2, lty2) axis(...)
-   lpolygon  <- function(..., refline2, level2, lty2) polygon(...)
-   llines    <- function(..., refline2, level2, lty2) lines(...)
-   lpoints   <- function(..., refline2, level2, lty2) points(...)
-   lrect     <- function(..., refline2, level2, lty2) rect(...)
-   ltext     <- function(..., refline2, level2, lty2) text(...)
+   if (!is.null(ddd$transf))
+      warning("Function does not have a 'transf' argument (use 'atransf' instead).", call.=FALSE)
+
+   lplot     <- function(..., refline2, level2, lty2, transf, ci.res) plot(...)
+   labline   <- function(..., refline2, level2, lty2, transf, ci.res) abline(...)
+   lsegments <- function(..., refline2, level2, lty2, transf, ci.res) segments(...)
+   laxis     <- function(..., refline2, level2, lty2, transf, ci.res) axis(...)
+   lpolygon  <- function(..., refline2, level2, lty2, transf, ci.res) polygon(...)
+   llines    <- function(..., refline2, level2, lty2, transf, ci.res) lines(...)
+   lpoints   <- function(..., refline2, level2, lty2, transf, ci.res) points(...)
+   lrect     <- function(..., refline2, level2, lty2, transf, ci.res) rect(...)
+   ltext     <- function(..., refline2, level2, lty2, transf, ci.res) text(...)
 
    ### refline2, level2, and lty2 for adding a second reference line / funnel
 
@@ -207,6 +216,14 @@ label=FALSE, offset=0.4, legend=FALSE, ci.res=1000, ...) {
       lty2 <- ddd$lty2
    } else {
       lty2 <- 3
+   }
+
+   ### number of y-axis values at which to calculate the bounds of the pseudo confidence interval
+
+   if (!is.null(ddd$ci.res)) {
+      ci.res <- ddd$ci.res
+   } else {
+      ci.res <- 1000
    }
 
    #########################################################################
@@ -625,7 +642,7 @@ label=FALSE, offset=0.4, legend=FALSE, ci.res=1000, ...) {
       pval2 <- NULL
       phantom <- NULL
 
-      ltxt <- sapply(1:lvals, function(i) {
+      ltxt <- sapply(seq_len(lvals), function(i) {
          if (i == 1)
             return(as.expression(bquote(paste(.(pval1) < p, phantom() <= .(pval2)), list(pval1=.fcf(level[i], lchars), pval2=.fcf(1, lchars)))))
             #return(as.expression(bquote(p > .(pval), list(pval=.fcf(level[i], lchars)))))

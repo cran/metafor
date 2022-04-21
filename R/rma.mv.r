@@ -1,7 +1,7 @@
-### fixed/random/mixed-effects multivariate/multilevel model with:
-###    - possibly one or multiple random intercepts (sigma2) with potentially known correlation matrices
-###    - possibly correlated random effects for arms/groups/levels within studies (tau2 and rho for 1st term, gamma2 and phi for 2nd term)
-### model also allows for correlated sampling errors via non-diagonal V matrix
+# fixed/random/mixed-effects multivariate/multilevel model with:
+#    - possibly one or multiple random intercepts (sigma2) with potentially known correlation matrices
+#    - possibly correlated random effects for arms/groups/levels within studies (tau2 and rho for 1st term, gamma2 and phi for 2nd term)
+# model also allows for correlated sampling errors via non-diagonal V matrix
 
 # V      = variance-covariance matrix of the sampling errors
 # sigma2 = (preset) value(s) for the variance of the random intercept(s)
@@ -10,21 +10,22 @@
 # gamma2 = (preset) value(s) for the variance of the random effects
 # phi    = (preset) value(s) for the correlation(s) between random effects
 
-### structures when there is an '~ inner | outer' term in the random argument:
-### - CS   (compound symmetry)
-### - HCS  (heteroscedastic compound symmetry)
-### - UN   (general positive-definite matrix with no structure)
-### - UNR  (general positive-definite correlation matrix with a single tau2/gamma2 value)
-### - AR   (AR1 structure with a single tau2/gamma2 value and autocorrelation rho/phi)
-### - HAR  (heteroscedastic AR1 structure with multiple tau2/gamma2 values and autocorrelation rho/phi)
-### - CAR  (continuous time AR1 structure)
-### - ID   (same as CS but with rho/phi=0)
-### - DIAG (same as HCS but with rho/phi=0)
-### - SPEXP/SPGAU/SPLIN/SPRAT/SPSPH (spatial structures: exponential, gaussian, linear, rational quadratic, spherical)
-### - PHYBM/PHYPL/PHYPD (phylogenetic structures: Brownian motion, Pagel's lambda, Pagel's delta)
+# structures when there is an '~ inner | outer' term in the random argument:
+# - CS   (compound symmetry)
+# - HCS  (heteroscedastic compound symmetry)
+# - UN   (general positive-definite matrix with no structure)
+# - UNR  (general positive-definite correlation matrix with a single tau2/gamma2 value)
+# - AR   (AR1 structure with a single tau2/gamma2 value and autocorrelation rho/phi)
+# - HAR  (heteroscedastic AR1 structure with multiple tau2/gamma2 values and autocorrelation rho/phi)
+# - CAR  (continuous time AR1 structure)
+# - ID   (same as CS but with rho/phi=0)
+# - DIAG (same as HCS but with rho/phi=0)
+# - SPEXP/SPGAU/SPLIN/SPRAT/SPSPH (spatial structures: exponential, gaussian, linear, rational quadratic, spherical)
+# - GEN (general positive-definite matrix for an arbitrary number of predictors)
+# - PHYBM/PHYPL/PHYPD (phylogenetic structures: Brownian motion, Pagel's lambda, Pagel's delta)
 
 rma.mv <- function(yi, V, W, mods, random, struct="CS", intercept=TRUE, data, slab, subset, ### add ni as argument in the future
-method="REML", test="z", dfs="residual", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, rho, gamma2, phi, sparse=FALSE, verbose=FALSE, control, ...) {
+method="REML", test="z", dfs="residual", level=95, digits, btt, R, Rscale="cor", sigma2, tau2, rho, gamma2, phi, cvvc=FALSE, sparse=FALSE, verbose=FALSE, control, ...) {
 
    #########################################################################
 
@@ -44,7 +45,7 @@ method="REML", test="z", dfs="residual", level=95, digits, btt, R, Rscale="cor",
       struct <- c(struct, struct)
 
    na.act <- getOption("na.action")
-   on.exit(options(na.action=na.act))
+   on.exit(options(na.action=na.act), add=TRUE)
 
    if (!is.element(na.act, c("na.omit", "na.exclude", "na.fail", "na.pass")))
       stop(mstyle$stop("Unknown 'na.action' specified under options()."))
@@ -87,7 +88,7 @@ method="REML", test="z", dfs="residual", level=95, digits, btt, R, Rscale="cor",
 
    ddd <- list(...)
 
-   .chkdots(ddd, c("tdist", "outlist", "time", "dist"))
+   .chkdots(ddd, c("tdist", "outlist", "time", "dist", "abbrev", "restart"))
 
    ### handle 'tdist' argument from ... (note: overrides test argument)
 
@@ -101,6 +102,9 @@ method="REML", test="z", dfs="residual", level=95, digits, btt, R, Rscale="cor",
 
    if (is.character(dfs))
       dfs <- match.arg(dfs, c("residual", "contain"))
+
+   if (dfs == "contain")
+      test <- "t"
 
    ### handle Rscale argument (either character, logical, or integer)
 
@@ -121,15 +125,21 @@ method="REML", test="z", dfs="residual", level=95, digits, btt, R, Rscale="cor",
 
    if (!is.null(ddd$dist)) {
 
+      if (is.data.frame(ddd$dist) || is.matrix(ddd$dist))
+         ddd$dist <- list(ddd$dist)
+
+      if (!inherits(ddd$dist, "list"))
+         ddd$dist <- as.list(ddd$dist)
+
       if (length(ddd$dist) == 1L)
          ddd$dist <- c(ddd$dist, ddd$dist)
-
-      if (!is.list(ddd$dist))
-         ddd$dist <- as.list(ddd$dist)
 
       dist.methods <- c("euclidean", "maximum", "manhattan", "gcd")
 
       for (j in 1:2) {
+
+         if (is.data.frame(ddd$dist[[j]]))
+            ddd$dist[[j]] <- as.matrix(ddd$dist[[j]])
 
          if (!is.function(ddd$dist[[j]]) && !is.matrix(ddd$dist[[j]])) {
             ddd$dist[[j]] <- charmatch(ddd$dist[[j]], dist.methods, nomatch = 0)
@@ -156,6 +166,17 @@ method="REML", test="z", dfs="residual", level=95, digits, btt, R, Rscale="cor",
    formula.yi <- NULL
    formula.mods <- NULL
 
+   ### in case user specifies v (instead of V), verbose is set to v, which is non-sensical
+   ### - if v is set to the name of a variable in 'data', it won't be found; can check for
+   ###   this with try() and inherits(verbose, "try-error")
+   ### - if v is set to vi or var (or anything else that might be interpreted as a function),
+   ###   then can catch this by checking if verbose is a function
+
+   verbose <- try(verbose, silent=TRUE)
+
+   if (inherits(verbose, "try-error") || is.function(verbose) || length(verbose) != 1L || !(is.logical(verbose) || is.numeric(verbose)))
+      stop(mstyle$stop("Argument 'verbose' must be a scalar (logical or numeric/integer)."))
+
    ### set options(warn=1) if verbose > 2
 
    if (verbose > 2) {
@@ -165,8 +186,10 @@ method="REML", test="z", dfs="residual", level=95, digits, btt, R, Rscale="cor",
 
    #########################################################################
 
+   if (verbose > 1) .space()
+
    if (verbose > 1)
-      message(mstyle$message("\nExtracting yi/V values ..."))
+      message(mstyle$message("Extracting yi/V values ..."))
 
    ### check if data argument has been specified
 
@@ -184,46 +207,19 @@ method="REML", test="z", dfs="residual", level=95, digits, btt, R, Rscale="cor",
 
    ### extract yi, V, W, ni, slab, subset, and mods values, possibly from the data frame specified via data (arguments not specified are NULL)
 
-   mf.yi     <- mf[[match("yi", names(mf))]]
-   mf.V      <- mf[[match("V",  names(mf))]]
-   mf.W      <- mf[[match("W",  names(mf))]]
-   mf.ni     <- mf[[match("ni", names(mf))]] ### not yet possible to specify this
-   mf.slab   <- mf[[match("slab",   names(mf))]]
-   mf.subset <- mf[[match("subset", names(mf))]]
-   mf.mods   <- mf[[match("mods",   names(mf))]]
-   if (is.null(mf.yi))
-      yi <- NULL
-   if (is.null(mf.V))
-      V <- NULL
-   if (is.null(mf.W))
-      W <- NULL
-   if (is.null(mf.ni))
-      ni <- NULL
-   if (is.null(mf.slab))
-      slab <- NULL
-   if (is.null(mf.subset))
-      subset <- NULL
-   if (is.null(mf.mods))
-      mods <- NULL
-   if (!is.null(mf.yi) && !any(grepl("$", mf.yi, fixed=TRUE)))
-      yi <- eval(mf.yi, data, enclos=sys.frame(sys.parent()))           ### NULL if user does not specify this
-   if (!is.null(mf.V) && !any(grepl("$", mf.V, fixed=TRUE)))
-      V <- eval(mf.V, data, enclos=sys.frame(sys.parent()))             ### NULL if user does not specify this
-   if (!is.null(mf.W) && !any(grepl("$", mf.W, fixed=TRUE)))
-      W <- eval(mf.W, data, enclos=sys.frame(sys.parent()))             ### NULL if user does not specify this
-   if (!is.null(mf.ni) && !any(grepl("$", mf.ni, fixed=TRUE)))
-      ni <- eval(mf.ni, data, enclos=sys.frame(sys.parent()))           ### NULL if user does not specify this
-   if (!is.null(mf.slab) && !any(grepl("$", mf.slab, fixed=TRUE)))
-      slab <- eval(mf.slab, data, enclos=sys.frame(sys.parent()))       ### NULL if user does not specify this
-   if (!is.null(mf.subset) && !any(grepl("$", mf.subset, fixed=TRUE)))
-      subset <- eval(mf.subset, data, enclos=sys.frame(sys.parent()))   ### NULL if user does not specify this
-   if (!is.null(mf.mods) && !any(grepl("$", mf.mods, fixed=TRUE)))
-      mods <- eval(mf.mods, data, enclos=sys.frame(sys.parent()))       ### NULL if user does not specify this
+   yi     <- .getx("yi",     mf=mf, data=data)
+   V      <- .getx("V",      mf=mf, data=data)
+   W      <- .getx("W",      mf=mf, data=data)
+   ni     <- .getx("ni",     mf=mf, data=data) ### not yet possible to specify this
+   slab   <- .getx("slab",   mf=mf, data=data)
+   subset <- .getx("subset", mf=mf, data=data)
+   mods   <- .getx("mods",   mf=mf, data=data)
 
    ### if yi is a formula, extract yi and X (this overrides anything specified via the mods argument further below)
 
    if (inherits(yi, "formula")) {
       formula.yi <- yi
+      formula.mods <- formula.yi[-2]
       options(na.action = "na.pass")                   ### set na.action to na.pass, so that NAs are not filtered out (we'll do that later)
       mods <- model.matrix(yi, data=data)              ### extract model matrix (now mods is no longer a formula, so [a] further below is skipped)
       attr(mods, "assign") <- NULL                     ### strip assign attribute (not needed at the moment)
@@ -259,6 +255,11 @@ method="REML", test="z", dfs="residual", level=95, digits, btt, R, Rscale="cor",
 
    if (is.null(V))
       stop(mstyle$stop("Must specify 'V' argument."))
+
+   ### catch cases where 'V' is the utils::vi() function
+
+   if (identical(V, utils::vi))
+      stop(mstyle$stop("Variable specified for 'V' argument cannot be found."))
 
    if (is.list(V) && !is.data.frame(V)) {
 
@@ -415,13 +416,18 @@ method="REML", test="z", dfs="residual", level=95, digits, btt, R, Rscale="cor",
 
    if (inherits(mods, "formula")) {
       formula.mods <- mods
-      options(na.action = "na.pass")        ### set na.action to na.pass, so that NAs are not filtered out (we'll do that later)
-      mods <- model.matrix(mods, data=data) ### extract model matrix
-      attr(mods, "assign") <- NULL          ### strip assign attribute (not needed at the moment)
-      attr(mods, "contrasts") <- NULL       ### strip contrasts attribute (not needed at the moment)
-      options(na.action = na.act)           ### set na.action back to na.act
-      intercept <- FALSE                    ### set to FALSE since formula now controls whether the intercept is included or not
-   }                                        ### note: code further below ([b]) actually checks whether intercept is included or not
+      if (isTRUE(all.equal(formula.mods, ~1))) { # needed so 'mods = ~ 1' without 'data' specified works
+         mods <- matrix(1, nrow=k, ncol=1)
+         intercept <- FALSE
+      } else {
+         options(na.action = "na.pass")        ### set na.action to na.pass, so that NAs are not filtered out (we'll do that later)
+         mods <- model.matrix(mods, data=data) ### extract model matrix
+         attr(mods, "assign") <- NULL          ### strip assign attribute (not needed at the moment)
+         attr(mods, "contrasts") <- NULL       ### strip contrasts attribute (not needed at the moment)
+         options(na.action = na.act)           ### set na.action back to na.act
+         intercept <- FALSE                    ### set to FALSE since formula now controls whether the intercept is included or not
+      }                                        ### note: code further below ([b]) actually checks whether intercept is included or not
+   }
 
    ### turn a vector for mods into a column vector
 
@@ -660,7 +666,7 @@ method="REML", test="z", dfs="residual", level=95, digits, btt, R, Rscale="cor",
 
    } else {
 
-      ### set defaults for some elements when method="FE/EE"
+      ### set defaults for some elements when method="FE/EE/CE"
 
       formulas <- list(NULL, NULL)
       mf.r  <- NULL
@@ -673,11 +679,15 @@ method="REML", test="z", dfs="residual", level=95, digits, btt, R, Rscale="cor",
 
    }
 
-   ### warn user that 'struct' argument is disregarded if it has been changed
-   ### from the default, but the model doesn't contain '~ inner | outer' terms
+   ### warn that 'struct' argument is disregarded if it has been specified, but model contains no '~ inner | outer' terms
 
-   if (!withG && struct[1] != "CS")
+   if (!withG && "struct" %in% names(mf))
       warning(mstyle$warning("Model does not contain an '~ inner | outer' term, so 'struct' argument is disregaded."), call.=FALSE)
+
+   ### warn that 'random' argument is disregarded if it has been specified, but method="FE/EE/CE"
+
+   if (is.element(method, c("FE","EE","CE")) && "random" %in% names(mf))
+      warning(mstyle$warning(paste0("The 'random' argument is disregaded when method=\"", method, "\".")), call.=FALSE)
 
    #return(list(mf.r=mf.r, mf.s=mf.s, mf.g=mf.g, mf.h=mf.h))
 
@@ -770,23 +780,6 @@ method="REML", test="z", dfs="residual", level=95, digits, btt, R, Rscale="cor",
    ### get the sampling variances from the diagonal of V
 
    vi <- diag(V)
-
-   ### check for non-positive sampling variances (and set negative values to 0)
-
-   if (any(vi <= 0, na.rm=TRUE)) {
-      allvipos <- FALSE
-      if (!V0)
-         warning(mstyle$warning("There are outcomes with non-positive sampling variances."), call.=FALSE)
-      vi.neg <- vi < 0
-      if (any(vi.neg, na.rm=TRUE)) {
-         V[vi.neg,] <- 0 ### note: entire row set to 0 (so covariances are also 0)
-         V[,vi.neg] <- 0 ### note: entire col set to 0 (so covariances are also 0)
-         vi[vi.neg] <- 0
-         warning(mstyle$warning("Negative sampling variances constrained to zero."), call.=FALSE)
-      }
-   } else {
-      allvipos <- TRUE
-   }
 
    ### save full data (including potential NAs in yi/vi/V/W/ni/mods)
 
@@ -1170,6 +1163,23 @@ method="REML", test="z", dfs="residual", level=95, digits, btt, R, Rscale="cor",
    if (k <= 1)
       stop(mstyle$stop("Processing terminated since k <= 1."))
 
+   ### check for non-positive sampling variances (and set negative values to 0)
+
+   if (any(vi <= 0)) {
+      allvipos <- FALSE
+      if (!V0)
+         warning(mstyle$warning("There are outcomes with non-positive sampling variances."), call.=FALSE)
+      vi.neg <- vi < 0
+      if (any(vi.neg)) {
+         V[vi.neg,] <- 0 ### note: entire row set to 0 (so covariances are also 0)
+         V[,vi.neg] <- 0 ### note: entire col set to 0 (so covariances are also 0)
+         vi[vi.neg] <- 0
+         warning(mstyle$warning("Negative sampling variances constrained to zero."), call.=FALSE)
+      }
+   } else {
+      allvipos <- TRUE
+   }
+
    ### check for V being positive definite (this should also cover non-positive variances)
    ### skipped: even if V is not positive definite, the marginal var-cov matrix can still be; so just check for pd during the optimization
    ### but at least issue a warning, since a fixed-effects model can then not be fitted and there is otherwise no indication why this is the case
@@ -1189,7 +1199,7 @@ method="REML", test="z", dfs="residual", level=95, digits, btt, R, Rscale="cor",
    ### make sure that there is at least one column in X ([b])
 
    if (is.null(mods) && !intercept) {
-      warning(mstyle$warning("Must either include an intercept and/or moderators in model.\n  Coerced intercept into the model."), call.=FALSE)
+      warning(mstyle$warning("Must either include an intercept and/or moderators in model.\nCoerced intercept into the model."), call.=FALSE)
       intercept <- TRUE
    }
 
@@ -1207,7 +1217,7 @@ method="REML", test="z", dfs="residual", level=95, digits, btt, R, Rscale="cor",
    ### note: need to save coef.na for functions that modify the data/model and then refit the model (regtest() and the
    ### various function that leave out an observation); so we can check if there are redundant/dropped predictors then
 
-   tmp <- lm(yi ~ X - 1)
+   tmp <- try(lm(yi ~ X - 1), silent=TRUE)
    coef.na <- is.na(coef(tmp))
    if (any(coef.na)) {
       warning(mstyle$warning("Redundant predictors dropped from the model."), call.=FALSE)
@@ -1229,6 +1239,10 @@ method="REML", test="z", dfs="residual", level=95, digits, btt, R, Rscale="cor",
    }
 
    p <- NCOL(X) ### number of columns in X (including the intercept if it is included)
+
+   ### make sure variable names in X are unique
+
+   colnames(X) <- colnames(X.f) <- .make.unique(colnames(X))
 
    ### check whether this is an intercept-only model
 
@@ -1524,7 +1538,7 @@ method="REML", test="z", dfs="residual", level=95, digits, btt, R, Rscale="cor",
    ### set default control parameters
 
    con <- list(verbose = FALSE,
-               optimizer = "nlminb",      # optimizer to use ("optim", "nlminb", "uobyqa", "newuoa", "bobyqa", "nloptr", "nlm", "hjk", "nmk", "mads", "ucminf", "optimParallel")
+               optimizer = "nlminb",      # optimizer to use ("optim","nlminb","uobyqa","newuoa","bobyqa","nloptr","nlm","hjk","nmk","mads","ucminf","lbfgsb3c","subplex","BBoptim","optimParallel")
                optmethod = "BFGS",        # argument 'method' for optim() ("Nelder-Mead" and "BFGS" are sensible options)
                parallel = list(),         # parallel argument for optimParallel() (note: 'cl' argument in parallel is not passed; this is directly specified via 'cl')
                cl = NULL,                 # arguments for optimParallel()
@@ -1537,11 +1551,10 @@ method="REML", test="z", dfs="residual", level=95, digits, btt, R, Rscale="cor",
                REMLf = TRUE,              # full REML likelihood (including all constants)
                evtol = 1e-07,             # lower bound for eigenvalues to determine if model matrix is positive definite
                cholesky = ifelse(is.element(struct, c("UN","UNR","GEN")), TRUE, FALSE), # by default, use Cholesky factorization for G and H matrix for "UN", "UNR", and "GEN" structures
-               posdefify = FALSE,         # to force G and H matrix to become positive definite
-               hessian = FALSE,           # to compute Hessian
-               hessianCtrl=list(r=8),     # arguments passed on to 'method.args' of hessian()
-               vctransf = FALSE)          # if FALSE, Hessian is computed for the untransformed (raw) variance components
-                                          # if TRUE,  Hessian is computed for the transformed components (log/atahn/qlogis space)
+               nearpd = FALSE,            # to force G and H matrix to become positive definite
+               hessianCtrl = list(r=8),   # arguments passed on to 'method.args' of hessian()
+               hessian0 = .Machine$double.eps^0.5, # threshold for detecting fixed elements in Hessian
+               hesspack = "numDeriv")     # package for computing the Hessian (numDeriv or pracma)
 
    ### replace defaults with any user-defined values
 
@@ -1552,6 +1565,16 @@ method="REML", test="z", dfs="residual", level=95, digits, btt, R, Rscale="cor",
       con$verbose <- verbose
 
    verbose <- con$verbose
+
+   ### when restart=TRUE, restart at current estimates
+
+   if (isTRUE(ddd$restart)) {
+      con$sigma2.init <- .getfromenv("rma.mv", "sigma2", default=sigma2.init)
+      con$tau2.init   <- .getfromenv("rma.mv", "tau2",   default=tau2.init)
+      con$rho.init    <- .getfromenv("rma.mv", "rho",    default=rho.init)
+      con$gamma2.init <- .getfromenv("rma.mv", "gamma2", default=gamma2.init)
+      con$phi.init    <- .getfromenv("rma.mv", "phi",    default=phi.init)
+   }
 
    ### check for missings in initial values
 
@@ -1609,7 +1632,7 @@ method="REML", test="z", dfs="residual", level=95, digits, btt, R, Rscale="cor",
    ### in case user manually sets con$cholesky and specifies only a single value
 
    if (length(con$cholesky) == 1L)
-      con$cholesky <- rep(con$cholesky, 2)
+      con$cholesky <- rep(con$cholesky, 2L)
 
    ### use of Cholesky factorization only applicable for models with "UN", "UNR", and "GEN" structure
 
@@ -1656,7 +1679,7 @@ method="REML", test="z", dfs="residual", level=95, digits, btt, R, Rscale="cor",
          con$tau2.init <- log(tau2.init)
       } else {
          con$tau2.init <- diag(G)        ### note: con$tau2.init and con$rho.init are the 'choled' values of the initial G matrix, so con$rho.init really
-         con$rho.init <- G[upper.tri(G)] ### contains the 'choled' covariances; and these values are also passed on the .ll.rma.mv as the initial values
+         con$rho.init <- G[lower.tri(G)] ### contains the 'choled' covariances; and these values are also passed on the .ll.rma.mv as the initial values
       }
       if (length(con$rho.init) == 0L)
          con$rho.init <- 0
@@ -1676,7 +1699,7 @@ method="REML", test="z", dfs="residual", level=95, digits, btt, R, Rscale="cor",
       if (inherits(H, "try-error"))
          stop(mstyle$stop("Cannot take Choleski decomposition of initial 'H' matrix."))
       con$gamma2.init <- diag(H)      ### note: con$gamma2.init and con$phi.init are the 'choled' values of the initial H matrix, so con$phi.init really
-      con$phi.init <- H[upper.tri(H)] ### contains the 'choled' covariances; and these values are also passed on the .ll.rma.mv as the initial values
+      con$phi.init <- H[lower.tri(H)] ### contains the 'choled' covariances; and these values are also passed on the .ll.rma.mv as the initial values
       if (length(con$phi.init) == 0L)
          con$phi.init <- 0
    } else {
@@ -1689,10 +1712,14 @@ method="REML", test="z", dfs="residual", level=95, digits, btt, R, Rscale="cor",
          con$phi.init  <- atanh(phi.init)
    }
 
-   optimizer  <- match.arg(con$optimizer, c("optim","nlminb","uobyqa","newuoa","bobyqa","nloptr","nlm","hjk","nmk","mads","ucminf","optimParallel"))
-   optmethod  <- match.arg(con$optmethod, c("Nelder-Mead","BFGS","CG","L-BFGS-B","SANN","Brent"))
+   optimizer <- match.arg(con$optimizer, c("optim","nlminb","uobyqa","newuoa","bobyqa","nloptr","nlm","hjk","nmk","mads","ucminf","lbfgsb3c","subplex","BBoptim","optimParallel","Nelder-Mead","BFGS","CG","L-BFGS-B","SANN","Brent"))
+   optmethod <- match.arg(con$optmethod, c("Nelder-Mead","BFGS","CG","L-BFGS-B","SANN","Brent"))
+   if (optimizer %in% c("Nelder-Mead","BFGS","CG","L-BFGS-B","SANN","Brent")) {
+      optmethod <- optimizer
+      optimizer <- "optim"
+   }
    evtol      <- con$evtol
-   posdefify  <- con$posdefify
+   nearpd     <- con$nearpd
    cholesky   <- con$cholesky
    parallel   <- con$parallel
    cl         <- con$cl
@@ -1712,21 +1739,31 @@ method="REML", test="z", dfs="residual", level=95, digits, btt, R, Rscale="cor",
    ### set NLOPT_LN_BOBYQA as the default algorithm for nloptr optimizer
    ### and by default use a relative convergence criterion of 1e-8 on the function value
 
-   if (optimizer=="nloptr" && !is.element("algorithm", names(optcontrol)))
+   if (optimizer == "nloptr" && !is.element("algorithm", names(optcontrol)))
       optcontrol$algorithm <- "NLOPT_LN_BOBYQA"
 
-   if (optimizer=="nloptr" && !is.element("ftol_rel", names(optcontrol)))
+   if (optimizer == "nloptr" && !is.element("ftol_rel", names(optcontrol)))
       optcontrol$ftol_rel <- 1e-8
 
    ### for mads, set trace=FALSE and tol=1e-6 by default
 
-   if (optimizer=="mads" && !is.element("trace", names(optcontrol)))
+   if (optimizer == "mads" && !is.element("trace", names(optcontrol)))
       optcontrol$trace <- FALSE
 
-   if (optimizer=="mads" && !is.element("tol", names(optcontrol)))
+   if (optimizer == "mads" && !is.element("tol", names(optcontrol)))
       optcontrol$tol <- 1e-6
 
-   #return(list(con=con, optimizer=optimizer, optmethod=optmethod, parallel=parallel, cl=cl, ncpus=ncpus, evtol=evtol, posdefify=posdefify, optcontrol=optcontrol))
+   ### for subplex, set reltol=1e-8 by default (the default in subplex() is .Machine$double.eps)
+
+   if (optimizer == "subplex" && !is.element("reltol", names(optcontrol)))
+      optcontrol$reltol <- 1e-8
+
+   ### for BBoptim, set trace=FALSE by default
+
+   if (optimizer == "BBoptim" && !is.element("trace", names(optcontrol)))
+      optcontrol$trace <- FALSE
+
+   #return(list(con=con, optimizer=optimizer, optmethod=optmethod, parallel=parallel, cl=cl, ncpus=ncpus, evtol=evtol, nearpd=nearpd, optcontrol=optcontrol))
 
    ### check that the required packages are installed
 
@@ -1735,9 +1772,9 @@ method="REML", test="z", dfs="residual", level=95, digits, btt, R, Rscale="cor",
          stop(mstyle$stop("Please install the 'minqa' package to use this optimizer."))
    }
 
-   if (optimizer == "nloptr") {
-      if (!requireNamespace("nloptr", quietly=TRUE))
-         stop(mstyle$stop("Please install the 'nloptr' package to use this optimizer."))
+   if (is.element(optimizer, c("nloptr","ucminf","lbfgsb3c","subplex","optimParallel"))) {
+      if (!requireNamespace(optimizer, quietly=TRUE))
+         stop(mstyle$stop(paste0("Please install the '", optimizer, "' package to use this optimizer.")))
    }
 
    if (is.element(optimizer, c("hjk","nmk","mads"))) {
@@ -1745,18 +1782,13 @@ method="REML", test="z", dfs="residual", level=95, digits, btt, R, Rscale="cor",
          stop(mstyle$stop("Please install the 'dfoptim' package to use this optimizer."))
    }
 
-   if (optimizer == "ucminf") {
-      if (!requireNamespace("ucminf", quietly=TRUE))
-         stop(mstyle$stop("Please install the 'ucminf' package to use this optimizer."))
+   if (optimizer == "BBoptim") {
+      if (!requireNamespace("BB", quietly=TRUE))
+         stop(mstyle$stop("Please install the 'BB' package to use this optimizer."))
    }
 
-   if (optimizer == "optimParallel") {
-      if (!requireNamespace("optimParallel", quietly=TRUE))
-         stop(mstyle$stop("Please install the 'optimParallel' package to use this optimizer."))
-   }
-
-   if (con$hessian && !requireNamespace("numDeriv", quietly=TRUE))
-      stop(mstyle$stop("Please install the 'numDeriv' package to compute the Hessian."))
+   if ((.isTRUE(cvvc) || cvvc %in% c("varcor","varcov","transf")) && !requireNamespace(con$hesspack, quietly=TRUE))
+      stop(mstyle$stop(paste0("Please install the '", con$hesspack, "' package to compute the Hessian.")))
 
    ### check if length of sigma2.init, tau2.init, rho.init, gamma2.init, and phi.init matches number of variance components
    ### note: if a particular component is not included, reset (transformed) initial values (in case the user still specifies multiple initial values)
@@ -1856,7 +1888,7 @@ method="REML", test="z", dfs="residual", level=95, digits, btt, R, Rscale="cor",
       }
    }
 
-   level <- ifelse(level == 0, 1, ifelse(level >= 1, (100-level)/100, ifelse(level > .5, 1-level, level)))
+   level <- .level(level)
 
    #return(list(sigma2s, tau2s, rhos, gamma2s, phis))
 
@@ -1871,44 +1903,57 @@ method="REML", test="z", dfs="residual", level=95, digits, btt, R, Rscale="cor",
 
    ### estimate sigma2, tau2, rho, gamma2, and phi as needed
 
-   if (optimizer=="optim") {
+   if (optimizer == "optim") {
       par.arg <- "par"
       ctrl.arg <- ", control=optcontrol"
    }
-   if (optimizer=="nlminb") {
+
+   if (optimizer == "nlminb") {
       par.arg <- "start"
       ctrl.arg <- ", control=optcontrol"
    }
+
    if (is.element(optimizer, c("uobyqa","newuoa","bobyqa"))) {
       par.arg <- "par"
-      optimizer <- paste0("minqa::", optimizer) ### need to use this since loading nloptr masks bobyqa() and newuoa() functions
+      optimizer <- paste0("minqa::", optimizer)
       ctrl.arg <- ", control=optcontrol"
    }
-   if (optimizer=="nloptr") {
+
+   if (optimizer == "nloptr") {
       par.arg <- "x0"
-      optimizer <- paste0("nloptr::nloptr") ### need to use this due to requireNamespace()
+      optimizer <- paste0("nloptr::nloptr")
       ctrl.arg <- ", opts=optcontrol"
    }
-   if (optimizer=="nlm") {
+
+   if (optimizer == "nlm") {
       par.arg <- "p" ### because of this, must use argument name pX for p (number of columns in X matrix)
       ctrl.arg <- paste(names(optcontrol), unlist(optcontrol), sep="=", collapse=", ")
       if (nchar(ctrl.arg) != 0L)
          ctrl.arg <- paste0(", ", ctrl.arg)
    }
+
    if (is.element(optimizer, c("hjk","nmk","mads"))) {
       par.arg <- "par"
-      optimizer <- paste0("dfoptim::", optimizer) ### need to use this so that the optimizers can be found
+      optimizer <- paste0("dfoptim::", optimizer)
       ctrl.arg <- ", control=optcontrol"
    }
-   if (optimizer=="ucminf") {
+
+   if (is.element(optimizer, c("ucminf","lbfgsb3c","subplex"))) {
       par.arg <- "par"
-      optimizer <- paste0("ucminf::ucminf") ### need to use this due to requireNamespace()
+      optimizer <- paste0(optimizer, "::", optimizer)
       ctrl.arg <- ", control=optcontrol"
    }
-   if (optimizer=="optimParallel") {
+
+   if (optimizer == "BBoptim") {
+      par.arg <- "par"
+      optimizer <- "BB::BBoptim"
+      ctrl.arg <- ", quiet=TRUE, control=optcontrol"
+   }
+
+   if (optimizer == "optimParallel") {
 
       par.arg <- "par"
-      optimizer <- paste0("optimParallel::optimParallel") ### need to use this due to requireNamespace()
+      optimizer <- paste0("optimParallel::optimParallel")
       ctrl.arg <- ", control=optcontrol, parallel=parallel"
 
       parallel$cl <- NULL
@@ -1956,17 +2001,22 @@ method="REML", test="z", dfs="residual", level=95, digits, btt, R, Rscale="cor",
             D.S=D.S, Z.G1=Z.G1, Z.G2=Z.G2, Z.H1=Z.H1, Z.H2=Z.H2, g.Dmat=g.Dmat, h.Dmat=h.Dmat,
             sigma2.val=sigma2, tau2.val=tau2, rho.val=rho, gamma2.val=gamma2, phi.val=phi,
             sigma2s=sigma2s, tau2s=tau2s, rhos=rhos, gamma2s=gamma2s, phis=phis,
-            withS=withS, withG=withG, withH=withH,
-            struct=struct, g.levels.r=g.levels.r, h.levels.r=h.levels.r, g.values=g.values, h.values=h.values,
-            sparse=sparse, cholesky=cholesky, posdefify=posdefify, vctransf=TRUE,
-            verbose=verbose, digits=digits, REMLf=con$REMLf, dofit=FALSE", ctrl.arg, ")\n", sep="")
+            withS=withS, withG=withG, withH=withH, struct=struct,
+            g.levels.r=g.levels.r, h.levels.r=h.levels.r, g.values=g.values, h.values=h.values,
+            sparse=sparse, cholesky=cholesky, nearpd=nearpd, vctransf=TRUE, vccov=FALSE,
+            verbose=verbose, digits=digits, REMLf=con$REMLf, dofit=FALSE, hessian=FALSE", ctrl.arg, ")\n", sep="")
 
          #return(optcall)
+
+         iteration <- 0
+         try(assign("iteration", iteration, envir=.metafor), silent=TRUE)
+
          if (verbose) {
-            opt.res <- try(eval(parse(text=optcall)), silent=!verbose)
+            opt.res <- try(eval(str2lang(optcall)), silent=!verbose)
          } else {
-            opt.res <- try(suppressWarnings(eval(parse(text=optcall))), silent=!verbose)
+            opt.res <- try(suppressWarnings(eval(str2lang(optcall))), silent=!verbose)
          }
+
          #return(opt.res)
 
          if (optimizer == "optimParallel::optimParallel" && verbose) {
@@ -1979,7 +2029,7 @@ method="REML", test="z", dfs="residual", level=95, digits, btt, R, Rscale="cor",
 
          ### convergence checks
 
-         if (is.element(optimizer, c("optim","nlminb","dfoptim::hjk","dfoptim::nmk","optimParallel::optimParallel")) && opt.res$convergence != 0)
+         if (is.element(optimizer, c("optim","nlminb","dfoptim::hjk","dfoptim::nmk","lbfgsb3c::lbfgsb3c","subplex::subplex","BB::BBoptim","optimParallel::optimParallel")) && opt.res$convergence != 0)
             stop(mstyle$stop(paste0("Optimizer (", optimizer, ") did not achieve convergence (convergence = ", opt.res$convergence, ").")))
 
          if (is.element(optimizer, c("dfoptim::mads")) && opt.res$convergence > optcontrol$tol)
@@ -2052,7 +2102,7 @@ method="REML", test="z", dfs="residual", level=95, digits, btt, R, Rscale="cor",
       sigma2s=sigma2s, tau2s=tau2s, rhos=rhos, gamma2s=gamma2s, phis=phis,
       withS=withS, withG=withG, withH=withH, struct=struct,
       g.levels.r=g.levels.r, h.levels.r=h.levels.r, g.values=g.values, h.values=h.values,
-      sparse=sparse, cholesky=cholesky, posdefify=posdefify, vctransf=TRUE,
+      sparse=sparse, cholesky=cholesky, nearpd=nearpd, vctransf=TRUE, vccov=FALSE,
       verbose=FALSE, digits=digits, REMLf=con$REMLf, dofit=TRUE)
 
    ### extract elements
@@ -2073,6 +2123,9 @@ method="REML", test="z", dfs="residual", level=95, digits, btt, R, Rscale="cor",
          colnames(G) <- rownames(G) <- g.names[-length(g.names)]
       tau2 <- fitcall$tau2
       rho  <- fitcall$rho
+      cov1 <- G[lower.tri(G)]
+   } else {
+      cov1 <- 0
    }
 
    if (withH) {
@@ -2085,6 +2138,9 @@ method="REML", test="z", dfs="residual", level=95, digits, btt, R, Rscale="cor",
          colnames(H) <- rownames(H) <- h.names[-length(h.names)]
       gamma2 <- fitcall$gamma2
       phi    <- fitcall$phi
+      cov2   <- H[lower.tri(H)]
+   } else {
+      cov2   <- 0
    }
 
    M <- fitcall$M
@@ -2098,11 +2154,11 @@ method="REML", test="z", dfs="residual", level=95, digits, btt, R, Rscale="cor",
    #print(M[1:8,1:8])
 
    if (verbose > 1)
-      message(mstyle$message("Conducting tests of the fixed effects ..."))
+      message(mstyle$message(ifelse(verbose > 2, "", "\n"), "Conducting tests of the fixed effects ..."))
 
    ### ddf calculation
 
-   if (test == "t") {
+   if (is.element(test, c("knha","adhoc","t"))) {
       ddf <- .ddf.calc(dfs, X=X, k=k, p=p, mf.s=mf.s, mf.g=mf.g, mf.h=mf.h)
    } else {
       ddf <- rep(NA, p)
@@ -2115,13 +2171,30 @@ method="REML", test="z", dfs="residual", level=95, digits, btt, R, Rscale="cor",
    if (inherits(QM, "try-error"))
       QM <- NA
 
-   rownames(beta) <- rownames(vb) <- colnames(vb) <- colnames(X)
+   ### abbreviate some types of coefficient names
+
+   if (.isTRUE(ddd$abbrev)) {
+      tmp <- colnames(X)
+      tmp <- gsub("relevel(factor(", "", tmp, fixed=TRUE)
+      tmp <- gsub("\\), ref = \"[[:alnum:]]*\")", "", tmp)
+      tmp <- gsub("poly(", "", tmp, fixed=TRUE)
+      tmp <- gsub(", degree = [[:digit:]], raw = TRUE)", "^", tmp)
+      tmp <- gsub(", degree = [[:digit:]], raw = T)", "^", tmp)
+      tmp <- gsub(", degree = [[:digit:]])", "^", tmp)
+      tmp <- gsub("rcs\\([[:alnum:]]*, [[:digit:]]\\)", "", tmp)
+      tmp <- gsub("factor(", "", tmp, fixed=TRUE)
+      tmp <- gsub("I(", "", tmp, fixed=TRUE)
+      tmp <- gsub(")", "", tmp, fixed=TRUE)
+      colnames(X) <- tmp
+   }
+
+   rownames(beta) <- rownames(vb) <- colnames(vb) <- colnames(X.f) <- colnames(X)
 
    se <- sqrt(diag(vb))
    names(se) <- NULL
    zval <- c(beta/se)
 
-   if (test == "t") {
+   if (is.element(test, c("knha","adhoc","t"))) {
       QM   <- QM / m
       QMdf <- c(m, min(ddf[btt]))
       QMp  <- if (QMdf[2] > 0) pf(QM, df1=QMdf[1], df2=QMdf[2], lower.tail=FALSE) else NA
@@ -2142,7 +2215,7 @@ method="REML", test="z", dfs="residual", level=95, digits, btt, R, Rscale="cor",
    ### heterogeneity test (Wald-type test of the extra coefficients in the saturated model)
 
    if (verbose > 1)
-      message(mstyle$message("\nConducting heterogeneity test ..."))
+      message(mstyle$message("Conducting heterogeneity test ..."))
 
    QE.df <- k-p
 
@@ -2175,25 +2248,82 @@ method="REML", test="z", dfs="residual", level=95, digits, btt, R, Rscale="cor",
    ###### compute Hessian
 
    hessian <- NA
+   vvc <- NA
 
-   if (con$hessian) {
+   if (.isTRUE(cvvc) || cvvc %in% c("varcor","varcov","transf")) {
 
       if (verbose > 1)
-         message(mstyle$message("Computing Hessian ..."))
+         message(mstyle$message("Computing Hessian ...\n"))
 
-      hessian <- try(numDeriv::hessian(func=.ll.rma.mv, x = if (con$vctransf) opt.res$par else c(sigma2, tau2, rho, gamma2, phi),
-         method.args=con$hessianCtrl, reml=reml, Y=Y, M=V, A=NULL, X.fit=X, k=k, pX=p,
-         D.S=D.S, Z.G1=Z.G1, Z.G2=Z.G2, Z.H1=Z.H1, Z.H2=Z.H2, g.Dmat=g.Dmat, h.Dmat=h.Dmat,
-         sigma2.val=sigma2.val, tau2.val=tau2.val, rho.val=rho.val, gamma2.val=gamma2.val, phi.val=phi.val,
-         sigma2s=sigma2s, tau2s=tau2s, rhos=rhos, gamma2s=gamma2s, phis=phis,
-         withS=withS, withG=withG, withH=withH,
-         struct=struct, g.levels.r=g.levels.r, h.levels.r=h.levels.r, g.values=g.values, h.values=h.values,
-         sparse=sparse, cholesky=ifelse(c(con$vctransf,con$vctransf) & cholesky, TRUE, FALSE), posdefify=posdefify, vctransf=con$vctransf,
-         verbose=verbose, digits=digits, REMLf=con$REMLf), silent=TRUE)
+      if (cvvc == "varcov" && (any(sigma2.fix, na.rm=TRUE) || any(tau2.fix, na.rm=TRUE) || any(rho.fix, na.rm=TRUE) || any(gamma2.fix, na.rm=TRUE) || any(phi.fix, na.rm=TRUE))) {
+         warning(mstyle$warning("Cannot use cvvc='varcov' when one or more components are fixed. Setting cvvc='varcor'."), call.=FALSE)
+         cvvc <- "varcor"
+      }
+
+      if (cvvc == "varcov" && any(!is.element(struct, c("UN","GEN")))) {
+         warning(mstyle$warning("Cannot use cvvc='varcov' for the specified structure(s). Setting cvvc='varcor'."), call.=FALSE)
+         cvvc <- "varcor"
+      }
+
+      if (cvvc == "varcov") {
+
+         if (con$hesspack == "numDeriv")
+            hessian <- try(numDeriv::hessian(func=.ll.rma.mv, x = c(sigma2, tau2, cov1, gamma2, cov2),
+               method.args=con$hessianCtrl, reml=reml, Y=Y, M=V, A=NULL, X.fit=X, k=k, pX=p,
+               D.S=D.S, Z.G1=Z.G1, Z.G2=Z.G2, Z.H1=Z.H1, Z.H2=Z.H2, g.Dmat=g.Dmat, h.Dmat=h.Dmat,
+               sigma2.val=sigma2.val, tau2.val=tau2.val, rho.val=rho.val, gamma2.val=gamma2.val, phi.val=phi.val,
+               sigma2s=sigma2s, tau2s=tau2s, rhos=rhos, gamma2s=gamma2s, phis=phis,
+               withS=withS, withG=withG, withH=withH, struct=struct,
+               g.levels.r=g.levels.r, h.levels.r=h.levels.r, g.values=g.values, h.values=h.values,
+               sparse=sparse, cholesky=c(FALSE,FALSE), nearpd=nearpd, vctransf=FALSE, vccov=TRUE,
+               verbose=verbose, digits=digits, REMLf=con$REMLf, hessian=TRUE), silent=TRUE)
+         if (con$hesspack == "pracma")
+            hessian <- try(pracma::hessian(f=.ll.rma.mv, x0 = c(sigma2, tau2, cov1, gamma2, cov2),
+               reml=reml, Y=Y, M=V, A=NULL, X.fit=X, k=k, pX=p,
+               D.S=D.S, Z.G1=Z.G1, Z.G2=Z.G2, Z.H1=Z.H1, Z.H2=Z.H2, g.Dmat=g.Dmat, h.Dmat=h.Dmat,
+               sigma2.val=sigma2.val, tau2.val=tau2.val, rho.val=rho.val, gamma2.val=gamma2.val, phi.val=phi.val,
+               sigma2s=sigma2s, tau2s=tau2s, rhos=rhos, gamma2s=gamma2s, phis=phis,
+               withS=withS, withG=withG, withH=withH, struct=struct,
+               g.levels.r=g.levels.r, h.levels.r=h.levels.r, g.values=g.values, h.values=h.values,
+               sparse=sparse, cholesky=c(FALSE,FALSE), nearpd=nearpd, vctransf=FALSE, vccov=TRUE,
+               verbose=verbose, digits=digits, REMLf=con$REMLf, hessian=TRUE), silent=TRUE)
+
+         # note: vctransf=FALSE and cholesky=c(FALSE,FALSE), so we get the Hessian for the untransfored variances and covariances
+
+      } else {
+
+         if (con$hesspack == "numDeriv")
+            hessian <- try(numDeriv::hessian(func=.ll.rma.mv, x = if (cvvc=="transf") opt.res$par else c(sigma2, tau2, rho, gamma2, phi),
+               method.args=con$hessianCtrl, reml=reml, Y=Y, M=V, A=NULL, X.fit=X, k=k, pX=p,
+               D.S=D.S, Z.G1=Z.G1, Z.G2=Z.G2, Z.H1=Z.H1, Z.H2=Z.H2, g.Dmat=g.Dmat, h.Dmat=h.Dmat,
+               sigma2.val=sigma2.val, tau2.val=tau2.val, rho.val=rho.val, gamma2.val=gamma2.val, phi.val=phi.val,
+               sigma2s=sigma2s, tau2s=tau2s, rhos=rhos, gamma2s=gamma2s, phis=phis,
+               withS=withS, withG=withG, withH=withH, struct=struct,
+               g.levels.r=g.levels.r, h.levels.r=h.levels.r, g.values=g.values, h.values=h.values,
+               sparse=sparse, cholesky=ifelse(c(cvvc=="transf",cvvc=="transf") & cholesky, TRUE, FALSE),
+               nearpd=nearpd, vctransf=cvvc=="transf", vccov=FALSE,
+               verbose=verbose, digits=digits, REMLf=con$REMLf, hessian=TRUE), silent=TRUE)
+         if (con$hesspack == "pracma")
+            hessian <- try(pracma::hessian(f=.ll.rma.mv, x0 = if (cvvc=="transf") opt.res$par else c(sigma2, tau2, rho, gamma2, phi),
+               reml=reml, Y=Y, M=V, A=NULL, X.fit=X, k=k, pX=p,
+               D.S=D.S, Z.G1=Z.G1, Z.G2=Z.G2, Z.H1=Z.H1, Z.H2=Z.H2, g.Dmat=g.Dmat, h.Dmat=h.Dmat,
+               sigma2.val=sigma2.val, tau2.val=tau2.val, rho.val=rho.val, gamma2.val=gamma2.val, phi.val=phi.val,
+               sigma2s=sigma2s, tau2s=tau2s, rhos=rhos, gamma2s=gamma2s, phis=phis,
+               withS=withS, withG=withG, withH=withH, struct=struct,
+               g.levels.r=g.levels.r, h.levels.r=h.levels.r, g.values=g.values, h.values=h.values,
+               sparse=sparse, cholesky=ifelse(c(cvvc=="transf",cvvc=="transf") & cholesky, TRUE, FALSE),
+               nearpd=nearpd, vctransf=cvvc=="transf", vccov=FALSE,
+               verbose=verbose, digits=digits, REMLf=con$REMLf, hessian=TRUE), silent=TRUE)
+
+         # note: when cvvc=TRUE/"covcor", get the Hessian for the (untransfored) variances and correlations
+         #       when cvvc="transf", get the Hessian for the transformed variances and correlations
+
+      }
 
       if (inherits(hessian, "try-error")) {
 
-         warning(mstyle$warning("Error when trying to compute Hessian."), call.=FALSE)
+         warning(mstyle$warning("Error when trying to compute the Hessian."), call.=FALSE)
+         hessian <- NA
 
       } else {
 
@@ -2211,29 +2341,31 @@ method="REML", test="z", dfs="residual", level=95, digits, btt, R, Rscale="cor",
          } else {
             colnames(hessian)[(sigma2s+1):(sigma2s+tau2s)] <- paste("tau^2.", seq_len(tau2s), sep="")
          }
+         term <- ifelse(cvvc == "varcov", ifelse(withH, "cov1", "cov"), "rho")
          if (rhos == 1) {
-            colnames(hessian)[sigma2s+tau2s+1] <- "rho"
+            colnames(hessian)[sigma2s+tau2s+1] <- term
          } else {
-            #colnames(hessian)[(sigma2s+tau2s+1):(sigma2s+tau2s+rhos)] <- paste("rho.", outer(seq_len(g.nlevels.f[1]), seq_len(g.nlevels.f), paste, sep=".")[upper.tri(matrix(NA,nrow=g.nlevels.f,ncol=g.nlevels.f))], sep="")
-            colnames(hessian)[(sigma2s+tau2s+1):(sigma2s+tau2s+rhos)] <- paste("rho.", seq_len(rhos), sep="")
+            colnames(hessian)[(sigma2s+tau2s+1):(sigma2s+tau2s+rhos)] <- paste(term, ".", outer(seq_len(g.nlevels.f[1]), seq_len(g.nlevels.f[1]), paste, sep=".")[lower.tri(matrix(NA,nrow=g.nlevels.f,ncol=g.nlevels.f))], sep="")
+            #colnames(hessian)[(sigma2s+tau2s+1):(sigma2s+tau2s+rhos)] <- paste(term, ".", seq_len(rhos), sep="")
          }
          if (gamma2s == 1) {
             colnames(hessian)[sigma2s+tau2s+rhos+1] <- "gamma^2"
          } else {
             colnames(hessian)[(sigma2s+tau2s+rhos+1):(sigma2s+tau2s+rhos+gamma2s)] <- paste("gamma^2.", seq_len(gamma2s), sep="")
          }
+         term <- ifelse(cvvc == "varcov", "cov2", "phi")
          if (phis == 1) {
-            colnames(hessian)[sigma2s+tau2s+rhos+gamma2s+1] <- "phi"
+            colnames(hessian)[sigma2s+tau2s+rhos+gamma2s+1] <- term
          } else {
-            #colnames(hessian)[(sigma2s+tau2s+rhos+gamma2s+1):(sigma2s+tau2s+rhos+gamma2s+phis)] <- paste("phi.", outer(seq_len(h.nlevels.f[1]), seq_len(h.nlevels.f), paste, sep=".")[upper.tri(matrix(NA,nrow=h.nlevels.f,ncol=h.nlevels.f))], sep="")
-            colnames(hessian)[(sigma2s+tau2s+rhos+gamma2s+1):(sigma2s+tau2s+rhos+gamma2s+phis)] <- paste("phi.", seq_len(phis), sep="")
+            colnames(hessian)[(sigma2s+tau2s+rhos+gamma2s+1):(sigma2s+tau2s+rhos+gamma2s+phis)] <- paste(term, ".", outer(seq_len(h.nlevels.f[1]), seq_len(h.nlevels.f[1]), paste, sep=".")[lower.tri(matrix(NA,nrow=h.nlevels.f,ncol=h.nlevels.f))], sep="")
+            #colnames(hessian)[(sigma2s+tau2s+rhos+gamma2s+1):(sigma2s+tau2s+rhos+gamma2s+phis)] <- paste(term, ".", seq_len(phis), sep="")
          }
 
          rownames(hessian) <- colnames(hessian)
 
          ### select correct rows/columns from Hessian depending on components in the model
          ### FIXME: this isn't quite right, since "DIAG" and "ID" have a rho/phi element, but this is fixed at 0, so should also exclude this
-         ###        in fact, all fixed elements should be filtered out
+         ###        in fact, all fixed elements should be filtered out (done below)
 
          #if (withS && withG && withH)
             #hessian <- hessian[1:nrow(hessian),1:ncol(hessian), drop=FALSE]
@@ -2248,7 +2380,48 @@ method="REML", test="z", dfs="residual", level=95, digits, btt, R, Rscale="cor",
          if (!withS && !withG && !withH)
             hessian <- NA
 
+         ### reorder hessian when vccov into the order of the lower triangular elements of G/H
+
+         if (cvvc == "varcov" && withG) {
+            posG <- matrix(NA, nrow=tau2s, ncol=tau2s)
+            diag(posG) <- 1:tau2s
+            posG[lower.tri(posG)] <- (tau2s+1):(tau2s*(tau2s+1)/2)
+            posG <- posG[lower.tri(posG, diag=TRUE)]
+            if (withS) {
+               pos <- c(1:sigma2s, sigma2s+posG)
+            } else {
+               pos <- posG
+            }
+            if (withH) {
+               posH <- matrix(NA, nrow=gamma2s, ncol=gamma2s)
+               diag(posH) <- 1:gamma2s
+               posH[lower.tri(posH)] <- (gamma2s+1):(gamma2s*(gamma2s+1)/2)
+               posH <- posH[lower.tri(posH, diag=TRUE)]
+               pos <- c(pos, max(pos)+posH)
+            }
+            hessian <- hessian[pos,pos]
+         }
+
+         ### detect rows/columns that are essentially all equal to 0 (fixed elements) and filter them out
+
+         hest <- !apply(hessian, 1, function(x) all(abs(x) <= con$hessian0))
+         hessian <- hessian[hest, hest, drop=FALSE]
+
+         ### try to invert Hessian
+
+         vvc <- try(suppressWarnings(chol2inv(chol(hessian))), silent=TRUE)
+
+         if (inherits(vvc, "try-error") || anyNA(vvc) || any(is.infinite(vvc))) {
+            warning(mstyle$warning("Error when trying to invert Hessian."), call.=FALSE)
+            vvc <- NA
+         } else {
+            dimnames(vvc) <- dimnames(hessian)
+         }
+
       }
+
+      if (verbose > 1)
+         cat("\n")
 
    }
 
@@ -2273,7 +2446,11 @@ method="REML", test="z", dfs="residual", level=95, digits, btt, R, Rscale="cor",
    ll.ML   <- fitcall$llvals[1]
    ll.REML <- fitcall$llvals[2]
 
-   dev.ML    <- -2 * (ll.ML - ll.QE)
+   if (allvipos) {
+      dev.ML <- -2 * (ll.ML - ll.QE)
+   } else {
+      dev.ML <- -2 * ll.ML
+   }
    AIC.ML    <- -2 * ll.ML   + 2*parms
    BIC.ML    <- -2 * ll.ML   +   parms * log(k)
    AICc.ML   <- -2 * ll.ML   + 2*parms * max(k, parms+2) / (max(k, parms+2) - parms - 1)
@@ -2298,14 +2475,14 @@ method="REML", test="z", dfs="residual", level=95, digits, btt, R, Rscale="cor",
 
    weighted <- TRUE
 
-   if (is.null(ddd$outlist)) {
+   if (is.null(ddd$outlist) || ddd$outlist == "nodata") {
 
       res <- list(b=beta, beta=beta, se=se, zval=zval, pval=pval, ci.lb=ci.lb, ci.ub=ci.ub, vb=vb,
                   sigma2=sigma2, tau2=tau2, rho=rho, gamma2=gamma2, phi=phi,
                   QE=QE, QEp=QEp, QM=QM, QMdf=QMdf, QMp=QMp,
                   k=k, k.f=k.f, k.eff=k.eff, k.all=k.all, p=p, p.eff=p.eff, parms=parms,
                   int.only=int.only, int.incl=int.incl, intercept=intercept, allvipos=allvipos, coef.na=coef.na,
-                  yi=yi, vi=vi, V=V, W=A, X=X, yi.f=yi.f, vi.f=vi.f, V.f=V.f, X.f=X.f, W.f=W.f, ni=ni, ni.f=ni.f, M=M, G=G, H=H, hessian=hessian,
+                  yi=yi, vi=vi, V=V, W=A, X=X, yi.f=yi.f, vi.f=vi.f, V.f=V.f, X.f=X.f, W.f=W.f, ni=ni, ni.f=ni.f, M=M, G=G, H=H, hessian=hessian, vvc=vvc,
                   ids=ids, not.na=not.na, subset=subset, slab=slab, slab.null=slab.null,
                   measure=measure, method=method, weighted=weighted,
                   test=test, dfs=dfs, ddf=ddf, btt=btt, m=m,
@@ -2326,9 +2503,13 @@ method="REML", test="z", dfs="residual", level=95, digits, btt, R, Rscale="cor",
                   formula.yi=formula.yi, formula.mods=formula.mods, random=random,
                   version=packageVersion("metafor"), call=mf)
 
+      if (is.null(ddd$outlist))
+         res <- append(res, list(data=data), which(names(res) == "fit.stats"))
+
    }
 
    if (!is.null(ddd$outlist)) {
+
       if (ddd$outlist == "minimal") {
          res <- list(b=beta, beta=beta, se=se, zval=zval, pval=pval, ci.lb=ci.lb, ci.ub=ci.ub, vb=vb,
                      sigma2=sigma2, tau2=tau2, rho=rho, gamma2=gamma2, phi=phi,
@@ -2349,8 +2530,9 @@ method="REML", test="z", dfs="residual", level=95, digits, btt, R, Rscale="cor",
                      h.levels.f=h.levels.f, h.levels.k=h.levels.k, h.levels.comb.k=h.levels.comb.k,
                      struct=struct, Rfix=Rfix)
       } else {
-         res <- eval(parse(text=paste0("list(", ddd$outlist, ")")))
+         res <- eval(str2lang(paste0("list(", ddd$outlist, ")")))
       }
+
    }
 
    time.end <- proc.time()

@@ -6,8 +6,7 @@ print.anova.rma <- function(x, digits=x$digits, ...) {
 
    digits <- .get.digits(digits=digits, xdigits=x$digits, dmiss=FALSE)
 
-   if (!exists(".rmspace"))
-      cat("\n")
+   .space()
 
    if (x$type == "Wald.btt") {
 
@@ -18,7 +17,7 @@ print.anova.rma <- function(x, digits=x$digits, ...) {
       }
       cat("\n")
       if (is.element(x$test, c("knha","adhoc","t"))) {
-         cat(mstyle$result(paste0("F(df1 = ", x$QMdf[1], ", df2 = ", x$QMdf[2], ") = ", .fcf(x$QM, digits[["test"]]), ", p-val ", .pval(x$QMp, digits[["pval"]], showeq=TRUE, sep=" "))))
+         cat(mstyle$result(paste0("F(df1 = ", x$QMdf[1], ", df2 = ", round(x$QMdf[2], 2), ") = ", .fcf(x$QM, digits[["test"]]), ", p-val ", .pval(x$QMp, digits[["pval"]], showeq=TRUE, sep=" "))))
       } else {
          cat(mstyle$result(paste0("QM(df = ", x$QMdf[1], ") = ", .fcf(x$QM, digits[["test"]]), ", p-val ", .pval(x$QMp, digits[["pval"]], showeq=TRUE, sep=" "))))
       }
@@ -30,8 +29,8 @@ print.anova.rma <- function(x, digits=x$digits, ...) {
 
       cat(mstyle$section(paste0("Test of Scale Coefficients (coefficient", ifelse(x$m == 1, " ", "s "), .format.btt(x$att),"):")))
       cat("\n")
-      if (x$test == "t") {
-         cat(mstyle$result(paste0("F(df1 = ", x$QSdf[1], ", df2 = ", x$QSdf[2], ") = ", .fcf(x$QS, digits[["test"]]), ", p-val ", .pval(x$QSp, digits[["pval"]], showeq=TRUE, sep=" "))))
+      if (is.element(x$test, c("knha","adhoc","t"))) {
+         cat(mstyle$result(paste0("F(df1 = ", x$QSdf[1], ", df2 = ", round(x$QSdf[2], 2), ") = ", .fcf(x$QS, digits[["test"]]), ", p-val ", .pval(x$QSp, digits[["pval"]], showeq=TRUE, sep=" "))))
       } else {
          cat(mstyle$result(paste0("QS(df = ", x$QSdf[1], ") = ", .fcf(x$QS, digits[["test"]]), ", p-val ", .pval(x$QSp, digits[["pval"]], showeq=TRUE, sep=" "))))
       }
@@ -72,7 +71,7 @@ print.anova.rma <- function(x, digits=x$digits, ...) {
          }
          cat("\n")
          if (is.element(x$test, c("knha","adhoc","t"))) {
-            cat(mstyle$result(paste0("F(df1 = ", x$QMdf[1], ", df2 = ", x$QMdf[2], ") = ", .fcf(x$QM, digits[["test"]]), ", p-val ", .pval(x$QMp, digits[["pval"]], showeq=TRUE, sep=" "))))
+            cat(mstyle$result(paste0("F(df1 = ", x$QMdf[1], ", df2 = ", round(x$QMdf[2], 2), ") = ", .fcf(x$QM, digits[["test"]]), ", p-val ", .pval(x$QMp, digits[["pval"]], showeq=TRUE, sep=" "))))
          } else {
             cat(mstyle$result(paste0("QM(df = ", x$QMdf[1], ") = ", .fcf(x$QM, digits[["test"]]), ", p-val ", .pval(x$QMp, digits[["pval"]], showeq=TRUE, sep=" "))))
          }
@@ -96,7 +95,7 @@ print.anova.rma <- function(x, digits=x$digits, ...) {
       cat(mstyle$section("Results:"))
       cat("\n")
 
-      if (x$test == "t") {
+      if (is.element(x$test, c("knha","adhoc","t"))) {
          res.table <- data.frame(estimate=.fcf(c(x$Za), digits[["est"]]), se=.fcf(x$se, digits[["se"]]), tval=.fcf(x$zval, digits[["test"]]), df=round(x$ddf,2), pval=.pval(x$pval, digits[["pval"]]), stringsAsFactors=FALSE)
       } else {
          res.table <- data.frame(estimate=.fcf(c(x$Za), digits[["est"]]), se=.fcf(x$se, digits[["se"]]), zval=.fcf(x$zval, digits[["test"]]), pval=.pval(x$pval, digits[["pval"]]), stringsAsFactors=FALSE)
@@ -113,8 +112,8 @@ print.anova.rma <- function(x, digits=x$digits, ...) {
             cat(mstyle$section("Omnibus Test of Hypotheses:"))
          }
          cat("\n")
-         if (x$test == "t") {
-            cat(mstyle$result(paste0("F(df1 = ", x$QSdf[1], ", df2 = ", x$QSdf[2], ") = ", .fcf(x$QS, digits[["test"]]), ", p-val ", .pval(x$QSp, digits[["pval"]], showeq=TRUE, sep=" "))))
+         if (is.element(x$test, c("knha","adhoc","t"))) {
+            cat(mstyle$result(paste0("F(df1 = ", x$QSdf[1], ", df2 = ", round(x$QSdf[2], 2), ") = ", .fcf(x$QS, digits[["test"]]), ", p-val ", .pval(x$QSp, digits[["pval"]], showeq=TRUE, sep=" "))))
          } else {
             cat(mstyle$result(paste0("QS(df = ", x$QSdf[1], ") = ", .fcf(x$QS, digits[["test"]]), ", p-val ", .pval(x$QSp, digits[["pval"]], showeq=TRUE, sep=" "))))
          }
@@ -143,18 +142,22 @@ print.anova.rma <- function(x, digits=x$digits, ...) {
       res.table["Full","R^2"] <- ""
       res.table["Reduced","R^2"] <- paste0(.fcf(x$R2, digits[["het"]]), "%")
 
-      ### remove tau^2 and R^2 columns if full model is a FE/EE/CE model or if dealing with rma.mv or rma.ls models
+      ### remove tau^2 column if full model is a FE/EE/CE model
 
-      if (is.element(x$method, c("FE","EE","CE")) || is.element("rma.mv", x$class.f) || is.element("rma.ls", x$class.f))
-         res.table <- res.table[,seq_len(8)]
+      if (is.element(x$method, c("FE","EE","CE")))
+         res.table <- res.table[-which(names(res.table) == "tau^2")]
+
+      ### remove R^2 column if full model is a rma.mv or rma.ls model
+
+      if (is.element("rma.mv", x$class.f) || is.element("rma.ls", x$class.f))
+         res.table <- res.table[-which(names(res.table) == "R^2")]
 
       tmp <- capture.output(print(res.table, quote=FALSE, right=TRUE))
       .print.table(tmp, mstyle)
 
    }
 
-   if (!exists(".rmspace"))
-      cat("\n")
+   .space()
 
    invisible()
 

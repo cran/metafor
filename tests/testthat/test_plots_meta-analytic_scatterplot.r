@@ -2,6 +2,8 @@
 
 ### see also: https://www.metafor-project.org/doku.php/plots:meta_analytic_scatterplot
 
+source("settings.r")
+
 context("Checking plots example: meta-analytic scatterplot")
 
 test_that("plot can be drawn.", {
@@ -14,9 +16,6 @@ test_that("plot can be drawn.", {
 
    ### adjust margins so the space is better used
    par(mar=c(5,5,1,2))
-
-   ### load BCG vaccine data
-   data(dat.bcg, package="metafor")
 
    ### calculate log risk ratios and corresponding sampling variances
    dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
@@ -56,3 +55,5 @@ test_that("plot can be drawn.", {
    par(opar)
 
 })
+
+rm(list=ls())

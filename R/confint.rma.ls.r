@@ -30,7 +30,7 @@ confint.rma.ls <- function(object, parm, level, fixed=FALSE, alpha, digits, tran
    if (missing(control))
       control <- list()
 
-   level <- ifelse(level == 0, 1, ifelse(level >= 1, (100-level)/100, ifelse(level > .5, 1-level, level)))
+   level <- .level(level)
 
    ddd <- list(...)
 
@@ -153,9 +153,23 @@ confint.rma.ls <- function(object, parm, level, fixed=FALSE, alpha, digits, tran
             con$vc.min <- vc - 10 * abs(vc)
             con$vc.max <- vc + 10 * abs(vc)
          } else {
-            con$vc.min <- vc - 10 * qnorm(level/2, lower.tail=FALSE) * x$se.alpha[alpha]
-            con$vc.max <- vc + 10 * qnorm(level/2, lower.tail=FALSE) * x$se.alpha[alpha]
+            #con$vc.min <- vc - 10 * qnorm(level/2, lower.tail=FALSE) * x$se.alpha[alpha]
+            #con$vc.max <- vc + 10 * qnorm(level/2, lower.tail=FALSE) * x$se.alpha[alpha]
+            # using this now to deal with cases where the SE may be extremely large
+            con$vc.min <- max(vc - 10 * abs(vc), vc - 10 * qnorm(level/2, lower.tail=FALSE) * x$se.alpha[alpha])
+            con$vc.max <- min(vc + 10 * abs(vc), vc + 10 * qnorm(level/2, lower.tail=FALSE) * x$se.alpha[alpha])
          }
+      }
+
+      if (!is.null(x$control$alpha.min)) {
+         if (length(x$control$alpha.min) == 1L)
+            x$control$alpha.min <- rep(x$control$alpha.min, x$q)
+         con$vc.min <- max(con$vc.min, x$control$alpha.min[alpha])
+      }
+      if (!is.null(x$control$alpha.max)) {
+         if (length(x$control$alpha.max) == 1L)
+            x$control$alpha.max <- rep(x$control$alpha.max, x$q)
+         con$vc.max <- min(con$vc.max, x$control$alpha.max[alpha])
       }
 
       con.pos <- pmatch(names(control), names(con))
@@ -321,7 +335,7 @@ confint.rma.ls <- function(object, parm, level, fixed=FALSE, alpha, digits, tran
 
    if (fixed) {
 
-      if (x$test == "t") {
+      if (is.element(x$test, c("knha","adhoc","t"))) {
          crit <- qt(level/2, df=x$ddf, lower.tail=FALSE)
       } else {
          crit <- qnorm(level/2, lower.tail=FALSE)

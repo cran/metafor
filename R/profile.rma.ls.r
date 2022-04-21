@@ -1,5 +1,5 @@
 profile.rma.ls <- function(fitted, alpha,
-   xlim, ylim, steps=20, lltol=1e-03, progbar=TRUE, parallel="no", ncpus=1, cl=NULL, plot=TRUE, pch=19, cline=FALSE, ...) {
+   xlim, ylim, steps=20, lltol=1e-03, progbar=TRUE, parallel="no", ncpus=1, cl, plot=TRUE, pch=19, refline=TRUE, cline=FALSE, ...) {
 
    mstyle <- .get.mstyle("crayon" %in% .packages())
 
@@ -14,6 +14,9 @@ profile.rma.ls <- function(fitted, alpha,
 
    if (parallel == "no" && ncpus > 1)
       parallel <- "snow"
+
+   if (missing(cl))
+      cl <- NULL
 
    if (!is.null(cl) && inherits(cl, "SOCKcluster")) {
       parallel <- "snow"
@@ -37,7 +40,7 @@ profile.rma.ls <- function(fitted, alpha,
 
    if (!progbar) {
       pbo <- pbapply::pboptions(type="none")
-      on.exit(pbapply::pboptions(pbo))
+      on.exit(pbapply::pboptions(pbo), add=TRUE)
    }
 
    ddd <- list(...)
@@ -156,6 +159,17 @@ profile.rma.ls <- function(fitted, alpha,
       if (is.na(vc.lb) || is.na(vc.ub))
          stop(mstyle$stop("Cannot set 'xlim' automatically. Please set this argument manually."))
 
+      if (!is.null(x$control$alpha.min)) {
+         if (length(x$control$alpha.min) == 1L)
+            x$control$alpha.min <- rep(x$control$alpha.min, x$q)
+         vc.lb <- max(vc.lb, x$con$alpha.min[alpha])
+      }
+      if (!is.null(x$control$alpha.max)) {
+         if (length(x$control$alpha.max) == 1L)
+            x$control$alpha.max <- rep(x$control$alpha.max, x$q)
+         vc.ub <- min(vc.ub, x$con$alpha.max[alpha])
+      }
+
       xlim <- sort(c(vc.lb, vc.ub))
 
    } else {
@@ -195,9 +209,9 @@ profile.rma.ls <- function(fitted, alpha,
    }
 
    lls <- sapply(res, function(x) x$ll)
-   beta  <- do.call("rbind", lapply(res, function(x) t(x$beta)))
-   ci.lb <- do.call("rbind", lapply(res, function(x) t(x$ci.lb)))
-   ci.ub <- do.call("rbind", lapply(res, function(x) t(x$ci.ub)))
+   beta  <- do.call(rbind, lapply(res, function(x) t(x$beta)))
+   ci.lb <- do.call(rbind, lapply(res, function(x) t(x$ci.lb)))
+   ci.ub <- do.call(rbind, lapply(res, function(x) t(x$ci.ub)))
 
    #########################################################################
 
@@ -223,7 +237,7 @@ profile.rma.ls <- function(fitted, alpha,
             ylim <- range(lls, na.rm=TRUE)
          }
       } else {
-         ylim <- rep(logLik(x), 2)
+         ylim <- rep(logLik(x), 2L)
       }
       ylim[1] <- ylim[1] - .1
       ylim[2] <- ylim[2] + .1
@@ -256,7 +270,7 @@ profile.rma.ls <- function(fitted, alpha,
    #########################################################################
 
    if (plot)
-      plot(sav, pch=pch, cline=cline, ...)
+      plot(sav, pch=pch, refline=refline, cline=cline, ...)
 
    #########################################################################
 

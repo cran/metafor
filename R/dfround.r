@@ -2,8 +2,8 @@ dfround <- function(x, digits) {
 
    mstyle <- .get.mstyle("crayon" %in% .packages())
 
-   #if (inherits(x, "matrix"))
-   #   x <- data.frame(x)
+   if (inherits(x, "matrix") && length(dim(x)) == 2L)
+      x <- data.frame(x, check.names=FALSE)
 
    .chkclass(class(x), must="data.frame")
 
@@ -21,7 +21,7 @@ dfround <- function(x, digits) {
    if (!is.numeric(digits))
       stop(mstyle$stop("Argument 'digits' must be a numeric vector."))
 
-   for (i in 1:p) {
+   for (i in seq_len(p)) {
       if (!is.numeric(x[[i]]))
          next
       x[[i]] <- round(x[[i]], digits[i])

@@ -8,7 +8,7 @@
 \method{print}{fsn}(x, digits=x$digits, \dots)
 }
 \arguments{
-   \item{x}{an object of class \code{"fsn"}.}
+   \item{x}{an object of class \code{"fsn"} obtained with \code{\link{fsn}}.}
    \item{digits}{integer to specify the number of decimal places to which the printed results should be rounded (the default is to take the value from the object).}
    \item{\dots}{other arguments.}
 }
@@ -25,6 +25,6 @@
    Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \verb{https://doi.org/10.18637/jss.v036.i03}
 }
 \seealso{
-   \code{\link{fsn}}
+   \code{\link{fsn}} for the function to create \code{fsn} objects.
 }
 \keyword{print}

@@ -15,20 +15,20 @@ cumul(x, \dots)
 \method{cumul}{rma.peto}(x, order, digits, transf, targs, progbar=FALSE, \dots)
 }
 \arguments{
-   \item{x}{an object of class \code{"rma.mh"}, \code{"rma.peto"}, \code{"rma.uni"}.}
+   \item{x}{an object of class \code{"rma.uni"}, \code{"rma.mh"}, or \code{"rma.peto"}.}
    \item{order}{optional argument to specify a variable based on which the studies will be ordered for the cumulative meta-analysis.}
-   \item{digits}{integer to specify the number of decimal places to which the printed results should be rounded. If unspecified, the default is to take the value from the object.}
+   \item{digits}{optional integer to specify the number of decimal places to which the printed results should be rounded. If unspecified, the default is to take the value from the object.}
    \item{transf}{optional argument to specify a function that should be used to transform the model coefficients and interval bounds (e.g., \code{transf=exp}; see also \link{transf}). If unspecified, no transformation is used.}
    \item{targs}{optional arguments needed by the function specified under \code{transf}.}
    \item{progbar}{logical to specify whether a progress bar should be shown (the default is \code{FALSE}).}
    \item{\dots}{other arguments.}
 }
 \details{
-   For \code{"rma.uni"} objects, the model specified via \code{x} must be a model without moderators (i.e., either a fixed- or a random-effects model).
+   For \code{"rma.uni"} objects, the model specified via \code{x} must be a model without moderators (i.e., either an equal- or a random-effects model).
 
    If argument \code{order} is not specified, the studies are added according to their order in the original dataset.
 
-   When a variable is specified for \code{order}, the variable is assumed to be of the same length as the original dataset that was used in the model fitting. Any subsetting and removal of studies with missing values that was applied during the model fitting is also automatically applied to the variable specified via the \code{order} argument. See \sQuote{Examples}.
+   When a variable is specified for \code{order}, the variable is assumed to be of the same length as the original dataset that was used in the model fitting (and if the \code{data} argument was used in the original model fit, then the variable will be searched for within this data frame first). Any subsetting and removal of studies with missing values that was applied during the model fitting is also automatically applied to the variable specified via the \code{order} argument. See \sQuote{Examples}.
 }
 \value{
    An object of class \code{c("list.rma","cumul.rma")}. The object is a list containing the following components:
@@ -47,7 +47,7 @@ cumul(x, \dots)
 
    When the model was fitted with \code{test="t"} or \code{test="knha"}, then \code{zval} is called \code{tval} in the object that is returned by the function.
 
-   The object is formatted and printed with \code{\link{print.list.rma}}. A forest plot showing the results from the cumulative meta-analysis can be obtained with \code{\link{forest.cumul.rma}}. Alternatively, \code{\link{plot.cumul.rma}} can also be used to visualize the results.
+   The object is formatted and printed with the \code{\link[=print.list.rma]{print}} function. A forest plot showing the results from the cumulative meta-analysis can be obtained with \code{\link[=forest.cumul.rma]{forest}}. Alternatively, \code{\link[=plot.cumul.rma]{plot}} can also be used to visualize the results.
 }
 \note{
    When using the \code{transf} option, the transformation is applied to the estimated coefficients and the corresponding interval bounds. The standard errors are then set equal to \code{NA} and are omitted from the printed output.
@@ -63,7 +63,7 @@ cumul(x, \dots)
    Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \verb{https://doi.org/10.18637/jss.v036.i03}
 }
 \seealso{
-   \code{\link{forest.cumul.rma}}, \code{\link{plot.cumul.rma}}
+   \code{\link{forest.cumul.rma}} for a function to draw cumulative forest plots and \code{\link{plot.cumul.rma}} for a different visualization of the cumulative results.
 }
 \examples{
 ### calculate log risk ratios and corresponding sampling variances
@@ -73,21 +73,21 @@ dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
 res <- rma(yi, vi, data=dat)
 
 ### cumulative meta-analysis (in the order of publication year)
-cumul(res, transf=exp, order=dat$year)
+cumul(res, transf=exp, order=year)
 
 ### meta-analysis of the (log) risk ratios using the Mantel-Haenszel method
 res <- rma.mh(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
 
 ### cumulative meta-analysis
-cumul(res, order=dat.bcg$year)
-cumul(res, order=dat.bcg$year, transf=TRUE)
+cumul(res, order=year)
+cumul(res, order=year, transf=TRUE)
 
 ### meta-analysis of the (log) odds ratios using Peto's method
-res <- rma.mh(ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
+res <- rma.peto(ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
 
 ### cumulative meta-analysis
-cumul(res, order=dat.bcg$year)
-cumul(res, order=dat.bcg$year, transf=TRUE)
+cumul(res, order=year)
+cumul(res, order=year, transf=TRUE)
 
 ### make first log risk ratio missing and fit model without study 2; then the
 ### variable specified via 'order' should still be of the same length as the
@@ -95,6 +95,6 @@ cumul(res, order=dat.bcg$year, transf=TRUE)
 ### automatically done by the cumul() function
 dat$yi[1] <- NA
 res <- rma(yi, vi, data=dat, subset=-2)
-cumul(res, transf=exp, order=dat$year)
+cumul(res, transf=exp, order=year)
 }
 \keyword{methods}

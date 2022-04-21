@@ -2,11 +2,10 @@
 
 context("Checking misc: rma.uni() against direct computations")
 
-source("tolerances.r") # read in tolerances
+source("settings.r")
 
 test_that("results match (FE model).", {
 
-   data(dat.bcg, package="metafor")
    dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
 
    res <- rma(yi, vi, mods = ~ ablat + year, data=dat, method="FE")
@@ -34,3 +33,5 @@ test_that("results match (FE model).", {
    expect_equivalent(resid(res), c(ei))
 
 })
+
+rm(list=ls())

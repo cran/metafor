@@ -4,10 +4,9 @@
 
 context("Checking analysis example: viechtbauer2007b")
 
-source("tolerances.r") # read in tolerances
+source("settings.r")
 
 ### create dataset for example
-data(dat.linde2005, package="metafor")
 dat <- escalc(measure="RR", ai=ai, ci=ci, n1i=n1i, n2i=n2i, data=dat.linde2005)
 dat <- dat[c(7:10,13:25), c(13:16,18:19,11,6,7,9)]
 dat$dosage <- (dat$dosage * 7) / 1000
@@ -24,9 +23,9 @@ test_that("results are correct for the CIs.", {
 
 })
 
-test_that("results are correct for the fixed-effects model.", {
+test_that("results are correct for the equal-effects model.", {
 
-   res <- rma(yi, vi, data=dat, method="FE")
+   res <- rma(yi, vi, data=dat, method="EE")
    sav <- predict(res, transf=exp)
    tmp <- c(sav$pred, sav$ci.lb, sav$ci.ub)
 
@@ -119,3 +118,5 @@ test_that("results are correct for the mixed-effects model.", {
    expect_equivalent(res$se.tau2, c(0.0197, 0.0764, 0.0376, 0.0528, 0.0436, 0.0437, 0.046, 0.046, 0.0222, 0.0409, 0.046), tolerance=.tol[["sevar"]])
 
 })
+
+rm(list=ls())

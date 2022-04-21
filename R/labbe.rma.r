@@ -9,10 +9,10 @@ add=x$add, to=x$to, transf, targs, pch=21, psize, plim=c(0.5,3.5), col, bg, grid
       stop(mstyle$stop("L'Abbe plots can only be drawn for models without moderators."))
 
    if (!is.element(x$measure, c("RR","OR","RD","AS","IRR","IRD","IRSD")))
-      stop(mstyle$stop("Argument 'measure' must have been one of the following: 'RR','OR','RD','AS','IRR','IRD','IRSD'."))
+      stop(mstyle$stop("Argument 'measure' must be set to one of the following: 'RR','OR','RD','AS','IRR','IRD','IRSD'."))
 
    na.act <- getOption("na.action")
-   on.exit(options(na.action=na.act))
+   on.exit(options(na.action=na.act), add=TRUE)
 
    if (!is.element(na.act, c("na.omit", "na.exclude", "na.fail", "na.pass")))
       stop(mstyle$stop("Unknown 'na.action' specified under options()."))
@@ -29,7 +29,7 @@ add=x$add, to=x$to, transf, targs, pch=21, psize, plim=c(0.5,3.5), col, bg, grid
    if (missing(transf))
       transf <- FALSE
 
-   transf.char <- deparse(substitute(transf))
+   transf.char <- deparse(transf)
 
    if (missing(targs))
       targs <- NULL
@@ -140,47 +140,20 @@ add=x$add, to=x$to, transf, targs, pch=21, psize, plim=c(0.5,3.5), col, bg, grid
 
    options(na.action = "na.pass") ### to make sure dat.t and dat.c are of the same length
 
-   if (x$measure == "RR") {
-      measure <- "PLN"
-      dat.t <- escalc(measure=measure, xi=ai, mi=bi, add=add, to=to, addyi=addyi, addvi=addvi)
-      dat.c <- escalc(measure=measure, xi=ci, mi=di, add=add, to=to, addyi=addyi, addvi=addvi)
+   measure <- switch(x$measure, "RR"="PLN", "OR"="PLO", "RD"="PR", "AS"="PAS", "IRR"="IRLN", "IRD"="IR", "IRSD"="IRS")
+
+   if (is.element(x$measure, c("RR","OR","RD","AS"))) {
+      args.t <- list(measure=measure, xi=ai, mi=bi, add=add, to=to, addyi=addyi, addvi=addvi)
+      args.c <- list(measure=measure, xi=ci, mi=di, add=add, to=to, addyi=addyi, addvi=addvi)
    }
 
-   if (x$measure == "OR") {
-      measure <- "PLO"
-      dat.t <- escalc(measure=measure, xi=ai, mi=bi, add=add, to=to, addyi=addyi, addvi=addvi)
-      dat.c <- escalc(measure=measure, xi=ci, mi=di, add=add, to=to, addyi=addyi, addvi=addvi)
+   if (is.element(x$measure, c("IRR","IRD","IRSD"))) {
+      args.t <- list(measure=measure, xi=x1i, ti=t1i, add=add, to=to, addyi=addyi, addvi=addvi)
+      args.c <- list(measure=measure, xi=x2i, ti=t2i, add=add, to=to, addyi=addyi, addvi=addvi)
    }
 
-   if (x$measure == "RD") {
-      measure <- "PR"
-      dat.t <- escalc(measure=measure, xi=ai, mi=bi, add=add, to=to, addyi=addyi, addvi=addvi)
-      dat.c <- escalc(measure=measure, xi=ci, mi=di, add=add, to=to, addyi=addyi, addvi=addvi)
-   }
-
-   if (x$measure == "AS") {
-      measure <- "PAS"
-      dat.t <- escalc(measure=measure, xi=ai, mi=bi, add=add, to=to, addyi=addyi, addvi=addvi)
-      dat.c <- escalc(measure=measure, xi=ci, mi=di, add=add, to=to, addyi=addyi, addvi=addvi)
-   }
-
-   if (x$measure == "IRR") {
-      measure <- "IRLN"
-      dat.t <- escalc(measure=measure, xi=x1i, ti=t1i, add=add, to=to, addyi=addyi, addvi=addvi)
-      dat.c <- escalc(measure=measure, xi=x2i, ti=t2i, add=add, to=to, addyi=addyi, addvi=addvi)
-   }
-
-   if (x$measure == "IRD") {
-      measure <- "IR"
-      dat.t <- escalc(measure=measure, xi=x1i, ti=t1i, add=add, to=to, addyi=addyi, addvi=addvi)
-      dat.c <- escalc(measure=measure, xi=x2i, ti=t2i, add=add, to=to, addyi=addyi, addvi=addvi)
-   }
-
-   if (x$measure == "IRSD") {
-      measure <-
-      dat.t <- escalc(measure=measure, xi=x1i, ti=t1i, add=add, to=to, addyi=addyi, addvi=addvi)
-      dat.c <- escalc(measure=measure, xi=x2i, ti=t2i, add=add, to=to, addyi=addyi, addvi=addvi)
-   }
+   dat.t <- .do.call(escalc, args.t)
+   dat.c <- .do.call(escalc, args.c)
 
    options(na.action = na.act)
 

@@ -10,8 +10,7 @@ print.matreg <- function(x, digits=x$digits, signif.stars=getOption("show.signif
       digits <- .get.digits(digits=digits, xdigits=x$digits, dmiss=FALSE)
    }
 
-   if (!exists(".rmspace"))
-      cat("\n")
+   .space()
 
    if (x$test == "t") {
       res.table <- data.frame(estimate=.fcf(c(x$tab$beta), digits[["est"]]), se=.fcf(x$tab$se, digits[["se"]]), tval=.fcf(x$tab$tval, digits[["test"]]), df=round(x$tab$df,2), pval=.pval(x$tab$pval, digits[["pval"]]), ci.lb=.fcf(x$tab$ci.lb, digits[["ci"]]), ci.ub=.fcf(x$tab$ci.ub, digits[["ci"]]), stringsAsFactors=FALSE)
@@ -26,16 +25,18 @@ print.matreg <- function(x, digits=x$digits, signif.stars=getOption("show.signif
    }
 
    tmp <- capture.output(print(res.table, quote=FALSE, right=TRUE, print.gap=2))
+   tmp[1] <- paste0(tmp[1], "\u200b")
    .print.table(tmp, mstyle)
 
    if (signif.legend) {
       cat("\n")
-      cat(mstyle$legend("---\nSignif. codes: "), mstyle$legend(attr(signif, "legend")))
+      cat(mstyle$legend("---"))
+      cat("\n")
+      cat(mstyle$legend("Signif. codes: "), mstyle$legend(attr(signif, "legend")))
       cat("\n")
    }
 
-   if (!exists(".rmspace"))
-      cat("\n")
+   .space()
 
    invisible()
 

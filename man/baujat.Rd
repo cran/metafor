@@ -18,16 +18,16 @@ baujat(x, \dots)
    \item{ylab}{title for the y-axis. If unspecified, the function tries to set an appropriate axis title.}
    \item{cex}{optional character expansion factor. If unspecified, the function tries to set this to a sensible value.}
    \item{symbol}{either an integer to specify the \code{pch} value (i.e., plotting symbol), or \code{"slab"} to plot the study labels, or \code{"ids"} (the default) to plot the study id numbers.}
-   \item{grid}{logical to specify whether a grid should be added to the plot (can also be a color name).}
+   \item{grid}{logical to specify whether a grid should be added to the plot. Can also be a color name.}
    \item{progbar}{logical to specify whether a progress bar should be shown (the default is \code{FALSE}).}
    \item{\dots}{other arguments.}
 }
 \details{
    The model specified via \code{x} must be a model fitted with either the \code{\link{rma.uni}}, \code{\link{rma.mh}}, or \code{\link{rma.peto}} functions.
 
-   Baujat et al. (2002) proposed a diagnostic plot to detect sources of heterogeneity in meta-analytic data. The plot shows the contribution of each study to the overall \mjseqn{Q}-test statistic for heterogeneity on the x-axis versus the influence of each study (defined as the standardized squared difference between the overall estimate based on a fixed-effects model with and without the study included in the model fitting) on the y-axis. The same type of plot can be produced by first fitting a fixed-effects model with either the \code{\link{rma.uni}} (using \code{method="FE"}), \code{\link{rma.mh}}, or \code{\link{rma.peto}} functions and then passing the fitted model object to the \code{baujat} function.
+   Baujat et al. (2002) proposed a diagnostic plot to detect sources of heterogeneity in meta-analytic data. The plot shows the contribution of each study to the overall \mjseqn{Q}-test statistic for heterogeneity on the x-axis versus the influence of each study (defined as the standardized squared difference between the overall estimate based on an equal-effects model with and without the study included in the model fitting) on the y-axis. The same type of plot can be produced by first fitting an equal-effects model with either the \code{\link{rma.uni}} (using \code{method="EE"}), \code{\link{rma.mh}}, or \code{\link{rma.peto}} functions and then passing the fitted model object to the \code{baujat} function.
 
-   For models fitted with the \code{\link{rma.uni}} function (which may involve moderators and/or which may be random/mixed-effects models), the idea underlying this type of plot can be generalized as follows (Viechtbauer, 2021): The x-axis then corresponds to the squared Pearson residual of a study, while the y-axis corresponds to the standardized squared difference between the predicted/fitted value for the study with and without the study included in the model fitting. Therefore, for a fixed-effects with moderators model, the x-axis corresponds to the contribution of the study to the \mjseqn{Q_E}-test statistic for residual heterogeneity.
+   For models fitted with the \code{\link{rma.uni}} function (which may be random-effects or mixed-effects meta-regressions models), the idea underlying this type of plot can be generalized as follows (Viechtbauer, 2021): The x-axis then corresponds to the squared Pearson residual of a study, while the y-axis corresponds to the standardized squared difference between the predicted/fitted value for the study with and without the study included in the model fitting.
 
    By default, the points plotted are the study id numbers, but one can also plot the study labels by setting \code{symbol="slab"} (if study labels are available within the model object) or one can specify a plotting symbol via the \code{symbol} argument that gets passed to \code{pch} (see \code{\link{points}} for possible options).
 }
@@ -50,7 +50,9 @@ baujat(x, \dots)
    Viechtbauer, W. (2021). Model checking in meta-analysis. In C. H. Schmid, T. Stijnen, & I. R. White (Eds.), \emph{Handbook of meta-analysis} (pp. 219--254). Boca Raton, FL: CRC Press. \verb{https://doi.org/10.1201/9781315119403}
 }
 \seealso{
-   \code{\link{rma.uni}}, \code{\link{rma.mh}}, \code{\link{rma.peto}}, \code{\link{influence.rma.uni}}, \code{\link{radial}}
+   \code{\link{rma.uni}}, \code{\link{rma.mh}} and \code{\link{rma.peto}} for functions to fit models for which Baujat plots can be created.
+
+   \code{\link{influence.rma.uni}} for other model diagnostics.
 }
 \examples{
 ### copy data from Pignon et al. (2000) into 'dat'
@@ -61,7 +63,7 @@ dat$yi <- with(dat, OmE/V)
 dat$vi <- with(dat, 1/V)
 
 ### meta-analysis based on all 65 trials
-res <- rma(yi, vi, data=dat, method="FE", slab=trial)
+res <- rma(yi, vi, data=dat, method="EE", slab=trial)
 
 ### create Baujat plot
 baujat(res)

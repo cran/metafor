@@ -1,6 +1,6 @@
 \name{llplot}
 \alias{llplot}
-\title{Likelihood Plot of a Parameter Corresponding to an Effect Size or Outcome Measure}
+\title{Plot of Likelihoods for Individual Studies}
 \description{
    Function to plot the likelihood of a certain parameter corresponding to an effect size or outcome measure given the study data. \loadmathjax
 }
@@ -52,7 +52,7 @@ llplot(measure, yi, vi, sei, ai, bi, ci, di, n1i, n2i, data, subset, drop00=TRUE
    Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \verb{https://doi.org/10.18637/jss.v036.i03}
 }
 \seealso{
-   \code{\link{rma.uni}}, \code{\link{rma.glmm}}
+   \code{\link{rma.uni}} and \code{\link{rma.glmm}} for model fitting functions that are based on corresponding likelihood functions.
 }
 \examples{
 ### calculate log risk ratios and corresponding sampling variances

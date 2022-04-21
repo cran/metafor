@@ -2,6 +2,8 @@
 
 ### see also: https://www.metafor-project.org/doku.php/plots:funnel_plot_with_trim_and_fill
 
+source("settings.r")
+
 context("Checking plots example: funnel plot with trim and fill")
 
 test_that("plot can be drawn.", {
@@ -14,9 +16,6 @@ test_that("plot can be drawn.", {
 
    ### decrease margins so the full space is used
    par(mar=c(5,4,1,2))
-
-   ### load ETS data
-   data(dat.hackshaw1998, package="metafor")
 
    ### fit random-effects model
    res <- rma(yi, vi, data=dat.hackshaw1998, measure="OR")
@@ -32,3 +31,5 @@ test_that("plot can be drawn.", {
    out <- capture.output(print(taf))
 
 })
+
+rm(list=ls())

@@ -159,6 +159,19 @@
 .is.vector <- function(x)
    is.atomic(x) && !is.matrix(x) && !is.null(x)
 
+### function to test if a string is an integer and to return the integer if so (otherwise return NA)
+
+.is.stringint <- function(x) {
+   is.int <- grepl("^[0-9]+L?$", x)
+   if (is.int) {
+      x <- sub("L", "", x, fixed=TRUE)
+      x <- as.integer(x)
+   } else {
+      x <- NA
+   }
+   return(x)
+}
+
 ############################################################################
 
 ### function to format p-values
@@ -190,6 +203,19 @@
 
 }
 
+### function to handle 'level' argument
+
+.level <- function(level, allow.vector=FALSE) {
+
+   if (!allow.vector && length(level) != 1L) {
+      mstyle <- .get.mstyle("crayon" %in% .packages())
+      stop(mstyle$stop("Argument 'level' must specify a single value."))
+   }
+
+   ifelse(level == 0, 1, ifelse(level >= 1, (100-level)/100, ifelse(level > .5, 1-level, level)))
+
+}
+
 ############################################################################
 
 ### function to print a named (character) vector right aligned with
@@ -203,14 +229,44 @@
    len.n   <- nchar(names(x))
    len.x   <- nchar(x, keepNA=FALSE)
    len.max <- pmax(len.n, len.x)
-   format  <- sapply(len.max, function(x) paste("%", x, "s", sep=""))
+   #format  <- sapply(len.max, function(x) paste("%", x, "s", sep=""))
 
-   row.n <- paste(sprintf(format, names(x)), collapse="  ")
-   row.x <- paste(sprintf(format, x), collapse="  ")
+   #row.n <- paste(sprintf(format, names(x)), collapse="  ") # sprintf("%3s", "\u00b9") isn't right
+   #row.x <- paste(sprintf(format, x), collapse="  ")
+
+   #f <- function(x, n)
+   #   paste0(paste0(rep(" ", n-nchar(x)), collapse=""), x, collapse="")
+   #row.n <- paste(mapply(f, names(x), len.max), collapse="  ")
+   #row.x <- paste(mapply(f, unname(x), len.max), collapse="  ")
+
+   row.n <- paste(mapply(formatC, names(x), width=len.max), collapse="  ") # formatC("\u00b9", width=3) works
+   row.x <- paste(mapply(formatC, x, width=len.max), collapse="  ")
 
    cat(row.n, "\n", row.x, "\n", sep="")
 
 }
+
+############################################################################
+
+.space <- function(x=TRUE) {
+   no.rmspace <- !exists(".rmspace")
+   if (no.rmspace && x)
+      cat("\n")
+}
+
+.get.footsym <- function() {
+
+   if (exists(".footsym")) {
+      fs <- get(".footsym")
+   } else {
+      fs <- c("\u00b9", "1)", "\u00b2", "2)", "\u00b3", "3)")
+   }
+
+   return(fs)
+
+}
+
+# .footsym <- c("\u00b9", "\u00b9\u207e", "\u00b2", "\u00b2\u207e", "\u00b3", "\u00b3\u207e")
 
 ############################################################################
 
@@ -237,6 +293,9 @@
 
 .make.unique <- function(x) {
 
+   if (is.null(x))
+      return(NULL)
+
    x <- as.character(x)
    ux <- unique(x)
 
@@ -258,14 +317,76 @@
 
 .chkdots <- function(ddd, okargs) {
 
-   mstyle <- .get.mstyle("crayon" %in% .packages())
-
    for (i in seq_along(okargs))
       ddd[okargs[i]] <- NULL
 
-   if (length(ddd) > 0L)
+   if (length(ddd) > 0L) {
+      mstyle <- .get.mstyle("crayon" %in% .packages())
       warning(mstyle$warning(paste0("Extra argument", ifelse(length(ddd) > 1L, "s ", " "), "(", paste0("'", names(ddd), "'", collapse=", "), ") disregarded.")), call.=FALSE)
+   }
 
+}
+
+############################################################################
+
+.getx <- function(x, mf, data, enclos=sys.frame(sys.parent(n=2))) {
+
+   mstyle <- .get.mstyle("crayon" %in% .packages())
+
+   mf.x <- mf[[match(x, names(mf))]]
+   out <- try(eval(mf.x, data, enclos), silent=TRUE) # NULL if x was not specifified
+
+   spec <- x %in% names(mf)
+
+   if (inherits(out, "try-error") || is.function(out))
+      stop(mstyle$stop(paste0("Cannot find the object/variable ('", deparse(mf.x), "') specified for the '", x, "' argument.")), call.=FALSE)
+
+   # note: is.function() check catches case where 'vi' is the utils::vi() function and other shenanigans
+
+   if (spec && is.null(out)) {
+      mf.txt <- deparse(mf.x)
+      if (mf.txt == "NULL") {
+         mf.txt <- " "
+      } else {
+         mf.txt <- paste0(" ('", mf.txt, "') ")
+      }
+      stop(mstyle$stop(paste0(deparse(mf)[1], ":\nThe object/variable", mf.txt, "specified for the '", x, "' argument is NULL.")), call.=FALSE)
+   }
+
+   return(out)
+
+}
+
+.getfromenv <- function(what, element, envir=.metafor, default=NULL) {
+
+   x <- try(get(what, envir=envir, inherits=FALSE), silent=TRUE)
+   if (inherits(x, "try-error")) {
+      return(default)
+   } else {
+      if (missing(element)) {
+         return(x)
+      } else {
+         x <- x[[element]]
+         if (is.null(x)) {
+            return(default)
+         } else {
+            return(x)
+         }
+      }
+   }
+
+}
+
+### a version of do.call() that allows for the arguments to be passed via ... (i.e., can either be a list or not) and removes NULL arguments
+
+.do.call <- function(fun, ...) {
+   if (is.list(..1) && ...length() == 1L) {
+      args <- c(...)
+   } else {
+      args <- list(...)
+   }
+   args <- args[!sapply(args, is.null)]
+   do.call(fun, args)
 }
 
 ############################################################################
@@ -292,6 +413,77 @@
 
 ############################################################################
 
+.chkviarg <- function(x) {
+
+   runvicheck <- .getfromenv("runvicheck", default=TRUE)
+
+   if (runvicheck) {
+
+      x <- deparse(x)
+      xl <- tolower(x)
+
+      ok <- TRUE
+
+      # starts with 'se' or 'std'
+      if (any(grepl("^se", xl)))
+         ok <- FALSE
+      if (any(grepl("^std", xl)))
+         ok <- FALSE
+      # catch cases where vi=<data frame>$se and vi=<data frame>$std
+      if (any(grepl("^[[:alpha:]][[:alnum:]_.]*\\$se", xl)))
+         ok <- FALSE
+      if (any(grepl("^[[:alpha:]][[:alnum:]_.]*\\$std", xl)))
+         ok <- FALSE
+
+      # but if ^, *, or ( appears, don't issue a warning
+      if (any(grepl("^", xl, fixed=TRUE)))
+         ok <- TRUE
+      if (any(grepl("*", xl, fixed=TRUE)))
+         ok <- TRUE
+      if (any(grepl("(", xl, fixed=TRUE)))
+         ok <- TRUE
+
+      if (!ok) {
+         mstyle <- .get.mstyle("crayon" %in% .packages())
+         warning(mstyle$warning(paste0("The 'vi' argument is for specifying the sampling variances,\nbut '", x, "' sounds like this variable may contain standard\nerrors (maybe use 'sei=", x, "' instead?).")), call.=FALSE)
+         try(assign("runvicheck", FALSE, envir=.metafor), silent=TRUE)
+      }
+
+   }
+
+}
+
+############################################################################
+
+### check that the lengths of all non-zero length elements given via ... are equal to each other
+
+.equal.length <- function(...) {
+
+   ddd <- list(...)
+   #ddd <- ddd[!sapply(ddd, is.null)] # length(NULL) is 0 anyway
+   ddd <- ddd[sapply(ddd, function(x) length(x) > 0)]
+   if (length(ddd) == 0L) { # if nothing left, return TRUE
+      return(TRUE)
+   } else {
+      ks <- lengths(ddd)
+      return(length(unique(ks)) == 1L)
+   }
+
+}
+
+### check that all elements are not of length 0 (NULL)
+
+.all.specified <- function(...) {
+
+   ddd  <- list(...)
+   not0  <- lengths(ddd) != 0L
+   all(not0)
+   #all(!sapply(ddd, is.null))
+
+}
+
+############################################################################
+
 ### set axis label (for forest, funnel, and labbe functions)
 
 .setlab <- function(measure, transf.char, atransf.char, gentype, short=FALSE) {
@@ -309,57 +501,59 @@
 
       ######################################################################
       if (is.element(measure, c("RR","MPRR"))) {
-         if (transf.char == "FALSE" && atransf.char == "FALSE") {
+         if (identical(transf.char, "FALSE") && identical(atransf.char, "FALSE")) {
             lab <- ifelse(short, "Log[RR]", "Log Risk Ratio")
          } else {
             lab <- ifelse(short, lab, "Transformed Log Risk Ratio")
-            if (atransf.char == "exp" || atransf.char == "transf.exp.int")
+            funlist <- lapply(list(exp, transf.exp.int), deparse)
+            if (any(sapply(funlist, identical, atransf.char)))
                lab <- ifelse(short, "Risk Ratio", "Risk Ratio (log scale)")
-            if (transf.char == "exp" || transf.char == "transf.exp.int")
+            if (any(sapply(funlist, identical, transf.char)))
                lab <- ifelse(short, "Risk Ratio", "Risk Ratio")
          }
       }
-      if (is.element(measure, c("OR","PETO","D2OR","D2ORN","D2ORL","MPOR","MPORC","MPPETO"))) {
-         if (transf.char == "FALSE" && atransf.char == "FALSE") {
+      if (is.element(measure, c("OR","PETO","D2OR","D2ORN","D2ORL","MPOR","MPORC","MPPETO","MPORM"))) {
+         if (identical(transf.char, "FALSE") && identical(atransf.char, "FALSE")) {
             lab <- ifelse(short, "Log[OR]", "Log Odds Ratio")
          } else {
             lab <- ifelse(short, lab, "Transformed Log Odds Ratio")
-            if (atransf.char == "exp" || atransf.char == "transf.exp.int")
+            funlist <- lapply(list(exp, transf.exp.int), deparse)
+            if (any(sapply(funlist, identical, atransf.char)))
                lab <- ifelse(short, "Odds Ratio", "Odds Ratio (log scale)")
-            if (transf.char == "exp" || transf.char == "transf.exp.int")
+            if (any(sapply(funlist, identical, transf.char)))
                lab <- ifelse(short, "Odds Ratio", "Odds Ratio")
          }
       }
       if (is.element(measure, c("RD","MPRD"))) {
-         if (transf.char == "FALSE" && atransf.char == "FALSE") {
+         if (identical(transf.char, "FALSE") && identical(atransf.char, "FALSE")) {
             lab <- ifelse(short, "Risk Difference", "Risk Difference")
          } else {
             lab <- ifelse(short, lab, "Transformed Risk Difference")
          }
       }
       if (measure == "AS") {
-         if (transf.char == "FALSE" && atransf.char == "FALSE") {
+         if (identical(transf.char, "FALSE") && identical(atransf.char, "FALSE")) {
             lab <- ifelse(short, "Arcsine RD", "Arcsine Transformed Risk Difference")
          } else {
             lab <- ifelse(short, lab, "Transformed Arcsine Transformed Risk Difference")
          }
       }
       if (measure == "PHI") {
-         if (transf.char == "FALSE" && atransf.char == "FALSE") {
+         if (identical(transf.char, "FALSE") && identical(atransf.char, "FALSE")) {
             lab <- ifelse(short, "Phi", "Phi Coefficient")
          } else {
             lab <- ifelse(short, lab, "Transformed Phi Coefficient")
          }
       }
       if (measure == "YUQ") {
-         if (transf.char == "FALSE" && atransf.char == "FALSE") {
+         if (identical(transf.char, "FALSE") && identical(atransf.char, "FALSE")) {
             lab <- ifelse(short, "Yule's Q", "Yule's Q")
          } else {
             lab <- ifelse(short, lab, "Transformed Yule's Q")
          }
       }
       if (measure == "YUY") {
-         if (transf.char == "FALSE" && atransf.char == "FALSE") {
+         if (identical(transf.char, "FALSE") && identical(atransf.char, "FALSE")) {
             lab <- ifelse(short, "Yule's Y", "Yule's Y")
          } else {
             lab <- ifelse(short, lab, "Transformed Yule's Y")
@@ -367,25 +561,26 @@
       }
       ######################################################################
       if (measure == "IRR") {
-         if (transf.char == "FALSE" && atransf.char == "FALSE") {
+         if (identical(transf.char, "FALSE") && identical(atransf.char, "FALSE")) {
             lab <- ifelse(short, "Log[IRR]", "Log Incidence Rate Ratio")
          } else {
             lab <- ifelse(short, lab, "Transformed Log Incidence Rate Ratio")
-            if (atransf.char == "exp" || atransf.char == "transf.exp.int")
+            funlist <- lapply(list(exp, transf.exp.int), deparse)
+            if (any(sapply(funlist, identical, atransf.char)))
                lab <- ifelse(short, "Rate Ratio", "Incidence Rate Ratio (log scale)")
-            if (transf.char == "exp" || transf.char == "transf.exp.int")
+            if (any(sapply(funlist, identical, transf.char)))
                lab <- ifelse(short, "Rate Ratio", "Incidence Rate Ratio")
          }
       }
       if (measure == "IRD") {
-         if (transf.char == "FALSE" && atransf.char == "FALSE") {
+         if (identical(transf.char, "FALSE") && identical(atransf.char, "FALSE")) {
             lab <- ifelse(short, "IRD", "Incidence Rate Difference")
          } else {
             lab <- ifelse(short, lab, "Transformed Incidence Rate Difference")
          }
       }
       if (measure == "IRSD") {
-         if (transf.char == "FALSE" && atransf.char == "FALSE") {
+         if (identical(transf.char, "FALSE") && identical(atransf.char, "FALSE")) {
             lab <- ifelse(short, "IRSD", "Square Root Transformed Incidence Rate Difference")
          } else {
             lab <- ifelse(short, lab, "Transformed Square Root Transformed Incidence Rate Difference")
@@ -393,99 +588,104 @@
       }
       ######################################################################
       if (measure == "MD") {
-         if (transf.char == "FALSE" && atransf.char == "FALSE") {
+         if (identical(transf.char, "FALSE") && identical(atransf.char, "FALSE")) {
             lab <- ifelse(short, "MD", "Mean Difference")
          } else {
             lab <- ifelse(short, lab, "Transformed Mean Difference")
          }
       }
-      if (is.element(measure, c("SMD","SMDH","PBIT","OR2D","OR2DN","OR2DL","SMD1"))) {
-         if (transf.char == "FALSE" && atransf.char == "FALSE") {
+      if (is.element(measure, c("SMD","SMDH","SMD1","PBIT","OR2D","OR2DN","OR2DL"))) {
+         if (identical(transf.char, "FALSE") && identical(atransf.char, "FALSE")) {
             lab <- ifelse(short, "SMD", "Standardized Mean Difference")
          } else {
             lab <- ifelse(short, lab, "Transformed Standardized Mean Difference")
          }
       }
       if (measure == "ROM") {
-         if (transf.char == "FALSE" && atransf.char == "FALSE") {
+         if (identical(transf.char, "FALSE") && identical(atransf.char, "FALSE")) {
             lab <- ifelse(short, "Log[RoM]", "Log Ratio of Means")
          } else {
             lab <- ifelse(short, lab, "Transformed Log Ratio of Means")
-            if (atransf.char == "exp" || atransf.char == "transf.exp.int")
+            funlist <- lapply(list(exp, transf.exp.int), deparse)
+            if (any(sapply(funlist, identical, atransf.char)))
                lab <- ifelse(short, "Ratio of Means", "Ratio of Means (log scale)")
-            if (transf.char == "exp" || transf.char == "transf.exp.int")
+            if (any(sapply(funlist, identical, transf.char)))
                lab <- ifelse(short, "Ratio of Means", "Ratio of Means")
          }
       }
       if (measure == "RPB") {
-         if (transf.char == "FALSE" && atransf.char == "FALSE") {
+         if (identical(transf.char, "FALSE") && identical(atransf.char, "FALSE")) {
             lab <- ifelse(short, "Correlation", "Point-Biserial Correlation")
          } else {
             lab <- ifelse(short, lab, "Transformed Point-Biserial Correlation")
          }
       }
       if (measure == "CVR") {
-         if (transf.char == "FALSE" && atransf.char == "FALSE") {
+         if (identical(transf.char, "FALSE") && identical(atransf.char, "FALSE")) {
             lab <- ifelse(short, "Log[CVR]", "Log Coefficient of Variation Ratio")
          } else {
             lab <- ifelse(short, lab, "Transformed Log Coefficient of Variation Ratio")
-            if (atransf.char == "exp" || atransf.char == "transf.exp.int")
+            funlist <- lapply(list(exp, transf.exp.int), deparse)
+            if (any(sapply(funlist, identical, atransf.char)))
                lab <- ifelse(short, "CVR", "Coefficient of Variation Ratio (log scale)")
-            if (transf.char == "exp" || transf.char == "transf.exp.int")
+            if (any(sapply(funlist, identical, transf.char)))
                lab <- ifelse(short, "CVR", "Coefficient of Variation Ratio")
          }
       }
       if (measure == "VR") {
-         if (transf.char == "FALSE" && atransf.char == "FALSE") {
+         if (identical(transf.char, "FALSE") && identical(atransf.char, "FALSE")) {
             lab <- ifelse(short, "Log[VR]", "Log Variability Ratio")
          } else {
             lab <- ifelse(short, lab, "Transformed Log Variability Ratio")
-            if (atransf.char == "exp" || atransf.char == "transf.exp.int")
+            funlist <- lapply(list(exp, transf.exp.int), deparse)
+            if (any(sapply(funlist, identical, atransf.char)))
                lab <- ifelse(short, "VR", "Variability Ratio (log scale)")
-            if (transf.char == "exp" || transf.char == "transf.exp.int")
+            if (any(sapply(funlist, identical, transf.char)))
                lab <- ifelse(short, "VR", "Variability Ratio")
          }
       }
       ######################################################################
       if (is.element(measure, c("COR","UCOR","RTET","RBIS"))) {
-         if (transf.char == "FALSE" && atransf.char == "FALSE") {
+         if (identical(transf.char, "FALSE") && identical(atransf.char, "FALSE")) {
             lab <- ifelse(short, "Correlation", "Correlation Coefficient")
          } else {
             lab <- ifelse(short, lab, "Transformed Correlation Coefficient")
          }
       }
       if (measure == "ZCOR") {
-         if (transf.char == "FALSE" && atransf.char == "FALSE") {
+         if (identical(transf.char, "FALSE") && identical(atransf.char, "FALSE")) {
             lab <- ifelse(short, expression('Fisher\'s ' * z[r]), "Fisher's z Transformed Correlation Coefficient")
          } else {
             lab <- ifelse(short, lab, "Transformed Fisher's z Transformed Correlation Coefficient")
-            if (atransf.char == "transf.ztor" || atransf.char == "transf.ztor.int")
+            funlist <- lapply(list(transf.ztor, transf.ztor.int, tanh), deparse)
+            if (any(sapply(funlist, identical, atransf.char)))
                lab <- ifelse(short, "Correlation", "Correlation Coefficient")
-            if (transf.char == "transf.ztor" || transf.char == "transf.ztor.int")
+            if (any(sapply(funlist, identical, transf.char)))
                lab <- ifelse(short, "Correlation", "Correlation Coefficient")
          }
       }
       ######################################################################
       if (measure == "PCOR") {
-         if (transf.char == "FALSE" && atransf.char == "FALSE") {
+         if (identical(transf.char, "FALSE") && identical(atransf.char, "FALSE")) {
             lab <- ifelse(short, "Correlation", "Partial Correlation Coefficient")
          } else {
             lab <- ifelse(short, lab, "Transformed Partial Correlation Coefficient")
          }
       }
       if (measure == "ZPCOR") {
-         if (transf.char == "FALSE" && atransf.char == "FALSE") {
+         if (identical(transf.char, "FALSE") && identical(atransf.char, "FALSE")) {
             lab <- ifelse(short, expression('Fisher\'s ' * z[r]), "Fisher's z Transformed Partial Correlation Coefficient")
          } else {
             lab <- ifelse(short, lab, "Transformed Fisher's z Transformed Partial Correlation Coefficient")
-            if (atransf.char == "transf.ztor" || atransf.char == "transf.ztor.int")
+            funlist <- lapply(list(transf.ztor, transf.ztor.int, tanh), deparse)
+            if (any(sapply(funlist, identical, atransf.char)))
                lab <- ifelse(short, "Correlation", "Partial Correlation Coefficient")
-            if (transf.char == "transf.ztor" || transf.char == "transf.ztor.int")
+            if (any(sapply(funlist, identical, transf.char)))
                lab <- ifelse(short, "Correlation", "Partial Correlation Coefficient")
          }
       }
       if (measure == "SPCOR") {
-         if (transf.char == "FALSE" && atransf.char == "FALSE") {
+         if (identical(transf.char, "FALSE") && identical(atransf.char, "FALSE")) {
             lab <- ifelse(short, "Correlation", "Semi-Partial Correlation Coefficient")
          } else {
             lab <- ifelse(short, lab, "Transformed Semi-Partial Correlation Coefficient")
@@ -493,92 +693,99 @@
       }
       ######################################################################
       if (measure == "PR") {
-         if (transf.char == "FALSE" && atransf.char == "FALSE") {
+         if (identical(transf.char, "FALSE") && identical(atransf.char, "FALSE")) {
             lab <- ifelse(short, "Proportion", "Proportion")
          } else {
             lab <- ifelse(short, lab, "Transformed Proportion")
          }
       }
       if (measure == "PLN") {
-         if (transf.char == "FALSE" && atransf.char == "FALSE") {
+         if (identical(transf.char, "FALSE") && identical(atransf.char, "FALSE")) {
             lab <- ifelse(short, "Log[Pr]", "Log Proportion")
          } else {
             lab <- ifelse(short, lab, "Transformed Log Proportion")
-            if (atransf.char == "exp" || atransf.char == "transf.exp.int")
+            funlist <- lapply(list(exp, transf.exp.int), deparse)
+            if (any(sapply(funlist, identical, atransf.char)))
                lab <- ifelse(short, "Proportion", "Proportion (log scale)")
-            if (transf.char == "exp" || transf.char == "transf.exp.int")
+            if (any(sapply(funlist, identical, transf.char)))
                lab <- ifelse(short, "Proportion", "Proportion")
          }
       }
       if (measure == "PLO") {
-         if (transf.char == "FALSE" && atransf.char == "FALSE") {
+         if (identical(transf.char, "FALSE") && identical(atransf.char, "FALSE")) {
             lab <- ifelse(short, "Log[Odds]", "Log Odds")
          } else {
             lab <- ifelse(short, lab, "Transformed Log Odds")
-            if (atransf.char == "transf.ilogit" || atransf.char == "transf.ilogit.int" || atransf.char == "plogis")
+            funlist <- lapply(list(transf.ilogit, transf.ilogit.int, plogis), deparse)
+            if (any(sapply(funlist, identical, atransf.char)))
                lab <- ifelse(short, "Proportion", "Proportion (logit scale)")
-            if (transf.char == "transf.ilogit" || transf.char == "transf.ilogit.int" || transf.char == "plogis")
+            if (any(sapply(funlist, identical, transf.char)))
                lab <- ifelse(short, "Proportion", "Proportion")
-            if (atransf.char == "exp" || atransf.char == "transf.exp.int")
+            funlist <- lapply(list(exp, transf.exp.int), deparse)
+            if (any(sapply(funlist, identical, atransf.char)))
                lab <- ifelse(short, "Odds", "Odds (log scale)")
-            if (transf.char == "exp" || transf.char == "transf.exp.int")
+            if (any(sapply(funlist, identical, transf.char)))
                lab <- ifelse(short, "Odds", "Odds")
          }
       }
       if (measure == "PAS") {
-         if (transf.char == "FALSE" && atransf.char == "FALSE") {
+         if (identical(transf.char, "FALSE") && identical(atransf.char, "FALSE")) {
             lab <- ifelse(short, expression(arcsin(sqrt(p))), "Arcsine Transformed Proportion")
          } else {
             lab <- ifelse(short, lab, "Transformed Arcsine Transformed Proportion")
-            if (atransf.char == "transf.iarcsin" || atransf.char == "transf.iarcsin.int")
+            funlist <- lapply(list(transf.iarcsin), deparse)
+            if (any(sapply(funlist, identical, atransf.char)))
                lab <- ifelse(short, "Proportion", "Proportion (arcsine scale)")
-            if (transf.char == "transf.iarcsin" || transf.char == "transf.iarcsin.int")
+            if (any(sapply(funlist, identical, transf.char)))
                lab <- ifelse(short, "Proportion", "Proportion")
          }
       }
       if (measure == "PFT") {
-         if (transf.char == "FALSE" && atransf.char == "FALSE") {
+         if (identical(transf.char, "FALSE") && identical(atransf.char, "FALSE")) {
             lab <- ifelse(short, "PFT", "Double Arcsine Transformed Proportion")
          } else {
             lab <- ifelse(short, lab, "Transformed Double Arcsine Transformed Proportion")
-            if (atransf.char == "transf.ipft.hm")
+            funlist <- lapply(list(transf.ipft.hm), deparse)
+            if (any(sapply(funlist, identical, atransf.char)))
                lab <- ifelse(short, "Proportion", "Proportion")
-            if (transf.char == "transf.ipft.hm")
+            if (any(sapply(funlist, identical, transf.char)))
                lab <- ifelse(short, "Proportion", "Proportion")
          }
       }
       ######################################################################
       if (measure == "IR") {
-         if (transf.char == "FALSE" && atransf.char == "FALSE") {
+         if (identical(transf.char, "FALSE") && identical(atransf.char, "FALSE")) {
             lab <- ifelse(short, "Rate", "Incidence Rate")
          } else {
             lab <- ifelse(short, lab, "Transformed Incidence Rate")
          }
       }
       if (measure == "IRLN") {
-         if (transf.char == "FALSE" && atransf.char == "FALSE") {
+         if (identical(transf.char, "FALSE") && identical(atransf.char, "FALSE")) {
             lab <- ifelse(short, "Log[IR]", "Log Incidence Rate")
          } else {
             lab <- ifelse(short, lab, "Transformed Log Incidence Rate")
-            if (atransf.char == "exp" || atransf.char == "transf.exp.int")
+            funlist <- lapply(list(exp, transf.exp.int), deparse)
+            if (any(sapply(funlist, identical, atransf.char)))
                lab <- ifelse(short, "Rate", "Incidence Rate (log scale)")
-            if (transf.char == "exp" || transf.char == "transf.exp.int")
+            if (any(sapply(funlist, identical, transf.char)))
                lab <- ifelse(short, "Rate", "Incidence Rate")
          }
       }
       if (measure == "IRS") {
-         if (transf.char == "FALSE" && atransf.char == "FALSE") {
+         if (identical(transf.char, "FALSE") && identical(atransf.char, "FALSE")) {
             lab <- ifelse(short, "Sqrt[IR]", "Square Root Transformed Incidence Rate")
          } else {
             lab <- ifelse(short, lab, "Transformed Square Root Transformed Incidence Rate")
-            if (atransf.char == "transf.isqrt" || atransf.char == "transf.isqrt.int")
+            funlist <- lapply(list(transf.isqrt, atransf.char), deparse)
+            if (any(sapply(funlist, identical, atransf.char)))
                lab <- ifelse(short, "Rate", "Incidence Rate (square root scale)")
-            if (transf.char == "transf.isqrt" || transf.char == "transf.isqrt.int")
+            if (any(sapply(funlist, identical, transf.char)))
                lab <- ifelse(short, "Rate", "Incidence Rate")
          }
       }
       if (measure == "IRFT") {
-         if (transf.char == "FALSE" && atransf.char == "FALSE") {
+         if (identical(transf.char, "FALSE") && identical(atransf.char, "FALSE")) {
             lab <- ifelse(short, "IRFT", "Freeman-Tukey Transformed Incidence Rate")
          } else {
             lab <- ifelse(short, lab, "Transformed Freeman-Tukey Transformed Incidence Rate")
@@ -586,121 +793,149 @@
       }
       ######################################################################
       if (measure == "MN") {
-         if (transf.char == "FALSE" && atransf.char == "FALSE") {
+         if (identical(transf.char, "FALSE") && identical(atransf.char, "FALSE")) {
             lab <- ifelse(short, "Mean", "Mean")
          } else {
             lab <- ifelse(short, lab, "Transformed Mean")
          }
       }
       if (measure == "MNLN") {
-         if (transf.char == "FALSE" && atransf.char == "FALSE") {
+         if (identical(transf.char, "FALSE") && identical(atransf.char, "FALSE")) {
             lab <- ifelse(short, "Log[Mean]", "Log Mean")
          } else {
             lab <- ifelse(short, lab, "Transformed Log Mean")
-            if (atransf.char == "exp" || atransf.char == "transf.exp.int")
+            funlist <- lapply(list(exp, transf.exp.int), deparse)
+            if (any(sapply(funlist, identical, atransf.char)))
                lab <- ifelse(short, "Mean", "Mean (log scale)")
-            if (transf.char == "exp" || transf.char == "transf.exp.int")
+            if (any(sapply(funlist, identical, transf.char)))
                lab <- ifelse(short, "Mean", "Mean")
          }
       }
+      if (measure == "SMN") {
+         if (identical(transf.char, "FALSE") && identical(atransf.char, "FALSE")) {
+            lab <- ifelse(short, "SM", "Standardized Mean")
+         } else {
+            lab <- ifelse(short, lab, "Transformed Standardized Mean")
+         }
+      }
       if (measure == "CVLN") {
-         if (transf.char == "FALSE" && atransf.char == "FALSE") {
+         if (identical(transf.char, "FALSE") && identical(atransf.char, "FALSE")) {
             lab <- ifelse(short, "Log[CV]", "Log Coefficient of Variation")
          } else {
             lab <- ifelse(short, lab, "Transformed Log Coefficient of Variation")
-            if (atransf.char == "exp" || atransf.char == "transf.exp.int")
+            funlist <- lapply(list(exp, transf.exp.int), deparse)
+            if (any(sapply(funlist, identical, atransf.char)))
                lab <- ifelse(short, "CV", "Coefficient of Variation (log scale)")
-            if (transf.char == "exp" || transf.char == "transf.exp.int")
+            if (any(sapply(funlist, identical, transf.char)))
                lab <- ifelse(short, "CV", "Coefficient of Variation")
          }
       }
       if (measure == "SDLN") {
-         if (transf.char == "FALSE" && atransf.char == "FALSE") {
+         if (identical(transf.char, "FALSE") && identical(atransf.char, "FALSE")) {
             lab <- ifelse(short, "Log[SD]", "Log Standard Deviation")
          } else {
             lab <- ifelse(short, lab, "Transformed Log Standard Deviation")
-            if (atransf.char == "exp" || atransf.char == "transf.exp.int")
+            funlist <- lapply(list(exp, transf.exp.int), deparse)
+            if (any(sapply(funlist, identical, atransf.char)))
                lab <- ifelse(short, "SD", "Standard Deviation (log scale)")
-            if (transf.char == "exp" || transf.char == "transf.exp.int")
+            if (any(sapply(funlist, identical, transf.char)))
                lab <- ifelse(short, "SD", "Standard Deviation")
          }
       }
       ######################################################################
       if (measure == "MC") {
-         if (transf.char == "FALSE" && atransf.char == "FALSE") {
+         if (identical(transf.char, "FALSE") && identical(atransf.char, "FALSE")) {
             lab <- ifelse(short, "Mean Change", "Mean Change")
          } else {
             lab <- ifelse(short, lab, "Transformed Mean Change")
          }
       }
       if (is.element(measure, c("SMCC","SMCR","SMCRH"))) {
-         if (transf.char == "FALSE" && atransf.char == "FALSE") {
+         if (identical(transf.char, "FALSE") && identical(atransf.char, "FALSE")) {
             lab <- ifelse(short, "SMC", "Standardized Mean Change")
          } else {
             lab <- ifelse(short, lab, "Transformed Standardized Mean Change")
          }
       }
       if (measure == "ROMC") {
-         if (transf.char == "FALSE" && atransf.char == "FALSE") {
+         if (identical(transf.char, "FALSE") && identical(atransf.char, "FALSE")) {
             lab <- ifelse(short, "Log[RoM]", "Log Ratio of Means")
          } else {
             lab <- ifelse(short, lab, "Transformed Log Ratio of Means")
-            if (atransf.char == "exp" || atransf.char == "transf.exp.int")
+            funlist <- lapply(list(exp, transf.exp.int), deparse)
+            if (any(sapply(funlist, identical, atransf.char)))
                lab <- ifelse(short, "Ratio of Means", "Ratio of Means (log scale)")
-            if (transf.char == "exp" || transf.char == "transf.exp.int")
+            if (any(sapply(funlist, identical, transf.char)))
                lab <- ifelse(short, "Ratio of Means", "Ratio of Means")
          }
       }
       if (measure == "CVRC") {
-         if (transf.char == "FALSE" && atransf.char == "FALSE") {
+         if (identical(transf.char, "FALSE") && identical(atransf.char, "FALSE")) {
             lab <- ifelse(short, "Log[CVR]", "Log Coefficient of Variation Ratio")
          } else {
             lab <- ifelse(short, lab, "Transformed Log Coefficient of Variation Ratio")
-            if (atransf.char == "exp" || atransf.char == "transf.exp.int")
+            funlist <- lapply(list(exp, transf.exp.int), deparse)
+            if (any(sapply(funlist, identical, atransf.char)))
                lab <- ifelse(short, "CVR", "Coefficient of Variation Ratio (log scale)")
-            if (transf.char == "exp" || transf.char == "transf.exp.int")
+            if (any(sapply(funlist, identical, transf.char)))
                lab <- ifelse(short, "CVR", "Coefficient of Variation Ratio")
          }
       }
       if (measure == "VRC") {
-         if (transf.char == "FALSE" && atransf.char == "FALSE") {
+         if (identical(transf.char, "FALSE") && identical(atransf.char, "FALSE")) {
             lab <- ifelse(short, "Log[VR]", "Log Variability Ratio")
          } else {
             lab <- ifelse(short, lab, "Transformed Log Variability Ratio")
-            if (atransf.char == "exp" || atransf.char == "transf.exp.int")
+            funlist <- lapply(list(exp, transf.exp.int), deparse)
+            if (any(sapply(funlist, identical, atransf.char)))
                lab <- ifelse(short, "VR", "Variability Ratio (log scale)")
-            if (transf.char == "exp" || transf.char == "transf.exp.int")
+            if (any(sapply(funlist, identical, transf.char)))
                lab <- ifelse(short, "VR", "Variability Ratio")
          }
       }
       ######################################################################
       if (measure == "ARAW") {
-         if (transf.char == "FALSE" && atransf.char == "FALSE") {
+         if (identical(transf.char, "FALSE") && identical(atransf.char, "FALSE")) {
             lab <- ifelse(short, "Alpha", "Cronbach's alpha")
          } else {
             lab <- ifelse(short, lab, "Transformed Cronbach's alpha")
          }
       }
       if (measure == "AHW") {
-         if (transf.char == "FALSE" && atransf.char == "FALSE") {
+         if (identical(transf.char, "FALSE") && identical(atransf.char, "FALSE")) {
             lab <- ifelse(short, expression('Alpha'[HW]), "Transformed Cronbach's alpha")
          } else {
             lab <- ifelse(short, lab, "Transformed Cronbach's alpha")
-            if (atransf.char == "transf.iahw")
+            funlist <- lapply(list(transf.iahw), deparse)
+            if (any(sapply(funlist, identical, atransf.char)))
                lab <- ifelse(short, "Alpha", "Cronbach's alpha")
-            if (transf.char == "transf.iahw")
+            if (any(sapply(funlist, identical, transf.char)))
                lab <- ifelse(short, "Alpha", "Cronbach's alpha")
          }
       }
       if (measure == "ABT") {
-         if (transf.char == "FALSE" && atransf.char == "FALSE") {
+         if (identical(transf.char, "FALSE") && identical(atransf.char, "FALSE")) {
             lab <- ifelse(short, expression('Alpha'[B]), "Transformed Cronbach's alpha")
          } else {
             lab <- ifelse(short, lab, "Transformed Cronbach's alpha")
-            if (atransf.char == "transf.iabt")
+            funlist <- lapply(list(transf.iabt), deparse)
+            if (any(sapply(funlist, identical, atransf.char)))
                lab <- ifelse(short, "Alpha", "Cronbach's alpha")
-            if (transf.char == "transf.iabt")
+            if (any(sapply(funlist, identical, transf.char)))
                lab <- ifelse(short, "Alpha", "Cronbach's alpha")
+         }
+      }
+      ######################################################################
+      if (measure == "REH") {
+         if (identical(transf.char, "FALSE") && identical(atransf.char, "FALSE")) {
+            lab <- ifelse(short, "Log[REH]", "Log Relative Excess Heterozygosity")
+         } else {
+            lab <- ifelse(short, lab, "Transformed Log Relative Excess Heterozygosity")
+            funlist <- lapply(list(exp, transf.exp.int), deparse)
+            if (any(sapply(funlist, identical, atransf.char)))
+               lab <- ifelse(short, "Relative Excess Heterozygosity", "Relative Excess Heterozygosity (log scale)")
+            if (any(sapply(funlist, identical, transf.char)))
+               lab <- ifelse(short, "Relative Excess Heterozygosity", "Relative Excess Heterozygosity")
          }
       }
       ######################################################################
@@ -737,10 +972,20 @@
       } else {
          header <- .mstyle$header
       }
-      if (is.null(.mstyle$body)) {
-         body <- crayon::reset
+      if (is.null(.mstyle$body1)) {
+         body1 <- crayon::reset
       } else {
-         body <- .mstyle$body
+         body1 <- .mstyle$body1
+      }
+      if (is.null(.mstyle$body2)) {
+         body2 <- crayon::reset
+      } else {
+         body2 <- .mstyle$body2
+      }
+      if (is.null(.mstyle$na)) {
+         na <- crayon::reset
+      } else {
+         na <- .mstyle$na
       }
       if (is.null(.mstyle$text)) {
          text <- crayon::reset
@@ -774,6 +1019,7 @@
       }
       if (is.null(.mstyle$legend)) {
          legend <- crayon::silver
+         #legend <- crayon::make_style("gray90")
       } else {
          legend <- .mstyle$legend
       }
@@ -783,7 +1029,9 @@
       tmp <- function(...) paste0(...)
       section <- tmp
       header  <- tmp
-      body    <- tmp
+      body1   <- tmp
+      body2   <- tmp
+      na      <- tmp
       text    <- tmp
       result  <- tmp
       stop    <- tmp
@@ -794,7 +1042,7 @@
 
    }
 
-   return(list(section=section, header=header, body=body, text=text, result=result, stop=stop, warning=warning, message=message, verbose=verbose, legend=legend))
+   return(list(section=section, header=header, body1=body1, body2=body2, na=na, text=text, result=result, stop=stop, warning=warning, message=message, verbose=verbose, legend=legend))
 
 }
 
@@ -812,23 +1060,31 @@
 
 }
 
+.is.even <- function(x) x %% 2 == 0
+
 .print.table <- function(x, mstyle) {
 
    is.header <- !grepl(" [-0-9]", x)
+   has.header <- any(is.header)
 
    for (i in seq_along(x)) {
       if (is.header[i]) {
          x[i] <- trimws(x[i], which="right")
          x[i] <- mstyle$header(x[i])
       } else {
-         x[i] <- mstyle$body(x[i])
+         x[i] <- gsub("NA", mstyle$na("NA"), x[i], fixed=TRUE)
+         if (.is.even(i-has.header)) {
+            x[i] <- mstyle$body2(x[i])
+         } else {
+            x[i] <- mstyle$body1(x[i])
+         }
       }
       cat(x[i], "\n")
    }
 
 }
 
-#.set.mstyle.1 <- parse(text=".mstyle <- list(section=make_style(\"gray90\")$bold, header=make_style(\"skyblue1\")$bold$underline, body=make_style(\"skyblue2\"), text=make_style(\"slateblue3\"), result=make_style(\"slateblue1\"))")
+#.set.mstyle.1 <- str2lang(".mstyle <- list(section=make_style(\"gray90\")$bold, header=make_style(\"skyblue1\")$bold$underline, body=make_style(\"skyblue2\"), text=make_style(\"slateblue3\"), result=make_style(\"slateblue1\"))")
 #eval(metafor:::.set.mstyle.1)
 
 ############################################################################
@@ -916,7 +1172,7 @@
 
 ### to register getfit method for 'rma.uni' and 'rma.mv' objects: eval(metafor:::.glmulti)
 
-.glmulti <- parse(text="
+.glmulti <- str2expression("
 
 if (!(\"glmulti\" %in% .packages()))
    stop(\"Must load the 'glmulti' package first to use this code.\")
@@ -955,7 +1211,7 @@ setMethod(\"getfit\", \"rma.glmm\", function(object, ...) {
 
 ### helper functions to make MuMIn work together with metafor
 
-.MuMIn <- parse(text="
+.MuMIn <- str2expression("
 
 makeArgs.rma <- function (obj, termNames, comb, opt, ...) {
    ret <- MuMIn:::makeArgs.default(obj, termNames, comb, opt)
@@ -972,7 +1228,7 @@ coefTable.rma <- function (model, ...) {
 ### helper functions to make mice work together with metafor (note: no longer
 ### needed, as there are glance and tidy methods for rma objects in broom now)
 
-.mice <- parse(text="
+.mice <- str2expression("
 
 glance.rma <- function (x, ...)
    data.frame(df.residual=df.residual(x))
@@ -1000,7 +1256,7 @@ tidy.rma <- function (x, ...) {
 
    maxlen <- max(nchar(unique(x)))
 
-   for (l in 1:maxlen) {
+   for (l in seq_len(maxlen)) {
       tab <- table(x, substr(x, 1, l))
       if (nrow(tab) == n && ncol(tab) == n && sum(tab[upper.tri(tab)]) == 0 && sum(tab[lower.tri(tab)]) == 0)
          break
@@ -1041,6 +1297,7 @@ tidy.rma <- function (x, ...) {
    mstyle <- .get.mstyle("crayon" %in% .packages())
 
    if (is.logical(x)) {
+      x <- x[seq_len(k)]
       if (anyNA(x))
          x[is.na(x)] <- FALSE
    }
@@ -1091,17 +1348,17 @@ tidy.rma <- function (x, ...) {
 
 .tes.intfun <- function(x, theta, tau, sei, H0, alternative, crit) {
    if (alternative == "two.sided")
-      pow <- (pnorm(crit, mean=(x-H0)/sei, 1, lower.tail=FALSE) + pnorm(-crit, mean=(x-H0)/sei, 1, lower.tail=TRUE))
+      pow <- (pnorm(crit, mean=(x-H0)/sei, sd=1, lower.tail=FALSE) + pnorm(-crit, mean=(x-H0)/sei, sd=1, lower.tail=TRUE))
    if (alternative == "greater")
-      pow <- pnorm(crit, mean=(x-H0)/sei, 1, lower.tail=FALSE)
+      pow <- pnorm(crit, mean=(x-H0)/sei, sd=1, lower.tail=FALSE)
    if (alternative == "less")
-      pow <- pnorm(crit, mean=(x-H0)/sei, 1, lower.tail=TRUE)
+      pow <- pnorm(crit, mean=(x-H0)/sei, sd=1, lower.tail=TRUE)
    res <- pow * dnorm(x, theta, tau)
    return(res)
 }
 
 .tes.lim <- function(theta, yi, vi, H0, alternative, alpha, tau2, test, tes.alternative, progbar, tes.alpha, correct, rel.tol, subdivisions, tau2.lb) {
-   pval <- tes.default(x=yi, vi=vi, H0=H0, alternative=alternative, alpha=alpha, theta=theta, tau2=tau2, test=test, tes.alternative=tes.alternative, progbar=progbar,
+   pval <- tes(x=yi, vi=vi, H0=H0, alternative=alternative, alpha=alpha, theta=theta, tau2=tau2, test=test, tes.alternative=tes.alternative, progbar=progbar,
                        tes.alpha=tes.alpha, correct=correct, rel.tol=rel.tol, subdivisions=subdivisions, tau2.lb=tau2.lb, find.lim=FALSE)$pval
    #cat("theta = ", theta, " pval = ", pval, "\n")
    return(pval - tes.alpha)
@@ -1141,7 +1398,7 @@ tidy.rma <- function (x, ...) {
    mus   <- rep(NA_real_, iters)
    pvals <- rep(NA_real_, iters)
 
-   for (j in 1:iters) {
+   for (j in seq_len(iters)) {
       yinew <- c(yi, rnorm(new, 0, sqrt(vnew+tau2)))
       vinew <- c(vi, rep(vnew, new))
       tmp <- .fsn.fitre(yinew, vinew)

@@ -6,8 +6,7 @@ print.regtest <- function(x, digits=x$digits, ret.fit=x$ret.fit, ...) {
 
    digits <- .get.digits(digits=digits, xdigits=x$digits, dmiss=FALSE)
 
-   if (!exists(".rmspace"))
-      cat("\n")
+   .space()
 
    cat(mstyle$section("Regression Test for Funnel Plot Asymmetry"))
    cat("\n\n")
@@ -33,15 +32,13 @@ print.regtest <- function(x, digits=x$digits, ret.fit=x$ret.fit, ...) {
    cat("\n")
 
    if (ret.fit) {
-      if (exists(".rmspace"))
-         cat("\n")
+      .space(FALSE)
       if (x$model == "lm") {
          print(summary(x$fit))
       } else {
          print(x$fit)
       }
-      if (exists(".rmspace"))
-         cat("\n")
+      .space(FALSE)
    } else {
       cat("\n")
    }
@@ -50,7 +47,7 @@ print.regtest <- function(x, digits=x$digits, ret.fit=x$ret.fit, ...) {
    if (is.na(x$ddf)) {
       cat(mstyle$result(paste0("z = ", .fcf(x$zval, digits[["test"]]), ", p ", .pval(x$pval, digits[["pval"]], showeq=TRUE, sep=" "))))
    } else {
-      cat(mstyle$result(paste0("t = ", .fcf(x$zval, digits[["test"]]), ", df = ", x$ddf, ", p ", .pval(x$pval, digits[["pval"]], showeq=TRUE, sep=" "))))
+      cat(mstyle$result(paste0("t = ", .fcf(x$zval, digits[["test"]]), ", df = ", round(x$ddf, 2), ", p ", .pval(x$pval, digits[["pval"]], showeq=TRUE, sep=" "))))
    }
    cat("\n")
 
@@ -65,8 +62,7 @@ print.regtest <- function(x, digits=x$digits, ret.fit=x$ret.fit, ...) {
       cat("\n")
    }
 
-   if (!exists(".rmspace"))
-      cat("\n")
+   .space()
 
    invisible()
 

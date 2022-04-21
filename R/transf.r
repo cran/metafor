@@ -1,8 +1,97 @@
+############################################################################
+
+.chktargsint <- function(targs) {
+
+   if (length(targs) > 3L)
+      stop("Length of 'targs' argument must be <= 3.", call.=FALSE)
+
+   if (.is.vector(targs)) {
+      if (is.null(names(targs))) {
+         names(targs) <- c("tau2", "lower", "upper")[seq_along(targs)]
+         targs <- as.list(targs)
+      } else {
+         targs <- list(tau2=unname(targs[startsWith(names(targs), "t")]), lower=unname(targs[startsWith(names(targs), "l")]), upper=unname(targs[startsWith(names(targs), "u")]))
+         targs <- targs[sapply(targs, length) > 0L]
+      }
+   }
+
+   if (any(sapply(targs, length) > 1L))
+      stop("Elements of 'targs' arguments must be scalars.", call.=FALSE)
+
+   if (is.null(targs$tau2))
+      targs$tau2 <- 0
+
+   return(targs)
+
+}
+
+############################################################################
+
 transf.rtoz <- function(xi, ...)                   ### resulting value between -Inf (for -1) and +Inf (for +1)
    atanh(xi)
 
 transf.ztor <- function(xi, ...)
    tanh(xi)
+
+transf.ztor.int <- function(xi, targs=NULL, ...) {
+
+   if (is.na(xi))
+      return(NA)
+
+   targs <- .chktargsint(targs)
+
+   if (is.null(targs$lower))
+      targs$lower <- xi-10*sqrt(targs$tau2)
+   if (is.null(targs$upper))
+      targs$upper <- xi+10*sqrt(targs$tau2)
+
+   toint <- function(zval, xi, tau2)
+      tanh(zval) * dnorm(zval, mean=xi, sd=sqrt(tau2))
+
+   cfunc <- function(xi, tau2, lower, upper)
+      integrate(toint, lower=lower, upper=upper, xi=xi, tau2=tau2)$value
+
+   if (targs$tau2 == 0) {
+      zi <- transf.ztor(xi)
+   } else {
+      zi <- mapply(xi, FUN=cfunc, tau2=targs$tau2, lower=targs$lower, upper=targs$upper)
+   }
+
+   return(c(zi))
+
+}
+
+############################################################################
+
+transf.exp.int <- function(xi, targs=NULL, ...) {
+
+   if (is.na(xi))
+      return(NA)
+
+   targs <- .chktargsint(targs)
+
+   if (is.null(targs$lower))
+      targs$lower <- xi-10*sqrt(targs$tau2)
+   if (is.null(targs$upper))
+      targs$upper <- xi+10*sqrt(targs$tau2)
+
+   toint <- function(zval, xi, tau2)
+      exp(zval) * dnorm(zval, mean=xi, sd=sqrt(tau2))
+
+   cfunc <- function(xi, tau2, lower, upper)
+      integrate(toint, lower=lower, upper=upper, xi=xi, tau2=tau2)$value
+
+   if (targs$tau2 == 0) {
+      zi <- exp(xi)
+   } else {
+      zi <- mapply(xi, FUN=cfunc, tau2=targs$tau2, lower=targs$lower, upper=targs$upper)
+   }
+
+   return(c(zi))
+
+}
+
+############################################################################
 
 transf.logit <- function(xi, ...)                  ### resulting value between -Inf (for 0) and +Inf (for +1)
    qlogis(xi)
@@ -10,7 +99,37 @@ transf.logit <- function(xi, ...)                  ### resulting value between -
 transf.ilogit <- function(xi, ...)
    plogis(xi)
 
-transf.arcsin <- function(xi, ...)                 ### resulting value between 0 (for 0) and asin(1) = pi/2 (for +1)
+transf.ilogit.int <- function(xi, targs=NULL, ...) {
+
+   if (is.na(xi))
+      return(NA)
+
+   targs <- .chktargsint(targs)
+
+   if (is.null(targs$lower))
+      targs$lower <- xi-10*sqrt(targs$tau2)
+   if (is.null(targs$upper))
+      targs$upper <- xi+10*sqrt(targs$tau2)
+
+   toint <- function(zval, xi, tau2)
+      plogis(zval) * dnorm(zval, mean=xi, sd=sqrt(tau2))
+
+   cfunc <- function(xi, tau2, lower, upper)
+      integrate(toint, lower=lower, upper=upper, xi=xi, tau2=tau2)$value
+
+   if (targs$tau2 == 0) {
+      zi <- transf.ilogit(xi)
+   } else {
+      zi <- mapply(xi, FUN=cfunc, tau2=targs$tau2, lower=targs$lower, upper=targs$upper)
+   }
+
+   return(c(zi))
+
+}
+
+############################################################################
+
+transf.arcsin <- function(xi, ...)                 ### resulting value between 0 (for 0) and asin(1) = pi/2 (for 1)
    asin(sqrt(xi))
 
 transf.iarcsin <- function(xi, ...) {
@@ -20,6 +139,36 @@ transf.iarcsin <- function(xi, ...) {
    return(c(zi))
 }
 
+# transf.iarcsin.int <- function(xi, targs=NULL, ...) {
+#
+#   if (is.na(xi))
+#      return(NA)
+#
+#   targs <- .chktargsint(targs)
+#
+#   if (is.null(targs$lower))
+#      targs$lower <- 0
+#   if (is.null(targs$upper))
+#      targs$upper <- asin(1)
+#
+#   toint <- function(zval, xi, tau2)
+#      transf.iarcsin(zval) * dnorm(zval, mean=xi, sd=sqrt(tau2))
+#
+#   cfunc <- function(xi, tau2, lower, upper)
+#      integrate(toint, lower=lower, upper=upper, xi=xi, tau2=tau2)$value
+#
+#   if (targs$tau2 == 0) {
+#      zi <- transf.iarcsin(xi)
+#   } else {
+#      zi <- mapply(xi, FUN=cfunc, tau2=targs$tau2, lower=targs$lower, upper=targs$upper)
+#   }
+#
+#   return(c(zi))
+#
+# }
+
+############################################################################
+
 transf.pft <- function(xi, ni, ...) {              ### Freeman-Tukey transformation for proportions
    xi <- xi*ni
    zi <- 1/2*(asin(sqrt(xi/(ni+1))) + asin(sqrt((xi+1)/(ni+1))))
@@ -28,7 +177,7 @@ transf.pft <- function(xi, ni, ...) {              ### Freeman-Tukey transformat
 
 transf.ipft <- function(xi, ni, ...) {             ### inverse of Freeman-Tukey transformation for individual proportions
    zi <- suppressWarnings(1/2 * (1 - sign(cos(2*xi)) * sqrt(1 - (sin(2*xi)+(sin(2*xi)-1/sin(2*xi))/ni)^2)))
-   zi <- ifelse(is.nan(zi), NA, zi)
+   zi <- ifelse(is.nan(zi), NA_real_, zi)
    zi[xi > transf.pft(1,ni)] <- 1                  ### if xi is above upper limit, return 1
    zi[xi < transf.pft(0,ni)] <- 0                  ### if xi is below lower limit, return 0
    return(c(zi))
@@ -44,17 +193,21 @@ transf.ipft.hm <- function(xi, targs, ...) {       ### inverse of Freeman-Tukey 
    }
    nhm <- 1/(mean(1/ni, na.rm=TRUE))               ### calculate harmonic mean of the ni's
    zi <- suppressWarnings(1/2 * (1 - sign(cos(2*xi)) * sqrt(1 - (sin(2*xi)+(sin(2*xi)-1/sin(2*xi))/nhm)^2)))
-   zi <- ifelse(is.nan(zi), NA, zi)                ### it may not be possible to calculate zi
+   zi <- ifelse(is.nan(zi), NA_real_, zi)          ### it may not be possible to calculate zi
    zi[xi > transf.pft(1,nhm)] <- 1                 ### if xi is above upper limit, return 1
    zi[xi < transf.pft(0,nhm)] <- 0                 ### if xi is below lower limit, return 0
    return(c(zi))
 }
+
+############################################################################
 
 transf.isqrt <- function(xi, ...) {
    zi <- xi*xi
    zi[xi < 0] <- 0                                 ### if xi value is below 0 (e.g., CI bound), return 0
    return(c(zi))
 }
+
+############################################################################
 
 transf.irft <- function(xi, ti, ...) {             ### Freeman-Tukey transformation for incidence rates
    zi <- 1/2*(sqrt(xi) + sqrt(xi + 1/ti))          ### xi is the incidence rate (not the number of events!)
@@ -64,11 +217,13 @@ transf.irft <- function(xi, ti, ...) {             ### Freeman-Tukey transformat
 transf.iirft <- function(xi, ti, ...) {            ### inverse of Freeman-Tukey transformation for incidence rates (see Freeman-Tukey_incidence.r in code directory)
    #zi <- (1/ti - 2*xi^2 + ti*xi^4)/(4*xi^2*ti)    ### old version where transf.irft was not multiplied by 1/2
    zi <- (1/ti - 8*xi^2 + 16*ti*xi^4)/(16*xi^2*ti) ### xi is the incidence rate (not the number of events!)
-   zi <- ifelse(is.nan(zi), NA, zi)
+   zi <- ifelse(is.nan(zi), NA_real_, zi)
    zi[xi < transf.irft(0,ti)] <- 0                 ### if xi is below lower limit, return 0
    zi[zi <= .Machine$double.eps] <- 0              ### avoid finite precision errors in back-transformed values (transf.iirft(transf.irft(0, 1:200), 1:200))
    return(c(zi))
 }
+
+############################################################################
 
 transf.ahw <- function(xi, ...) {                  ### resulting value between 0 (for alpha=0) and 1 (for alpha=1)
    #zi <- (1-xi)^(1/3)
@@ -79,7 +234,7 @@ transf.ahw <- function(xi, ...) {                  ### resulting value between 0
 transf.iahw <- function(xi, ...) {
    #zi <- 1-xi^3
    zi <- 1 - (1-xi)^3
-   zi <- ifelse(is.nan(zi), NA, zi)
+   zi <- ifelse(is.nan(zi), NA_real_, zi)
    zi[xi > 1] <- 1                                 ### if xi is above upper limit, return 1
    zi[xi < 0] <- 0                                 ### if xi is below lower limit, return 0
    return(c(zi))
@@ -98,85 +253,12 @@ transf.iabt <- function(xi, ...) {                 ### inverse of Bonett (2002) 
    #zi <- 1 - exp(xi) * ni / (ni-1)
    #zi <- 1 - exp(xi)
    zi <- 1 - exp(-xi)
-   zi <- ifelse(is.nan(zi), NA, zi)
+   zi <- ifelse(is.nan(zi), NA_real_, zi)
    zi[xi < 0] <- 0                                 ### if xi is below lower limit, return 0
    return(c(zi))
 }
 
-transf.ztor.int <- function(xi, targs=NULL, ...) {
-
-   if (is.null(targs$tau2))
-      targs$tau2 <- 0
-   if (is.null(targs$lower))
-      targs$lower <- xi-5*sqrt(targs$tau2)
-   if (is.null(targs$upper))
-      targs$upper <- xi+5*sqrt(targs$tau2)
-
-   toint <- function(zval, xi, tau2)
-      tanh(zval) * dnorm(zval, mean=xi, sd=sqrt(tau2))
-
-   cfunc <- function(xi, tau2, lower, upper)
-      integrate(toint, lower=lower, upper=upper, xi=xi, tau2=tau2)$value
-
-   if (targs$tau2 == 0) {
-      zi <- transf.ztor(xi)
-   } else {
-      zi <- mapply(xi, FUN=cfunc, tau2=targs$tau2, lower=targs$lower, upper=targs$upper)
-   }
-
-   return(c(zi))
-
-}
-
-transf.exp.int <- function(xi, targs=NULL, ...) {
-
-   if (is.null(targs$tau2))
-      targs$tau2 <- 0
-   if (is.null(targs$lower))
-      targs$lower <- xi-5*sqrt(targs$tau2)
-   if (is.null(targs$upper))
-      targs$upper <- xi+5*sqrt(targs$tau2)
-
-   toint <- function(zval, xi, tau2)
-      exp(zval) * dnorm(zval, mean=xi, sd=sqrt(tau2))
-
-   cfunc <- function(xi, tau2, lower, upper)
-      integrate(toint, lower=lower, upper=upper, xi=xi, tau2=tau2)$value
-
-   if (targs$tau2 == 0) {
-      zi <- exp(xi)
-   } else {
-      zi <- mapply(xi, FUN=cfunc, tau2=targs$tau2, lower=targs$lower, upper=targs$upper)
-   }
-
-   return(c(zi))
-
-}
-
-transf.ilogit.int <- function(xi, targs=NULL, ...) {
-
-   if (is.null(targs$tau2))
-      targs$tau2 <- 0
-   if (is.null(targs$lower))
-      targs$lower <- xi-5*sqrt(targs$tau2)
-   if (is.null(targs$upper))
-      targs$upper <- xi+5*sqrt(targs$tau2)
-
-   toint <- function(zval, xi, tau2)
-      plogis(zval) * dnorm(zval, mean=xi, sd=sqrt(tau2))
-
-   cfunc <- function(xi, tau2, lower, upper)
-      integrate(toint, lower=lower, upper=upper, xi=xi, tau2=tau2)$value
-
-   if (targs$tau2 == 0) {
-      zi <- transf.ilogit(xi)
-   } else {
-      zi <- mapply(xi, FUN=cfunc, tau2=targs$tau2, lower=targs$lower, upper=targs$upper)
-   }
-
-   return(c(zi))
-
-}
+############################################################################
 
 transf.dtou1 <- function(xi, ...) {
    u2i <- pnorm(abs(xi)/2)
@@ -243,3 +325,5 @@ transf.logortorr <- function(xi, pc, ...) {
       stop("The control group risk 'pc' must be between 0 and 1.", call.=FALSE)
    return(exp(xi) / (pc * (exp(xi) - 1) + 1))
 }
+
+############################################################################

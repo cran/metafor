@@ -2,7 +2,7 @@
 
 context("Checking misc: aggregate() function")
 
-source("tolerances.r") # read in tolerances
+source("settings.r")
 
 test_that("aggregate() works correctly for 'dat.konstantopoulos2011'.", {
 
@@ -32,9 +32,8 @@ test_that("aggregate() works correctly for 'dat.ishak2007'.", {
    dat <- dat.ishak2007
    dat <- reshape(dat.ishak2007, direction="long", idvar="study", v.names=c("yi","vi"),
                        varying=list(c(2,4,6,8), c(3,5,7,9)))
-   dat <- dat[order(dat$study, dat$time),]
-   is.miss  <- is.na(dat$yi)
-   dat <- dat[!is.miss,]
+   dat <- dat[order(study, time),]
+   dat <- dat[!is.na(yi),]
    rownames(dat) <- NULL
 
    agg <- aggregate(dat, cluster=study, struct="CAR", time=time, phi=0.9)
@@ -43,3 +42,5 @@ test_that("aggregate() works correctly for 'dat.ishak2007'.", {
    expect_equivalent(c(agg$vi), c(14.3, 5.611511, 7.3, 4.562371, 125, 4.132918, 86.117899, 17, 5, 6.308605, 41, 20.229622, 7.743863, 5.632795, 3.438095, 12.975915, 27.3, 10.7, 1.895013, 25.3, 20.1, 21.2, 18, 16.3, 29.751824, 9.417499, 5.156788, 5.8, 12.4, 24.954806, 19.1, 17.528303, 8.508767, 28.4, 20, 27.7, 20.3, 1.379225, 85.2, 15.281948, 9.8, 179.802277, 3.317364, 15.082821, 20.888464, 40.8), tolerance=.tol[["var"]])
 
 })
+
+rm(list=ls())

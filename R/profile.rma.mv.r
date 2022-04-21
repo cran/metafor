@@ -1,5 +1,5 @@
 profile.rma.mv <- function(fitted, sigma2, tau2, rho, gamma2, phi,
-   xlim, ylim, steps=20, lltol=1e-03, progbar=TRUE, parallel="no", ncpus=1, cl=NULL, plot=TRUE, pch=19, cline=FALSE, ...) {
+   xlim, ylim, steps=20, lltol=1e-03, progbar=TRUE, parallel="no", ncpus=1, cl, plot=TRUE, pch=19, refline=TRUE, cline=FALSE, ...) {
 
    mstyle <- .get.mstyle("crayon" %in% .packages())
 
@@ -14,6 +14,9 @@ profile.rma.mv <- function(fitted, sigma2, tau2, rho, gamma2, phi,
 
    if (parallel == "no" && ncpus > 1)
       parallel <- "snow"
+
+   if (missing(cl))
+      cl <- NULL
 
    if (!is.null(cl) && inherits(cl, "SOCKcluster")) {
       parallel <- "snow"
@@ -37,7 +40,7 @@ profile.rma.mv <- function(fitted, sigma2, tau2, rho, gamma2, phi,
 
    if (!progbar) {
       pbo <- pbapply::pboptions(type="none")
-      on.exit(pbapply::pboptions(pbo))
+      on.exit(pbapply::pboptions(pbo), add=TRUE)
    }
 
    ddd <- list(...)
@@ -413,9 +416,9 @@ profile.rma.mv <- function(fitted, sigma2, tau2, rho, gamma2, phi,
    }
 
    lls <- sapply(res, function(x) x$ll)
-   beta  <- do.call("rbind", lapply(res, function(x) t(x$beta)))
-   ci.lb <- do.call("rbind", lapply(res, function(x) t(x$ci.lb)))
-   ci.ub <- do.call("rbind", lapply(res, function(x) t(x$ci.ub)))
+   beta  <- do.call(rbind, lapply(res, function(x) t(x$beta)))
+   ci.lb <- do.call(rbind, lapply(res, function(x) t(x$ci.lb)))
+   ci.ub <- do.call(rbind, lapply(res, function(x) t(x$ci.ub)))
 
    #########################################################################
 
@@ -441,7 +444,7 @@ profile.rma.mv <- function(fitted, sigma2, tau2, rho, gamma2, phi,
             ylim <- range(lls, na.rm=TRUE)
          }
       } else {
-         ylim <- rep(logLik(x), 2)
+         ylim <- rep(logLik(x), 2L)
       }
       ylim[1] <- ylim[1] - .1
       ylim[2] <- ylim[2] + .1
@@ -508,7 +511,7 @@ profile.rma.mv <- function(fitted, sigma2, tau2, rho, gamma2, phi,
    #########################################################################
 
    if (plot)
-      plot(sav, pch=pch, cline=cline, ...)
+      plot(sav, pch=pch, refline=refline, cline=cline, ...)
 
    #########################################################################
 

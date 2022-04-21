@@ -2,11 +2,9 @@
 
 context("Checking misc: rma.peto() against metan with 'dat.bcg'")
 
-source("tolerances.r") # read in tolerances
+source("settings.r")
 
-test_that("results match (FE model, measure='OR').", {
-
-   data(dat.bcg, package="metafor")
+test_that("results match (EE model, measure='OR').", {
 
    ### compare results with: metan tpos tneg cpos cneg, peto nograph or log
 
@@ -27,3 +25,5 @@ test_that("results match (FE model, measure='OR').", {
    expect_equivalent(sav$ci.ub, 0.6738, tolerance=.tol[["ci"]])
 
 })
+
+rm(list=ls())

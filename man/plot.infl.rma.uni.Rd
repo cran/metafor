@@ -10,7 +10,7 @@
      bg.infl="red", col.na="lightgray", \dots)
 }
 \arguments{
-   \item{x}{an object of class \code{"infl.rma.uni"}.}
+   \item{x}{an object of class \code{"infl.rma.uni"} obtained with \code{\link[=influence.rma.uni]{influence}}.}
    \item{plotinf}{logical to specify whether the various case diagnostics should be plotted (the default is \code{TRUE}). Can also be a vector of up to 8 integers to specify which plots to draw. See \sQuote{Details} for the numbers corresponding to the various plots.}
    \item{plotdfbs}{logical to specify whether the DFBETAS values should be plotted (the default is \code{FALSE}). Can also be a vector of integers to specify for which coefficient(s) to plot the DFBETAS values.}
    \item{dfbsnew}{logical to specify whether a new device should be opened for plotting the DFBETAS values (the default is \code{FALSE}).}
@@ -48,7 +48,7 @@
    Viechtbauer, W., & Cheung, M. W.-L. (2010). Outlier and influence diagnostics for meta-analysis. \emph{Research Synthesis Methods}, \bold{1}(2), 112--125. \verb{https://doi.org/10.1002/jrsm.11}
 }
 \seealso{
-   \code{\link{influence.rma.uni}}
+   \code{\link{influence.rma.uni}} for the function to compute the various model diagnostics.
 }
 \examples{
 ### calculate log risk ratios and corresponding sampling variances

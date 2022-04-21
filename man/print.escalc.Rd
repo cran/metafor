@@ -12,14 +12,14 @@
         H0=0, append=TRUE, replace=TRUE, level=95, olim, digits, transf, \dots)
 }
 \arguments{
-   \item{x}{an object of class \code{"escalc"}.}
-   \item{object}{an object of class \code{"escalc"}.}
+   \item{x}{an object of class \code{"escalc"} obtained with \code{\link{escalc}}.}
+   \item{object}{an object of class \code{"escalc"} obtained with \code{\link{escalc}}.}
    \item{digits}{integer to specify the number of decimal places to which the printed results should be rounded (the default is to take the value from the object).}
    \item{out.names}{character string with four elements to specify the variable names for the standard errors, test statistics, and lower/upper confidence interval bounds.}
    \item{var.names}{character string with two elements to specify the variable names for the observed effect sizes or outcomes and the sampling variances (the default is to take the value from the object if possible).}
    \item{H0}{numeric value to specify the value of the effect size or outcome under the null hypothesis (the default is 0).}
    \item{append}{logical to specify whether the data frame specified via the \code{object} argument should be returned together with the additional variables that are calculated by the \code{summary} function (the default is \code{TRUE}).}
-   \item{replace}{logical to specify whether existing values for \code{sei}, \code{zi}, \code{ci.lb}, and \code{ci.ub} in the data frame should be replaced or not. Only relevant when the data frame already contains these variables. If \code{replace=TRUE} (the default), all of the existing values will be overwritten. If \code{replace=FALSE}, only \code{NA} values will be replaced.}
+   \item{replace}{logical to specify whether existing values for \code{sei}, \code{zi}, \code{ci.lb}, and \code{ci.ub} in the data frame should be replaced. Only relevant when the data frame already contains these variables. If \code{replace=TRUE} (the default), all of the existing values will be overwritten. If \code{replace=FALSE}, only \code{NA} values will be replaced.}
    \item{level}{numeric value between 0 and 100 to specify the confidence interval level (the default is 95).}
    \item{olim}{optional argument to specify observation/outcome limits. If unspecified, no limits are used.}
    \item{transf}{optional argument to specify a function that should be used to transform the observed effect sizes or outcomes and interval bounds (e.g., \code{transf=exp}; see also \link{transf}). If unspecified, no transformation is used. Any additional arguments needed for the function specified here can be passed via \code{\dots}.}
@@ -57,7 +57,7 @@
    Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \verb{https://doi.org/10.18637/jss.v036.i03}
 }
 \seealso{
-   \code{\link{escalc}}
+   \code{\link{escalc}} for the function to create \code{escalc} objects.
 }
 \examples{
 ### calculate log risk ratios and corresponding sampling variances

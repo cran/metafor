@@ -62,13 +62,15 @@ level=95, digits, verbose=FALSE, ...) {
 
    if (verbose > 2) {
       opwarn <- options(warn=1)
-      on.exit(options(warn=opwarn$warn))
+      on.exit(options(warn=opwarn$warn), add=TRUE)
    }
 
    #########################################################################
 
+   if (verbose) .space()
+
    if (verbose)
-      message(mstyle$message("\nExtracting data and computing yi/vi values ..."))
+      message(mstyle$message("Extracting data and computing yi/vi values ..."))
 
    ### check if data argument has been specified
 
@@ -86,31 +88,27 @@ level=95, digits, verbose=FALSE, ...) {
 
    ### extract slab and subset values, possibly from the data frame specified via data (arguments not specified are NULL)
 
-   mf.slab   <- mf[[match("slab",   names(mf))]]
-   mf.subset <- mf[[match("subset", names(mf))]]
-   slab   <- eval(mf.slab,   data, enclos=sys.frame(sys.parent()))
-   subset <- eval(mf.subset, data, enclos=sys.frame(sys.parent()))
+   slab   <- .getx("slab",   mf=mf, data=data)
+   subset <- .getx("subset", mf=mf, data=data)
 
    ### extract/calculate ai,bi,ci,di,n1i,n2i values
 
-   mf.ai  <- mf[[match("ai",  names(mf))]]
-   mf.bi  <- mf[[match("bi",  names(mf))]]
-   mf.ci  <- mf[[match("ci",  names(mf))]]
-   mf.di  <- mf[[match("di",  names(mf))]]
-   mf.n1i <- mf[[match("n1i", names(mf))]]
-   mf.n2i <- mf[[match("n2i", names(mf))]]
-   ai  <- eval(mf.ai,  data, enclos=sys.frame(sys.parent()))
-   bi  <- eval(mf.bi,  data, enclos=sys.frame(sys.parent()))
-   ci  <- eval(mf.ci,  data, enclos=sys.frame(sys.parent()))
-   di  <- eval(mf.di,  data, enclos=sys.frame(sys.parent()))
-   n1i <- eval(mf.n1i, data, enclos=sys.frame(sys.parent()))
-   n2i <- eval(mf.n2i, data, enclos=sys.frame(sys.parent()))
+   ai  <- .getx("ai",  mf=mf, data=data)
+   bi  <- .getx("bi",  mf=mf, data=data)
+   ci  <- .getx("ci",  mf=mf, data=data)
+   di  <- .getx("di",  mf=mf, data=data)
+   n1i <- .getx("n1i", mf=mf, data=data)
+   n2i <- .getx("n2i", mf=mf, data=data)
+
    if (is.null(bi)) bi <- n1i - ai
    if (is.null(di)) di <- n2i - ci
    ni <- ai + bi + ci + di
 
    k <- length(ai) ### number of outcomes before subsetting
    k.all <- k
+
+   if (length(ai)==0L || length(bi)==0L || length(ci)==0L || length(di)==0L)
+      stop(mstyle$stop("Need to specify arguments ai, bi, ci, di (or ai, ci, n1i, n2i)."))
 
    ids <- seq_len(k)
 
@@ -166,9 +164,9 @@ level=95, digits, verbose=FALSE, ...) {
 
    ### calculate observed effect estimates and sampling variances
 
-   dat <- escalc(measure="PETO", ai=ai, bi=bi, ci=ci, di=di, add=add[1], to=to[1], drop00=drop00[1])
-   yi  <- dat$yi ### one or more yi/vi pairs may be NA/NA
-   vi  <- dat$vi ### one or more yi/vi pairs may be NA/NA
+   dat <- .do.call(escalc, measure="PETO", ai=ai, bi=bi, ci=ci, di=di, add=add[1], to=to[1], drop00=drop00[1])
+   yi <- dat$yi ### one or more yi/vi pairs may be NA/NA
+   vi <- dat$vi ### one or more yi/vi pairs may be NA/NA
 
    ### if drop00[2]=TRUE, set counts to NA for studies that have no events (or all events) in both arms
 
@@ -301,7 +299,7 @@ level=95, digits, verbose=FALSE, ...) {
 
    #########################################################################
 
-   level <- ifelse(level == 0, 1, ifelse(level >= 1, (100-level)/100, ifelse(level > .5, 1-level, level)))
+   level <- .level(level)
 
    ###### model fitting, test statistics, and confidence intervals
 
@@ -361,7 +359,11 @@ level=95, digits, verbose=FALSE, ...) {
 
    ll.ML     <- -1/2 * (k.yi)   * log(2*base::pi)                   - 1/2 * sum(log(vi))                      - 1/2 * RSS
    ll.REML   <- -1/2 * (k.yi-1) * log(2*base::pi) + 1/2 * log(k.yi) - 1/2 * sum(log(vi)) - 1/2 * log(sum(wi)) - 1/2 * RSS
-   dev.ML    <- -2 * (ll.ML - sum(dnorm(yi, mean=yi, sd=sqrt(vi), log=TRUE)))
+   if (any(vi <= 0)) {
+      dev.ML <- -2 * ll.ML
+   } else {
+      dev.ML <- -2 * (ll.ML - sum(dnorm(yi, mean=yi, sd=sqrt(vi), log=TRUE)))
+   }
    AIC.ML    <- -2 * ll.ML   + 2
    BIC.ML    <- -2 * ll.ML   + log(k.yi)
    AICc.ML   <- -2 * ll.ML   + 2 * max(k.yi, 3) / (max(k.yi, 3) - 2)
@@ -398,7 +400,7 @@ level=95, digits, verbose=FALSE, ...) {
    test      <- "z"
    ddf       <- NA
 
-   if (is.null(ddd$outlist)) {
+   if (is.null(ddd$outlist) || ddd$outlist == "nodata") {
 
       res <- list(b=beta, beta=beta, se=se, zval=zval, pval=pval, ci.lb=ci.lb, ci.ub=ci.ub, vb=vb,
                   tau2=tau2, tau2.f=tau2,
@@ -415,9 +417,13 @@ level=95, digits, verbose=FALSE, ...) {
                   fit.stats=fit.stats,
                   formula.yi=NULL, formula.mods=NULL, version=packageVersion("metafor"), call=mf)
 
+      if (is.null(ddd$outlist))
+         res <- append(res, list(data=data), which(names(res) == "fit.stats"))
+
    }
 
    if (!is.null(ddd$outlist)) {
+
       if (ddd$outlist == "minimal") {
          res <- list(b=beta, beta=beta, se=se, zval=zval, pval=pval, ci.lb=ci.lb, ci.ub=ci.ub, vb=vb,
                      tau2=tau2,
@@ -430,8 +436,9 @@ level=95, digits, verbose=FALSE, ...) {
                      digits=digits,
                      fit.stats=fit.stats)
       } else {
-         res <- eval(parse(text=paste0("list(", ddd$outlist, ")")))
+         res <- eval(str2lang(paste0("list(", ddd$outlist, ")")))
       }
+
    }
 
    time.end <- proc.time()

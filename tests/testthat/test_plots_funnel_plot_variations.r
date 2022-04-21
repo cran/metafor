@@ -2,6 +2,8 @@
 
 ### see also: https://www.metafor-project.org/doku.php/plots:funnel_plot_variations
 
+source("settings.r")
+
 context("Checking plots example: funnel plot variations")
 
 test_that("plot can be drawn.", {
@@ -12,11 +14,8 @@ test_that("plot can be drawn.", {
 
    opar <- par(no.readonly=TRUE)
 
-   ### load ETS data
-   data(dat.hackshaw1998, package="metafor")
-
-   ### fit fixed-effects model
-   res <- rma(yi, vi, data=dat.hackshaw1998, measure="OR", method="FE")
+   ### fit equal-effects model
+   res <- rma(yi, vi, data=dat.hackshaw1998, measure="OR", method="EE")
 
    ### set up 2x2 array for plotting
    par(mfrow=c(2,2))
@@ -30,3 +29,5 @@ test_that("plot can be drawn.", {
    par(opar)
 
 })
+
+rm(list=ls())

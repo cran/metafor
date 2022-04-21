@@ -2,14 +2,14 @@
 
 context("Checking misc: location-scale models")
 
-source("tolerances.r") # read in tolerances
+source("settings.r")
 
 dat <- dat.bangertdrowns2004
 
 test_that("location-scale model works correctly for an intercept-only model", {
 
    res1 <- rma(yi, vi, data=dat)
-   res2 <- rma.mv(yi, vi, random = ~ 1 | id, data=dat)
+   res2 <- rma.mv(yi, vi, random = ~ 1 | id, data=dat, sparse=sparse)
    res3 <- rma(yi, vi, data=dat, scale = ~ 1)
    res4 <- rma(yi, vi, data=dat, scale = res3$Z)
 
@@ -21,7 +21,7 @@ test_that("location-scale model works correctly for an intercept-only model", {
 
 test_that("location-scale model works correctly for two subgroups with different tau^2 values", {
 
-   res1 <- rma.mv(yi, vi, data=dat, random = ~ factor(meta) | id, struct="DIAG", subset=!is.na(meta), control=list(hessian=TRUE, vctransf=TRUE))
+   res1 <- rma.mv(yi, vi, data=dat, random = ~ factor(meta) | id, struct="DIAG", subset=!is.na(meta), cvvc="transf", sparse=sparse)
    expect_warning(res2 <- rma(yi, vi, data=dat, scale = ~ meta))
    expect_warning(res3 <- rma(yi, vi, data=dat, scale = res2$Z.f))
 
@@ -30,7 +30,7 @@ test_that("location-scale model works correctly for two subgroups with different
 
    expect_warning(res4 <- rma(yi, vi, data=dat, scale = ~  0 + factor(meta)))
 
-   expect_equivalent(unname(sqrt(diag(solve(res1$hessian[1:2, 1:2])))), res4$se.alpha, tolerance=.tol[["se"]])
+   expect_equivalent(unname(sqrt(diag(res1$vvc))), res4$se.alpha, tolerance=.tol[["se"]])
 
    expect_warning(res5 <- rma(yi, vi, data=dat, scale = ~  0 + factor(meta), link="identity"))
    expect_equivalent(res1$tau2, res5$alpha, tolerance=.tol[["var"]])
@@ -53,7 +53,7 @@ test_that("profile() and confint() work correctly for location-scale models", {
    conf1 <- confint(res1, type="PL")
    abline(v=conf1$random[1,2:3], lty="dotted")
 
-   res2  <- rma.mv(yi, vi, random = ~ 1 | id, data=dat)
+   res2  <- rma.mv(yi, vi, random = ~ 1 | id, data=dat, sparse=sparse)
    prof2 <- profile(res2, progbar=FALSE, cline=TRUE, xlim=c(.01,.15))
    conf2 <- confint(res2)
    abline(v=conf2$random[1,2:3], lty="dotted")
@@ -92,21 +92,23 @@ test_that("location-scale model works correctly for a continuous predictor", {
    expect_equivalent(res1$alpha, c(-3.10513013522415, 0.041361925354706), tolerance=.tol[["coef"]])
 
    res2 <- rma(yi, vi, data=dat, scale = ~ grade, link="identity")
-   expect_equivalent(res1$tau2, res2$tau2, tolerance=.tol[["var"]])
+   expect_equivalent(res2$alpha, c(0.042926535, 0.002729234), tolerance=.tol[["coef"]])
+   #expect_equivalent(res1$tau2, res2$tau2, tolerance=.tol[["var"]]) # not true
 
-   res3 <- rma.mv(yi, vi, data=dat, random = ~ sqrt(grade) | id, rho=0, struct="GEN", control=list(hessian=TRUE, vctransf=FALSE))
+   res3 <- rma.mv(yi, vi, data=dat, random = ~ sqrt(grade) | id, rho=0, struct="GEN", cvvc=TRUE, sparse=sparse)
    expect_equivalent(c(res2$alpha), diag(res3$G), tolerance=.tol[["coef"]])
    expect_equivalent(diag(res2$M),  diag(res3$M), tolerance=.tol[["var"]])
-   expect_equivalent(unname(sqrt(diag(solve(res3$hessian[1:2, 1:2])))), res2$se.alpha, tolerance=.tol[["se"]])
+   expect_equivalent(unname(sqrt(diag(res3$vvc))), res2$se.alpha, tolerance=.tol[["se"]])
 
-   conf1 <- confint(res1)
-   expect_equivalent(conf1[[1]]$random, c(-3.10513, -5.25032, -1.21713), tolerance=.tol[["var"]])
-   expect_equivalent(conf1[[2]]$random, c( 0.04136, -0.65819,  0.69562), tolerance=.tol[["var"]])
+   conf11 <- confint(res1, alpha=1)
+   expect_equivalent(conf11$random, c(-3.10513, -5.25032, -1.21713), tolerance=.tol[["var"]])
+   conf12 <- confint(res1, alpha=2, xlim=c(-1,1))
+   expect_equivalent(conf12$random, c( 0.04136, -0.65819,  0.69562), tolerance=.tol[["var"]])
 
    profile(res1, alpha=1, progbar=FALSE, cline=TRUE)
-   abline(v=conf1[[1]]$random[2:3], lty="dotted")
+   abline(v=conf11$random[2:3], lty="dotted")
    profile(res1, alpha=2, progbar=FALSE, cline=TRUE)
-   abline(v=conf1[[2]]$random[2:3], lty="dotted")
+   abline(v=conf12$random[2:3], lty="dotted")
 
    conf21 <- confint(res2, alpha=1, control=list(vc.min=-0.4, vc.max=0.3))
    conf22 <- confint(res2, alpha=2, control=list(vc.min=-0.1, vc.max=0.05))
@@ -225,3 +227,5 @@ test_that("anova() works correctly for location-scale models", {
    expect_error(anova(res1, X=c(0,1,-1,0,0,0), Z=c(0,1,-1,0,0,0)))
 
 })
+
+rm(list=ls())

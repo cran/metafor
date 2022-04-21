@@ -1,12 +1,12 @@
 profile.rma.uni <- function(fitted,
-   xlim, ylim, steps=20, lltol=1e-03, progbar=TRUE, parallel="no", ncpus=1, cl=NULL, plot=TRUE, pch=19, cline=FALSE, ...) {
+   xlim, ylim, steps=20, lltol=1e-03, progbar=TRUE, parallel="no", ncpus=1, cl, plot=TRUE, pch=19, refline=TRUE, cline=FALSE, ...) {
 
    mstyle <- .get.mstyle("crayon" %in% .packages())
 
    .chkclass(class(fitted), must="rma.uni", notav="rma.uni.selmodel")
 
    if (is.element(fitted$method, c("FE","EE","CE")))
-      stop(mstyle$stop("Cannot profile tau2 parameter for fixed-effects models."))
+      stop(mstyle$stop("Cannot profile tau2 parameter for equal/fixed-effects models."))
 
    if (steps < 2)
       stop(mstyle$stop("Argument 'steps' must be >= 2."))
@@ -17,6 +17,9 @@ profile.rma.uni <- function(fitted,
 
    if (parallel == "no" && ncpus > 1)
       parallel <- "snow"
+
+   if (missing(cl))
+      cl <- NULL
 
    if (!is.null(cl) && inherits(cl, "SOCKcluster")) {
       parallel <- "snow"
@@ -40,7 +43,7 @@ profile.rma.uni <- function(fitted,
 
    if (!progbar) {
       pbo <- pbapply::pboptions(type="none")
-      on.exit(pbapply::pboptions(pbo))
+      on.exit(pbapply::pboptions(pbo), add=TRUE)
    }
 
    ddd <- list(...)
@@ -136,9 +139,9 @@ profile.rma.uni <- function(fitted,
    }
 
    lls <- sapply(res, function(x) x$ll)
-   beta  <- do.call("rbind", lapply(res, function(x) t(x$beta)))
-   ci.lb <- do.call("rbind", lapply(res, function(x) t(x$ci.lb)))
-   ci.ub <- do.call("rbind", lapply(res, function(x) t(x$ci.ub)))
+   beta  <- do.call(rbind, lapply(res, function(x) t(x$beta)))
+   ci.lb <- do.call(rbind, lapply(res, function(x) t(x$ci.lb)))
+   ci.ub <- do.call(rbind, lapply(res, function(x) t(x$ci.ub)))
 
    #########################################################################
 
@@ -164,7 +167,7 @@ profile.rma.uni <- function(fitted,
             ylim <- range(lls, na.rm=TRUE)
          }
       } else {
-         ylim <- rep(logLik(x), 2)
+         ylim <- rep(logLik(x), 2L)
       }
       ylim[1] <- ylim[1] - .1
       ylim[2] <- ylim[2] + .1
@@ -187,7 +190,7 @@ profile.rma.uni <- function(fitted,
    #########################################################################
 
    if (plot)
-      plot(sav, pch=pch, cline=cline, ...)
+      plot(sav, pch=pch, refline=refline, cline=cline, ...)
 
    #########################################################################
 

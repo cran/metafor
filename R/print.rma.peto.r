@@ -10,10 +10,9 @@ print.rma.peto <- function(x, digits, showfit=FALSE, ...) {
       digits <- .get.digits(digits=digits, xdigits=x$digits, dmiss=FALSE)
    }
 
-   if (!exists(".rmspace"))
-      cat("\n")
+   .space()
 
-   cat(mstyle$section("Fixed-Effects Model"))
+   cat(mstyle$section("Equal-Effects Model"))
    cat(mstyle$section(paste0(" (k = ", x$k, ")")))
 
    cat("\n")
@@ -23,6 +22,7 @@ print.rma.peto <- function(x, digits, showfit=FALSE, ...) {
       names(fs) <- c("logLik", "deviance", "AIC", "BIC", "AICc")
       cat("\n")
       tmp <- capture.output(print(fs, quote=FALSE, print.gap=2))
+      tmp[1] <- paste0(tmp[1], "\u200b")
       .print.table(tmp, mstyle)
    }
 
@@ -62,8 +62,7 @@ print.rma.peto <- function(x, digits, showfit=FALSE, ...) {
    tmp <- capture.output(.print.vector(res.table.exp))
    .print.table(tmp, mstyle)
 
-   if (!exists(".rmspace"))
-      cat("\n")
+   .space()
 
    invisible()
 

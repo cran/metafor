@@ -10,8 +10,11 @@ print.rma.glmm <- function(x, digits, showfit=FALSE, signif.stars=getOption("sho
       digits <- .get.digits(digits=digits, xdigits=x$digits, dmiss=FALSE)
    }
 
-   if (!exists(".rmspace"))
-      cat("\n")
+   ddd <- list(...)
+
+   .chkdots(ddd, c("num"))
+
+   .space()
 
    if (is.element(x$method, c("FE","EE","CE"))) {
       if (x$int.only) {
@@ -48,6 +51,7 @@ print.rma.glmm <- function(x, digits, showfit=FALSE, signif.stars=getOption("sho
       names(fs) <- c("logLik", "deviance", "AIC", "BIC", "AICc")
       cat("\n")
       tmp <- capture.output(print(fs, quote=FALSE, print.gap=2))
+      tmp[1] <- paste0(tmp[1], "\u200b")
       .print.table(tmp, mstyle)
       cat("\n")
    } else {
@@ -118,15 +122,15 @@ print.rma.glmm <- function(x, digits, showfit=FALSE, signif.stars=getOption("sho
    if (x$p > 1L && !is.na(x$QM)) {
       cat(mstyle$section(paste0("Test of Moderators (coefficient", ifelse(x$m == 1, " ", "s "), .format.btt(x$btt),"):")))
       cat("\n")
-      if (x$test == "t") {
-         cat(mstyle$result(paste0("F(df1 = ", x$QMdf[1], ", df2 = ", x$QMdf[2], ") = ", .fcf(x$QM, digits[["test"]]), ", p-val ", .pval(x$QMp, digits[["pval"]], showeq=TRUE, sep=" "))))
+      if (is.element(x$test, c("knha","adhoc","t"))) {
+         cat(mstyle$result(paste0("F(df1 = ", x$QMdf[1], ", df2 = ", round(x$QMdf[2], 2), ") = ", .fcf(x$QM, digits[["test"]]), ", p-val ", .pval(x$QMp, digits[["pval"]], showeq=TRUE, sep=" "))))
       } else {
          cat(mstyle$result(paste0("QM(df = ", x$QMdf[1], ") = ", .fcf(x$QM, digits[["test"]]), ", p-val ", .pval(x$QMp, digits[["pval"]], showeq=TRUE, sep=" "))))
       }
       cat("\n\n")
    }
 
-   if (x$test == "t") {
+   if (is.element(x$test, c("knha","adhoc","t"))) {
       res.table <- data.frame(estimate=.fcf(c(x$beta), digits[["est"]]), se=.fcf(x$se, digits[["se"]]), tval=.fcf(x$zval, digits[["test"]]), df=round(x$ddf,2), pval=.pval(x$pval, digits[["pval"]]), ci.lb=.fcf(x$ci.lb, digits[["ci"]]), ci.ub=.fcf(x$ci.ub, digits[["ci"]]), stringsAsFactors=FALSE)
    } else {
       res.table <- data.frame(estimate=.fcf(c(x$beta), digits[["est"]]), se=.fcf(x$se, digits[["se"]]), zval=.fcf(x$zval, digits[["test"]]), pval=.pval(x$pval, digits[["pval"]]), ci.lb=.fcf(x$ci.lb, digits[["ci"]]), ci.ub=.fcf(x$ci.ub, digits[["ci"]]), stringsAsFactors=FALSE)
@@ -138,12 +142,8 @@ print.rma.glmm <- function(x, digits, showfit=FALSE, signif.stars=getOption("sho
       colnames(res.table)[ncol(res.table)] <- ""
    }
 
-   ddd <- list(...)
-
-   .chkdots(ddd, c("num"))
-
    if (.isTRUE(ddd$num))
-      rownames(res.table) <- paste0(1:nrow(res.table), ") ", rownames(res.table))
+      rownames(res.table) <- paste0(seq_len(nrow(res.table)), ") ", rownames(res.table))
 
    if (x$int.only)
       res.table <- res.table[1,]
@@ -155,16 +155,18 @@ print.rma.glmm <- function(x, digits, showfit=FALSE, signif.stars=getOption("sho
    } else {
       tmp <- capture.output(print(res.table, quote=FALSE, right=TRUE, print.gap=2))
    }
+   tmp[1] <- paste0(tmp[1], "\u200b")
    .print.table(tmp, mstyle)
 
    if (signif.legend) {
       cat("\n")
-      cat(mstyle$legend("---\nSignif. codes: "), mstyle$legend(attr(signif, "legend")))
+      cat(mstyle$legend("---"))
+      cat("\n")
+      cat(mstyle$legend("Signif. codes: "), mstyle$legend(attr(signif, "legend")))
       cat("\n")
    }
 
-   if (!exists(".rmspace"))
-      cat("\n")
+   .space()
 
    invisible()
 

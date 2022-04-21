@@ -2,6 +2,8 @@
 
 ### see also: https://www.metafor-project.org/doku.php/plots:contour_enhanced_funnel_plot
 
+source("settings.r")
+
 context("Checking plots example: contour-enhanced funnel plot")
 
 test_that("plot can be drawn.", {
@@ -15,9 +17,6 @@ test_that("plot can be drawn.", {
    ### decrease margins so the full space is used
    par(mar=c(5,4,1,2))
 
-   ### load BCG vaccine data
-   data(dat.bcg, package="metafor")
-
    ### fit random-effects model
    res <- rma(ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg, measure="RR",
               slab=paste(author, year, sep=", "), method="REML")
@@ -28,3 +27,5 @@ test_that("plot can be drawn.", {
    par(opar)
 
 })
+
+rm(list=ls())

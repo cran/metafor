@@ -2,11 +2,10 @@
 
 context("Checking misc: residuals() function")
 
-source("tolerances.r") # read in tolerances
+source("settings.r")
 
 test_that("residuals are correct for rma().", {
 
-   data(dat.bcg, package="metafor")
    dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg, subset=1:6)
 
    res <- rma(yi, vi, data=dat)
@@ -14,7 +13,7 @@ test_that("residuals are correct for rma().", {
    expect_equivalent(rstandard(res)$z, c(0.1401, -0.9930, -0.4719, -1.0475, 1.6462, 0.4825), tolerance=.tol[["pred"]])
    expect_equivalent(rstudent(res)$z,  c(0.1426, -0.9957, -0.4591, -1.1949, 2.0949, 0.4330), tolerance=.tol[["test"]])
 
-   res <- rma(yi, vi, data=dat, method="FE")
+   res <- rma(yi, vi, data=dat, method="EE")
    expect_equivalent(sum(residuals(res, type="pearson")^2), res$QE, tolerance=.tol[["test"]])
    expect_equivalent(sum(residuals(res, type="cholesky")^2), res$QE, tolerance=.tol[["test"]])
 
@@ -22,7 +21,6 @@ test_that("residuals are correct for rma().", {
 
 test_that("rstudent() yields the same results as a mean shift outlier model for rma().", {
 
-   data(dat.bcg, package="metafor")
    dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg, subset=1:6)
    dat$trial1 <- ifelse(dat$trial == 1, 1, 0)
 
@@ -44,22 +42,20 @@ test_that("rstudent() yields the same results as a mean shift outlier model for 
 
 test_that("residuals are correct for rma.mv().", {
 
-   data(dat.bcg, package="metafor")
    dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg, subset=1:6)
 
-   res <- rma.mv(yi, vi, random = ~ 1 | trial, data=dat)
+   res <- rma.mv(yi, vi, random = ~ 1 | trial, data=dat, sparse=sparse)
    expect_equivalent(c(residuals(res)), c(dat$yi - coef(res)))
    expect_equivalent(rstandard(res)$z, c(0.1401, -0.9930, -0.4719, -1.0476, 1.6462, 0.4825), tolerance=.tol[["test"]])
-   expect_equivalent(rstandard(res, cluster=dat$alloc)$cluster$X2, c(3.7017, 3.6145), tolerance=.tol[["test"]])
+   expect_equivalent(rstandard(res, cluster=alloc)$cluster$X2, c(3.7017, 3.6145), tolerance=.tol[["test"]])
    expect_equivalent(rstudent(res)$z, c(0.1426, -0.9957, -0.4591, -1.1949, 2.0949, 0.4330), tolerance=.tol[["test"]])
-   expect_equivalent(rstudent(res, cluster=dat$alloc)$cluster$X2, c(27.4717, 5.2128), tolerance=.tol[["test"]])
-   expect_equivalent(rstudent(res, cluster=dat$alloc, reestimate=FALSE)$cluster$X2, c(3.7017, 3.6145), tolerance=.tol[["test"]])
+   expect_equivalent(rstudent(res, cluster=alloc)$cluster$X2, c(27.4717, 5.2128), tolerance=.tol[["test"]])
+   expect_equivalent(rstudent(res, cluster=alloc, reestimate=FALSE)$cluster$X2, c(3.7017, 3.6145), tolerance=.tol[["test"]])
 
 })
 
 test_that("residuals are correct for rma.mh().", {
 
-   data(dat.bcg, package="metafor")
    dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg, subset=1:6)
 
    res <- rma.mh(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg, subset=1:6)
@@ -71,7 +67,6 @@ test_that("residuals are correct for rma.mh().", {
 
 test_that("residuals are correct for rma.peto().", {
 
-   data(dat.bcg, package="metafor")
    dat <- escalc(measure="PETO", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg, subset=1:6)
 
    res <- rma.peto(ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg, subset=1:6)
@@ -85,10 +80,11 @@ test_that("residuals are correct for rma.glmm().", {
 
    skip_on_cran()
 
-   data(dat.bcg, package="metafor")
    dat <- escalc(measure="OR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg, subset=1:6)
 
    res <- rma.glmm(measure="OR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg, subset=1:6)
    expect_equivalent(c(residuals(res)), c(dat$yi - coef(res)))
 
 })
+
+rm(list=ls())

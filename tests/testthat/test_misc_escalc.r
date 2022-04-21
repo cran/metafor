@@ -2,11 +2,9 @@
 
 context("Checking misc: escalc() function")
 
-source("tolerances.r") # read in tolerances
+source("settings.r")
 
 test_that("escalc() works correctly for measure='RR'", {
-
-   data(dat.bcg, package="metafor")
 
    dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
 
@@ -358,3 +356,5 @@ test_that("'subset' and 'include' arguments work correctly in 'escalc'.", {
    expect_identical(dat$measure, c("", "RR", "RR", ""))
 
 })
+
+rm(list=ls())

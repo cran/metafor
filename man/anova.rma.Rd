@@ -6,33 +6,44 @@
    For two (nested) models of class \code{"rma.uni"} or \code{"rma.mv"}, the function provides a full versus reduced model comparison in terms of model fit statistics and a likelihood ratio test. When a single model is specified, a Wald-type test of one or more model coefficients or linear combinations thereof is carried out. \loadmathjax
 }
 \usage{
-\method{anova}{rma}(object, object2, btt, X, att, Z, digits, \dots)
+\method{anova}{rma}(object, object2, btt, X, att, Z, rhs, digits, refit=FALSE, \dots)
 }
 \arguments{
    \item{object}{an object of class \code{"rma.uni"} or \code{"rma.mv"}.}
    \item{object2}{an (optional) object of class \code{"rma.uni"} or \code{"rma.mv"}. See \sQuote{Details}.}
-   \item{btt}{optional vector of indices to specify which coefficients should be included in the Wald-type test. Can also be a string to grep for. See \sQuote{Details}.}
+   \item{btt}{optional vector of indices to specify which coefficients should be included in the Wald-type test. Can also be a string to \code{\link{grep}} for. See \sQuote{Details}.}
    \item{X}{optional numeric vector or matrix to specify one or more linear combinations of the coefficients in the model that should be tested. See \sQuote{Details}.}
-   \item{att}{optional vector of indices to specify which scale coefficients should be included in the Wald-type test. Can also be a string to grep for. See \sQuote{Details}. Only relevant for location-scale models (see \code{\link{rma}}).}
-   \item{Z}{optional numeric vector or matrix to specify one or more linear combinations of the scale coefficients in the model that should be tested. See \sQuote{Details}. Only relevant for location-scale models (see \code{\link{rma}}).}
-   \item{digits}{integer to specify the number of decimal places to which the printed results should be rounded. If unspecified, the default is to take the value from the object.}
+   \item{att}{optional vector of indices to specify which scale coefficients should be included in the Wald-type test. Can also be a string to \code{\link{grep}} for. See \sQuote{Details}. Only relevant for location-scale models (see \code{\link{rma.uni}}).}
+   \item{Z}{optional numeric vector or matrix to specify one or more linear combinations of the scale coefficients in the model that should be tested. See \sQuote{Details}. Only relevant for location-scale models (see \code{\link{rma.uni}}).}
+   \item{rhs}{optional vector of values for the right-hand side when testing linear combinations of coefficients via \code{X} or \code{Z}. If unspecified, this defaults to a vector of zeros of the appropriate length. See \sQuote{Details}.}
+   \item{digits}{optional integer to specify the number of decimal places to which the printed results should be rounded. If unspecified, the default is to take the value from the object.}
+   \item{refit}{logical to indicate whether models fitted with REML estimation and differing in their fixed effects should be refitted with ML estimation when conducting a likelihood ratio test (the default is \code{FALSE}).}
    \item{\dots}{other arguments.}
 }
 \details{
-   When a single model is specified, the function provides Wald-type tests of one or more model coefficients or linear combinations thereof.
+   The function can be used in three different ways:
 
-   In particular, for a fixed- or random-effects model (i.e., a model without moderators), this is just the test of the single coefficient of the model. For models including moderators, an omnibus test of all the model coefficients is conducted that excludes the intercept (the first coefficient) if it is included in the model. If no intercept is included in the model, then the omnibus test includes all of the coefficients in the model including the first.
+   \enumerate{
 
-   Alternatively, one can manually specify the indices of the coefficients to test via the \code{btt} argument. For example, with \code{btt=c(3,4)}, only the third and fourth coefficient from the model would be included in the test (if an intercept is included in the model, then it corresponds to the first coefficient in the model). Instead of specifying the coefficient numbers, one can specify a string for \code{btt}. In that case, \code{\link{grep}} will be used to search for all coefficient names that match the string. Using the \code{btt} argument, one can for example select all coefficients corresponding to a particular factor to test if the factor as a whole is significant. See \sQuote{Examples}.
+   \item When a single model is specified (via argument \code{object}), the function provides Wald-type tests of one or more model coefficients (i.e., \mjseqn{\mbox{H}_0{:}\; \beta_{j \in H_0} = 0}, where \mjseqn{\beta_{j \in H_0}} is the set of coefficients to be tested).
 
-   Instead, one can use the \code{X} argument to specify a linear combination of the coefficients in the model that should be tested (i.e., whether the linear combination is significantly different from zero). If a matrix of linear combinations is specified, each row defines a particular linear combination to be tested. If the matrix is of full rank, an omnibus Wald-type test of all linear combinations is also provided. Linear combinations can also be obtained with the \code{\link{predict.rma}} function, which will provide corresponding confidence intervals.
+   In particular, for equal- or random-effects models (i.e., models without moderators), this is just the test of the single coefficient of the model (i.e., \mjseqn{\mbox{H}_0{:}\; \theta = 0} or \mjseqn{\mbox{H}_0{:}\; \mu = 0}). For models including moderators, an omnibus test of all model coefficients is conducted that excludes the intercept (the first coefficient) if it is included in the model. If no intercept is included in the model, then the omnibus test includes all coefficients in the model including the first.
 
-   When specifying two models for comparison, the function provides a likelihood ratio test (LRT) comparing the two models. The two models must be based on the same set of data, must be of the same class, and should be nested for the LRT to make sense. Note that LRTs are not meaningful when using REML estimation and the two models differ in their fixed effects.
+   Alternatively, one can manually specify the indices of the coefficients to test via the \code{btt} (\sQuote{betas to test}) argument. For example, with \code{btt=c(3,4)}, only the third and fourth coefficient from the model would be included in the test (if an intercept is included in the model, then it corresponds to the first coefficient in the model). Instead of specifying the coefficient numbers, one can specify a string for \code{btt}. In that case, \code{\link{grep}} will be used to search for all coefficient names that match the string. Using the \code{btt} argument, one can for example select all coefficients corresponding to a particular factor to test if the factor as a whole is significant. See \sQuote{Examples}.
 
-   For location-scale models fitted with the \code{\link{rma}} function, one can use \code{att} to specify the indices of the scale coefficients to test. Similarly, one can use the \code{Z} argument to specify one or multiple linear combinations of the scale coefficients in the model that should be tested.
+   For location-scale models fitted with the \code{\link{rma.uni}} function, one can use the \code{att} argument in an analogous manner to specify the indices of the scale coefficients to test.
+
+   \item When a single model is specified (via argument \code{object}), one can use the \code{X} argument to specify a linear combination of the coefficients in the model that should be tested (i.e., \mjseqn{\mbox{H}_0{:}\; X \beta = 0}) using a Wald-type test (i.e., by default whether the linear combination is significantly different from zero, but one can specify a different value under the null hypothesis via argument \code{rhs}). If a matrix of linear combinations is specified, each row defines a particular linear combination to be tested (if \code{rhs} is used, then it should either be a scalar or of the same length as the number of combinations to be tested). If the matrix is of full rank, an omnibus Wald-type test of all linear combinations is also provided. Linear combinations can also be obtained with the \code{\link[=predict.rma]{predict}} function, which provides corresponding confidence intervals.
+
+   For location-scale models fitted with the \code{\link{rma.uni}} function, one can use the \code{Z} argument in an analogous manner to specify one or multiple linear combinations of the scale coefficients in the model that should be tested.
+
+   \item When specifying two models for comparison (via arguments \code{object} and \code{object2}), the function provides a likelihood ratio test (LRT) comparing the two models. The two models must be based on the same set of data, must be of the same class, and should be nested for the LRT to make sense. Also, LRTs are not meaningful when using REML estimation and the two models differ in terms of their fixed effects (setting \code{refit=TRUE} automatically refits the two models using ML estimation). Also, the theory underlying LRTs is only really applicable when comparing models that were fitted with ML/REML estimation, so if some other estimation was used to fit the two models, the results should be treated with caution.
+
+   }
+
 }
 \value{
-   An object of class \code{"anova.rma"}. When a single model is specified (without any further arguments or together with the \code{btt} argument), the object is a list containing the following components:
+   An object of class \code{"anova.rma"}. When a single model is specified (without any further arguments or together with the \code{btt} or \code{att} argument), the object is a list containing the following components:
    \item{QM}{test statistic of the Wald-type test of the model coefficients.}
    \item{QMdf}{corresponding degrees of freedom.}
    \item{QMp}{corresponding p-value.}
@@ -61,13 +72,13 @@
    \item{QE.r}{test statistic of the test for (residual) heterogeneity from the reduced model.}
    \item{tau2.f}{estimated \mjseqn{\tau^2} value from the full model. \code{NA} for \code{"rma.mv"} objects.}
    \item{tau2.r}{estimated \mjseqn{\tau^2} value from the reduced model. \code{NA} for \code{"rma.mv"} objects.}
-   \item{R2}{amount (in percent) of the heterogeneity in the reduced model that is accounted for in the full model (\code{NA} for fixed-effects models or for \code{"rma.mv"} objects). This can be regarded as a pseudo \mjseqn{R^2} statistic (Raudenbush, 2009). Note that the value may not be very accurate unless \mjseqn{k} is large (Lopez-Lopez et al., 2014).}
+   \item{R2}{amount (in percent) of the heterogeneity in the reduced model that is accounted for in the full model (\code{NA} for \code{"rma.mv"} objects). This can be regarded as a pseudo \mjseqn{R^2} statistic (Raudenbush, 2009). Note that the value may not be very accurate unless \mjseqn{k} is large (Lopez-Lopez et al., 2014).}
    \item{\dots}{some additional elements/values.}
 
-   The results are formatted and printed with the \code{\link{print.anova.rma}} function.
+   The results are formatted and printed with the \code{\link[=print.anova.rma]{print}} function.
 }
 \note{
-   The function can also be used to conduct a likelihood ratio test (LRT) for the amount of (residual) heterogeneity in random- and mixed-effects models. The full model should then be fitted with either \code{method="ML"} or \code{method="REML"} and the reduced model with \code{method="FE"}. The p-value for the test is based on a chi-square distribution with 1 degree of freedom, but actually needs to be adjusted for the fact that the parameter (i.e., \mjseqn{\tau^2}) falls on the boundary of the parameter space under the null hypothesis (see Viechtbauer, 2007, for more details).
+   The function can also be used to conduct a likelihood ratio test (LRT) for the amount of (residual) heterogeneity in random- and mixed-effects models. The full model should then be fitted with either \code{method="ML"} or \code{method="REML"} and the reduced model with \code{method="EE"}. The p-value for the test is based on a chi-square distribution with 1 degree of freedom, but actually needs to be adjusted for the fact that the parameter (i.e., \mjseqn{\tau^2}) falls on the boundary of the parameter space under the null hypothesis (see Viechtbauer, 2007, for more details).
 
    LRTs for variance components in more complex models (as fitted with the \code{\link{rma.mv}} function) can also be conducted in this manner (see \sQuote{Examples}).
 }
@@ -88,7 +99,9 @@
    Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \verb{https://doi.org/10.18637/jss.v036.i03}
 }
 \seealso{
-   \code{\link{rma.uni}}, \code{\link{rma.mv}}, \code{\link{print.anova.rma}}
+   \code{\link{rma.uni}} and \code{\link{rma.mv}} for functions to fit models for which likelihood ratio and Wald-type tests can be conducted.
+
+   \code{\link{print.anova.rma}} for the print method.
 }
 \examples{
 ### calculate log risk ratios and corresponding sampling variances
@@ -109,7 +122,7 @@ anova(res2, X=rbind(c(0,1,0), c(0,0,1)))
 ### corresponding likelihood ratio test
 anova(res1, res2)
 
-### test of a linear combination
+### Wald-type test of a linear combination
 anova(res2, X=c(1,35,1970))
 
 ### use predict() to obtain the same linear combination (with its CI)
@@ -119,7 +132,7 @@ predict(res2, newmods=c(35,1970))
 res3 <- rma(yi, vi, mods = ~ ablat + year + alloc, data=dat, method="ML")
 res3
 
-### test the 'alloc' factor
+### Wald-type test of the 'alloc' factor
 anova(res3, btt=4:5)
 
 ### instead of specifying the coefficient numbers, grep for "alloc"
@@ -131,16 +144,50 @@ anova(res3, btt="alloc")
 dat <- dat.konstantopoulos2011
 res <- rma.mv(yi, vi, random = ~ 1 | district/school, data=dat)
 
-### test the district-level variance component
+### likelihood ratio test of the district-level variance component
 res0 <- rma.mv(yi, vi, random = ~ 1 | district/school, data=dat, sigma2=c(0,NA))
 anova(res, res0)
 
-### test the school-level variance component
+### likelihood ratio test of the school-level variance component
 res0 <- rma.mv(yi, vi, random = ~ 1 | district/school, data=dat, sigma2=c(NA,0))
 anova(res, res0)
 
-### test both variance components simultaneously
+### likelihood ratio test of both variance components simultaneously
 res0 <- rma.mv(yi, vi, data=dat)
 anova(res, res0)
+
+############################################################################
+
+### an example illustrating a workflow involving cluster-robust inference
+dat <- dat.assink2016
+
+### assume that the effect sizes within studies are correlated with rho=0.6
+V <- vcalc(vi, cluster=study, obs=esid, data=dat, rho=0.6)
+
+### fit multilevel model using this approximate V matrix
+res <- rma.mv(yi, V, random = ~ 1 | study/esid, data=dat)
+res
+
+### likelihood ratio tests of the two variance components
+res0 <- rma.mv(yi, V, random = ~ 1 | study/esid, data=dat, sigma2=c(0,NA))
+anova(res, res0)
+res0 <- rma.mv(yi, V, random = ~ 1 | study/esid, data=dat, sigma2=c(NA,0))
+anova(res, res0)
+
+### use cluster-robust methods for inferences about the fixed effects
+sav <- robust(res, cluster=study, clubSandwich=TRUE)
+sav
+
+### examine if 'deltype' is a potential moderator
+res <- rma.mv(yi, V, mods = ~ deltype, random = ~ 1 | study/esid, data=dat)
+sav <- robust(res, cluster=study, clubSandwich=TRUE)
+sav
+
+### note: the (denominator) dfs for the omnibus F-test are very low, so the results
+### of this test may not be trustworthy; consider using cluster wild bootstrapping
+\dontrun{
+library(wildmeta)
+Wald_test_cwb(res, constraints=constrain_zero(2:3), R=1000, seed=1234)
+}
 }
 \keyword{models}

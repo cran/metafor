@@ -25,7 +25,7 @@
    mstyle <- .get.mstyle("crayon" %in% .packages())
 
    if (any(tau2val + vi < 0))
-      stop(mstyle$stop("Some marginal variances are negative."))
+      stop(mstyle$stop("Some marginal variances are negative."), call.=FALSE)
 
    W     <- diag(1/(vi + tau2val), nrow=k, ncol=k)
    stXWX <- .invcalc(X=X, W=W, k=k)
@@ -126,7 +126,8 @@
    mstyle <- .get.mstyle("crayon" %in% .packages())
 
    ### fit model with shifted outcome
-   res <- try(suppressWarnings(rma.uni(obj$yi - c(val*obj$X[,j]), obj$vi, weights=obj$weights, mods=obj$X, intercept=FALSE, method=obj$method, weighted=obj$weighted, test=obj$test, tau2=ifelse(obj$tau2.fix, obj$tau2, NA), control=obj$control, skipr2=TRUE)), silent=TRUE)
+   args <- list(yi=obj$yi - c(val*obj$X[,j]), vi=obj$vi, weights=obj$weights, mods=obj$X, intercept=FALSE, method=obj$method, weighted=obj$weighted, test=obj$test, tau2=ifelse(obj$tau2.fix, obj$tau2, NA), control=obj$control, skipr2=TRUE)
+   res <- try(suppressWarnings(.do.call(rma.uni, args)), silent=TRUE)
 
    if (inherits(res, "try-error"))
       stop()
@@ -150,9 +151,25 @@
 
 ############################################################################
 
+.mapfun.alpha <- function(x, lb, ub) {
+   if (is.infinite(lb) || is.infinite(ub)) {
+      x
+   } else {
+      lb + (ub-lb) / (1 + exp(-x))
+   }
+}
+
+.mapinvfun.alpha <- function(x, lb, ub) {
+   if (is.infinite(lb) || is.infinite(ub)) {
+      x
+   } else {
+      log((x-lb)/(ub-x))
+   }
+}
+
 ### -1 times the log likelihood (regular or restricted) for location-scale model
 
-.ll.rma.ls <- function(par, yi, vi, X, Z, reml, k, pX, alpha.val, verbose, digits, REMLf, link, mZ) {
+.ll.rma.ls <- function(par, yi, vi, X, Z, reml, k, pX, alpha.val, verbose, digits, REMLf, link, mZ, alpha.min, alpha.max, alpha.transf, tau2.min, tau2.max) {
 
    mstyle <- .get.mstyle("crayon" %in% .packages())
 
@@ -160,6 +177,10 @@
    #alpha <- par[-seq_len(pX)]
 
    alpha <- par
+
+   if (alpha.transf)
+      alpha <- mapply(.mapfun.alpha, alpha, alpha.min, alpha.max)
+
    alpha <- ifelse(is.na(alpha.val), alpha, alpha.val)
 
    ### compute predicted tau2 values
@@ -169,6 +190,9 @@
    } else {
       tau2 <- c(Z %*% alpha)
    }
+
+   if (any(is.na(tau2)) || any(tau2 < tau2.min) || any(tau2 > tau2.max))
+      return(Inf)
 
    if (any(tau2 < 0)) {
 
@@ -194,7 +218,7 @@
          beta <- stXWX %*% crossprod(X,W) %*% as.matrix(yi)
 
          ### compute residual sum of squares
-         RSS <- sum(wi*(yi - X %*% beta)^2)
+         RSS <- sum(wi*c(yi - X %*% beta)^2)
 
          ### log-likelihood (could leave out additive constants)
          if (!reml) {

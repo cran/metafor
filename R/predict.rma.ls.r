@@ -38,7 +38,7 @@ level, digits, transf, targs, vcov=FALSE, ...) {
    if (missing(targs))
       targs <- NULL
 
-   level <- ifelse(level == 0, 1, ifelse(level >= 1, (100-level)/100, ifelse(level > .5, 1-level, level)))
+   level <- .level(level)
 
    ddd <- list(...)
 
@@ -285,7 +285,7 @@ level, digits, transf, targs, vcov=FALSE, ...) {
          vpred[i] <- Xi.new %*% tcrossprod(x$vb, Xi.new)
       }
 
-      if (x$test == "t") {
+      if (is.element(x$test, c("knha","adhoc","t"))) {
          crit <- if (ddf > 0) qt(level/2, df=ddf, lower.tail=FALSE) else NA
       } else {
          crit <- qnorm(level/2, lower.tail=FALSE)
@@ -301,7 +301,7 @@ level, digits, transf, targs, vcov=FALSE, ...) {
          vpred[i] <- Zi.new %*% tcrossprod(x$va, Zi.new)
       }
 
-      if (x$test == "t") {
+      if (is.element(x$test, c("knha","adhoc","t"))) {
          crit <- if (ddf > 0) qt(level/2, df=ddf, lower.tail=FALSE) else NA
       } else {
          crit <- qnorm(level/2, lower.tail=FALSE)
@@ -309,6 +309,7 @@ level, digits, transf, targs, vcov=FALSE, ...) {
 
    }
 
+   vpred[vpred < 0] <- NA_real_
    se <- sqrt(vpred)
    ci.lb <- pred - crit * se
    ci.ub <- pred + crit * se
@@ -501,6 +502,7 @@ level, digits, transf, targs, vcov=FALSE, ...) {
    out$digits <- digits
    out$method <- x$method
    out$transf <- do.transf
+   out$pred.type <- ifelse(pred.mui, "location", "scale")
 
    if (x$test != "z")
       out$ddf <- ddf
@@ -508,7 +510,7 @@ level, digits, transf, targs, vcov=FALSE, ...) {
    if (pred.mui && (x$test != "z" || is.element(pi.type, c("riley","t"))) && pi.type != "simple")
       out$pi.ddf <- pi.ddf
 
-   class(out) <- "list.rma"
+   class(out) <- c("predict.rma", "list.rma")
 
    if (vcov & !do.transf) {
       out <- list(pred=out)

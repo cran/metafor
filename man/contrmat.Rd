@@ -36,7 +36,9 @@ contrmat(data, grp1, grp2, last, shorten=FALSE, minlen=2, check=TRUE, append=TRU
    Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \verb{https://doi.org/10.18637/jss.v036.i03}
 }
 \seealso{
-   \code{\link{to.wide}}, \code{\link{dat.senn2013}}, \code{\link{dat.hasselblad1998}}
+   \code{\link{to.wide}} for a function to create \sQuote{wide} format datasets.
+
+   \code{\link[metadat]{dat.senn2013}}, \code{\link[metadat]{dat.hasselblad1998}}, \code{\link[metadat]{dat.lopez2019}} for illustrative examples.
 }
 \examples{
 ### restructure to wide format
@@ -58,7 +60,7 @@ dat <- to.wide(dat, study="study", grp="trt", ref="no_contact", grpvars=6:7)
 dat
 
 ### add contrast matrix
-dat <- contrmat(dat, grp1="trt.1", grp2="trt.2", shorten=TRUE)
+dat <- contrmat(dat, grp1="trt.1", grp2="trt.2", shorten=TRUE, minlen=3)
 dat
 }
 \keyword{manip}

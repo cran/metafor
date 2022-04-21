@@ -1,4 +1,4 @@
-gosh.rma <- function(x, subsets, progbar=TRUE, parallel="no", ncpus=1, cl=NULL, ...) {
+gosh.rma <- function(x, subsets, progbar=TRUE, parallel="no", ncpus=1, cl, ...) {
 
    mstyle <- .get.mstyle("crayon" %in% .packages())
 
@@ -16,6 +16,9 @@ gosh.rma <- function(x, subsets, progbar=TRUE, parallel="no", ncpus=1, cl=NULL, 
 
    if (parallel == "no" && ncpus > 1)
       parallel <- "snow"
+
+   if (missing(cl))
+      cl <- NULL
 
    if (!is.null(cl) && inherits(cl, "SOCKcluster")) {
       parallel <- "snow"
@@ -39,7 +42,7 @@ gosh.rma <- function(x, subsets, progbar=TRUE, parallel="no", ncpus=1, cl=NULL, 
 
    if (!progbar) {
       pbo <- pbapply::pboptions(type="none")
-      on.exit(pbapply::pboptions(pbo))
+      on.exit(pbapply::pboptions(pbo), add=TRUE)
    }
 
    ddd <- list(...)
@@ -181,8 +184,8 @@ gosh.rma <- function(x, subsets, progbar=TRUE, parallel="no", ncpus=1, cl=NULL, 
 
    }
 
-   beta <- do.call("rbind", lapply(res, function(x) if (inherits(x, "try-error") || any(x$coef.na)) NA else t(x$beta)))
-   het  <- do.call("rbind", lapply(res, function(x) if (inherits(x, "try-error") || any(x$coef.na)) NA else c(x$k, x$QE, x$I2, x$H2, x$tau2)))
+   beta <- do.call(rbind, lapply(res, function(x) if (inherits(x, "try-error") || any(x$coef.na)) NA else t(x$beta)))
+   het  <- do.call(rbind, lapply(res, function(x) if (inherits(x, "try-error") || any(x$coef.na)) NA else c(x$k, x$QE, x$I2, x$H2, x$tau2)))
 
    if (all(is.na(het)))
       stop(mstyle$stop("All model fits failed."))

@@ -21,7 +21,7 @@ digits, cols=c("gray80","gray10"), grid=TRUE, pch=19, cex=1, lwd=2, ...) {
    } else {
       yaxis <- match.arg(yaxis, c("tau2","I2","H2"))
       if (is.null(x$tau2))
-         stop(mstyle$stop("Cannot use yaxis=\"tau2\" for fixed-effects models."))
+         stop(mstyle$stop("Cannot use yaxis=\"tau2\" for equal/fixed-effects models."))
    }
 
    if (missing(transf))
@@ -30,8 +30,8 @@ digits, cols=c("gray80","gray10"), grid=TRUE, pch=19, cex=1, lwd=2, ...) {
    if (missing(atransf))
       atransf <- FALSE
 
-   transf.char  <- deparse(substitute(transf))
-   atransf.char <- deparse(substitute(atransf))
+   transf.char  <- deparse(transf)
+   atransf.char <- deparse(atransf)
 
    if (is.function(transf) && is.function(atransf))
       stop(mstyle$stop("Use either 'transf' or 'atransf' to specify a transformation (not both)."))
@@ -54,7 +54,7 @@ digits, cols=c("gray80","gray10"), grid=TRUE, pch=19, cex=1, lwd=2, ...) {
    par.mar <- par("mar")
    par.mar.adj <- par.mar + c(0,0.5,0,0) # need a bit more space on the right for the y-axis label
    par(mar = par.mar.adj)
-   on.exit(par(mar = par.mar))
+   on.exit(par(mar = par.mar), add=TRUE)
 
    if (missing(at))
       at <- NULL

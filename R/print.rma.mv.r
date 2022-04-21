@@ -10,8 +10,19 @@ print.rma.mv <- function(x, digits, showfit=FALSE, signif.stars=getOption("show.
       digits <- .get.digits(digits=digits, xdigits=x$digits, dmiss=FALSE)
    }
 
-   if (!exists(".rmspace"))
-      cat("\n")
+   footsym <- .get.footsym()
+
+   ddd <- list(...)
+
+   .chkdots(ddd, c("num", "legend"))
+
+   if (is.null(ddd$legend)) {
+      legend <- ifelse(inherits(x, "robust.rma"), TRUE, FALSE)
+   } else {
+      legend <- .isTRUE(ddd$legend)
+   }
+
+   .space()
 
    cat(mstyle$section("Multivariate Meta-Analysis Model"))
    cat(mstyle$section(paste0(" (k = ", x$k, "; ")))
@@ -27,6 +38,7 @@ print.rma.mv <- function(x, digits, showfit=FALSE, signif.stars=getOption("show.
       names(fs) <- c("logLik", "Deviance", "AIC", "BIC", "AICc")
       cat("\n")
       tmp <- capture.output(print(fs, quote=FALSE, print.gap=2))
+      tmp[1] <- paste0(tmp[1], "\u200b")
       .print.table(tmp, mstyle)
       cat("\n")
    } else {
@@ -147,19 +159,19 @@ print.rma.mv <- function(x, digits, showfit=FALSE, signif.stars=getOption("show.
             } else {
                G <- matrix(NA_real_, nrow=x$g.nlevels.f[1], ncol=x$g.nlevels.f[1])
             }
-            G[upper.tri(G)] <- rho
-            G[lower.tri(G)] <- t(G)[lower.tri(G)]
+            G[lower.tri(G)] <- rho
+            G[upper.tri(G)] <- t(G)[upper.tri(G)]
             diag(G) <- 1
-            #G[upper.tri(G)] <- ""
+            G[upper.tri(G)] <- ""
 
             if (length(x$rho) == 1L) {
                G.info <- matrix(NA_real_, nrow=2, ncol=2)
             } else {
                G.info <- matrix(NA_real_, nrow=x$g.nlevels.f[1], ncol=x$g.nlevels.f[1])
             }
-            G.info[upper.tri(G.info)] <- x$g.levels.comb.k
-            G.info[lower.tri(G.info)] <- t(G.info)[lower.tri(G.info)]
-            G.info[upper.tri(G.info)] <- ifelse(x$vc.fix$rho, "yes", "no")
+            G.info[lower.tri(G.info)] <- x$g.levels.comb.k
+            G.info[upper.tri(G.info)] <- t(G.info)[upper.tri(G.info)]
+            G.info[lower.tri(G.info)] <- ifelse(x$vc.fix$rho, "yes", "no")
             diag(G.info) <- "-"
 
             vc <- cbind(G, "", G.info)
@@ -178,7 +190,7 @@ print.rma.mv <- function(x, digits, showfit=FALSE, signif.stars=getOption("show.
 
             G.info <- .fcf(cov2cor(x$G), digits[["var"]])
             diag(G.info) <- "-"
-            G.info[upper.tri(G.info)] <- ifelse(x$vc.fix$rho, "yes", "no")
+            G.info[lower.tri(G.info)] <- ifelse(x$vc.fix$rho, "yes", "no")
             colnames(G.info) <- abbreviate(x$g.names[-length(x$g.names)])
             vc <- cbind(vc, G.info)
             tmp <- capture.output(print(vc, quote=FALSE, right=right, print.gap=2))
@@ -278,8 +290,8 @@ print.rma.mv <- function(x, digits, showfit=FALSE, signif.stars=getOption("show.
             } else {
                H <- matrix(NA_real_, nrow=x$h.nlevels.f[1], ncol=x$h.nlevels.f[1])
             }
-            H[upper.tri(H)] <- phi
-            H[lower.tri(H)] <- t(H)[lower.tri(H)]
+            H[lower.tri(H)] <- phi
+            H[upper.tri(H)] <- t(H)[upper.tri(H)]
             diag(H) <- 1
             #H[upper.tri(H)] <- ""
 
@@ -288,9 +300,9 @@ print.rma.mv <- function(x, digits, showfit=FALSE, signif.stars=getOption("show.
             } else {
                H.info <- matrix(NA_real_, nrow=x$h.nlevels.f[1], ncol=x$h.nlevels.f[1])
             }
-            H.info[upper.tri(H.info)] <- x$h.levels.comb.k
-            H.info[lower.tri(H.info)] <- t(H.info)[lower.tri(H.info)]
-            H.info[upper.tri(H.info)] <- ifelse(x$vc.fix$phi, "yes", "no")
+            H.info[lower.tri(H.info)] <- x$h.levels.comb.k
+            H.info[upper.tri(H.info)] <- t(H.info)[upper.tri(H.info)]
+            H.info[lower.tri(H.info)] <- ifelse(x$vc.fix$phi, "yes", "no")
             diag(H.info) <- "-"
 
             vc <- cbind(H, "", H.info)
@@ -309,7 +321,7 @@ print.rma.mv <- function(x, digits, showfit=FALSE, signif.stars=getOption("show.
 
             H.info <- .fcf(cov2cor(x$H), digits[["var"]])
             diag(H.info) <- "-"
-            H.info[upper.tri(H.info)] <- ifelse(x$vc.fix$phi, "yes", "no")
+            H.info[lower.tri(H.info)] <- ifelse(x$vc.fix$phi, "yes", "no")
             colnames(H.info) <- abbreviate(x$h.names[-length(x$h.names)])
             vc <- cbind(vc, H.info)
             tmp <- capture.output(print(vc, quote=FALSE, right=right, print.gap=2))
@@ -346,19 +358,40 @@ print.rma.mv <- function(x, digits, showfit=FALSE, signif.stars=getOption("show.
       cat("\n\n")
    }
 
-   if (x$p > 1L && !is.na(x$QM)) {
-      cat(mstyle$section(paste0("Test of Moderators (coefficient", ifelse(x$m == 1, " ", "s "), .format.btt(x$btt),"):")))
+   if (inherits(x, "robust.rma")) {
+
+      cat(mstyle$text("Number of estimates:   "))
+      cat(mstyle$result(x$k))
       cat("\n")
-      if (x$test == "t") {
-         cat(mstyle$result(paste0("F(df1 = ", x$QMdf[1], ", df2 = ", x$QMdf[2], ") = ", .fcf(x$QM, digits[["test"]]), ", p-val ", .pval(x$QMp, digits[["pval"]], showeq=TRUE, sep=" "))))
+      cat(mstyle$text("Number of clusters:    "))
+      cat(mstyle$result(x$n))
+      cat("\n")
+
+      cat(mstyle$text("Estimates per cluster: "))
+      if (all(x$tcl[1] == x$tcl)) {
+         cat(mstyle$result(x$tcl[1]))
+      } else {
+         cat(mstyle$result(paste0(min(x$tcl), "-", max(x$tcl), " (mean: ", .fcf(mean(x$tcl), digits=2), ", median: ", round(median(x$tcl), digits=2), ")")))
+      }
+      cat("\n\n")
+
+   }
+
+   if (x$p > 1L && !is.na(x$QM)) {
+      cat(mstyle$section(paste0("Test of Moderators (coefficient", ifelse(x$m == 1, " ", "s "), .format.btt(x$btt),"):", ifelse(inherits(x, "robust.rma"), footsym[1], ""))))
+      cat("\n")
+      if (is.element(x$test, c("knha","adhoc","t"))) {
+         cat(mstyle$result(paste0("F(df1 = ", x$QMdf[1], ", df2 = ", round(x$QMdf[2], 2), ") = ", .fcf(x$QM, digits[["test"]]), ", p-val ", .pval(x$QMp, digits[["pval"]], showeq=TRUE, sep=" "))))
       } else {
          cat(mstyle$result(paste0("QM(df = ", x$QMdf[1], ") = ", .fcf(x$QM, digits[["test"]]), ", p-val ", .pval(x$QMp, digits[["pval"]], showeq=TRUE, sep=" "))))
       }
       cat("\n\n")
    }
 
-   if (x$test == "t") {
+   if (is.element(x$test, c("knha","adhoc","t"))) {
       res.table <- data.frame(estimate=.fcf(c(x$beta), digits[["est"]]), se=.fcf(x$se, digits[["se"]]), tval=.fcf(x$zval, digits[["test"]]), df=round(x$ddf,2), pval=.pval(x$pval, digits[["pval"]]), ci.lb=.fcf(x$ci.lb, digits[["ci"]]), ci.ub=.fcf(x$ci.ub, digits[["ci"]]), stringsAsFactors=FALSE)
+      if (inherits(x, "robust.rma"))
+         colnames(res.table)[c(2:7)] <- paste0(colnames(res.table)[c(2:7)], footsym[1])
    } else {
       res.table <- data.frame(estimate=.fcf(c(x$beta), digits[["est"]]), se=.fcf(x$se, digits[["se"]]), zval=.fcf(x$zval, digits[["test"]]), pval=.pval(x$pval, digits[["pval"]]), ci.lb=.fcf(x$ci.lb, digits[["ci"]]), ci.ub=.fcf(x$ci.ub, digits[["ci"]]), stringsAsFactors=FALSE)
    }
@@ -369,12 +402,8 @@ print.rma.mv <- function(x, digits, showfit=FALSE, signif.stars=getOption("show.
       colnames(res.table)[ncol(res.table)] <- ""
    }
 
-   ddd <- list(...)
-
-   .chkdots(ddd, c("num"))
-
    if (.isTRUE(ddd$num))
-      rownames(res.table) <- paste0(1:nrow(res.table), ") ", rownames(res.table))
+      rownames(res.table) <- paste0(seq_len(nrow(res.table)), ") ", rownames(res.table))
 
    if (x$int.only)
       res.table <- res.table[1,]
@@ -386,16 +415,40 @@ print.rma.mv <- function(x, digits, showfit=FALSE, signif.stars=getOption("show.
    } else {
       tmp <- capture.output(print(res.table, quote=FALSE, right=TRUE, print.gap=2))
    }
+   tmp[1] <- paste0(tmp[1], "\u200b")
    .print.table(tmp, mstyle)
+
+   if (signif.legend || legend) {
+      cat("\n")
+      cat(mstyle$legend("---"))
+   }
 
    if (signif.legend) {
       cat("\n")
-      cat(mstyle$legend("---\nSignif. codes: "), mstyle$legend(attr(signif, "legend")))
+      cat(mstyle$legend("Signif. codes: "), mstyle$legend(attr(signif, "legend")))
       cat("\n")
    }
 
-   if (!exists(".rmspace"))
+   if (inherits(x, "robust.rma") && legend) {
       cat("\n")
+      cat(mstyle$legend(paste0(footsym[2], " results based on cluster-robust inference (var-cov estimator: ", x$vbest)))
+      if (x$robumethod == "default") {
+         cat(mstyle$legend(","))
+         cat("\n")
+         cat(mstyle$legend(paste0("   approx. ", ifelse(x$int.only, "t-test and confidence interval", "t/F-tests and confidence intervals"), ", dfs = residual method)")))
+      } else {
+         if (x$coef_test == "Satterthwaite" && x$conf_test == "Satterthwaite" && x$wald_test == "HTZ") {
+            cat(mstyle$legend(","))
+            cat("\n")
+            cat(mstyle$legend(paste0("   approx. ", ifelse(x$int.only, "t-test and confidence interval", "t/F-tests and confidence intervals"), ", dfs = Satterthwaite method)")))
+         } else {
+            cat(mstyle$legend(")"))
+         }
+      }
+      cat("\n")
+   }
+
+   .space()
 
    invisible()
 

@@ -2,7 +2,7 @@
 
 context("Checking misc: permutest() function")
 
-source("tolerances.r") # read in tolerances
+source("settings.r")
 
 ### load data
 dat <- dat.hine1989
@@ -60,7 +60,7 @@ test_that("permutest() gives correct results for a mixed-effects model.", {
    maj <- as.numeric(R.Version()$major)
    min <- as.numeric(R.Version()$minor)
 
-   ### run test only on R versions 3.6.x (due to change in sampler)
+   ### run test only on R versions 3.6.x or later (due to change in sampler)
 
    if (maj >= 3 && min >= 6) {
 
@@ -116,7 +116,7 @@ test_that("permutest() gives correct results for example in Follmann & Proschan 
       dat <- escalc(measure="PETO", ai=ai, n1i=n1i, ci=ci, n2i=n2i, data=dat)
 
       res <- rma(yi, vi, data=dat, method="DL")
-      sav <- permutest(res, permci=TRUE, progbar=FALSE, retpermdist=TRUE, control=list(stat="coef"))
+      sav <- permutest(res, permci=TRUE, progbar=FALSE, control=list(stat="coef"))
 
       expect_equivalent(sav$pval, 10/256)
       expect_equivalent(sav$ci.lb, -0.3677, tolerance=.tol[["ci"]])
@@ -129,3 +129,5 @@ test_that("permutest() gives correct results for example in Follmann & Proschan 
    }
 
 })
+
+rm(list=ls())

@@ -2,11 +2,10 @@
 
 context("Checking misc: anova() function")
 
-source("tolerances.r") # read in tolerances
+source("settings.r")
 
 test_that("anova() works correctly for comparing nested models.", {
 
-   data(dat.bcg, package="metafor")
    dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
    res1 <- rma(yi, vi, data=dat, method="ML")
    res2 <- rma(yi ~ ablat, vi, data=dat, method="ML")
@@ -25,7 +24,6 @@ test_that("anova() works correctly for comparing nested models.", {
 
 test_that("anova() works correctly when using the 'btt' argument.", {
 
-   data(dat.bcg, package="metafor")
    dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
    res <- rma(yi, vi, mods = ~ ablat + alloc, data=dat)
    sav <- anova(res, btt=3:4)
@@ -51,13 +49,17 @@ test_that("anova() works correctly when using the 'btt' argument.", {
 
 test_that("anova() works correctly when using the 'X' argument.", {
 
-   data(dat.bcg, package="metafor")
    dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
    res <- rma(yi, vi, mods = ~ ablat + alloc, data=dat)
+
    sav <- anova(res, X=rbind(c(1, 10, 0, 0), c(1, 30, 0, 0), c(1, 50, 0, 0)))
    out <- capture.output(print(sav))
 
    expect_equivalent(sav$zval, c(0.0588, -1.7964, -3.1210), tolerance=.tol[["test"]])
+
+   sav <- anova(res, X=rbind(c(1, 10, 0, 0), c(1, 30, 0, 0), c(1, 50, 0, 0)), rhs=-.10)
+
+   expect_equivalent(sav$zval, c(0.3463, -1.4543, -2.8295), tolerance=.tol[["test"]])
 
    res <- rma(yi, vi, mods = ~ ablat + alloc, data=dat, test="knha")
    sav <- anova(res, X=rbind(c(1, 10, 0, 0), c(1, 10, 1, 0), c(1, 10, 0, 1)))
@@ -68,3 +70,5 @@ test_that("anova() works correctly when using the 'X' argument.", {
    expect_equivalent(sav$QMp, 0.7412, tolerance=.tol[["pval"]])
 
 })
+
+rm(list=ls())

@@ -2,16 +2,15 @@
 
 context("Checking misc: rma() function with location-scale models")
 
-source("tolerances.r") # read in tolerances
+source("settings.r")
 
 test_that("location-scale model results are correct for in intercept-only model", {
 
-   data(dat.bcg, package="metafor")
    dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
 
    res1 <- rma(yi, vi, data=dat, test="t")
    res2 <- rma(yi, vi, scale = ~ 1, data=dat, test="t", control=list(optimizer="optim"))
-   res3 <- suppressWarnings(rma(yi, vi, scale = ~ 1, link="identity", data=dat, test="t", control=list(optimizer="optim", optmethod="Nelder-Mead")))
+   res3 <- suppressWarnings(rma(yi, vi, scale = ~ 1, link="identity", data=dat, test="t", control=list(optimizer="Nelder-Mead")))
    expect_equivalent(res1$tau2, as.vector(exp(coef(res2)$alpha)), tolerance=.tol[["var"]])
    expect_equivalent(res1$tau2, as.vector(coef(res3)$alpha), tolerance=.tol[["var"]])
 
@@ -19,12 +18,11 @@ test_that("location-scale model results are correct for in intercept-only model"
 
 test_that("location-scale model results are correct for a categorical predictor", {
 
-   data(dat.bcg, package="metafor")
    dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
 
    res1 <- rma(yi ~ alloc, vi, scale = ~ alloc - 1, data=dat)
    res2 <- rma(yi ~ alloc, vi, scale = ~ alloc - 1, link = "identity", data=dat)
-   res3 <- rma.mv(yi ~ alloc, vi, random = ~ alloc | trial, struct="DIAG", data=dat)
+   res3 <- rma.mv(yi ~ alloc, vi, random = ~ alloc | trial, struct="DIAG", data=dat, sparse=sparse)
    expect_equivalent(as.vector(exp(coef(res1)$alpha)), as.vector(coef(res2)$alpha), tolerance=.tol[["var"]])
    expect_equivalent(as.vector(exp(coef(res1)$alpha)), res3$tau2, tolerance=.tol[["var"]])
 
@@ -32,7 +30,6 @@ test_that("location-scale model results are correct for a categorical predictor"
 
 test_that("location-scale model results are correct for a continuous predictor", {
 
-   data(dat.laopaiboon2015, package="metafor")
    dat <- escalc(measure="RR", ai=ai, n1i=n1i, ci=ci, n2i=n2i, data=dat.laopaiboon2015)
 
    dat$ni <- dat$n1i + dat$n2i
@@ -67,3 +64,5 @@ test_that("location-scale model results are correct for a continuous predictor",
    expect_equivalent(sav, c(-0.479, -0.588, -0.831, -0.711, -0.494, -0.254, -0.661, -0.458, -0.542, -0.039, -0.039, -0.13, -0.405, -0.764, -0.357), tolerance=.tol[["var"]])
 
 })
+
+rm(list=ls())

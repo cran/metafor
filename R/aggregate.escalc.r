@@ -1,11 +1,14 @@
-aggregate.escalc <- function(x, cluster, time, V, struct="CS", rho, phi, weighted=TRUE, fun, na.rm=TRUE, subset, select, digits, ...) {
+aggregate.escalc <- function(x, cluster, time, obs, V, struct="CS", rho, phi, weighted=TRUE, checkpd=TRUE, fun, na.rm=TRUE, subset, select, digits, ...) {
 
    mstyle <- .get.mstyle("crayon" %in% .packages())
 
    .chkclass(class(x), must="escalc")
 
-   if (any(!is.element(struct, c("ID","CS","CAR","CS+CAR"))))
+   if (any(!is.element(struct, c("ID","CS","CAR","CS+CAR","CS*CAR"))))
       stop(mstyle$stop("Unknown 'struct' specified."))
+
+   if (missing(cluster))
+      stop(mstyle$stop("Must specify 'cluster' variable."))
 
    if (length(na.rm) == 1L)
       na.rm <- c(na.rm, na.rm)
@@ -14,26 +17,19 @@ aggregate.escalc <- function(x, cluster, time, V, struct="CS", rho, phi, weighte
 
    #########################################################################
 
-   ### extract V, cluster, and subset variables
+   ### extract V, cluster, time, and subset variables
 
    mf <- match.call()
 
-   mf.V       <- mf[[match("V",       names(mf))]]
-   mf.cluster <- mf[[match("cluster", names(mf))]]
-   mf.time    <- mf[[match("time",    names(mf))]]
-   mf.subset  <- mf[[match("subset",  names(mf))]]
-
-   V       <- eval(mf.V,       x, enclos=sys.frame(sys.parent())) # NULL if user does not specify this
-   cluster <- eval(mf.cluster, x, enclos=sys.frame(sys.parent())) # NULL if user does not specify this
-   time    <- eval(mf.time,    x, enclos=sys.frame(sys.parent())) # NULL if user does not specify this
-   subset  <- eval(mf.subset,  x, enclos=sys.frame(sys.parent())) # NULL if user does not specify this
+   V       <- .getx("V",       mf=mf, data=x)
+   cluster <- .getx("cluster", mf=mf, data=x)
+   time    <- .getx("time",    mf=mf, data=x)
+   obs     <- .getx("obs",     mf=mf, data=x)
+   subset  <- .getx("subset",  mf=mf, data=x)
 
    #########################################################################
 
    ### checks on cluster variable
-
-   if (is.null(cluster))
-      stop(mstyle$stop("Must specify 'cluster' variable."))
 
    if (anyNA(cluster))
       stop(mstyle$stop("No missing values allowed in 'cluster' variable."))
@@ -72,7 +68,7 @@ aggregate.escalc <- function(x, cluster, time, V, struct="CS", rho, phi, weighte
       if (struct=="ID")
          R <- diag(1, nrow=k, ncol=k)
 
-      if (is.element(struct, c("CS","CS+CAR"))) {
+      if (is.element(struct, c("CS","CS+CAR","CS*CAR"))) {
 
          if (missing(rho))
             stop(mstyle$stop("Must specify 'rho' for this var-cov structure."))
@@ -88,7 +84,7 @@ aggregate.escalc <- function(x, cluster, time, V, struct="CS", rho, phi, weighte
 
       }
 
-      if (is.element(struct, c("CAR","CS+CAR"))) {
+      if (is.element(struct, c("CAR","CS+CAR","CS*CAR"))) {
 
          if (missing(phi))
             stop(mstyle$stop("Must specify 'phi' for this var-cov structure."))
@@ -104,18 +100,30 @@ aggregate.escalc <- function(x, cluster, time, V, struct="CS", rho, phi, weighte
 
          ### checks on time variable
 
-         if (is.null(time))
+         if (!is.element("time", names(mf)))
             stop(mstyle$stop("Must specify 'time' variable for this var-cov structure."))
 
          if (length(time) != k)
             stop(mstyle$stop(paste0("Length of variable specified via 'time' (", length(time), ") does not match length of data (", k, ").")))
+
+         if (struct == "CS*CAR") {
+
+            ### checks on obs variable
+
+         if (!is.element("obs", names(mf)))
+            stop(mstyle$stop("Must specify 'obs' variable for this var-cov structure."))
+
+            if (length(obs) != k)
+               stop(mstyle$stop(paste0("Length of variable specified via 'obs' (", length(obs), ") does not match length of data (", k, ").")))
+
+         }
 
       }
 
       if (struct=="CS") {
 
          R <- matrix(0, nrow=k, ncol=k)
-         for (i in 1:n) {
+         for (i in seq_len(n)) {
             R[cluster == ucluster[i], cluster == ucluster[i]] <- rho[i]
          }
 
@@ -124,7 +132,7 @@ aggregate.escalc <- function(x, cluster, time, V, struct="CS", rho, phi, weighte
       if (struct == "CAR") {
 
          R <- matrix(0, nrow=k, ncol=k)
-         for (i in 1:n) {
+         for (i in seq_len(n)) {
             R[cluster == ucluster[i], cluster == ucluster[i]] <- outer(time[cluster == ucluster[i]], time[cluster == ucluster[i]], function(x,y) phi[i]^(abs(x-y)))
          }
 
@@ -133,8 +141,17 @@ aggregate.escalc <- function(x, cluster, time, V, struct="CS", rho, phi, weighte
       if (struct == "CS+CAR") {
 
          R <- matrix(0, nrow=k, ncol=k)
-         for (i in 1:n) {
+         for (i in seq_len(n)) {
             R[cluster == ucluster[i], cluster == ucluster[i]] <- rho[i] + (1 - rho[i]) * outer(time[cluster == ucluster[i]], time[cluster == ucluster[i]], function(x,y) phi[i]^(abs(x-y)))
+         }
+
+      }
+
+      if (struct == "CS*CAR") {
+
+         R <- matrix(0, nrow=k, ncol=k)
+         for (i in seq_len(n)) {
+            R[cluster == ucluster[i], cluster == ucluster[i]] <- outer(obs[cluster == ucluster[i]], obs[cluster == ucluster[i]], function(x,y) ifelse(x==y, 1, rho[i])) * outer(time[cluster == ucluster[i]], time[cluster == ucluster[i]], function(x,y) phi[i]^(abs(x-y)))
          }
 
       }
@@ -177,9 +194,9 @@ aggregate.escalc <- function(x, cluster, time, V, struct="CS", rho, phi, weighte
       ### check that covariances are really 0 for estimates belonging to different clusters
       ### note: if na.rm[1] is FALSE, there may be missings in V, so skip check in those clusters
 
-      for (i in 1:n) {
+      for (i in seq_len(n)) {
          if (any(abs(V[cluster == ucluster[i], cluster != ucluster[i]]) >= .Machine$double.eps, na.rm=TRUE))
-            warning(mstyle$warning(paste0("Estimates in cluster '", ucluster[i], "' appear to have non-zero covariances with estimates belonging to a different cluster.")), call.=FALSE)
+            warning(mstyle$warning(paste0("Estimates in cluster '", ucluster[i], "' appear to have non-zero covariances with estimates belonging to different clusters.")), call.=FALSE)
       }
 
    }
@@ -246,34 +263,38 @@ aggregate.escalc <- function(x, cluster, time, V, struct="CS", rho, phi, weighte
 
    ### check that 'V' is positive definite (in each cluster)
 
-   all.pd <- TRUE
+   if (checkpd) {
 
-   for (i in 1:n) {
+      all.pd <- TRUE
 
-      Vi <- V[cluster == ucluster[i], cluster == ucluster[i]]
+      for (i in seq_len(n)) {
 
-      if (!anyNA(Vi) && any(eigen(Vi, symmetric=TRUE, only.values=TRUE)$values <= .Machine$double.eps)) {
-         all.pd <- FALSE
-         warning(mstyle$warning(paste0("'V' appears to be not positive definite in cluster ", ucluster[i], ".")), call.=FALSE)
+         Vi <- V[cluster == ucluster[i], cluster == ucluster[i]]
+
+         if (!anyNA(Vi) && any(eigen(Vi, symmetric=TRUE, only.values=TRUE)$values <= .Machine$double.eps)) {
+            all.pd <- FALSE
+            warning(mstyle$warning(paste0("'V' appears to be not positive definite in cluster ", ucluster[i], ".")), call.=FALSE)
+         }
+
       }
 
-   }
+      if (!all.pd)
+         stop(mstyle$stop("Cannot aggregate estimates with a non-positive-definite 'V' matrix."))
 
-   if (!all.pd)
-      stop(mstyle$stop("Cannot aggregate estimates with a non-positive-definite 'V' matrix."))
+   }
 
    ### compute aggregated estimates and corresponding sampling variances
 
    yi.agg <- rep(NA_real_, n)
    vi.agg <- rep(NA_real_, n)
 
-   for (i in 1:n) {
+   for (i in seq_len(n)) {
 
       Vi <- V[cluster == ucluster[i], cluster == ucluster[i]]
 
       if (weighted) {
 
-         Wi <- try(chol2inv(chol(Vi)), silent=FALSE)
+         Wi <- try(chol2inv(chol(Vi)), silent=TRUE)
 
          if (inherits(Wi, "try-error"))
             stop(mstyle$stop(paste0("Cannot take inverse of 'V' in cluster ", ucluster[i], ".")))

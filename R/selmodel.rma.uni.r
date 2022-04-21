@@ -39,17 +39,21 @@ selmodel.rma.uni <- function(x, type, alternative="greater", prec, delta, steps,
    ### refit RE/ME models with ML estimation
 
    if (!is.element(x$method, c("FE","EE","CE","ML"))) {
-      #stop(mstyle$stop("Argument 'x' must either be a fixed-effects model or a model fitted with ML estimation."))
+      #stop(mstyle$stop("Argument 'x' must either be an equal/fixed-effects model or a model fitted with ML estimation."))
       #x <- try(update(x, method="ML"), silent=TRUE)
       #x <- suppressWarnings(update(x, method="ML"))
-      x <- try(suppressWarnings(rma.uni(x$yi, x$vi, weights=x$weights, mods=x$X, intercept=FALSE, method="ML", weighted=x$weighted, test=x$test, level=x$level, tau2=ifelse(x$tau2.fix, x$tau2, NA), control=x$control, skipr2=TRUE)), silent=TRUE)
+      #x <- try(suppressWarnings(rma.uni(x$yi, x$vi, weights=x$weights, mods=x$X, intercept=FALSE, method="ML", weighted=x$weighted, test=x$test, level=x$level, tau2=ifelse(x$tau2.fix, x$tau2, NA), control=x$control, skipr2=TRUE)), silent=TRUE)
+      args <- list(yi=x$yi, vi=x$vi, weights=x$weights, mods=x$X, intercept=FALSE, method="ML", weighted=x$weighted, test=x$test, level=x$level, tau2=ifelse(x$tau2.fix, x$tau2, NA), control=x$control, skipr2=TRUE)
+      x <- try(suppressWarnings(.do.call(rma.uni, args)), silent=TRUE)
+      if (inherits(x, "try-error"))
+         stop(mstyle$stop("Could not refit input model using method='ML'."))
    }
 
    ### get ... argument and check for extra/superfluous arguments
 
    ddd <- list(...)
 
-   .chkdots(ddd, c("time", "tau2", "beta", "skiphes", "skiphet", "scaleprec", "defmap", "mapfun", "mapinvfun"))
+   .chkdots(ddd, c("time", "tau2", "beta", "skiphes", "skiphet", "skipintcheck", "scaleprec", "defmap", "mapfun", "mapinvfun"))
 
    ### handle 'tau2' argument from ...
 
@@ -166,7 +170,7 @@ selmodel.rma.uni <- function(x, type, alternative="greater", prec, delta, steps,
                delta.max = NULL,      # max possible value(s) for selection model parameter(s)
                tau2.max = Inf,        # max possible value for tau^2
                pval.min = NULL,       # minimum p-value to intergrate over (for selection models where this matters)
-               optimizer = "optim",   # optimizer to use ("optim", "nlminb", "uobyqa", "newuoa", "bobyqa", "nloptr", "nlm", "hjk", "nmk", "mads", "ucminf", "optimParallel")
+               optimizer = "optim",   # optimizer to use ("optim","nlminb","uobyqa","newuoa","bobyqa","nloptr","nlm","hjk","nmk","mads","ucminf","lbfgsb3c","subplex","BBoptim","optimParallel")
                optmethod = "BFGS",    # argument 'method' for optim() ("Nelder-Mead" and "BFGS" are sensible options)
                parallel = list(),     # parallel argument for optimParallel() (note: 'cl' argument in parallel is not passed; this is directly specified via 'cl')
                cl = NULL,             # arguments for optimParallel()
@@ -176,6 +180,7 @@ selmodel.rma.uni <- function(x, type, alternative="greater", prec, delta, steps,
                delta.fix = FALSE,     # fix delta in Hessian computation
                htransf = FALSE,       # FALSE/TRUE: Hessian is computed for the untransformed/transformed delta and tau^2 estimates
                hessianCtrl=list(r=6), # arguments passed on to 'method.args' of hessian()
+               hesspack = "numDeriv", # package for computing the Hessian (numDeriv or pracma)
                scaleX = !betaspec)    # whether non-dummy variables in the X matrix should be rescaled before model fitting
 
    ### replace defaults with any user-defined values
@@ -188,13 +193,17 @@ selmodel.rma.uni <- function(x, type, alternative="greater", prec, delta, steps,
 
    verbose <- con$verbose
 
-   optimizer  <- match.arg(con$optimizer, c("optim","nlminb","uobyqa","newuoa","bobyqa","nloptr","nlm","hjk","nmk","mads","ucminf","optimParallel"))
-   optmethod  <- match.arg(con$optmethod, c("Nelder-Mead","BFGS","CG","L-BFGS-B","SANN","Brent"))
+   optimizer <- match.arg(con$optimizer, c("optim","nlminb","uobyqa","newuoa","bobyqa","nloptr","nlm","hjk","nmk","mads","ucminf","lbfgsb3c","subplex","BBoptim","optimParallel","Nelder-Mead","BFGS","CG","L-BFGS-B","SANN","Brent"))
+   optmethod <- match.arg(con$optmethod, c("Nelder-Mead","BFGS","CG","L-BFGS-B","SANN","Brent"))
+   if (optimizer %in% c("Nelder-Mead","BFGS","CG","L-BFGS-B","SANN","Brent")) {
+      optmethod <- optimizer
+      optimizer <- "optim"
+   }
    parallel   <- con$parallel
    cl         <- con$cl
    ncpus      <- con$ncpus
-   optcontrol <- control[is.na(con.pos)] ### get arguments that are control arguments for optimizer
-   optcontrol$intCtrl <- NULL # but remove intCtrl from this list
+   optcontrol <- control[is.na(con.pos)] # get arguments that are control arguments for optimizer
+   optcontrol$intCtrl <- NULL            # but remove intCtrl from this list
 
    if (length(optcontrol) == 0L)
       optcontrol <- list()
@@ -287,19 +296,29 @@ selmodel.rma.uni <- function(x, type, alternative="greater", prec, delta, steps,
    ### set NLOPT_LN_BOBYQA as the default algorithm for nloptr optimizer
    ### and by default use a relative convergence criterion of 1e-8 on the function value
 
-   if (optimizer=="nloptr" && !is.element("algorithm", names(optcontrol)))
+   if (optimizer == "nloptr" && !is.element("algorithm", names(optcontrol)))
       optcontrol$algorithm <- "NLOPT_LN_BOBYQA"
 
-   if (optimizer=="nloptr" && !is.element("ftol_rel", names(optcontrol)))
+   if (optimizer == "nloptr" && !is.element("ftol_rel", names(optcontrol)))
       optcontrol$ftol_rel <- 1e-8
 
    ### for mads, set trace=FALSE and tol=1e-6 by default
 
-   if (optimizer=="mads" && !is.element("trace", names(optcontrol)))
+   if (optimizer == "mads" && !is.element("trace", names(optcontrol)))
       optcontrol$trace <- FALSE
 
-   if (optimizer=="mads" && !is.element("tol", names(optcontrol)))
+   if (optimizer == "mads" && !is.element("tol", names(optcontrol)))
       optcontrol$tol <- 1e-6
+
+   ### for subplex, set reltol=1e-8 by default (the default in subplex() is .Machine$double.eps)
+
+   if (optimizer == "subplex" && !is.element("reltol", names(optcontrol)))
+      optcontrol$reltol <- 1e-8
+
+   ### for BBoptim, set trace=FALSE by default
+
+   if (optimizer == "BBoptim" && !is.element("trace", names(optcontrol)))
+      optcontrol$trace <- FALSE
 
    ### check that the required packages are installed
 
@@ -308,9 +327,9 @@ selmodel.rma.uni <- function(x, type, alternative="greater", prec, delta, steps,
          stop(mstyle$stop("Please install the 'minqa' package to use this optimizer."))
    }
 
-   if (optimizer == "nloptr") {
-      if (!requireNamespace("nloptr", quietly=TRUE))
-         stop(mstyle$stop("Please install the 'nloptr' package to use this optimizer."))
+   if (is.element(optimizer, c("nloptr","ucminf","lbfgsb3c","subplex","optimParallel"))) {
+      if (!requireNamespace(optimizer, quietly=TRUE))
+         stop(mstyle$stop(paste0("Please install the '", optimizer, "' package to use this optimizer.")))
    }
 
    if (is.element(optimizer, c("hjk","nmk","mads"))) {
@@ -318,18 +337,13 @@ selmodel.rma.uni <- function(x, type, alternative="greater", prec, delta, steps,
          stop(mstyle$stop("Please install the 'dfoptim' package to use this optimizer."))
    }
 
-   if (optimizer == "ucminf") {
-      if (!requireNamespace("ucminf", quietly=TRUE))
-         stop(mstyle$stop("Please install the 'ucminf' package to use this optimizer."))
+   if (optimizer == "BBoptim") {
+      if (!requireNamespace("BB", quietly=TRUE))
+         stop(mstyle$stop("Please install the 'BB' package to use this optimizer."))
    }
 
-   if (optimizer == "optimParallel") {
-      if (!requireNamespace("optimParallel", quietly=TRUE))
-         stop(mstyle$stop("Please install the 'optimParallel' package to use this optimizer."))
-   }
-
-   if (!isTRUE(ddd$skiphes) && !requireNamespace("numDeriv", quietly=TRUE))
-      stop(mstyle$stop("Please install the 'numDeriv' package to compute the Hessian."))
+   if (!isTRUE(ddd$skiphes) && !requireNamespace(con$hesspack, quietly=TRUE))
+      stop(mstyle$stop(paste0("Please install the '", con$hesspack, "' package to compute the Hessian.")))
 
    ############################################################################
 
@@ -616,7 +630,7 @@ selmodel.rma.uni <- function(x, type, alternative="greater", prec, delta, steps,
    if (is.null(ddd$mapfun)) {
       mapfun <- rep(NA, deltas)
    } else {
-      if (length(ddd$mapfun) == 1L) {
+      if (length(ddd$mapfun) == 1L) { # note: mapfun must be given as character string
          mapfun <- rep(ddd$mapfun, deltas)
       } else {
          mapfun <- ddd$mapfun
@@ -625,7 +639,7 @@ selmodel.rma.uni <- function(x, type, alternative="greater", prec, delta, steps,
    if (is.null(ddd$mapinvfun)) {
       mapinvfun <- rep(NA, deltas)
    } else {
-      if (length(ddd$mapinvfun) == 1L) {
+      if (length(ddd$mapinvfun) == 1L) { # note: mapinvfun must be given as character string
          mapinvfun <- rep(ddd$mapinvfun, deltas)
       } else {
          mapinvfun <- ddd$mapinvfun
@@ -638,7 +652,7 @@ selmodel.rma.uni <- function(x, type, alternative="greater", prec, delta, steps,
       pval.min <- con$pval.min
 
    if (k < p + ifelse(is.element(x$method, c("FE","EE","CE")) || x$tau2.fix, 0, 1) + sum(is.na(delta)))
-      stop(mstyle$stop("Number of studies (k=", k, ") is too small to fit the selection model."))
+      stop(mstyle$stop(paste0("Number of studies (k=", k, ") is too small to fit the selection model.")))
 
    ############################################################################
 
@@ -654,15 +668,15 @@ selmodel.rma.uni <- function(x, type, alternative="greater", prec, delta, steps,
       pad.l    <- sapply(max(len.l) - len.l, function(x) paste0(rep(" ", x), collapse=""))
       psteps.l <- paste0(psteps.l, pad.l)
       psteps   <- paste0(psteps.l, " < p <= ", psteps.r)
-      ptable   <- table(factor(pgrp, levels=1:length(steps), labels=psteps))
+      ptable   <- table(factor(pgrp, levels=seq_along(steps), labels=psteps))
       ptable   <- data.frame(k=as.vector(ptable), row.names=names(ptable))
 
       if (any(ptable[["k"]] == 0L)) {
          if (verbose >= 1)
             print(ptable)
-         if (type == "stepfun" && (any(ptable[["k"]] & is.na(delta))))
+         if (!isTRUE(ddd$skipintcheck) && type == "stepfun" && (any(ptable[["k"]] == 0L & is.na(delta))))
             stop(mstyle$stop(paste0("One or more intervals do not contain any observed p-values", if (!verbose) " (use 'verbose=TRUE' to see which)", ".")))
-         if (type != "stepfun" && any(ptable[["k"]]))
+         if (!isTRUE(ddd$skipintcheck) && type != "stepfun")
             stop(mstyle$stop(paste0("One of the intervals does not contain any observed p-values", if (!verbose) " (use 'verbose=TRUE' to see which)", ".")))
       }
 
@@ -675,44 +689,57 @@ selmodel.rma.uni <- function(x, type, alternative="greater", prec, delta, steps,
 
    ############################################################################
 
-   if (optimizer=="optim") {
+   if (optimizer == "optim") {
       par.arg <- "par"
       ctrl.arg <- ", control=optcontrol"
    }
-   if (optimizer=="nlminb") {
+
+   if (optimizer == "nlminb") {
       par.arg <- "start"
       ctrl.arg <- ", control=optcontrol"
    }
+
    if (is.element(optimizer, c("uobyqa","newuoa","bobyqa"))) {
       par.arg <- "par"
-      optimizer <- paste0("minqa::", optimizer) ### need to use this since loading nloptr masks bobyqa() and newuoa() functions
+      optimizer <- paste0("minqa::", optimizer)
       ctrl.arg <- ", control=optcontrol"
    }
-   if (optimizer=="nloptr") {
+
+   if (optimizer == "nloptr") {
       par.arg <- "x0"
-      optimizer <- paste0("nloptr::nloptr") ### need to use this due to requireNamespace()
+      optimizer <- paste0("nloptr::nloptr")
       ctrl.arg <- ", opts=optcontrol"
    }
-   if (optimizer=="nlm") {
+
+   if (optimizer == "nlm") {
       par.arg <- "p" ### because of this, must use argument name pX for p (number of columns in X matrix)
       ctrl.arg <- paste(names(optcontrol), unlist(optcontrol), sep="=", collapse=", ")
       if (nchar(ctrl.arg) != 0L)
          ctrl.arg <- paste0(", ", ctrl.arg)
    }
+
    if (is.element(optimizer, c("hjk","nmk","mads"))) {
       par.arg <- "par"
-      optimizer <- paste0("dfoptim::", optimizer) ### need to use this so that the optimizers can be found
+      optimizer <- paste0("dfoptim::", optimizer)
       ctrl.arg <- ", control=optcontrol"
    }
-   if (optimizer=="ucminf") {
+
+   if (is.element(optimizer, c("ucminf","lbfgsb3c","subplex"))) {
       par.arg <- "par"
-      optimizer <- paste0("ucminf::ucminf") ### need to use this due to requireNamespace()
+      optimizer <- paste0(optimizer, "::", optimizer)
       ctrl.arg <- ", control=optcontrol"
    }
-   if (optimizer=="optimParallel") {
+
+   if (optimizer == "BBoptim") {
+      par.arg <- "par"
+      optimizer <- "BB::BBoptim"
+      ctrl.arg <- ", quiet=TRUE, control=optcontrol"
+   }
+
+   if (optimizer == "optimParallel") {
 
       par.arg <- "par"
-      optimizer <- paste0("optimParallel::optimParallel") ### need to use this due to requireNamespace()
+      optimizer <- paste0("optimParallel::optimParallel")
       ctrl.arg <- ", control=optcontrol, parallel=parallel"
 
       parallel$cl <- NULL
@@ -763,10 +790,11 @@ selmodel.rma.uni <- function(x, type, alternative="greater", prec, delta, steps,
       message(mstyle$message("\nModel fitting ...\n"))
 
    #return(optcall)
+
    if (verbose) {
-      opt.res <- try(eval(parse(text=optcall)), silent=!verbose)
+      opt.res <- try(eval(str2lang(optcall)), silent=!verbose)
    } else {
-      opt.res <- try(suppressWarnings(eval(parse(text=optcall))), silent=!verbose)
+      opt.res <- try(suppressWarnings(eval(str2lang(optcall))), silent=!verbose)
    }
 
    #return(opt.res)
@@ -781,7 +809,7 @@ selmodel.rma.uni <- function(x, type, alternative="greater", prec, delta, steps,
 
    ### convergence checks
 
-   if (is.element(optimizer, c("optim","nlminb","dfoptim::hjk","dfoptim::nmk","optimParallel::optimParallel")) && opt.res$convergence != 0)
+   if (is.element(optimizer, c("optim","nlminb","dfoptim::hjk","dfoptim::nmk","optimParallel::optimParallel","lbfgsb3c::lbfgsb3c","subplex::subplex","BB::BBoptim")) && opt.res$convergence != 0)
       stop(mstyle$stop(paste0("Optimizer (", optimizer, ") did not achieve convergence (convergence = ", opt.res$convergence, ").")))
 
    if (is.element(optimizer, c("dfoptim::mads")) && opt.res$convergence > optcontrol$tol)
@@ -830,7 +858,7 @@ selmodel.rma.uni <- function(x, type, alternative="greater", prec, delta, steps,
       alternative=alternative, pval.min=pval.min, intCtrl=intCtrl, verbose=FALSE, digits=digits, dofit=TRUE)\n", sep="")
 
    #return(fitcall)
-   fitcall <- try(eval(parse(text=fitcall)), silent=!verbose)
+   fitcall <- try(eval(str2lang(fitcall)), silent=!verbose)
    #return(fitcall)
 
    if (inherits(fitcall, "try-error"))
@@ -883,27 +911,43 @@ selmodel.rma.uni <- function(x, type, alternative="greater", prec, delta, steps,
 
       if (con$htransf) {
 
-         hescall <- paste("numDeriv::hessian(", .selmodel.ll, ", x=opt.res$par, method.args=con$hessianCtrl,
-            yi=yi, vi=vi, X.fit=X, preci=preci, k=k, pX=p, pvals=pvals,
-            deltas=deltas, delta.val=delta.hes, delta.transf=TRUE, mapfun=mapfun, delta.min=delta.min, delta.max=delta.max,
-            tau2.val=tau2.hes, tau2.transf=TRUE, tau2.max=tau2.max, beta.val=beta.hes,
-            wi.fun=wi.fun, steps=steps, pgrp=pgrp,
-            alternative=alternative, pval.min=pval.min, intCtrl=intCtrl, verbose=ifelse(verbose > 3, verbose, 0), digits=digits)\n", sep="")
+         if (con$hesspack == "numDeriv")
+            hescall <- paste("numDeriv::hessian(", .selmodel.ll, ", x=opt.res$par, method.args=con$hessianCtrl,
+               yi=yi, vi=vi, X.fit=X, preci=preci, k=k, pX=p, pvals=pvals,
+               deltas=deltas, delta.val=delta.hes, delta.transf=TRUE, mapfun=mapfun, delta.min=delta.min, delta.max=delta.max,
+               tau2.val=tau2.hes, tau2.transf=TRUE, tau2.max=tau2.max, beta.val=beta.hes,
+               wi.fun=wi.fun, steps=steps, pgrp=pgrp,
+               alternative=alternative, pval.min=pval.min, intCtrl=intCtrl, verbose=ifelse(verbose > 3, verbose, 0), digits=digits)\n", sep="")
+      if (con$hesspack == "pracma")
+            hescall <- paste("pracma::hessian(", .selmodel.ll, ", x0=opt.res$par,
+               yi=yi, vi=vi, X.fit=X, preci=preci, k=k, pX=p, pvals=pvals,
+               deltas=deltas, delta.val=delta.hes, delta.transf=TRUE, mapfun=mapfun, delta.min=delta.min, delta.max=delta.max,
+               tau2.val=tau2.hes, tau2.transf=TRUE, tau2.max=tau2.max, beta.val=beta.hes,
+               wi.fun=wi.fun, steps=steps, pgrp=pgrp,
+               alternative=alternative, pval.min=pval.min, intCtrl=intCtrl, verbose=ifelse(verbose > 3, verbose, 0), digits=digits)\n", sep="")
 
       } else {
 
-         hescall <- paste("numDeriv::hessian(", .selmodel.ll, ", x=c(beta, tau2, delta), method.args=con$hessianCtrl,
-            yi=yi, vi=vi, X.fit=X, preci=preci, k=k, pX=p, pvals=pvals,
-            deltas=deltas, delta.val=delta.hes, delta.transf=FALSE, mapfun=mapfun, delta.min=delta.min, delta.max=delta.max,
-            tau2.val=tau2.hes, tau2.transf=FALSE, tau2.max=tau2.max, beta.val=beta.hes,
-            wi.fun=wi.fun, steps=steps, pgrp=pgrp,
-            alternative=alternative, pval.min=pval.min, intCtrl=intCtrl, verbose=ifelse(verbose > 3, verbose, 0), digits=digits)\n", sep="")
+         if (con$hesspack == "numDeriv")
+            hescall <- paste("numDeriv::hessian(", .selmodel.ll, ", x=c(beta, tau2, delta), method.args=con$hessianCtrl,
+               yi=yi, vi=vi, X.fit=X, preci=preci, k=k, pX=p, pvals=pvals,
+               deltas=deltas, delta.val=delta.hes, delta.transf=FALSE, mapfun=mapfun, delta.min=delta.min, delta.max=delta.max,
+               tau2.val=tau2.hes, tau2.transf=FALSE, tau2.max=tau2.max, beta.val=beta.hes,
+               wi.fun=wi.fun, steps=steps, pgrp=pgrp,
+               alternative=alternative, pval.min=pval.min, intCtrl=intCtrl, verbose=ifelse(verbose > 3, verbose, 0), digits=digits)\n", sep="")
+      if (con$hesspack == "pracma")
+            hescall <- paste("pracma::hessian(", .selmodel.ll, ", x0=c(beta, tau2, delta),
+               yi=yi, vi=vi, X.fit=X, preci=preci, k=k, pX=p, pvals=pvals,
+               deltas=deltas, delta.val=delta.hes, delta.transf=FALSE, mapfun=mapfun, delta.min=delta.min, delta.max=delta.max,
+               tau2.val=tau2.hes, tau2.transf=FALSE, tau2.max=tau2.max, beta.val=beta.hes,
+               wi.fun=wi.fun, steps=steps, pgrp=pgrp,
+               alternative=alternative, pval.min=pval.min, intCtrl=intCtrl, verbose=ifelse(verbose > 3, verbose, 0), digits=digits)\n", sep="")
 
       }
 
       #return(hescall)
 
-      H <- try(eval(parse(text=hescall)), silent=TRUE)
+      H <- try(eval(str2lang(hescall)), silent=TRUE)
 
       #return(H)
 
@@ -912,14 +956,14 @@ selmodel.rma.uni <- function(x, type, alternative="greater", prec, delta, steps,
 
       if (inherits(H, "try-error")) {
 
-         warning(mstyle$warning("Error when trying to compute Hessian."), call.=FALSE)
+         warning(mstyle$warning("Error when trying to compute the Hessian."), call.=FALSE)
 
       } else {
 
          if (deltas == 1L) {
             rownames(H) <- colnames(H) <- c(colnames(X), "tau2", "delta")
          } else {
-            rownames(H) <- colnames(H) <- c(colnames(X), "tau2", paste0("delta.", 1:deltas))
+            rownames(H) <- colnames(H) <- c(colnames(X), "tau2", paste0("delta.", seq_len(deltas)))
          }
 
          H.hest  <- H[hest, hest, drop=FALSE]
@@ -1042,7 +1086,7 @@ selmodel.rma.uni <- function(x, type, alternative="greater", prec, delta, steps,
          wi.fun=wi.fun, steps=steps, pgrp=pgrp,
          alternative=alternative, pval.min=pval.min, intCtrl=intCtrl, verbose=ifelse(verbose > 4, verbose, 0), digits=digits", ctrl.arg, ")\n", sep="")
 
-      opt.res <- try(eval(parse(text=optcall)), silent=!verbose)
+      opt.res <- try(eval(str2lang(optcall)), silent=!verbose)
 
       if (verbose > 4)
          cat("\n")
@@ -1056,7 +1100,7 @@ selmodel.rma.uni <- function(x, type, alternative="greater", prec, delta, steps,
             wi.fun=wi.fun, steps=steps, pgrp=pgrp,
             alternative=alternative, pval.min=pval.min, intCtrl=intCtrl, verbose=FALSE, digits=digits, dofit=TRUE)\n", sep="")
 
-         fitcall <- try(eval(parse(text=fitcall)), silent=!verbose)
+         fitcall <- try(eval(str2lang(fitcall)), silent=!verbose)
 
          if (!inherits(fitcall, "try-error")) {
             ll0 <- fitcall$ll
@@ -1078,7 +1122,7 @@ selmodel.rma.uni <- function(x, type, alternative="greater", prec, delta, steps,
    ll0   <- c(logLik(x, REML=FALSE))
    LRT   <- max(0, -2 * (ll0 - ll))
    LRTdf <- sum(is.na(delta.val) & delta.LRT)
-   LRTp  <- ifelse(LRTdf > 0, pchisq(LRT, df=LRTdf, lower.tail=FALSE), NA)
+   LRTp  <- ifelse(LRTdf > 0, pchisq(LRT, df=LRTdf, lower.tail=FALSE), NA_real_)
 
    ############################################################################
 

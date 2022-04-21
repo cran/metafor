@@ -2,6 +2,8 @@
 
 ### see also: https://www.metafor-project.org/doku.php/plots:plot_of_influence_diagnostics
 
+source("settings.r")
+
 context("Checking plots example: plot of influence diagnostics")
 
 test_that("plot can be drawn.", {
@@ -11,9 +13,6 @@ test_that("plot can be drawn.", {
    skip_on_cran()
 
    opar <- par(no.readonly=TRUE)
-
-   ### load validity of employment interviews data
-   data(dat.mcdaniel1994, package="metafor")
 
    ### fit random-effects model with r-to-z transformed correlations
    res <- rma(ri=ri, ni=ni, measure="ZCOR", data=dat.mcdaniel1994)
@@ -30,3 +29,5 @@ test_that("plot can be drawn.", {
    par(opar)
 
 })
+
+rm(list=ls())

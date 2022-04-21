@@ -2,11 +2,10 @@
 
 context("Checking misc: weights() function")
 
-source("tolerances.r") # read in tolerances
+source("settings.r")
 
 test_that("weights are correct for rma() with method='FE'.", {
 
-   data(dat.bcg, package="metafor")
    dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
 
    ### weighted analysis
@@ -40,7 +39,6 @@ test_that("weights are correct for rma() with method='FE'.", {
 
 test_that("weights are correct for rma() with method='DL'.", {
 
-   data(dat.bcg, package="metafor")
    dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
 
    ### weighted analysis
@@ -74,11 +72,10 @@ test_that("weights are correct for rma() with method='DL'.", {
 
 test_that("weights are correct for rma.mv() with method='REML'.", {
 
-   data(dat.bcg, package="metafor")
    dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
 
    ### weighted analysis
-   res <- rma.mv(yi, vi, random = ~ 1 | trial, data=dat)
+   res <- rma.mv(yi, vi, random = ~ 1 | trial, data=dat, sparse=sparse)
 
    ### weights should be the same as 1/(vi+sigma2) (scaled to percentages)
    expect_equivalent(weights(res), (1/(dat$vi+res$sigma2)/sum(1/(dat$vi+res$sigma2)) * 100))
@@ -87,13 +84,13 @@ test_that("weights are correct for rma.mv() with method='REML'.", {
    expect_equivalent(diag(weights(res, type="matrix")), 1/(dat$vi+res$sigma2))
 
    ### weighted analysis with user defined weights
-   res <- rma.mv(yi, vi, random = ~ 1 | trial, data=dat, W=1:13)
+   res <- rma.mv(yi, vi, random = ~ 1 | trial, data=dat, W=1:13, sparse=sparse)
 
    ### weights should match (scaled to percentages)
    expect_equivalent(weights(res), (1:13)/sum(1:13) * 100)
 
    ### unweighted analysis
-   res <- rma.mv(yi, vi, random = ~ 1 | trial, data=dat, W=1)
+   res <- rma.mv(yi, vi, random = ~ 1 | trial, data=dat, W=1, sparse=sparse)
 
    ### weights should be the same as 1/k (scaled to percentages)
    expect_equivalent(weights(res), rep(1/res$k, res$k) * 100)
@@ -153,3 +150,5 @@ test_that("weights are correct for rma.peto().", {
    expect_equivalent(sav, tmp/sum(tmp)*100)
 
 })
+
+rm(list=ls())

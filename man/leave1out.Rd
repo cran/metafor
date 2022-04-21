@@ -15,15 +15,15 @@ leave1out(x, \dots)
 \method{leave1out}{rma.peto}(x, digits, transf, targs, progbar=FALSE, \dots)
 }
 \arguments{
-   \item{x}{an object of class \code{"rma.mh"}, \code{"rma.peto"}, or \code{"rma.uni"}.}
-   \item{digits}{integer to specify the number of decimal places to which the printed results should be rounded. If unspecified, the default is to take the value from the object.}
-   \item{transf}{an optional argument to specify a function that should be used to transform the model coefficients and interval bounds (e.g., \code{transf=exp}; see also \link{transf}). If unspecified, no transformation is used.}
+   \item{x}{an object of class \code{"rma.uni"}, \code{"rma.mh"}, or \code{"rma.peto"}.}
+   \item{digits}{optional integer to specify the number of decimal places to which the printed results should be rounded. If unspecified, the default is to take the value from the object.}
+   \item{transf}{optional argument to specify a function that should be used to transform the model coefficients and interval bounds (e.g., \code{transf=exp}; see also \link{transf}). If unspecified, no transformation is used.}
    \item{targs}{optional arguments needed by the function specified under \code{transf}.}
    \item{progbar}{logical to specify whether a progress bar should be shown (the default is \code{FALSE}).}
    \item{\dots}{other arguments.}
 }
 \details{
-   For \code{"rma.uni"} objects, the model specified via \code{x} must be a model without moderators (i.e., either a fixed- or a random-effects model).
+   For \code{"rma.uni"} objects, the model specified via \code{x} must be a model without moderators (i.e., either an equal- or a random-effects model).
 }
 \value{
    An object of class \code{"list.rma"}. The object is a list containing the following components:
@@ -41,7 +41,7 @@ leave1out(x, \dots)
 
    When the model was fitted with \code{test="t"} or \code{test="knha"}, then \code{zval} is called \code{tval} in the object that is returned by the function.
 
-   The object is formatted and printed with \code{\link{print.list.rma}}.
+   The object is formatted and printed with the \code{\link[=print.list.rma]{print}} function.
 }
 \note{
    When using the \code{transf} option, the transformation is applied to the estimated coefficients and the corresponding interval bounds. The standard errors are then set equal to \code{NA} and are omitted from the printed output.
@@ -52,10 +52,12 @@ leave1out(x, \dots)
 \references{
    Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \verb{https://doi.org/10.18637/jss.v036.i03}
 
+   Viechtbauer, W. (2021). Model checking in meta-analysis. In C. H. Schmid, T. Stijnen, & I. R. White (Eds.), \emph{Handbook of meta-analysis} (pp. 219--254). Boca Raton, FL: CRC Press. \verb{https://doi.org/10.1201/9781315119403}
+
    Viechtbauer, W., & Cheung, M. W.-L. (2010). Outlier and influence diagnostics for meta-analysis. \emph{Research Synthesis Methods}, \bold{1}(2), 112--125. \verb{https://doi.org/10.1002/jrsm.11}
 }
 \seealso{
-   \code{\link{rma.uni}}, \code{\link{rma.mh}}, \code{\link{rma.peto}}
+   \code{\link{rma.uni}}, \code{\link{rma.mh}}, and \code{\link{rma.peto}} for functions to fit models for which leave-one-out diagnostics can be computed.
 }
 \examples{
 ### calculate log risk ratios and corresponding sampling variances

@@ -10,10 +10,9 @@ print.rma.mh <- function(x, digits, showfit=FALSE, ...) {
       digits <- .get.digits(digits=digits, xdigits=x$digits, dmiss=FALSE)
    }
 
-   if (!exists(".rmspace"))
-      cat("\n")
+   .space()
 
-   cat(mstyle$section("Fixed-Effects Model"))
+   cat(mstyle$section("Equal-Effects Model"))
    cat(mstyle$section(paste0(" (k = ", x$k, ")")))
 
    cat("\n")
@@ -23,6 +22,7 @@ print.rma.mh <- function(x, digits, showfit=FALSE, ...) {
       names(fs) <- c("logLik", "deviance", "AIC", "BIC", "AICc")
       cat("\n")
       tmp <- capture.output(print(fs, quote=FALSE, print.gap=2))
+      tmp[1] <- paste0(tmp[1], "\u200b")
       .print.table(tmp, mstyle)
    }
 
@@ -78,7 +78,7 @@ print.rma.mh <- function(x, digits, showfit=FALSE, ...) {
             cat(mstyle$result("test value not computable for these data"))
             cat("\n")
          } else {
-            cat(mstyle$result(paste0("CMH = ", formatC(MH, width=width), ", df = 1,", paste(rep(" ", nchar(x$k.pos)-1, collapse="")), " p-val ", .pval(x$MHp, digits[["pval"]], showeq=TRUE, sep=" ", add0=TRUE))))
+            cat(mstyle$result(paste0("CMH = ", formatC(MH, width=width), ", df = 1,", paste(rep(" ", nchar(x$k.pos)-1L), collapse=""), " p-val ", .pval(x$MHp, digits[["pval"]], showeq=TRUE, sep=" ", add0=TRUE))))
             cat("\n")
          }
          cat(mstyle$text("Tarone's Test for Heterogeneity: "))
@@ -112,8 +112,7 @@ print.rma.mh <- function(x, digits, showfit=FALSE, ...) {
 
    }
 
-   if (!exists(".rmspace"))
-      cat("\n")
+   .space()
 
    invisible()
 

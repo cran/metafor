@@ -2,9 +2,8 @@
 
 context("Checking misc: formula() function")
 
-source("tolerances.r") # read in tolerances
+source("settings.r")
 
-data(dat.bcg, package="metafor")
 dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
 
 test_that("formula() works correctly for 'rma.uni' objects.", {
@@ -18,9 +17,11 @@ test_that("formula() works correctly for 'rma.uni' objects.", {
    expect_null(formula(res, type="yi"))
 
    res <- rma(yi ~ ablat, vi, data=dat, method="DL")
-   expect_null(formula(res, type="mods"))
+   expect_equal(~ablat, formula(res, type="mods"))
    expect_equal(yi~ablat, formula(res, type="yi"))
 
    expect_error(formula(res, type="scale"))
 
 })
+
+rm(list=ls())

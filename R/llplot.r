@@ -39,7 +39,7 @@ lty, lwd, col, level=99.99, refline=0, ...) {
       }
    }
 
-   level <- ifelse(level == 0, 1, ifelse(level >= 1, (100-level)/100, ifelse(level > .5, 1-level, level)))
+   level <- .level(level)
 
    ### get ... argument
 
@@ -68,23 +68,17 @@ lty, lwd, col, level=99.99, refline=0, ...) {
    ### extract values, possibly from the data frame specified via data (arguments not specified are NULL)
 
    mf <- match.call()
-   mf.subset <- mf[[match("subset", names(mf))]]
-   mf.lty    <- mf[[match("lty",    names(mf))]]
-   mf.lwd    <- mf[[match("lwd",    names(mf))]]
-   mf.col    <- mf[[match("col",    names(mf))]]
-   subset <- eval(mf.subset, data, enclos=sys.frame(sys.parent()))
-   lty    <- eval(mf.lty,    data, enclos=sys.frame(sys.parent()))
-   lwd    <- eval(mf.lwd,    data, enclos=sys.frame(sys.parent()))
-   col    <- eval(mf.col,    data, enclos=sys.frame(sys.parent()))
+
+   subset  <- .getx("subset", mf=mf, data=data)
+   lty     <- .getx("lty",    mf=mf, data=data)
+   lwd     <- .getx("lwd",    mf=mf, data=data)
+   col     <- .getx("col",    mf=mf, data=data)
 
    if (measure == "GEN") {
 
-      mf.yi  <- mf[[match("yi",  names(mf))]]
-      mf.vi  <- mf[[match("vi",  names(mf))]]
-      mf.sei <- mf[[match("sei", names(mf))]]
-      yi  <- eval(mf.yi,  data, enclos=sys.frame(sys.parent()))
-      vi  <- eval(mf.vi,  data, enclos=sys.frame(sys.parent()))
-      sei <- eval(mf.sei, data, enclos=sys.frame(sys.parent()))
+      yi  <- .getx("yi",  mf=mf, data=data)
+      vi  <- .getx("vi",  mf=mf, data=data)
+      sei <- .getx("sei", mf=mf, data=data)
 
       if (is.null(vi)) {
          if (is.null(sei)) {
@@ -94,10 +88,10 @@ lty, lwd, col, level=99.99, refline=0, ...) {
          }
       }
 
-      if (length(yi)==0L || length(vi)==0L)
-         stop(mstyle$stop("Cannot extract outcomes. Check that all of the required \n  information is specified via the appropriate arguments."))
+      if (!.all.specified(yi, vi))
+         stop(mstyle$stop("Cannot compute outcomes. Check that all of the required\n  information is specified via the appropriate arguments."))
 
-      if (length(yi) != length(vi))
+      if (!.equal.length(yi, vi))
          stop(mstyle$stop("Supplied data vectors are not all of the same length."))
 
       k <- length(yi) ### number of outcomes before subsetting
@@ -114,32 +108,41 @@ lty, lwd, col, level=99.99, refline=0, ...) {
 
    if (measure == "OR") {
 
-      mf.ai  <- mf[[match("ai",  names(mf))]]
-      mf.bi  <- mf[[match("bi",  names(mf))]]
-      mf.ci  <- mf[[match("ci",  names(mf))]]
-      mf.di  <- mf[[match("di",  names(mf))]]
-      mf.n1i <- mf[[match("n1i", names(mf))]]
-      mf.n2i <- mf[[match("n2i", names(mf))]]
-      ai  <- eval(mf.ai,  data, enclos=sys.frame(sys.parent()))
-      bi  <- eval(mf.bi,  data, enclos=sys.frame(sys.parent()))
-      ci  <- eval(mf.ci,  data, enclos=sys.frame(sys.parent()))
-      di  <- eval(mf.di,  data, enclos=sys.frame(sys.parent()))
-      n1i <- eval(mf.n1i, data, enclos=sys.frame(sys.parent()))
-      n2i <- eval(mf.n2i, data, enclos=sys.frame(sys.parent()))
-      if (is.null(bi)) bi <- n1i - ai
-      if (is.null(di)) di <- n2i - ci
+      ai  <- .getx("ai",  mf=mf, data=data)
+      bi  <- .getx("bi",  mf=mf, data=data)
+      ci  <- .getx("ci",  mf=mf, data=data)
+      di  <- .getx("di",  mf=mf, data=data)
+      n1i <- .getx("n1i", mf=mf, data=data)
+      n2i <- .getx("n2i", mf=mf, data=data)
 
-      if (length(ai)==0L || length(bi)==0L || length(ci)==0L || length(di)==0L)
-         stop(mstyle$stop("Cannot compute outcomes. Check that all of the required \n  information is specified via the appropriate arguments."))
-
-      if (!all(length(ai) == c(length(ai),length(bi),length(ci),length(di))))
+      if (!.equal.length(ai, bi, ci, di, n1i, n2i))
          stop(mstyle$stop("Supplied data vectors are not all of the same length."))
+
+      n1i.inc <- n1i != ai + bi
+      n2i.inc <- n2i != ci + di
+
+      if (any(n1i.inc, na.rm=TRUE))
+         stop(mstyle$stop("One or more 'n1i' values are not equal to 'ai + bi'."))
+      if (any(n2i.inc, na.rm=TRUE))
+         stop(mstyle$stop("One or more 'n2i' values are not equal to 'ci + di'."))
+
+      bi <- replmiss(bi, n1i-ai)
+      di <- replmiss(di, n2i-ci)
+
+      if (!.all.specified(ai, bi, ci, di))
+         stop(mstyle$stop("Cannot compute outcomes. Check that all of the required\n  information is specified via the appropriate arguments."))
+
+      n1i <- ai + bi
+      n2i <- ci + di
 
       if (any(c(ai > n1i, ci > n2i), na.rm=TRUE))
          stop(mstyle$stop("One or more event counts are larger than the corresponding group sizes."))
 
       if (any(c(ai, bi, ci, di) < 0, na.rm=TRUE))
          stop(mstyle$stop("One or more counts are negative."))
+
+      if (any(c(n1i < 0, n2i < 0), na.rm=TRUE))
+         stop(mstyle$stop("One or more group sizes are negative."))
 
       k <- length(ai) ### number of outcomes before subsetting
 
@@ -172,7 +175,7 @@ lty, lwd, col, level=99.99, refline=0, ...) {
          di <- di[subset]
       }
 
-      dat <- escalc(measure="OR", ai=ai, bi=bi, ci=ci, di=di, drop00=drop00, onlyo1=onlyo1, addyi=addyi, addvi=addvi)
+      dat <- .do.call(escalc, measure="OR", ai=ai, bi=bi, ci=ci, di=di, drop00=drop00, onlyo1=onlyo1, addyi=addyi, addvi=addvi)
 
       yi <- dat$yi ### one or more yi/vi pairs may be NA/NA
       vi <- dat$vi ### one or more yi/vi pairs may be NA/NA
@@ -339,9 +342,8 @@ lty, lwd, col, level=99.99, refline=0, ...) {
       lls.sum <- rep(NA_real_, k)
       for (i in seq_len(k)) {
          lls.sum[i] <- trapezoid(xs[!is.na(lls[i,])], lls[i,!is.na(lls[i,])])
+         lls[i,] <- lls[i,] / lls.sum[i]
       }
-      #lls.sum <- rowSums(lls, na.rm=TRUE)
-      lls <- apply(lls, 2, "/", lls.sum)
    }
 
    lls[out] <- NA
@@ -354,7 +356,7 @@ lty, lwd, col, level=99.99, refline=0, ...) {
       ylim <- sort(ylim)
    }
 
-   plot(NA, NA, xlim=c(xlim[1], xlim[2]), ylim=ylim, xlab=xlab, ylab=ylab, ...)
+   plot(NA, NA, xlim=xlim, ylim=ylim, xlab=xlab, ylab=ylab, ...)
 
    for (i in seq_len(k)[order(1/vi)]) {
       lines(xs, lls[i,], lty=lty[i], lwd=lwd[i], col=col[i], ...)

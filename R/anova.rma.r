@@ -1,4 +1,4 @@
-anova.rma <- function(object, object2, btt, X, att, Z, digits, ...) {
+anova.rma <- function(object, object2, btt, X, att, Z, rhs, digits, refit=FALSE, ...) {
 
    mstyle <- .get.mstyle("crayon" %in% .packages())
 
@@ -12,7 +12,7 @@ anova.rma <- function(object, object2, btt, X, att, Z, digits, ...) {
 
    ddd <- list(...)
 
-   .chkdots(ddd, c("test", "L"))
+   .chkdots(ddd, c("test", "L", "verbose"))
 
    if (!is.null(ddd$L))
       X <- ddd$L
@@ -25,9 +25,9 @@ anova.rma <- function(object, object2, btt, X, att, Z, digits, ...) {
 
    if (missing(object2)) {
 
-      ### if only 'object' has been specified, can use function to test (sets) of coefficients via
-      ### the 'btt' (or 'att') argument or one or more linear contrasts of the coefficients via the
-      ### 'X' (or 'Z') argument
+      ### if only 'object' has been specified, can use function to test one or multiple coefficients
+      ### via the 'btt' (or 'att') argument or one or more linear contrasts of the coefficients via
+      ### the 'X' (or 'Z') argument
 
       x <- object
 
@@ -42,7 +42,12 @@ anova.rma <- function(object, object2, btt, X, att, Z, digits, ...) {
 
             ### set/check 'att' argument
 
-            att <- .set.btt(att, x$q, x$Z.int.incl, colnames(x$Z))
+            if (missing(att) || is.null(att)) {
+               att <- x$att
+            } else {
+               att <- .set.btt(att, x$q, x$Z.int.incl, colnames(x$Z))
+            }
+
             m <- length(att)
 
             QS <- try(as.vector(t(x$alpha)[att] %*% chol2inv(chol(x$va[att,att])) %*% x$alpha[att]), silent=TRUE)
@@ -50,7 +55,7 @@ anova.rma <- function(object, object2, btt, X, att, Z, digits, ...) {
             if (inherits(QS, "try-error"))
                QS <- NA
 
-            if (x$test == "t") {
+            if (is.element(x$test, c("knha","adhoc","t"))) {
                QS   <- QS / m
                QSdf <- c(m, x$QSdf[2])
                QSp  <- pf(QS, df1=QSdf[1], df2=QSdf[2], lower.tail=FALSE)
@@ -65,21 +70,41 @@ anova.rma <- function(object, object2, btt, X, att, Z, digits, ...) {
 
             ### set/check 'btt' argument
 
-            btt <- .set.btt(btt, x$p, x$int.incl, colnames(x$X))
+            if (missing(btt) || is.null(btt)) {
+               btt <- x$btt
+            } else {
+               btt <- .set.btt(btt, x$p, x$int.incl, colnames(x$X))
+            }
+
             m <- length(btt)
 
-            QM <- try(as.vector(t(x$beta)[btt] %*% chol2inv(chol(x$vb[btt,btt])) %*% x$beta[btt]), silent=TRUE)
+            if (inherits(x, "robust.rma") && x$robumethod == "clubSandwich") {
 
-            if (inherits(QM, "try-error"))
-               QM <- NA
+               cs.wald <- try(clubSandwich::Wald_test(x, cluster=x$cluster, vcov=x$vb, test=x$wald_test, constraints=clubSandwich::constrain_zero(btt)), silent=!isTRUE(ddd$verbose))
 
-            if (is.element(x$test, c("knha","adhoc","t"))) {
-               QM   <- QM / m
-               QMdf <- c(m, x$QMdf[2])
-               QMp  <- pf(QM, df1=QMdf[1], df2=QMdf[2], lower.tail=FALSE)
+               if (inherits(cs.wald, "try-error"))
+                  stop(mstyle$stop("Could not obtain the cluster-robust Wald test (use verbose=TRUE for more details)."))
+
+               QM   <- max(0, cs.wald$Fstat)
+               QMdf <- c(cs.wald$df_num, cs.wald$df_denom)
+               QMp  <- cs.wald$p_val
+
             } else {
-               QMdf <- c(m, NA)
-               QMp  <- pchisq(QM, df=QMdf[1], lower.tail=FALSE)
+
+               QM <- try(as.vector(t(x$beta)[btt] %*% chol2inv(chol(x$vb[btt,btt])) %*% x$beta[btt]), silent=TRUE)
+
+               if (inherits(QM, "try-error"))
+                  QM <- NA
+
+               if (is.element(x$test, c("knha","adhoc","t"))) {
+                  QM   <- QM / m
+                  QMdf <- c(m, x$QMdf[2])
+                  QMp  <- pf(QM, df1=QMdf[1], df2=QMdf[2], lower.tail=FALSE)
+               } else {
+                  QMdf <- c(m, NA)
+                  QMp  <- pchisq(QM, df=QMdf[1], lower.tail=FALSE)
+               }
+
             }
 
             res <- list(QM=QM, QMdf=QMdf, QMp=QMp, btt=btt, k=x$k, p=x$p, m=m, test=x$test, digits=digits, type="Wald.btt", class=class(x))
@@ -109,28 +134,31 @@ anova.rma <- function(object, object2, btt, X, att, Z, digits, ...) {
             if (x$Z.int.incl && ncol(Z) == (x$q-1))
                Z <- cbind(1, Z)
 
-            ### if Z has q+1 columns, assume that last column is the right-hand side
-            ### leave this out for now; maybe add later or a 'rhs' argument (as linearHypothesis() from car package)
-
-            #if (ncol(Z) == (x$q+1)) {
-            #   rhs <- Z[,x$q+1]
-            #   Z <- Z[,seq_len(x$q)]
-            #}
-
             if (ncol(Z) != x$q)
                stop(mstyle$stop(paste0("Length or number of columns of 'Z' (", ncol(Z), ") does not match the number of scale coefficients (", x$q, ").")))
 
             m <- nrow(Z)
 
+            ### specification of the right-hand side
+
+            if (missing(rhs)) {
+               rhs <- rep(0, m)
+            } else {
+               if (length(rhs) == 1L)
+                  rhs <- rep(rhs, m)
+               if (length(rhs) != m)
+                  stop(mstyle$stop(paste0("Length of 'rhs' (", length(rhs), ") does not match the number of linear combinations (", m, ").")))
+            }
+
             ### test of individual hypotheses
 
-            Za  <- Z %*% x$alpha
+            Za  <- Z %*% x$alpha - rhs
             vZa <- Z %*% x$va %*% t(Z)
 
             se <- sqrt(diag(vZa))
             zval <- c(Za/se)
 
-            if (x$test == "t") {
+            if (is.element(x$test, c("knha","adhoc","t"))) {
                pval <- if (x$ddf.alpha > 0) 2*pt(abs(zval), df=x$ddf.alpha, lower.tail=FALSE) else rep(NA,m)
             } else {
                pval <- 2*pnorm(abs(zval), lower.tail=FALSE)
@@ -148,7 +176,7 @@ anova.rma <- function(object, object2, btt, X, att, Z, digits, ...) {
                if (inherits(QS, "try-error"))
                   QS <- NA
 
-               if (x$test == "t") {
+               if (is.element(x$test, c("knha","adhoc","t"))) {
                   QS   <- QS / m
                   QSdf <- c(m, x$QSdf[2])
                   QSp  <- if (QSdf[2] > 0) pf(QS, df1=QSdf[1], df2=QSdf[2], lower.tail=FALSE) else NA
@@ -169,7 +197,11 @@ anova.rma <- function(object, object2, btt, X, att, Z, digits, ...) {
                hyp[j] <- gsub("1*", "", hyp[j], fixed=TRUE) ### turn '+1' into '+' and '-1' into '-'
                hyp[j] <- gsub("+ -", "- ", hyp[j], fixed=TRUE) ### turn '+ -' into '-'
             }
-            hyp <- paste0(hyp, " = 0") ### add '= 0' at the right
+            if (identical(rhs, rep(0,m))) {
+               hyp <- paste0(hyp, " = 0") ### add '= 0' at the right
+            } else {
+               hyp <- paste0(hyp, " = ", .fcf(rhs, digits=digits[["est"]])) ### add '= rhs' at the right
+            }
             hyp <- data.frame(hyp, stringsAsFactors=FALSE)
             colnames(hyp) <- ""
             rownames(hyp) <- paste0(seq_len(m), ":") ### add '1:', '2:', ... as row names
@@ -194,74 +226,119 @@ anova.rma <- function(object, object2, btt, X, att, Z, digits, ...) {
             if (x$int.incl && ncol(X) == (x$p-1))
                X <- cbind(1, X)
 
-            ### if X has p+1 columns, assume that last column is the right-hand side
-            ### leave this out for now; maybe add later or a 'rhs' argument (as linearHypothesis() from car package)
-
-            #if (ncol(X) == (x$p+1)) {
-            #   rhs <- X[,x$p+1]
-            #   X <- X[,seq_len(x$p)]
-            #}
-
             if (ncol(X) != x$p)
                stop(mstyle$stop(paste0("Length or number of columns of 'X' (", ncol(X), ") does not match the number of ", ifelse(inherits(object, "rma.ls"), "location", "model"), " coefficients (", x$p, ").")))
 
             m <- nrow(X)
 
-            ### ddf calculation
+            if (inherits(x, "robust.rma") && x$robumethod == "clubSandwich") {
 
-            if (is.element(x$test, c("knha","adhoc","t"))) {
-               if (length(x$ddf) == 1L) {
-                  ddf <- rep(x$ddf, m)
-               } else {
-                  ddf <- rep(NA, m)
-                  for (j in seq_len(m)) {
-                     bn0 <- X[j,] != 0
-                     ddf[j] <- min(x$ddf[bn0])
-                  }
+               cs.lc <- try(clubSandwich::linear_contrast(x, cluster=x$cluster, vcov=x$vb, test=x$coef_test, contrasts=X, p_values=TRUE), silent=!isTRUE(ddd$verbose))
+
+               if (inherits(cs.lc, "try-error"))
+                  stop(mstyle$stop("Could not obtain the cluster-robust test(s) (use verbose=TRUE for more details)."))
+
+               ddf <- cs.lc$df
+
+               if (!missing(rhs))
+                  warning(mstyle$warning("Cannot use 'rhs' argument for 'robust.rma' objects based on 'clubSandwich'."))
+
+               rhs <- rep(0, m)
+
+               Xb   <- cs.lc$Est
+               se   <- cs.lc$SE
+               zval <- c(Xb/se)
+               pval <- cs.lc$p_val
+
+               ### omnibus test of all hypotheses (only possible if 'X' is of full rank)
+
+               QM   <- NA ### need this in case QMp cannot be calculated below
+               QMdf <- NA ### need this in case X is not of full rank
+               QMp  <- NA ### need this in case QMp cannot be calculated below
+
+               if (rankMatrix(X) == m) {
+
+                  cs.wald <- try(clubSandwich::Wald_test(x, cluster=x$cluster, vcov=x$vb, test=x$wald_test, constraints=X), silent=!isTRUE(ddd$verbose))
+
+                  if (inherits(cs.wald, "try-error"))
+                     stop(mstyle$stop("Could not obtain the cluster-robust omnibus Wald test (use verbose=TRUE for more details)."))
+
+                  QM   <- max(0, cs.wald$Fstat)
+                  QMdf <- c(cs.wald$df_num, cs.wald$df_denom)
+                  QMp  <- cs.wald$p_val
+
                }
+
             } else {
-               ddf <- rep(NA, m)
-            }
 
-            ### test of individual hypotheses
-
-            Xb  <- X %*% x$beta
-            vXb <- X %*% x$vb %*% t(X)
-
-            se <- sqrt(diag(vXb))
-            zval <- c(Xb/se)
-
-            if (is.element(x$test, c("knha","adhoc","t"))) {
-               pval <- sapply(seq_along(ddf), function(j) if (ddf[j] > 0) 2*pt(abs(zval[j]), df=ddf[j], lower.tail=FALSE) else NA)
-            } else {
-               pval <- 2*pnorm(abs(zval), lower.tail=FALSE)
-            }
-
-            ### omnibus test of all hypotheses (only possible if 'X' is of full rank)
-
-            QM   <- NA ### need this in case QMp cannot be calculated below
-            QMdf <- NA ### need this in case X is not of full rank
-            QMp  <- NA ### need this in case QMp cannot be calculated below
-
-            if (rankMatrix(X) == m) {
-
-               ### use try(), since this could fail: this could happen when the var-cov matrix of the
-               ### fixed effects has been estimated using robust() -- 'vb' is then only guaranteed to
-               ### be positive semidefinite, so for certain linear combinations, vXb could be singular
-               ### (see Cameron & Miller, 2015, p. 326)
-
-               QM <- try(as.vector(t(Xb) %*% chol2inv(chol(vXb)) %*% Xb), silent=TRUE)
-
-               if (inherits(QM, "try-error"))
-                  QM <- NA
+               ### ddf calculation
 
                if (is.element(x$test, c("knha","adhoc","t"))) {
-                  QM   <- QM / m
-                  QMdf <- c(m, min(ddf))
-                  QMp  <- if (QMdf[2] > 0) pf(QM, df1=QMdf[1], df2=QMdf[2], lower.tail=FALSE) else NA
+                  if (length(x$ddf) == 1L) {
+                     ddf <- rep(x$ddf, m)
+                  } else {
+                     ddf <- rep(NA, m)
+                     for (j in seq_len(m)) {
+                        bn0 <- X[j,] != 0
+                        ddf[j] <- min(x$ddf[bn0])
+                     }
+                  }
                } else {
-                  QMdf <- c(m, NA)
-                  QMp  <- pchisq(QM, df=QMdf[1], lower.tail=FALSE)
+                  ddf <- rep(NA, m)
+               }
+
+               ### specification of the right-hand side
+
+               if (missing(rhs)) {
+                  rhs <- rep(0, m)
+               } else {
+                  if (length(rhs) == 1L)
+                     rhs <- rep(rhs, m)
+                  if (length(rhs) != m)
+                     stop(mstyle$stop(paste0("Length of 'rhs' (", length(rhs), ") does not match the number of linear combinations (", m, ").")))
+               }
+
+               ### test of individual hypotheses
+
+               Xb  <- X %*% x$beta - rhs
+               vXb <- X %*% x$vb %*% t(X)
+
+               se <- sqrt(diag(vXb))
+               zval <- c(Xb/se)
+
+               if (is.element(x$test, c("knha","adhoc","t"))) {
+                  pval <- sapply(seq_along(ddf), function(j) if (ddf[j] > 0) 2*pt(abs(zval[j]), df=ddf[j], lower.tail=FALSE) else NA)
+               } else {
+                  pval <- 2*pnorm(abs(zval), lower.tail=FALSE)
+               }
+
+               ### omnibus test of all hypotheses (only possible if 'X' is of full rank)
+
+               QM   <- NA ### need this in case QMp cannot be calculated below
+               QMdf <- NA ### need this in case X is not of full rank
+               QMp  <- NA ### need this in case QMp cannot be calculated below
+
+               if (rankMatrix(X) == m) {
+
+                  ### use try(), since this could fail: this could happen when the var-cov matrix of the
+                  ### fixed effects has been estimated using robust() -- 'vb' is then only guaranteed to
+                  ### be positive semidefinite, so for certain linear combinations, vXb could be singular
+                  ### (see Cameron & Miller, 2015, p. 326)
+
+                  QM <- try(as.vector(t(Xb) %*% chol2inv(chol(vXb)) %*% Xb), silent=TRUE)
+
+                  if (inherits(QM, "try-error"))
+                     QM <- NA
+
+                  if (is.element(x$test, c("knha","adhoc","t"))) {
+                     QM   <- QM / m
+                     QMdf <- c(m, min(ddf))
+                     QMp  <- if (QMdf[2] > 0) pf(QM, df1=QMdf[1], df2=QMdf[2], lower.tail=FALSE) else NA
+                  } else {
+                     QMdf <- c(m, NA)
+                     QMp  <- pchisq(QM, df=QMdf[1], lower.tail=FALSE)
+                  }
+
                }
 
             }
@@ -276,7 +353,11 @@ anova.rma <- function(object, object2, btt, X, att, Z, digits, ...) {
                hyp[j] <- gsub("1*", "", hyp[j], fixed=TRUE) ### turn '+1' into '+' and '-1' into '-'
                hyp[j] <- gsub("+ -", "- ", hyp[j], fixed=TRUE) ### turn '+ -' into '-'
             }
-            hyp <- paste0(hyp, " = 0") ### add '= 0' at the right
+            if (identical(rhs, rep(0,m))) {
+               hyp <- paste0(hyp, " = 0") ### add '= 0' at the right
+            } else {
+               hyp <- paste0(hyp, " = ", .fcf(rhs, digits=digits[["est"]])) ### add '= rhs' at the right
+            }
             hyp <- data.frame(hyp, stringsAsFactors=FALSE)
             colnames(hyp) <- ""
             rownames(hyp) <- paste0(seq_len(m), ":") ### add '1:', '2:', ... as row names
@@ -351,11 +432,42 @@ anova.rma <- function(object, object2, btt, X, att, Z, digits, ...) {
       if (test == "Wald" && (model.f$method != model.r$method))
          stop(mstyle$stop("Full and reduced model must use the same 'method' for the model fitting."))
 
-      ### for LRT, reduced model may use method="FE/EE/CE" and full model method="(RE)ML"
-      ### which is fine, but the other way around doesn't really make sense
+      ### for LRTs, reduced model may use method="FE/EE/CE" and full model method="(RE)ML" but the other way around doesn't really make sense
 
       if (is.element(model.f$method, c("FE","EE","CE")) && !is.element(model.r$method, c("FE","EE","CE")))
          stop(mstyle$stop("Full model uses a fixed- and reduced model uses a random/mixed-effects model."))
+
+      ### but have to check for a ML/REML mismatch
+
+      if ((model.f$method == "ML" && model.r$method == "REML") || model.r$method == "ML" && model.f$method == "REML")
+         stop(mstyle$stop(paste0("Mismatch between the use of ", model.f$method, " and ", model.r$method, " estimation in the full versus reduced model.")))
+
+      ### for LRTs, using anything besides ML/REML is strictly speaking incorrect
+
+      if (test == "LRT" && (!is.element(model.f$method, c("FE","EE","CE","ML","REML")) || !is.element(model.r$method, c("FE","EE","CE","ML","REML"))))
+         warning(mstyle$warning("LRTs should be based on ML/REML estimation."))
+
+      ### for LRTs based on REML estimation, check if fixed effects differ
+      if (test == "LRT" && model.f$method == "REML" && (!identical(model.f$X, model.r$X))) {
+         if (refit) {
+            #message(mstyle$message("Refitting models with ML (instead of REML) estimation ..."))
+            model.f <- try(update(model.f, method="ML"), silent=TRUE)
+            if (inherits(model.f, "try-error"))
+               stop(mstyle$stop("Refitting the full model with ML estimation failed."))
+            model.r <- try(update(model.r, method="ML"), silent=TRUE)
+            if (inherits(model.r, "try-error"))
+               stop(mstyle$stop("Refitting the reduced model with ML estimation failed."))
+            parms.f <- model.f$parms
+            parms.r <- model.r$parms
+         } else {
+            warning(mstyle$warning("REML comparisons not meaningful for models with different fixed effects\n(use 'refit=TRUE' to refit both models based on ML estimation)."), call.=FALSE)
+         }
+      }
+
+      ### in this case, one could consider just taking the ML deviances, but this
+      ### is really ad-hoc; there is some theory in Welham & Thompson (1997) about
+      ### LRTs for fixed effects when using REML estimation, but this involves
+      ### additional work
 
       ### could do even more checks for cases where the models are clearly not nested
 
@@ -366,11 +478,31 @@ anova.rma <- function(object, object2, btt, X, att, Z, digits, ...) {
 
       if (inherits(object, "rma.uni") && !inherits(object, "rma.ls") && !inherits(object2, "rma.ls")) {
          if (is.element(model.f$method, c("FE","EE","CE"))) {
-            R2 <- NA
+            if (model.f$weighted) {
+               if (is.null(model.f$weights)) {
+                  lm.f <- lm(model.f$yi ~ model.f$X, weights=1/model.f$vi)
+               } else {
+                  lm.f <- lm(model.f$yi ~ model.f$X, weights=model.f$weights)
+               }
+            } else {
+               lm.f <- lm(model.f$yi ~ model.f$X)
+            }
+            if (model.r$weighted) {
+               if (is.null(model.r$weights)) {
+                  lm.r <- lm(model.r$yi ~ model.r$X, weights=1/model.r$vi)
+               } else {
+                  lm.r <- lm(model.r$yi ~ model.r$X, weights=model.r$weights)
+               }
+            } else {
+               lm.r <- lm(model.r$yi ~ model.r$X)
+            }
+            s2.f <- sigma(lm.f)^2
+            s2.r <- sigma(lm.r)^2
+            R2 <- 100 * max(0, (s2.r - s2.f) / s2.r)
          } else if (identical(model.r$tau2,0)) {
             R2 <- 0
          } else {
-            R2 <- 100 * max(0, (model.r$tau2 - model.f$tau2)/model.r$tau2)
+            R2 <- 100 * max(0, (model.r$tau2 - model.f$tau2) / model.r$tau2)
          }
       } else {
          R2 <- NA
@@ -396,23 +528,11 @@ anova.rma <- function(object, object2, btt, X, att, Z, digits, ...) {
             fit.stats.f <- t(model.f$fit.stats)["REML",] # to keep (row)names of fit.stats
             fit.stats.r <- t(model.r$fit.stats)["REML",] # to keep (row)names of fit.stats
 
-            if (!identical(model.f$X, model.r$X))
-               warning(mstyle$warning("Models with different fixed effects. REML comparisons are not meaningful."), call.=FALSE)
-
-            ### in this case, one could consider just taking the ML deviances, but this
-            ### is really ad-hoc; there is some theory in Welham & Thompson (1997) about
-            ### LRTs for fixed effects when using REML estimation, but this involves
-            ### additional work
-
          } else {
 
             LRT <- model.r$fit.stats["dev","ML"] - model.f$fit.stats["dev","ML"]
             fit.stats.f <- t(model.f$fit.stats)["ML",]
             fit.stats.r <- t(model.r$fit.stats)["ML",]
-
-            ### in principle, a 'rma.uni' model may have been fitted with something besides ML
-            ### estimation (for tau^2), so technically the deviance is then not really that as
-            ### obtained with proper ML estimation; issue a warning about this?
 
          }
 

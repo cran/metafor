@@ -2,12 +2,9 @@
 
 ### see also: https://www.metafor-project.org/doku.php/analyses:berkey1995
 
-source("tolerances.r") # read in tolerances
+source("settings.r")
 
 context("Checking analysis example: berkey1995")
-
-### load BCG dataset
-data(dat.bcg, package="metafor")
 
 ### calculate log ratio ratios and corresponding sampling variances
 dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
@@ -43,7 +40,8 @@ test_that("results are correct for the mixed-effects meta-regression model.", {
    expect_equivalent(coef(res.ME), c(-0.6303, -0.0268), tolerance=.tol[["coef"]]) ### -0.6304 in article
    expect_equivalent(res.ME$se, c(0.1591, 0.0110), tolerance=.tol[["se"]])
    expect_equivalent(res.ME$tau2, 0.1572, tolerance=.tol[["var"]])
-   expect_equivalent(anova(res.RE, res.ME)$R2, 41.3844, tolerance=.tol[["r2"]])
+   expect_warning(tmp <- anova(res.RE, res.ME))
+   expect_equivalent(tmp$R2, 41.3844, tolerance=.tol[["r2"]])
 
    ### predicted average risk ratios
    tmp <- predict(res.ME, newmods=c(33.46,42)-33.46, transf=exp, digits=2)
@@ -69,3 +67,5 @@ test_that("results are correct for the fixed-effects meta-regression model.", {
    expect_equivalent(tmp$pred, c(0.5516, 0.4336), tolerance=.tol[["pred"]])
 
 })
+
+rm(list=ls())

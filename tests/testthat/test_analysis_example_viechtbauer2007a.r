@@ -4,10 +4,9 @@
 
 context("Checking analysis example: viechtbauer2007a")
 
-source("tolerances.r") # read in tolerances
+source("settings.r")
 
 ### load data
-data(dat.collins1985b, package="metafor")
 dat <- dat.collins1985b[,1:7]
 dat <- escalc(measure="OR", ai=pre.xti, n1i=pre.nti, ci=pre.xci, n2i=pre.nci, data=dat)
 
@@ -61,8 +60,8 @@ test_that("CI is correct for the Biggerstaff–Tweedie method.", {
 
 test_that("CI is correct for the profile likelihood method.", {
 
-   res.ML <- rma.mv(yi, vi, random = ~ 1 | id, data=dat, method="ML")
-   res.REML <- rma.mv(yi, vi, random = ~ 1 | id, data=dat, method="REML")
+   res.ML <- rma.mv(yi, vi, random = ~ 1 | id, data=dat, method="ML", sparse=sparse)
+   res.REML <- rma.mv(yi, vi, random = ~ 1 | id, data=dat, method="REML", sparse=sparse)
 
    sav <- confint(res.ML)
    sav <- c(sav$random["sigma^2","ci.lb"], sav$random["sigma^2","ci.ub"])
@@ -114,7 +113,7 @@ test_that("CI is correct for the parametric bootstrap method.", {
    maj <- as.numeric(R.Version()$major)
    min <- as.numeric(R.Version()$minor)
 
-   ### run test only on R versions 3.6.x (due to change in sampler)
+   ### run test only on R versions 3.6.x or later (due to change in sampler)
 
    if (maj >= 3 && min >= 6) {
 
@@ -152,7 +151,7 @@ test_that("CI is correct for the non-parametric bootstrap method.", {
    maj <- as.numeric(R.Version()$major)
    min <- as.numeric(R.Version()$minor)
 
-   ### run test only on R versions 3.6.x (due to change in sampler)
+   ### run test only on R versions 3.6.x or later (due to change in sampler)
 
    if (maj >= 3 && min >= 6) {
 
@@ -176,3 +175,5 @@ test_that("CI is correct for the non-parametric bootstrap method.", {
    }
 
 })
+
+rm(list=ls())

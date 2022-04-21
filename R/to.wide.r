@@ -24,7 +24,7 @@ addid=TRUE, addcomp=TRUE, adddesign=TRUE, minlen=2, var.names=c("id","comp","des
 
    if (any(var.names != make.names(var.names, unique=TRUE))) {
       var.names <- make.names(var.names, unique=TRUE)
-      warning(mstyle$warning(paste0("Argument 'var.names' does not contain syntactically valid variable names.\n  Variable names adjusted to: var.names = c('", var.names[1], "', '", var.names[2], "', '", var.names[3], "').")))
+      warning(mstyle$warning(paste0("Argument 'var.names' does not contain syntactically valid variable names.\nVariable names adjusted to: var.names = c('", var.names[1], "', '", var.names[2], "', '", var.names[3], "').")), call.=FALSE)
    }
 
    ############################################################################
@@ -41,11 +41,8 @@ addid=TRUE, addcomp=TRUE, adddesign=TRUE, minlen=2, var.names=c("id","comp","des
 
       study.pos <- charmatch(study, varnames)
 
-      if (is.na(study.pos))
-         stop(mstyle$stop("Argument 'study' must be the name of a variable in the data frame."))
-
-      if (study.pos == 0L)
-         stop(mstyle$stop("No ambiguous match found for variable name specified via 'study' argument."))
+      if (is.na(study.pos) || study.pos == 0L)
+         stop(mstyle$stop("Could not find or uniquely identify variable specified via the 'study' argument."))
 
    } else {
 
@@ -79,11 +76,8 @@ addid=TRUE, addcomp=TRUE, adddesign=TRUE, minlen=2, var.names=c("id","comp","des
 
       grp.pos <- charmatch(grp, varnames)
 
-      if (is.na(grp.pos))
-         stop(mstyle$stop("Argument 'grp' must be the name of a variable in the data frame."))
-
-      if (grp.pos == 0L)
-         stop(mstyle$stop("No ambiguous match found for variable name specified via 'grp' argument."))
+      if (is.na(grp.pos) || grp.pos == 0L)
+         stop(mstyle$stop("Could not find or uniquely identify variable specified via the 'grp' argument."))
 
    } else {
 
@@ -125,11 +119,8 @@ addid=TRUE, addcomp=TRUE, adddesign=TRUE, minlen=2, var.names=c("id","comp","des
 
    ref.pos <- charmatch(ref, lvls)
 
-   if (is.na(ref.pos))
-      stop(mstyle$stop("Could not find specified reference group in 'grp' variable."))
-
-   if (ref.pos == 0L)
-      stop(mstyle$stop("No ambiguous match found for reference group specified via 'ref' argument."))
+   if (is.na(ref.pos) || ref.pos == 0L)
+      stop(mstyle$stop("Could not find or uniquely identify reference group specified via the 'ref' argument."))
 
    ############################################################################
 
@@ -154,11 +145,8 @@ addid=TRUE, addcomp=TRUE, adddesign=TRUE, minlen=2, var.names=c("id","comp","des
 
       grpvars.pos <- unique(charmatch(grpvars, varnames))
 
-      if (anyNA(grpvars.pos))
-         stop(mstyle$stop("Argument 'grpvars' must be the names of variables in the data frame."))
-
-      if (any(grpvars.pos == 0L))
-         stop(mstyle$stop("One or multiple ambiguous matches for variable names specified via 'grpvars' argument."))
+      if (anyNA(grpvars.pos) || any(grpvars.pos == 0L))
+         stop(mstyle$stop("Could not find or uniquely identify variable(s) specified via the 'grpvars' argument."))
 
    } else {
 
@@ -184,7 +172,7 @@ addid=TRUE, addcomp=TRUE, adddesign=TRUE, minlen=2, var.names=c("id","comp","des
 
    restruct <- function(x) {
       if (nrow(x) > 1L) {
-         cbind(x[-nrow(x),], x[rep(nrow(x),nrow(x)-1),grpvars.pos])
+         cbind(x[-nrow(x),], x[rep(nrow(x),nrow(x)-1L),grpvars.pos])
       } else {
          # to handle one-arm studies
          unname(c(x, rep(NA, length(grpvars.pos))))
@@ -223,7 +211,7 @@ addid=TRUE, addcomp=TRUE, adddesign=TRUE, minlen=2, var.names=c("id","comp","des
 
    restruct <- function(x) {
       if (length(x) > 1L) {
-         rep(paste0(x, collapse="-"), length(x)-1)
+         rep(paste0(x, collapse="-"), length(x)-1L)
       } else {
          NA
       }
@@ -237,7 +225,7 @@ addid=TRUE, addcomp=TRUE, adddesign=TRUE, minlen=2, var.names=c("id","comp","des
 
    if (addid) {
 
-      dat[[var.names[1]]] <- 1:nrow(dat)
+      dat[[var.names[1]]] <- seq_len(nrow(dat))
 
       ### make sure that row id variable is always the first variable in the dataset
       #id.pos <- which(names(dat) == "id")

@@ -17,9 +17,9 @@ reporter(x, \dots)
    \item{filename}{optional character string to specify the filename (without file extension) for the report. If unspecified, the function sets a filename automatically.}
    \item{format}{output format for the report (either \code{html_document}, \code{pdf_document}, or \code{word_document}). Can be abbreviated. See \sQuote{Note}.}
    \item{open}{logical to specify whether the report should be opened after it has been generated (the default is \code{TRUE}). See \sQuote{Note}.}
-   \item{digits}{integer to specify the number of decimal places to which the printed results should be rounded. If unspecified, the default is to take the value from the object.}
-   \item{forest}{either a logical which will suppress the drawing of the forest plot when set to \code{FALSE} or a character string with arguments to be added to the call to \code{\link{forest.rma}} for generating the forest plot.}
-   \item{funnel}{either a logical which will suppress the drawing of the funnel plot when set to \code{FALSE} or a character string with arguments to be added to the call to \code{\link{funnel.rma}} for generating the funnel plot.}
+   \item{digits}{optional integer to specify the number of decimal places to which the printed results should be rounded. If unspecified, the default is to take the value from the object.}
+   \item{forest}{either a logical which will suppress the drawing of the forest plot when set to \code{FALSE} or a character string with arguments to be added to the call to \code{\link[=forest.rma]{forest}} for generating the forest plot.}
+   \item{funnel}{either a logical which will suppress the drawing of the funnel plot when set to \code{FALSE} or a character string with arguments to be added to the call to \code{\link[=funnel.rma]{funnel}} for generating the funnel plot.}
    \item{footnotes}{logical to specify whether additional explanatory footnotes should be added to the report (the default is \code{FALSE}).}
    \item{verbose}{logical to specify whether information on the progress of the report generation should be provided (the default is \code{TRUE}).}
    \item{\dots}{other arguments.}
@@ -50,7 +50,7 @@ reporter(x, \dots)
    Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \verb{https://doi.org/10.18637/jss.v036.i03}
 }
 \seealso{
-   \code{\link{rma.uni}}
+   \code{\link{rma.uni}} for the function to fit models for which an analysis report can be generated.
 }
 \examples{
 ### copy BCG vaccine data into 'dat'
@@ -64,7 +64,8 @@ dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat,
 res <- rma(yi, vi, data=dat)
 
 \dontrun{
-### generate pdf report
-reporter(res)}
+### generate report
+reporter(res)
+}
 }
 \keyword{methods}

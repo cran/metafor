@@ -71,7 +71,7 @@ reporter.rma.uni <- function(x, dir, filename, format="html_document", open=TRUE
 
    ### set default filenames
 
-   object.name <- deparse(substitute(x))
+   object.name <- deparse1(substitute(x))
    has.object.name <- TRUE
 
    if (grepl("rma(", object.name, fixed=TRUE) || grepl("rma.uni(", object.name, fixed=TRUE)) { # check for 'reporter(rma(yi, vi))' usage
@@ -152,7 +152,7 @@ reporter.rma.uni <- function(x, dir, filename, format="html_document", open=TRUE
 
    ### get measure name
 
-   measure <- tolower(.setlab(x$measure, transf.char=FALSE, atransf.char=FALSE, gentype=1))
+   measure <- tolower(.setlab(x$measure, transf.char="FALSE", atransf.char="FALSE", gentype=1))
    measure <- sub("observed outcome", "outcome", measure)
    measure <- sub("fisher's z", "Fisher r-to-z", measure)
    measure <- sub("yule", "Yule", measure)
@@ -207,10 +207,8 @@ reporter.rma.uni <- function(x, dir, filename, format="html_document", open=TRUE
    if (x$method == "GENQ" && model == "ME")
       tau2.ref <- "[@jackson2014]"
 
-   if (x$method == "GENQM" && model == "RE")
-      tau2.ref <- "[@dersimonian2007]"
-   if (x$method == "GENQM" && model == "ME")
-      tau2.ref <- "[@jackson2014]"
+   if (x$method == "GENQM")
+      tau2.ref <- "[@viechtbauer2021]"
 
    if (x$method == "SJ")
       tau2.ref <- "[@sidik2005]"
@@ -235,10 +233,8 @@ reporter.rma.uni <- function(x, dir, filename, format="html_document", open=TRUE
    if (x$method == "PM" && model == "ME")
       tau2.ref <- "[@viechtbauer2015]"
 
-   if (x$method == "PMM" && model == "RE")
-      tau2.ref <- "[@paule1982]"
-   if (x$method == "PMM" && model == "ME")
-      tau2.ref <- "[@viechtbauer2015]"
+   if (x$method == "PMM")
+      tau2.ref <- "[@viechtbauer2021]"
 
    ### Q-test reference
 

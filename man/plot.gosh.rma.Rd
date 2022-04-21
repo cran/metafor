@@ -10,14 +10,14 @@
      adjust, lwd, labels, \dots)
 }
 \arguments{
-   \item{x}{an object of class \code{"gosh.rma"}.}
+   \item{x}{an object of class \code{"gosh.rma"} obtained with \code{\link{gosh}}.}
    \item{het}{character string to specify the heterogeneity measure to plot. Either \code{"I2"}, \code{"H2"}, \code{"QE"}, or \code{"tau2"} (the last only for random/mixed-effects models).}
    \item{pch}{plotting symbol to use. By default, a borderless filled circle is used. See \code{\link{points}} for other options.}
    \item{cex}{symbol expansion factor.}
    \item{out}{optional integer to specify the number of a study that may be a potential outlier. If specified, subsets containing the specified study are drawn in a different color than those not containing the study.}
-   \item{col}{optional character string to specify the name of a color to use for the points (if not provided, points are drawn in black). When \code{out} is used, two colors should be specified (if not provided, red is used for subsets containing the specified study and blue otherwise).}
+   \item{col}{optional character string to specify the color to use for the points (if not provided, points are drawn in black). When \code{out} is used, two colors should be specified (if not provided, red is used for subsets containing the specified study and blue otherwise).}
    \item{alpha}{optional alpha transparency value for the points (0 means fully transparent and 1 means opaque). If unspecified, the function tries to set this to a sensible value.}
-   \item{border}{optional character string to specify the name of a color to use for the borders of the histogram (if not provided, borders are drawn in white). Set to \code{FALSE} to omit the borders.}
+   \item{border}{optional character string to specify the color to use for the borders of the histogram (if not provided, borders are drawn in white). Set to \code{FALSE} to omit the borders.}
    \item{xlim}{x-axis limits. If unspecified, the function tries to set the x-axis limits to some sensible values.}
    \item{ylim}{y-axis limits. If unspecified, the function tries to set the y-axis limits to some sensible values.}
    \item{xhist}{logical to specify whether a histogram should be drawn for the x-axis (the default is \code{TRUE}).}
@@ -45,14 +45,14 @@
    Viechtbauer, W. (2021). Model checking in meta-analysis. In C. H. Schmid, T. Stijnen, & I. R. White (Eds.), \emph{Handbook of meta-analysis} (pp. 219--254). Boca Raton, FL: CRC Press. \verb{https://doi.org/10.1201/9781315119403}
 }
 \seealso{
-   \code{\link{gosh.rma}}
+   \code{\link{gosh.rma}} for the function to create the input to a GOSH plot.
 }
 \examples{
 ### calculate log odds ratios and corresponding sampling variances
 dat <- escalc(measure="OR", ai=ai, n1i=n1i, ci=ci, n2i=n2i, data=dat.egger2001)
 
-### meta-analysis of all trials including ISIS-4 using a FE model
-res <- rma(yi, vi, data=dat, method="FE")
+### meta-analysis of all trials including ISIS-4 using an equal-effects model
+res <- rma(yi, vi, data=dat, method="EE")
 
 ### fit FE model to all possible subsets (65535 models)
 \dontrun{
@@ -61,6 +61,7 @@ sav <- gosh(res, progbar=FALSE)
 ### create GOSH plot
 ### red points for subsets that include and blue points
 ### for subsets that exclude study 16 (the ISIS-4 trial)
-plot(sav, out=16, breaks=100)}
+plot(sav, out=16, breaks=100)
+}
 }
 \keyword{hplot}

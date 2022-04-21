@@ -5,7 +5,7 @@ influence.rma.uni <- function(model, digits, progbar=FALSE, ...) {
    .chkclass(class(model), must="rma.uni", notav=c("rma.ls", "rma.uni.selmodel"))
 
    na.act <- getOption("na.action")
-   on.exit(options(na.action=na.act))
+   on.exit(options(na.action=na.act), add=TRUE)
 
    if (!is.element(na.act, c("na.omit", "na.exclude", "na.fail", "na.pass")))
       stop(mstyle$stop("Unknown 'na.action' specified under options()."))
@@ -80,6 +80,10 @@ influence.rma.uni <- function(model, digits, progbar=FALSE, ...) {
    hat <- hatvalues(x)
    options(na.action = na.act)
 
+   ### elements that need to be returned
+
+   outlist <- "coef.na=coef.na, tau2=tau2, QE=QE, beta=beta, vb=vb, s2w=s2w"
+
    ### note: skipping NA cases
    ### also: it is possible that model fitting fails, so that generates more NAs (these NAs will always be shown in output)
 
@@ -91,7 +95,8 @@ influence.rma.uni <- function(model, digits, progbar=FALSE, ...) {
       if (progbar)
          pbapply::setpb(pbar, i)
 
-      res <- try(suppressWarnings(rma.uni(x$yi, x$vi, weights=x$weights, mods=x$X, intercept=FALSE, method=x$method, weighted=x$weighted, test=x$test, level=x$level, tau2=ifelse(x$tau2.fix, x$tau2, NA), control=x$control, subset=-i, skipr2=TRUE)), silent=TRUE)
+      args <- list(yi=x$yi, vi=x$vi, weights=x$weights, mods=x$X, intercept=FALSE, method=x$method, weighted=x$weighted, test=x$test, level=x$level, tau2=ifelse(x$tau2.fix, x$tau2, NA), control=x$control, subset=-i, skipr2=TRUE, outlist=outlist)
+      res <- try(suppressWarnings(.do.call(rma.uni, args)), silent=TRUE)
 
       if (inherits(res, "try-error"))
          next
@@ -254,18 +259,18 @@ influence.rma.uni <- function(model, digits, progbar=FALSE, ...) {
    if (measure == "rstudent") {
 
       if (na.act == "na.omit") {
-         resid.f   <- resid
-         seresid.f <- seresid
-         stresid.f <- stresid
+         resid.f   <- c(resid)
+         seresid.f <- c(seresid)
+         stresid.f <- c(stresid)
       }
 
       if (na.act == "na.exclude" || na.act == "na.pass") {
          resid.f   <- rep(NA_real_, x$k.f)
          seresid.f <- rep(NA_real_, x$k.f)
          stresid.f <- rep(NA_real_, x$k.f)
-         resid.f[x$not.na]   <- resid
-         seresid.f[x$not.na] <- seresid
-         stresid.f[x$not.na] <- stresid
+         resid.f[x$not.na]   <- c(resid)
+         seresid.f[x$not.na] <- c(seresid)
+         stresid.f[x$not.na] <- c(stresid)
       }
 
       out <- list(resid=resid.f, se=seresid.f, z=stresid.f, slab=out$inf$slab, digits=digits)

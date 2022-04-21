@@ -33,7 +33,7 @@ confint.rma.uni.selmodel <- function(object, parm, level, fixed=FALSE, tau2, del
    if (missing(control))
       control <- list()
 
-   level <- ifelse(level == 0, 1, ifelse(level >= 1, (100-level)/100, ifelse(level > .5, 1-level, level)))
+   level <- .level(level)
 
    ddd <- list(...)
 
@@ -353,7 +353,7 @@ confint.rma.uni.selmodel <- function(object, parm, level, fixed=FALSE, tau2, del
       vc <- c(vc, vc.lb, vc.ub)
 
       if (comp == "tau2") {
-         vcsqrt <- sqrt(ifelse(vc >= 0, vc, NA))
+         vcsqrt <- sqrt(ifelse(vc >= 0, vc, NA_real_))
          res.random <- rbind(vc, vcsqrt)
          rownames(res.random) <- c("tau^2", "tau")
       }
@@ -376,7 +376,7 @@ confint.rma.uni.selmodel <- function(object, parm, level, fixed=FALSE, tau2, del
 
    if (fixed) {
 
-      if (x$test == "t") {
+      if (is.element(x$test, c("knha","adhoc","t"))) {
          crit <- qt(level/2, df=x$ddf, lower.tail=FALSE)
       } else {
          crit <- qnorm(level/2, lower.tail=FALSE)

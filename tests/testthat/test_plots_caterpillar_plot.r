@@ -2,6 +2,8 @@
 
 ### see also: https://www.metafor-project.org/doku.php/plots:caterpillar_plot
 
+source("settings.r")
+
 context("Checking plots example: Caterpillar plot")
 
 test_that("plot can be drawn.", {
@@ -40,9 +42,11 @@ test_that("plot can be drawn.", {
    points(sort(yi), k:1, pch=19, cex=0.5)
 
    ### add summary polygon at bottom and text
-   addpoly(res, mlab="", annotate=FALSE, cex=1)
+   addpoly(res, mlab="", cex=1)
    text(-2, -2, "RE Model", pos=4, offset=0, cex=1)
 
    par(opar)
 
 })
+
+rm(list=ls())

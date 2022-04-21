@@ -2,7 +2,7 @@
 
 context("Checking misc: matreg() function")
 
-source("tolerances.r") # read in tolerances
+source("settings.r")
 
 test_that("matreg() works correctly for 'dat.craft2003'.", {
 
@@ -26,7 +26,7 @@ test_that("matreg() works correctly for 'dat.craft2003'.", {
       levels=c("acog.perf", "asom.perf", "conf.perf", "acog.asom", "acog.conf", "asom.conf"))
 
    ### multivariate random-effects model
-   expect_warning(res <- rma.mv(yi, V, mods = ~ var1.var2 - 1, random = ~ var1.var2 | study, struct="UN", data=dat))
+   expect_warning(res <- rma.mv(yi, V, mods = ~ var1.var2 - 1, random = ~ var1.var2 | study, struct="UN", data=dat, sparse=sparse))
 
    ### restructure estimated mean correlations into a 4x4 matrix
    R <- matrix(NA, nrow=4, ncol=4)
@@ -41,4 +41,10 @@ test_that("matreg() works correctly for 'dat.craft2003'.", {
    sav <- structure(list(estimate = c(0.14817903234559, -0.0536342615587582, 0.363679177420187), se = c(0.156551433378687, 0.0768472434859867, 0.0909539697381244), zval = c(0.946519805967891, -0.697933447262015, 3.99849702511387), pval = c(0.343883525131896, 0.485218815885662, 0.0000637459821320369), ci.lb = c(-0.158656138804758, -0.204252091102472, 0.185412672482517), ci.ub = c(0.455014203495939, 0.0969835679849561, 0.541945682357857)), class = "data.frame", row.names = c("acog", "asom", "conf"))
    expect_equivalent(fit$tab, sav, tolerance=.tol[["misc"]])
 
+   ### use variable names
+   fit <- matreg("perf", c("acog","asom","conf"), R=R, V=vcov(res))
+   expect_equivalent(fit$tab, sav, tolerance=.tol[["misc"]])
+
 })
+
+rm(list=ls())

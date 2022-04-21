@@ -2,16 +2,17 @@
 
 context("Checking misc: reporter() function")
 
-source("tolerances.r") # read in tolerances
+source("settings.r")
 
 test_that("reporter() works correctly for 'rma.uni' objects.", {
 
-   skip_on_cran()
-
-   data(dat.bcg, package="metafor")
    dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
-   res <- rma(yi, vi, data=dat)
+   expect_error(res <- rma(yi, vi, data=dat), NA) # to avoid this being an empty test
+
+   skip_on_cran()
 
    reporter(res, open=FALSE)
 
 })
+
+rm(list=ls())

@@ -1,30 +1,80 @@
-matreg <- function(y, x, R, n, V, cov=FALSE, means, ztor=FALSE, nearPD=FALSE, level=95, digits) {
+matreg <- function(y, x, R, n, V, cov=FALSE, means, ztor=FALSE, nearpd=FALSE, level=95, digits, ...) {
 
    mstyle <- .get.mstyle("crayon" %in% .packages())
 
    if (missing(digits))
       digits <- 4
 
-   level <- ifelse(level == 0, 1, ifelse(level >= 1, (100-level)/100, ifelse(level > .5, 1-level, level)))
+   level <- .level(level)
+
+   ### check/process R argument
 
    if (missing(R))
       stop(mstyle$stop("Must specify 'R' argument."))
 
+   R <- as.matrix(R)
+
    if (nrow(R) != ncol(R))
       stop(mstyle$stop("Argument 'R' must be a square matrix."))
 
+   if (is.null(rownames(R)))
+      rownames(R) <- colnames(R)
+   if (is.null(colnames(R)))
+      colnames(R) <- rownames(R)
+
    p <- nrow(R)
+
+   if (p <= 1L)
+      stop(mstyle$stop("The 'R' matrix must be at least of size 2x2."))
+
+   ### check/process y argument
+
+   if (length(y) != 1L)
+      stop(mstyle$stop("Argument 'y' should specify a single variable."))
+
+   if (is.character(y)) {
+
+      if (is.null(rownames(R)))
+         stop(mstyle$stop("'R' must have dimension names when specifying a variable name for 'y'."))
+
+      if (anyDuplicated(rownames(R)))
+         stop(mstyle$stop("Dimension names of 'R' must be unique."))
+
+      y.pos <- pmatch(y, rownames(R)) # NA if no match or there are duplicates
+
+      if (is.na(y.pos))
+         stop(mstyle$stop(paste0("Could not find variable '", y, "' in the 'R' matrix.")))
+
+      y <- y.pos
+
+   }
 
    y <- round(y)
 
-   if (length(y) != 1L)
-      stop(mstyle$stop("Argument 'y' should be a single index."))
-
    if (y < 1 || y > p)
-      stop(mstyle$stop("Index 'y' must be >= 1 or <= ", p, "."))
+      stop(mstyle$stop(paste0("Index 'y' must be >= 1 or <= ", p, ".")))
 
-   if (missing(x))
+   ### check/process x argument
+
+   if (missing(x)) # if not specified, use all other variables in R as predictors
       x <- seq_len(p)[-y]
+
+   if (is.character(x)) {
+
+      if (is.null(rownames(R)))
+         stop(mstyle$stop("'R' must have dimension names when specifying variable names for 'x'."))
+
+      if (anyDuplicated(rownames(R)))
+         stop(mstyle$stop("Dimension names of 'R' must be unique."))
+
+      x.pos <- pmatch(x, rownames(R)) # NA if no match or there are duplicates
+
+      if (anyNA(x.pos))
+         stop(mstyle$stop(paste0("Could not find variable", ifelse(sum(is.na(x.pos)) > 1L, "s", ""), " '", paste(x[is.na(x.pos)], collapse=", "), "' in the 'R' matrix.")))
+
+      x <- x.pos
+
+   }
 
    x <- round(x)
 
@@ -32,19 +82,15 @@ matreg <- function(y, x, R, n, V, cov=FALSE, means, ztor=FALSE, nearPD=FALSE, le
       stop(mstyle$stop("Argument 'x' should not contain duplicated elements."))
 
    if (any(x < 1 | x > p))
-      stop(mstyle$stop("Indices in 'x' must be >= 1 or <= ", p, "."))
+      stop(mstyle$stop(paste0("Indices in 'x' must be >= 1 or <= ", p, ".")))
 
    if (y %in% x)
-      stop(mstyle$stop("Index 'y' should not be an element of 'x'."))
+      stop(mstyle$stop("Variable 'y' should not be an element of 'x'."))
+
+   ### check/process V/n arguments
 
    if (missing(V))
       V <- NULL
-
-   if (cov && !is.null(V))
-      stop(mstyle$stop("Cannot use a covariance matrix as input when specifying 'V'."))
-
-   if (cov && ztor)
-      stop(mstyle$stop("Cannot use a covariance matrix as input when 'ztor=TRUE'."))
 
    if (is.null(V) && missing(n))
       stop(mstyle$stop("Either 'V' or 'n' must be specified."))
@@ -52,11 +98,45 @@ matreg <- function(y, x, R, n, V, cov=FALSE, means, ztor=FALSE, nearPD=FALSE, le
    if (!is.null(V) && !missing(n))
       stop(mstyle$stop("Either 'V' or 'n' must be specified, not both."))
 
-   m <- length(x)
+   if (cov && ztor)
+      stop(mstyle$stop("Cannot use a covariance matrix as input when 'ztor=TRUE'."))
+
+   ### get ... argument and check for extra/superfluous arguments
+
+   ddd <- list(...)
+
+   .chkdots(ddd, c("nearPD"))
+
+   if (.isTRUE(ddd$nearPD))
+      nearpd <- TRUE
 
    ############################################################################
 
+   m <- length(x)
+
    R[upper.tri(R)] <- t(R)[upper.tri(R)]
+
+   if (!is.null(V)) {
+
+      V <- as.matrix(V)
+
+      if (nrow(V) != ncol(V))
+      stop(mstyle$stop("Argument 'V' must be a square matrix."))
+
+      V[upper.tri(V)] <- t(V)[upper.tri(V)]
+
+      if (cov) {
+         s <- p*(p+1)/2
+      } else {
+         s <- p*(p-1)/2
+      }
+
+      if (nrow(V) != s)
+         stop(mstyle$stop(paste0("Dimensions of 'V' (", nrow(V), "x", ncol(V), ") do not match the number of elements in 'R' (", s, ").")))
+
+   }
+
+   ############################################################################
 
    if (ztor) {
 
@@ -96,7 +176,7 @@ matreg <- function(y, x, R, n, V, cov=FALSE, means, ztor=FALSE, nearPD=FALSE, le
    invRxx <- try(chol2inv(chol(Rxx)), silent=TRUE)
 
    if (inherits(invRxx, "try-error")) {
-      if (nearPD) {
+      if (nearpd) {
          message(mstyle$message("Cannot invert R[x,x] matrix. Using nearPD(). Treat results with caution."))
          Rxx <- as.matrix(nearPD(Rxx, corr=TRUE)$mat)
       } else {
@@ -112,14 +192,36 @@ matreg <- function(y, x, R, n, V, cov=FALSE, means, ztor=FALSE, nearPD=FALSE, le
    if (!is.null(rownames(Rxx))) {
       rownames(b) <- rownames(Rxx)
    } else {
-      rownames(b) <- x
+      rownames(b) <- paste0("x", x)
    }
 
    colnames(b) <- NULL
 
    ############################################################################
 
+   if (cov) {
+
+      if (missing(means)) {
+
+         means <- rep(0,p)
+         has.means <- FALSE
+
+      } else {
+
+         if (length(means) != p)
+            stop(mstyle$stop(paste0("Length of 'means' (", length(means), ") does not match the dimensions of 'R' (", p, "x", p, ").")))
+
+         has.means <- TRUE
+
+      }
+
+   }
+
+   ############################################################################
+
    if (is.null(V)) {
+
+      # when no V matrix is specified
 
       if (length(n) != 1L)
          stop(mstyle$stop("Argument 'n' should be a single number."))
@@ -144,20 +246,6 @@ matreg <- function(y, x, R, n, V, cov=FALSE, means, ztor=FALSE, nearPD=FALSE, le
          mult <- sdy / sdx
          b    <- b * mult
          mse  <- sdy^2 * (n-1) * (1 - R2) / df
-
-         if (missing(means)) {
-
-            means <- rep(0,p)
-            has.means <- FALSE
-
-         } else {
-
-            if (length(means) != p)
-               stop(mstyle$stop(paste0("Length of 'means' (", length(means), ") does not match the dimensions of 'R' (", p, "x", p, ").")))
-
-            has.means <- TRUE
-
-         }
 
          b <- rbind(means[y] - means[x] %*% b, b)
          rownames(b)[1] <- "intrcpt"
@@ -190,23 +278,34 @@ matreg <- function(y, x, R, n, V, cov=FALSE, means, ztor=FALSE, nearPD=FALSE, le
       ci.lb <- c(b - crit * se)
       ci.ub <- c(b + crit * se)
 
-      res <- list(tab = data.frame(beta=b, se=se, tval=tval, df=df, pval=pval, ci.lb=ci.lb, ci.ub=ci.ub), vb=vb, R2=R2, R2adj=R2adj, F=F, Fp=Fp, digits=digits, test="t")
+      res <- list(tab = data.frame(beta=b, se=se, tval=tval, df=df, pval=pval, ci.lb=ci.lb, ci.ub=ci.ub), vb=vb, R2=R2, R2adj=R2adj, F=F, Fdf=c(m,df), Fp=Fp, digits=digits, test="t")
 
    } else {
 
-      if (nrow(V) != ncol(V))
-         stop(mstyle$stop("Argument 'V' must be a square matrix."))
+      # when a V matrix is specified
 
-      s <- p*(p-1)/2
+      R2 <- c(t(b) %*% Rxy) # as in Becker & Aloe (2019); assume that this also applies for Cov matrices
 
-      if (nrow(V) != s)
-         stop(mstyle$stop(paste0("Dimensions of 'V' (", nrow(V), "x", ncol(V), ") do not match the number of elements in 'R' (", s, ").")))
+      if (cov) {
 
-      V[upper.tri(V)] <- t(V)[upper.tri(V)]
+         mult <- sdy / sdx
+         b    <- b * mult
+
+         Rxy <- S[x, y, drop=FALSE]
+         invRxx <- diag(1/sdx, nrow=m, ncol=m) %*% invRxx %*% diag(1/sdx, nrow=m, ncol=m)
+
+         Udiag <- TRUE
+
+      } else {
+
+         Udiag <- FALSE
+
+      }
 
       U <- matrix(NA, nrow=p, ncol=p)
-      U[lower.tri(U)] <- seq_len(s)
-      U[upper.tri(U)] <- t(U)[upper.tri(U)]
+      U[lower.tri(U, diag=Udiag)] <- seq_len(s)
+      U[upper.tri(U, diag=Udiag)] <- t(U)[upper.tri(U, diag=Udiag)]
+
       Uxx <- U[x, x, drop=FALSE]
       Uxy <- U[x, y, drop=FALSE]
       uxx <- unique(c(na.omit(c(Uxx))))
@@ -227,7 +326,23 @@ matreg <- function(y, x, R, n, V, cov=FALSE, means, ztor=FALSE, nearPD=FALSE, le
          }
       }
 
-      vb    <- A %*% V %*% t(A)
+      vb <- A %*% V %*% t(A)
+
+      if (cov) {
+
+         b <- rbind(means[y] - means[x] %*% b, b)
+         rownames(b)[1] <- "intrcpt"
+         X <- rbind(means[x], diag(m))
+         vb <- X %*% vb %*% t(X)
+
+         if (!has.means) {
+            b[1,]  <- NA
+            vb[1,] <- NA
+            vb[,1] <- NA
+         }
+
+      }
+
       se    <- sqrt(diag(vb))
       zval  <- c(b / se)
       pval  <- 2*pnorm(abs(zval), lower.tail=FALSE)
@@ -235,18 +350,20 @@ matreg <- function(y, x, R, n, V, cov=FALSE, means, ztor=FALSE, nearPD=FALSE, le
       ci.lb <- c(b - crit * se)
       ci.ub <- c(b + crit * se)
 
-      QM <- try(t(b) %*% chol2inv(chol(vb)) %*% b, silent=TRUE)
+      if (cov) {
+         QM <- try(as.vector(t(b[-1,,drop=FALSE]) %*% chol2inv(chol(vb[-1,-1,drop=FALSE])) %*% b[-1,,drop=FALSE]), silent=TRUE)
+      } else {
+         QM <- try(as.vector(t(b) %*% chol2inv(chol(vb)) %*% b), silent=TRUE)
+      }
 
       if (inherits(QM, "try-error"))
          QM <- NA
 
       QMp <- pchisq(QM, df=m, lower.tail=FALSE)
 
-      R2 <- c(t(b) %*% Rxy)
-
       rownames(vb) <- colnames(vb) <- rownames(b)
 
-      res <- list(tab = data.frame(beta=b, se=se, zval=zval, pval=pval, ci.lb=ci.lb, ci.ub=ci.ub), vb=vb, R2=R2, digits=digits, test="z")
+      res <- list(tab = data.frame(beta=b, se=se, zval=zval, pval=pval, ci.lb=ci.lb, ci.ub=ci.ub), vb=vb, R2=R2, QM=QM, QMdf=c(m,NA), QMp=QMp, digits=digits, test="z")
 
    }
 

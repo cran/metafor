@@ -2,7 +2,7 @@
 \alias{metafor.news}
 \title{Read News File of the Metafor Package}
 \description{
-   Read news file of the \pkg{\link{metafor-package}}.
+   Read the news file of the \pkg{\link{metafor-package}}.
 }
 \usage{
 metafor.news()
@@ -18,6 +18,7 @@ metafor.news()
 }
 \examples{
 \dontrun{
-metafor.news()}
+metafor.news()
+}
 }
 \keyword{utilities}

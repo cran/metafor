@@ -4,7 +4,7 @@
 
 context("Checking analysis example: lipsey2001")
 
-source("tolerances.r") # read in tolerances
+source("settings.r")
 
 ### create dataset
 dat <- data.frame(
@@ -14,9 +14,9 @@ vi = c(0.084, 0.035, 0.017, 0.034, 0.072, 0.117, 0.102, 0.093, 0.012, 0.067),
 random = c(0, 0, 0, 0, 0, 0, 1, 1, 1, 1),
 intensity = c(7, 3, 7, 5, 7, 7, 4, 4, 5, 6))
 
-test_that("results are correct for the fixed-effects model.", {
+test_that("results are correct for the equal-effects model.", {
 
-   res <- rma(yi, vi, data=dat, method="FE")
+   res <- rma(yi, vi, data=dat, method="EE")
 
    ### compare with results on page 133 (Exhibit 7.3)
    expect_equivalent(c(as.matrix(coef(summary(res)))), c(0.1549, 0.0609, 2.5450, 0.0109, 0.0356, 0.2742), tolerance=.tol[["misc"]])
@@ -39,8 +39,8 @@ test_that("results are correct for the ANOVA-type analysis.", {
 
    res <- rma(yi, vi, mods = ~ random, data=dat, method="FE")
 
-   res0 <- rma(yi, vi, data=dat, method="FE", subset=random==0)
-   res1 <- rma(yi, vi, data=dat, method="FE", subset=random==1)
+   res0 <- rma(yi, vi, data=dat, method="EE", subset=random==0)
+   res1 <- rma(yi, vi, data=dat, method="EE", subset=random==1)
 
    tmp <- predict(res, newmods=c(0,1))
    tmp <- do.call(cbind, unclass(tmp)[1:4])
@@ -102,8 +102,10 @@ test_that("results are correct for the comutation of R^2 via the anova() functio
 
    res.ME <- rma(yi, vi, mods = ~ random + intensity, data=dat, method="DL")
    res.RE <- rma(yi, vi, data=dat, method="DL")
-   tmp <- anova(res.RE, res.ME)
+   expect_warning(tmp <- anova(res.RE, res.ME))
 
    expect_equivalent(tmp$R2, 81.2023, tolerance=.tol[["r2"]])
 
 })
+
+rm(list=ls())

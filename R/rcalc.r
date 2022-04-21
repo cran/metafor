@@ -30,7 +30,7 @@ rcalc <- function(x, ni, data, rtoz=FALSE, nfun="min", sparse=FALSE, ...) {
    }
 
    na.act <- getOption("na.action")
-   on.exit(options(na.action=na.act))
+   on.exit(options(na.action=na.act), add=TRUE)
 
    ############################################################################
 
@@ -46,8 +46,7 @@ rcalc <- function(x, ni, data, rtoz=FALSE, nfun="min", sparse=FALSE, ...) {
 
       ### extract ni
       mf <- match.call()
-      mf.ni <- mf[[match("ni", names(mf))]]
-      ni <- eval(mf.ni, data, enclos=sys.frame(sys.parent()))
+      ni <- .getx("ni", mf=mf, data=data)
 
       ### get all variables from data
       options(na.action = "na.pass")
@@ -66,7 +65,7 @@ rcalc <- function(x, ni, data, rtoz=FALSE, nfun="min", sparse=FALSE, ...) {
 
       ### check that there are really 4 variables
       if (ncol(dat) != 4L)
-         stop(mstyle$stop("Formula should contain 4 variables, but contains ", ncol(dat), " variables."))
+         stop(mstyle$stop(paste0("Formula should contain 4 variables, but contains ", ncol(dat), " variables.")))
 
       ### check that there are no missings in the variable identifiers
       if (anyNA(c(dat[[2]],dat[[3]])))
@@ -97,10 +96,10 @@ rcalc <- function(x, ni, data, rtoz=FALSE, nfun="min", sparse=FALSE, ...) {
       Rlist <- list()
       nmi <- rep(NA, length(ni))
 
-      for (i in 1:length(dat)) {
+      for (i in seq_along(dat)) {
 
-         if (any(ni[[i]] < 0, na.rm=TRUE))
-            stop(mstyle$stop("One or more sample sizes are negative in study ", dat[[i]][[4]][[1]], "."))
+         if (any(ni[[i]] <= 0, na.rm=TRUE))
+            stop(mstyle$stop(paste0("One or more sample sizes are <= 0 in study ", dat[[i]][[4]][[1]], ".")))
 
          if (is.function(nfun)) {
             nfunnmi <- nfun(ni[[i]])
@@ -123,16 +122,16 @@ rcalc <- function(x, ni, data, rtoz=FALSE, nfun="min", sparse=FALSE, ...) {
 
          var1.var2.eq <- var1 == var2
          if (any(var1.var2.eq))
-            stop(mstyle$stop("Identical var1-var2 pair", ifelse(sum(var1.var2.eq) >= 2L, "s", ""), " (", paste0(var1.var2[var1.var2.eq], collapse=", "), ") in study ", dat[[i]][[4]][[1]], "."))
+            stop(mstyle$stop(paste0("Identical var1-var2 pair", ifelse(sum(var1.var2.eq) >= 2L, "s", ""), " (", paste0(var1.var2[var1.var2.eq], collapse=", "), ") in study ", dat[[i]][[4]][[1]], ".")))
 
          var1.var2.dup <- duplicated(var1.var2)
          if (any(var1.var2.dup))
-            stop(mstyle$stop("Duplicated var1-var2 pair", ifelse(sum(var1.var2.dup) >= 2L, "s", ""), " (", paste0(var1.var2[var1.var2.dup], collapse=", "), ") in study ", dat[[i]][[4]][[1]], "."))
+            stop(mstyle$stop(paste0("Duplicated var1-var2 pair", ifelse(sum(var1.var2.dup) >= 2L, "s", ""), " (", paste0(var1.var2[var1.var2.dup], collapse=", "), ") in study ", dat[[i]][[4]][[1]], ".")))
 
          ri <- dat[[i]][[1]]
 
          if (any(abs(ri) > 1, na.rm=TRUE))
-            stop(mstyle$stop("One or more correlations are > 1 or < -1 in study ", dat[[i]][[4]][[1]], "."))
+            stop(mstyle$stop(paste0("One or more correlations are > 1 or < -1 in study ", dat[[i]][[4]][[1]], ".")))
 
          vars <- sort(unique(c(var1, var2)))
 
@@ -140,7 +139,7 @@ rcalc <- function(x, ni, data, rtoz=FALSE, nfun="min", sparse=FALSE, ...) {
          diag(Ri) <- 1
          rownames(Ri) <- colnames(Ri) <- vars
 
-         for (j in 1:length(var1)) {
+         for (j in seq_along(var1)) {
             Ri[var1[j],var2[j]] <- Ri[var2[j],var1[j]] <- ri[j]
          }
 
@@ -167,12 +166,12 @@ rcalc <- function(x, ni, data, rtoz=FALSE, nfun="min", sparse=FALSE, ...) {
 
       res <- list()
 
-      for (i in 1:k) {
+      for (i in seq_len(k)) {
          res[[i]] <- rcalc(x[[i]], ni[i], upper=upper, rtoz=rtoz, ...)
       }
 
       if (is.null(names(x)))
-         names(x) <- 1:k
+         names(x) <- seq_len(k)
 
       if (simplify) {
 
@@ -200,7 +199,7 @@ rcalc <- function(x, ni, data, rtoz=FALSE, nfun="min", sparse=FALSE, ...) {
             dat[[1]] <- NULL
          }
 
-         rownames(dat) <- 1:nrow(dat)
+         rownames(dat) <- seq_len(nrow(dat))
          return(list(dat=dat, V=V))
 
       } else {
@@ -225,7 +224,7 @@ rcalc <- function(x, ni, data, rtoz=FALSE, nfun="min", sparse=FALSE, ...) {
    ### set default dimension names
 
    dimsx  <- nrow(x)
-   dnames <- paste0("x", 1:dimsx)
+   dnames <- paste0("x", seq_len(dimsx))
 
    ### in case x has dimension names, use those
 
@@ -265,10 +264,10 @@ rcalc <- function(x, ni, data, rtoz=FALSE, nfun="min", sparse=FALSE, ...) {
    if (any(abs(ri) > 1, na.rm=TRUE))
       stop(mstyle$stop("One or more correlations are > 1 or < -1."))
 
-   ### check that sample sizes are non-negative
+   ### check that sample sizes are > 0
 
-   if (isTRUE(ni < 0))
-      stop(mstyle$stop("One or more sample sizes are negative."))
+   if (isTRUE(ni <= 0))
+      stop(mstyle$stop("One or more sample sizes are <= 0."))
 
    ### apply r-to-z transformation if requested
 
@@ -277,8 +276,8 @@ rcalc <- function(x, ni, data, rtoz=FALSE, nfun="min", sparse=FALSE, ...) {
 
    ### I and J are matrices with 1:dimsx for rows and columns, respectively
 
-   I <- matrix(1:dimsx, nrow=dimsx, ncol=dimsx)
-   J <- matrix(1:dimsx, nrow=dimsx, ncol=dimsx, byrow=TRUE)
+   I <- matrix(seq_len(dimsx), nrow=dimsx, ncol=dimsx)
+   J <- matrix(seq_len(dimsx), nrow=dimsx, ncol=dimsx, byrow=TRUE)
 
    ### get upper/lower triangular elements of I and J
 
@@ -298,8 +297,8 @@ rcalc <- function(x, ni, data, rtoz=FALSE, nfun="min", sparse=FALSE, ...) {
 
    V <- matrix(NA, nrow=dimsV, ncol=dimsV)
 
-   for (ro in 1:dimsV) {
-      for (co in 1:dimsV) {
+   for (ro in seq_len(dimsV)) {
+      for (co in seq_len(dimsV)) {
 
          i <- I[ro]
          j <- J[ro]

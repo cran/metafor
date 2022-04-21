@@ -16,7 +16,7 @@
 \details{
    Note that \code{type="obs"} currently only works for object of class \code{"rma.uni"} and \code{"rma.mv"}.
 
-   For objects of class \code{"rma.uni"}, the marginal variance-covariance matrix of the observed effect sizes or outcomes is just a diagonal matrix with \mjeqn{\hat{\tau}^2 + v_i}{\tau^2 + v_i} along the diagonal, where \mjeqn{\hat{\tau}^2}{\tau^2} is the estimated amount of (residual) heterogeneity (set to 0 in fixed-effects models) and \mjseqn{v_i} is the sampling variance of the \mjseqn{i}th study.
+   For objects of class \code{"rma.uni"}, the marginal variance-covariance matrix of the observed effect sizes or outcomes is just a diagonal matrix with \mjeqn{\hat{\tau}^2 + v_i}{\tau^2 + v_i} along the diagonal, where \mjeqn{\hat{\tau}^2}{\tau^2} is the estimated amount of (residual) heterogeneity (set to 0 in equal-effects models) and \mjseqn{v_i} is the sampling variance of the \mjeqn{i\textrm{th}}{ith} study.
 
    For objects of class \code{"rma.mv"}, the structure can be more complex and depends on the random effects included in the model.
 }
@@ -30,7 +30,7 @@
    Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \verb{https://doi.org/10.18637/jss.v036.i03}
 }
 \seealso{
-   \code{\link{rma.uni}}, \code{\link{rma.mh}}, \code{\link{rma.peto}}, \code{\link{rma.glmm}}, \code{\link{rma.mv}}
+   \code{\link{rma.uni}}, \code{\link{rma.mh}}, \code{\link{rma.peto}}, \code{\link{rma.glmm}}, and \code{\link{rma.mv}} for functions to fit models for which the various types of variance-covariance matrices can be extracted.
 }
 \examples{
 ### calculate log risk ratios and corresponding sampling variances
@@ -43,12 +43,12 @@ res <- rma(yi, vi, mods = ~ ablat + year, data=dat)
 vcov(res)
 
 ### marginal var-cov matrix of the observed log risk ratios
-vcov(res, type="obs")
+round(vcov(res, type="obs"), 3)
 
 ### var-cov matrix of the fitted values
-vcov(res, type="fitted")
+round(vcov(res, type="fitted"), 3)
 
 ### var-cov matrix of the residuals
-vcov(res, type="resid")
+round(vcov(res, type="resid"), 3)
 }
 \keyword{models}

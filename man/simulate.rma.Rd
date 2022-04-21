@@ -6,7 +6,7 @@
    The function simulates effect sizes or outcomes based on \code{"rma"} model object.
 }
 \usage{
-\method{simulate}{rma}(object, nsim = 1, seed = NULL, olim, \dots)
+\method{simulate}{rma}(object, nsim=1, seed=NULL, olim, \dots)
 }
 \arguments{
    \item{object}{an object of class \code{"rma"}.}
@@ -33,7 +33,7 @@
    Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \verb{https://doi.org/10.18637/jss.v036.i03}
 }
 \seealso{
-   \code{\link{rma.uni}}, \code{\link{rma.mv}}
+   \code{\link{rma.uni}} and \code{\link{rma.mv}} for functions to fit models for which simulated effect sizes or outcomes can be generated.
 }
 \examples{
 ### copy BCG vaccine data into 'dat'
@@ -47,8 +47,8 @@ dat
 res <- rma(yi, vi, data=dat)
 res
 
-### simulate 10 sets of new outcomes based on the fitted model
-newdat <- simulate(res, nsim=10, seed=1234)
+### simulate 5 sets of new outcomes based on the fitted model
+newdat <- simulate(res, nsim=5, seed=1234)
 newdat
 }
 \keyword{datagen}

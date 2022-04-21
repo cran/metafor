@@ -2,16 +2,15 @@
 
 context("Checking misc: rma.uni() against metan with 'dat.bcg'")
 
-source("tolerances.r") # read in tolerances
+source("settings.r")
 
-test_that("results match (FE model, measure='RR').", {
+test_that("results match (EE model, measure='RR').", {
 
-   data(dat.bcg, package="metafor")
    dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
 
    ### compare results with: metan tpos tneg cpos cneg, fixedi nograph rr log
 
-   res <- rma(yi, vi, data=dat, method="FE")
+   res <- rma(yi, vi, data=dat, method="EE")
 
    expect_equivalent(c(res$beta), -0.4303, tolerance=.tol[["coef"]])
    expect_equivalent(res$ci.lb,   -0.5097, tolerance=.tol[["ci"]])
@@ -31,7 +30,6 @@ test_that("results match (FE model, measure='RR').", {
 
 test_that("results match (RE model w/ DL estimator, measure='RR').", {
 
-   data(dat.bcg, package="metafor")
    dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
 
    ### compare results with: metan tpos tneg cpos cneg, randomi nograph rr log
@@ -55,14 +53,13 @@ test_that("results match (RE model w/ DL estimator, measure='RR').", {
 
 })
 
-test_that("results match (FE model, measure='OR').", {
+test_that("results match (EE model, measure='OR').", {
 
-   data(dat.bcg, package="metafor")
    dat <- escalc(measure="OR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
 
    ### compare results with: metan tpos tneg cpos cneg, fixedi nograph or log
 
-   res <- rma(yi, vi, data=dat, method="FE")
+   res <- rma(yi, vi, data=dat, method="EE")
 
    expect_equivalent(c(res$beta), -0.4361, tolerance=.tol[["coef"]])
    expect_equivalent(res$ci.lb,   -0.5190, tolerance=.tol[["ci"]])
@@ -82,7 +79,6 @@ test_that("results match (FE model, measure='OR').", {
 
 test_that("results match (RE model w/ DL estimator, measure='OR').", {
 
-   data(dat.bcg, package="metafor")
    dat <- escalc(measure="OR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
 
    ### compare results with: metan tpos tneg cpos cneg, randomi nograph or log
@@ -106,14 +102,13 @@ test_that("results match (RE model w/ DL estimator, measure='OR').", {
 
 })
 
-test_that("results match (FE model, measure='RD').", {
+test_that("results match (EE model, measure='RD').", {
 
-   data(dat.bcg, package="metafor")
    dat <- escalc(measure="RD", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
 
    ### compare results with: metan tpos tneg cpos cneg, fixedi nograph rd
 
-   res <- rma(yi, vi, data=dat, method="FE")
+   res <- rma(yi, vi, data=dat, method="EE")
 
    expect_equivalent(c(res$beta), -0.0009, tolerance=.tol[["coef"]])
    expect_equivalent(res$ci.lb,   -0.0014, tolerance=.tol[["ci"]])
@@ -125,7 +120,6 @@ test_that("results match (FE model, measure='RD').", {
 
 test_that("results match (RE model w/ DL estimator, measure='RD').", {
 
-   data(dat.bcg, package="metafor")
    dat <- escalc(measure="RD", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
 
    ### compare results with: metan tpos tneg cpos cneg, randomi nograph rd
@@ -142,3 +136,5 @@ test_that("results match (RE model w/ DL estimator, measure='RD').", {
 })
 
 #expect_that(rma(yi ~ ablat, vi, data=dat, subset=1:2), throws_error("Number of parameters to be estimated is larger than the number of observations."))
+
+rm(list=ls())

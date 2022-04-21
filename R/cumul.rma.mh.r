@@ -37,11 +37,15 @@ cumul.rma.mh <- function(x, order, digits, transf, targs, progbar=FALSE, ...) {
 
    #########################################################################
 
-   if (grepl("^order\\(", deparse(substitute(order))))
+   if (grepl("^order\\(", deparse1(substitute(order))))
       warning(mstyle$warning("Use of order() in 'order' argument is probably erroneous."), call.=FALSE)
 
-   if (missing(order))
+   if (missing(order)) {
       order <- seq_len(x$k.all)
+   } else {
+      mf <- match.call()
+      order <- .getx("order", mf=mf, data=x$data)
+   }
 
    if (length(order) != x$k.all)
       stop(mstyle$stop(paste0("Length of the 'order' argument (", length(order), ") does not correspond to the size of the original dataset (", x$k.all, ").")))
@@ -80,6 +84,10 @@ cumul.rma.mh <- function(x, order, digits, transf, targs, progbar=FALSE, ...) {
    I2    <- rep(NA_real_, x$k.f)
    H2    <- rep(NA_real_, x$k.f)
 
+   ### elements that need to be returned
+
+   outlist <- "beta=beta, se=se, zval=zval, pval=pval, ci.lb=ci.lb, ci.ub=ci.ub, QE=QE, QEp=QEp, tau2=tau2, I2=I2, H2=H2"
+
    ### note: skipping NA cases
 
    if (progbar)
@@ -94,10 +102,11 @@ cumul.rma.mh <- function(x, order, digits, transf, targs, progbar=FALSE, ...) {
          next
 
       if (is.element(x$measure, c("RR","OR","RD"))) {
-         res <- try(suppressWarnings(rma.mh(ai=ai.f, bi=bi.f, ci=ci.f, di=di.f, measure=x$measure, add=x$add, to=x$to, drop00=x$drop00, correct=x$correct, level=x$level, subset=seq_len(i))), silent=TRUE)
+         args <- list(ai=ai.f, bi=bi.f, ci=ci.f, di=di.f, measure=x$measure, add=x$add, to=x$to, drop00=x$drop00, correct=x$correct, level=x$level, subset=seq_len(i), outlist=outlist)
       } else {
-         res <- try(suppressWarnings(rma.mh(x1i=x1i.f, x2i=x2i.f, t1i=t1i.f, t2i=t2i.f, measure=x$measure, add=x$add, to=x$to, drop00=x$drop00, correct=x$correct, level=x$level, subset=seq_len(i))), silent=TRUE)
+         args <- list(x1i=x1i.f, x2i=x2i.f, t1i=t1i.f, t2i=t2i.f, measure=x$measure, add=x$add, to=x$to, drop00=x$drop00, correct=x$correct, level=x$level, subset=seq_len(i), outlist=outlist)
       }
+      res <- try(suppressWarnings(.do.call(rma.mh, args)), silent=TRUE)
 
       if (inherits(res, "try-error"))
          next

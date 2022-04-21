@@ -8,12 +8,11 @@ print.list.confint.rma <- function(x, digits=x$digits, ...) {
 
    x$digits <- NULL # so length(x) is correct
 
-   if (!exists(".rmspace"))
-      cat("\n")
+   .space()
 
    len <- length(x)
 
-   for (j in 1:len) {
+   for (j in seq_len(len)) {
 
       res.random <- .fcf(x[[j]]$random, digits[["var"]])
       res.random[,2] <- paste0(x[[j]]$lb.sign, res.random[,2])
@@ -26,8 +25,7 @@ print.list.confint.rma <- function(x, digits=x$digits, ...) {
 
    }
 
-   if (!exists(".rmspace"))
-      cat("\n")
+   .space()
 
    invisible()
 

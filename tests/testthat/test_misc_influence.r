@@ -2,11 +2,10 @@
 
 context("Checking misc: influence() and related functions")
 
-source("tolerances.r") # read in tolerances
+source("settings.r")
 
 test_that("influence() works for rma().", {
 
-   data(dat.bcg, package="metafor")
    dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
    res <- rma(yi, vi, data=dat)
    sav <- influence(res)
@@ -23,7 +22,6 @@ test_that("influence() works for rma().", {
 
 test_that("leave1out() works for rma().", {
 
-   data(dat.bcg, package="metafor")
    dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
    res <- rma(yi, vi, data=dat)
    inf <- leave1out(res)
@@ -37,7 +35,6 @@ test_that("leave1out() works for rma().", {
 
 test_that("leave1out() works for rma.mh().", {
 
-   data(dat.bcg, package="metafor")
    res <- rma.mh(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
    inf <- leave1out(res)
    inf <- inf[1]
@@ -51,7 +48,6 @@ test_that("leave1out() works for rma.mh().", {
 
 test_that("leave1out() works for rma.peto().", {
 
-   data(dat.bcg, package="metafor")
    res <- rma.peto(ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
    inf <- leave1out(res)
    inf <- inf[1]
@@ -65,7 +61,6 @@ test_that("leave1out() works for rma.peto().", {
 
 test_that("model.matrix() works for rma().", {
 
-   data(dat.bcg, package="metafor")
    dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
    res <- rma(yi, vi, mods = ~ ablat, data=dat)
 
@@ -77,7 +72,6 @@ test_that("model.matrix() works for rma().", {
 
 test_that("hatvalues() works for rma().", {
 
-   data(dat.bcg, package="metafor")
    dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
    res <- rma(yi, vi, mods = ~ ablat, data=dat)
 
@@ -90,9 +84,8 @@ test_that("hatvalues() works for rma().", {
 
 test_that("hatvalues() works for rma.mv().", {
 
-   data(dat.bcg, package="metafor")
    dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
-   res <- rma.mv(yi, vi, mods = ~ ablat, random = ~ 1 | trial, data=dat)
+   res <- rma.mv(yi, vi, mods = ~ ablat, random = ~ 1 | trial, data=dat, sparse=sparse)
 
    expect_equivalent(hatvalues(res), c(0.049, 0.1493, 0.0351, 0.3481, 0.2248, 0.2367, 0.064, 0.357, 0.0926, 0.1157, 0.2309, 0.0189, 0.0778), tolerance=.tol[["inf"]])
 
@@ -103,7 +96,6 @@ test_that("hatvalues() works for rma.mv().", {
 
 test_that("cooks.distance() works for rma().", {
 
-   data(dat.bcg, package="metafor")
    dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
    res <- rma(yi, vi, mods = ~ ablat, data=dat)
 
@@ -113,19 +105,17 @@ test_that("cooks.distance() works for rma().", {
 
 test_that("cooks.distance() works for rma.mv().", {
 
-   data(dat.bcg, package="metafor")
    dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
-   res <- rma.mv(yi, vi, mods = ~ ablat, random = ~ 1 | trial, data=dat)
+   res <- rma.mv(yi, vi, mods = ~ ablat, random = ~ 1 | trial, data=dat, sparse=sparse)
 
    expect_equivalent(cooks.distance(res), c(0.0048, 0.0489, 0.0104, 0.2495, 0.0072, 0.2883, 0.3643, 0.2719, 0.02, 0.1645, 0.0009, 0.0404, 0.1434), tolerance=.tol[["inf"]])
-   expect_equivalent(cooks.distance(res, cluster=dat$alloc), c(0.2591, 2.4372, 0.1533), tolerance=.tol[["inf"]])
-   expect_equivalent(cooks.distance(res, cluster=dat$alloc, reestimate=FALSE), c(0.3199, 2.2194, 0.2421), tolerance=.tol[["inf"]])
+   expect_equivalent(cooks.distance(res, cluster=alloc), c(0.2591, 2.4372, 0.1533), tolerance=.tol[["inf"]])
+   expect_equivalent(cooks.distance(res, cluster=alloc, reestimate=FALSE), c(0.3199, 2.2194, 0.2421), tolerance=.tol[["inf"]])
 
 })
 
 test_that("influence() correctly works with 'na.omit' and 'na.pass'.", {
 
-   data(dat.bcg, package="metafor")
    dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg, slab=paste0("Trial ", dat.bcg$trial))
 
    dat$yi[2] <- NA
@@ -153,13 +143,14 @@ test_that("influence() correctly works with 'na.omit' and 'na.pass'.", {
    expect_equivalent(sum(is.na(sav$inf$hat)), 3)
    expect_equivalent(sum(is.na(sav$dfbs$intrcpt)), 4)
 
+   options(na.action="na.omit")
+
 })
 
 test_that("'infonly' argument works correctly with influence().", {
 
-   data(dat.bcg, package="metafor")
    dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg, slab=paste0("Trial ", dat.bcg$trial))
-   res <- rma(yi, vi, data=dat, method="FE")
+   res <- rma(yi, vi, data=dat, method="EE")
    inf <- influence(res)
    tmp <- capture.output(sav <- print(inf))
    expect_equivalent(length(sav$rstudent), 13)
@@ -167,3 +158,5 @@ test_that("'infonly' argument works correctly with influence().", {
    expect_equivalent(length(sav$rstudent), 3)
 
 })
+
+rm(list=ls())

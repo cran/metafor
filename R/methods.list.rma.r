@@ -1,6 +1,6 @@
 ############################################################################
 
-"[.list.rma" <- function(x, i, ...) { ### removed j argument (see below), so can only select rows, not columns
+"[.list.rma" <- function(x, i, ...) { # removed j argument (see below), so can only select rows, not columns
 
    out <- x
 
@@ -8,8 +8,11 @@
 
    slab.pos <- which(names(out) == "slab")
 
-   if (!missing(i)) ### for X and Z element
+   if (!missing(i)) { # for X and Z element
+      mf <- match.call()
+      i <- .getx("i", mf=mf, data=x) # not sure about the consequences of using this
       out[seq_len(slab.pos-1)] <- lapply(out[seq_len(slab.pos-1)], function(r) if (inherits(r, "matrix")) r[i,,drop=FALSE] else r[i])
+   }
 
    ### catch cases where user selects values outside 1:k
 
@@ -40,6 +43,11 @@ as.data.frame.list.rma <- function(x, ...) {
 
    attr(x, "class") <- NULL
 
+   ### remove cr.lb and cr.ub (in case they are there)
+
+   x$cr.lb <- NULL
+   x$cr.ub <- NULL
+
    ### turn all vectors before the slab vector into a data frame
 
    slab.pos <- which(names(x) == "slab")
@@ -65,6 +73,11 @@ as.data.frame.list.rma <- function(x, ...) {
 as.matrix.list.rma <- function(x, ...) {
 
    attr(x, "class") <- NULL
+
+   ### remove cr.lb and cr.ub (in case they are there)
+
+   x$cr.lb <- NULL
+   x$cr.ub <- NULL
 
    ### turn all vectors before the slab vector into a matrix
 

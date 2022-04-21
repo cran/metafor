@@ -7,7 +7,7 @@ label=FALSE, offset=0.3, pos=13, lty, ...) {
    .chkclass(class(y), must="rma.uni", notav="rma.uni.selmodel")
 
    na.act <- getOption("na.action")
-   on.exit(options(na.action=na.act))
+   on.exit(options(na.action=na.act), add=TRUE)
 
    x <- y
 
@@ -70,7 +70,7 @@ label=FALSE, offset=0.3, pos=13, lty, ...) {
 
    if (envelope) {
 
-      level <- ifelse(level == 0, 1, ifelse(level >= 1, (100-level)/100, ifelse(level > .5, 1-level, level)))
+      level <- .level(level)
 
       if (!is.null(ddd$seed))
          set.seed(ddd$seed)

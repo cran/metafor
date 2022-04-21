@@ -16,22 +16,23 @@ level=95, digits, btt, att, tau2, verbose=FALSE, control, ...) {
 
    if (!is.element(measure, c("RR","OR","PETO","RD","AS","PHI","YUQ","YUY","RTET", ### 2x2 table measures
                               "PBIT","OR2D","OR2DN","OR2DL",                       ### - transformations to SMD
-                              "MPRD","MPRR","MPOR","MPORC","MPPETO",               ### - measures for matched pairs data
+                              "MPRD","MPRR","MPOR","MPORC","MPPETO","MPORM",       ### - measures for matched pairs data
                               "IRR","IRD","IRSD",                                  ### two-group person-time data measures
-                              "MD","SMD","SMDH","ROM",                             ### two-group mean/SD measures
+                              "MD","SMD","SMDH","SMD1","ROM",                      ### two-group mean/SD measures
                               "CVR","VR",                                          ### coefficient of variation ratio, variability ratio
                               "RPB","RBIS","D2OR","D2ORN","D2ORL",                 ### - transformations to r_PB, r_BIS, and log(OR)
                               "COR","UCOR","ZCOR",                                 ### correlations (raw and r-to-z transformed)
                               "PCOR","ZPCOR","SPCOR",                              ### partial and semi-partial correlations
                               "PR","PLN","PLO","PAS","PFT",                        ### single proportions (and transformations thereof)
                               "IR","IRLN","IRS","IRFT",                            ### single-group person-time data (and transformations thereof)
-                              "MN","MNLN","CVLN","SDLN","SMD1",                    ### mean, log(mean), log(CV), log(SD), single-group SMD
+                              "MN","MNLN","CVLN","SDLN","SMN",                     ### mean, log(mean), log(CV), log(SD), standardized mean
                               "MC","SMCC","SMCR","SMCRH","ROMC","CVRC","VRC",      ### raw/standardized mean change, log(ROM), CVR, and VR for dependent samples
                               "ARAW","AHW","ABT",                                  ### alpha (and transformations thereof)
+                              "REH",                                               ### relative excess heterozygosity
                               "GEN")))
       stop(mstyle$stop("Unknown 'measure' specified."))
 
-   if (!is.element(method, c("FE","EE","CE","HS","HSk","HE","DL","DLIT","GENQ","GENQM","SJ","SJIT","PM","PMM","ML","REML","EB")))
+   if (!is.element(method[1], c("FE","EE","CE","HS","HSk","HE","DL","DLIT","GENQ","GENQM","SJ","SJIT","PM","PMM","ML","REML","EB")))
       stop(mstyle$stop("Unknown 'method' specified."))
 
    ### in case user specifies more than one add/to value (as one can do with rma.mh() and rma.peto())
@@ -60,7 +61,7 @@ level=95, digits, btt, att, tau2, verbose=FALSE, control, ...) {
 
    ddd <- list(...)
 
-   .chkdots(ddd, c("knha", "link", "alpha", "outlist", "onlyo1", "addyi", "addvi", "time", "skipr2", "skiphes"))
+   .chkdots(ddd, c("knha", "link", "alpha", "outlist", "onlyo1", "addyi", "addvi", "time", "skipr2", "skiphes", "i2def", "r2def", "abbrev", "dfs"))
 
    ### handle 'knha' argument from ... (note: overrides test argument)
 
@@ -81,8 +82,8 @@ level=95, digits, btt, att, tau2, verbose=FALSE, control, ...) {
       #if (!inherits(scale, "formula"))
       #   stop(mstyle$stop("Must specify a formula for the 'scale' argument."))
 
-      if (is.element(test, c("knha", "adhoc")))
-         stop(mstyle$stop("Cannot use Knapp & Hartung method with location-scale models."))
+      #if (is.element(test, c("knha", "adhoc")))
+      #   stop(mstyle$stop("Cannot use Knapp & Hartung method with location-scale models."))
 
       model <- "rma.ls"
 
@@ -106,6 +107,11 @@ level=95, digits, btt, att, tau2, verbose=FALSE, control, ...) {
    addyi  <- ifelse(is.null(ddd$addyi),  TRUE,  ddd$addyi)
    addvi  <- ifelse(is.null(ddd$addvi),  TRUE,  ddd$addvi)
 
+   ### set defaults for i2def and r2def
+
+   i2def <- ifelse(is.null(ddd$i2def), "1", ddd$i2def)
+   r2def <- ifelse(is.null(ddd$r2def), "1", ddd$r2def)
+
    ### set defaults for digits
 
    if (missing(digits)) {
@@ -124,13 +130,12 @@ level=95, digits, btt, att, tau2, verbose=FALSE, control, ...) {
 
    if (verbose > 2) {
       opwarn <- options(warn=1)
-      on.exit(options(warn=opwarn$warn))
+      on.exit(options(warn=opwarn$warn), add=TRUE)
    }
 
    #########################################################################
 
-   if (verbose && !exists(".rmspace"))
-      cat("\n")
+   if (verbose) .space()
 
    if (verbose > 1)
       message(mstyle$message("Extracting/computing yi/vi values ..."))
@@ -158,8 +163,7 @@ level=95, digits, btt, att, tau2, verbose=FALSE, control, ...) {
 
    ### extract yi (either NULL if not specified, a vector, a formula, or an escalc object)
 
-   mf.yi <- mf[[match("yi", names(mf))]]
-   yi <- eval(mf.yi, data, enclos=sys.frame(sys.parent())) ### NULL if user does not specify this
+   yi <- .getx("yi", mf=mf, data=data)
 
    ### if yi is not NULL and it is an escalc object, then use that object in place of the data argument
 
@@ -168,16 +172,11 @@ level=95, digits, btt, att, tau2, verbose=FALSE, control, ...) {
 
    ### extract weights, slab, subset, mods, and scale values, possibly from the data frame specified via data or yi (arguments not specified are NULL)
 
-   mf.weights <- mf[[match("weights", names(mf))]]
-   mf.slab    <- mf[[match("slab",    names(mf))]]
-   mf.subset  <- mf[[match("subset",  names(mf))]]
-   mf.mods    <- mf[[match("mods",    names(mf))]]
-   mf.scale   <- mf[[match("scale",   names(mf))]]
-   weights <- eval(mf.weights, data, enclos=sys.frame(sys.parent())) ### NULL if user does not specify this
-   slab    <- eval(mf.slab,    data, enclos=sys.frame(sys.parent())) ### NULL if user does not specify this
-   subset  <- eval(mf.subset,  data, enclos=sys.frame(sys.parent())) ### NULL if user does not specify this
-   mods    <- eval(mf.mods,    data, enclos=sys.frame(sys.parent())) ### NULL if user does not specify this
-   scale   <- eval(mf.scale,   data, enclos=sys.frame(sys.parent())) ### NULL if user does not specify this
+   weights <- .getx("weights", mf=mf, data=data)
+   slab    <- .getx("slab",    mf=mf, data=data)
+   subset  <- .getx("subset",  mf=mf, data=data)
+   mods    <- .getx("mods",    mf=mf, data=data)
+   scale   <- .getx("scale",   mf=mf, data=data)
 
    ai <- bi <- ci <- di <- x1i <- x2i <- t1i <- t2i <- NA
 
@@ -189,6 +188,7 @@ level=95, digits, btt, att, tau2, verbose=FALSE, control, ...) {
 
       if (inherits(yi, "formula")) {
          formula.yi <- yi
+         formula.mods <- formula.yi[-2]
          options(na.action = "na.pass")                   ### set na.action to na.pass, so that NAs are not filtered out (we'll do that later)
          mods <- model.matrix(yi, data=data)              ### extract model matrix (now mods is no longer a formula, so [a] further below is skipped)
          attr(mods, "assign") <- NULL                     ### strip assign attribute (not needed at the moment)
@@ -223,6 +223,13 @@ level=95, digits, btt, att, tau2, verbose=FALSE, control, ...) {
          vi <- yi[[vi.name]]
          yi <- yi[[yi.name]]
 
+         ### could still be NULL if attributes do not match up with actual contents of the escalc object
+
+         if (is.null(yi))
+            stop(mstyle$stop("Cannot find the 'yi' variable in the object."))
+         if (is.null(vi))
+            stop(mstyle$stop("Cannot find the 'vi' variable in the object."))
+
          yi.escalc <- TRUE
 
       } else {
@@ -255,17 +262,14 @@ level=95, digits, btt, att, tau2, verbose=FALSE, control, ...) {
 
       if (!yi.escalc) {
 
-         mf.vi  <- mf[[match("vi",  names(mf))]]
-         mf.sei <- mf[[match("sei", names(mf))]]
-         vi  <- eval(mf.vi,  data, enclos=sys.frame(sys.parent())) ### NULL if user does not specify this
-         sei <- eval(mf.sei, data, enclos=sys.frame(sys.parent())) ### NULL if user does not specify this
+         vi  <- .getx("vi",  mf=mf, data=data)
+         sei <- .getx("sei", mf=mf, data=data)
 
       }
 
       ### extract ni argument
 
-      mf.ni <- mf[[match("ni", names(mf))]]
-      ni <- eval(mf.ni,  data, enclos=sys.frame(sys.parent())) ### NULL if user does not specify this
+      ni <- .getx("ni", mf=mf, data=data)
 
       ### if neither vi nor sei is specified, then throw an error
       ### if only sei is specified, then square those values to get vi
@@ -278,6 +282,10 @@ level=95, digits, btt, att, tau2, verbose=FALSE, control, ...) {
             vi <- sei^2
          }
       }
+
+      ### check 'vi' argument for potential misuse
+
+      .chkviarg(mf$vi)
 
       ### in case user passes a matrix to vi, convert it to a vector
       ### note: only a row or column matrix with the right dimensions will end with the right length
@@ -355,20 +363,16 @@ level=95, digits, btt, att, tau2, verbose=FALSE, control, ...) {
 
       ### if yi is NULL, try to compute yi/vi based on specified measure and supplied data
 
-      if (is.element(measure, c("RR","OR","PETO","RD","AS","PHI","YUQ","YUY","RTET","PBIT","OR2D","OR2DN","OR2DL","MPRD","MPRR","MPOR","MPORC","MPPETO"))) {
+      if (is.element(measure, c("RR","OR","PETO","RD","AS","PHI","YUQ","YUY","RTET","PBIT","OR2D","OR2DN","OR2DL","MPRD","MPRR","MPOR","MPORC","MPPETO","MPORM"))) {
 
-         mf.ai  <- mf[[match("ai",  names(mf))]]
-         mf.bi  <- mf[[match("bi",  names(mf))]]
-         mf.ci  <- mf[[match("ci",  names(mf))]]
-         mf.di  <- mf[[match("di",  names(mf))]]
-         mf.n1i <- mf[[match("n1i", names(mf))]]
-         mf.n2i <- mf[[match("n2i", names(mf))]]
-         ai  <- eval(mf.ai,  data, enclos=sys.frame(sys.parent()))
-         bi  <- eval(mf.bi,  data, enclos=sys.frame(sys.parent()))
-         ci  <- eval(mf.ci,  data, enclos=sys.frame(sys.parent()))
-         di  <- eval(mf.di,  data, enclos=sys.frame(sys.parent()))
-         n1i <- eval(mf.n1i, data, enclos=sys.frame(sys.parent()))
-         n2i <- eval(mf.n2i, data, enclos=sys.frame(sys.parent()))
+         ai  <- .getx("ai",  mf=mf, data=data)
+         bi  <- .getx("bi",  mf=mf, data=data)
+         ci  <- .getx("ci",  mf=mf, data=data)
+         di  <- .getx("di",  mf=mf, data=data)
+         n1i <- .getx("n1i", mf=mf, data=data)
+         n2i <- .getx("n2i", mf=mf, data=data)
+         ri  <- .getx("ri",  mf=mf, data=data)
+
          if (is.null(bi)) bi <- n1i - ai
          if (is.null(di)) di <- n2i - ci
 
@@ -383,20 +387,16 @@ level=95, digits, btt, att, tau2, verbose=FALSE, control, ...) {
             di <- di[subset]
          }
 
-         dat <- escalc(measure=measure, ai=ai, bi=bi, ci=ci, di=di, add=add, to=to, drop00=drop00, vtype=vtype, onlyo1=onlyo1, addyi=addyi, addvi=addvi)
+         args <- list(measure=measure, ai=ai, bi=bi, ci=ci, di=di, ri=ri, add=add, to=to, drop00=drop00, vtype=vtype, onlyo1=onlyo1, addyi=addyi, addvi=addvi)
 
       }
 
       if (is.element(measure, c("IRR","IRD","IRSD"))) {
 
-         mf.x1i <- mf[[match("x1i", names(mf))]]
-         mf.x2i <- mf[[match("x2i", names(mf))]]
-         mf.t1i <- mf[[match("t1i", names(mf))]]
-         mf.t2i <- mf[[match("t2i", names(mf))]]
-         x1i <- eval(mf.x1i, data, enclos=sys.frame(sys.parent()))
-         x2i <- eval(mf.x2i, data, enclos=sys.frame(sys.parent()))
-         t1i <- eval(mf.t1i, data, enclos=sys.frame(sys.parent()))
-         t2i <- eval(mf.t2i, data, enclos=sys.frame(sys.parent()))
+         x1i <- .getx("x1i", mf=mf, data=data)
+         x2i <- .getx("x2i", mf=mf, data=data)
+         t1i <- .getx("t1i", mf=mf, data=data)
+         t2i <- .getx("t2i", mf=mf, data=data)
 
          k <- length(x1i) ### number of outcomes before subsetting
          k.all <- k
@@ -409,24 +409,18 @@ level=95, digits, btt, att, tau2, verbose=FALSE, control, ...) {
             t2i <- t2i[subset]
          }
 
-         dat <- escalc(measure=measure, x1i=x1i, x2i=x2i, t1i=t1i, t2i=t2i, add=add, to=to, drop00=drop00, vtype=vtype, addyi=addyi, addvi=addvi)
+         args <- list(measure=measure, x1i=x1i, x2i=x2i, t1i=t1i, t2i=t2i, add=add, to=to, drop00=drop00, vtype=vtype, addyi=addyi, addvi=addvi)
 
       }
 
-      if (is.element(measure, c("MD","SMD","SMDH","ROM","RPB","RBIS","D2OR","D2ORN","D2ORL","CVR","VR"))) {
+      if (is.element(measure, c("MD","SMD","SMDH","SMD1","ROM","RPB","RBIS","D2OR","D2ORN","D2ORL","CVR","VR"))) {
 
-         mf.m1i  <- mf[[match("m1i",  names(mf))]]
-         mf.m2i  <- mf[[match("m2i",  names(mf))]]
-         mf.sd1i <- mf[[match("sd1i", names(mf))]]
-         mf.sd2i <- mf[[match("sd2i", names(mf))]]
-         mf.n1i  <- mf[[match("n1i",  names(mf))]]
-         mf.n2i  <- mf[[match("n2i",  names(mf))]]
-         m1i  <- eval(mf.m1i,  data, enclos=sys.frame(sys.parent()))
-         m2i  <- eval(mf.m2i,  data, enclos=sys.frame(sys.parent()))
-         sd1i <- eval(mf.sd1i, data, enclos=sys.frame(sys.parent()))
-         sd2i <- eval(mf.sd2i, data, enclos=sys.frame(sys.parent()))
-         n1i  <- eval(mf.n1i,  data, enclos=sys.frame(sys.parent()))
-         n2i  <- eval(mf.n2i,  data, enclos=sys.frame(sys.parent()))
+         m1i  <- .getx("m1i",  mf=mf, data=data)
+         m2i  <- .getx("m2i",  mf=mf, data=data)
+         sd1i <- .getx("sd1i", mf=mf, data=data)
+         sd2i <- .getx("sd2i", mf=mf, data=data)
+         n1i  <- .getx("n1i",  mf=mf, data=data)
+         n2i  <- .getx("n2i",  mf=mf, data=data)
 
          k <- length(n1i) ### number of outcomes before subsetting
          k.all <- k
@@ -441,16 +435,14 @@ level=95, digits, btt, att, tau2, verbose=FALSE, control, ...) {
             n2i  <- n2i[subset]
          }
 
-         dat <- escalc(measure=measure, m1i=m1i, m2i=m2i, sd1i=sd1i, sd2i=sd2i, n1i=n1i, n2i=n2i, vtype=vtype)
+         args <- list(measure=measure, m1i=m1i, m2i=m2i, sd1i=sd1i, sd2i=sd2i, n1i=n1i, n2i=n2i, vtype=vtype)
 
       }
 
       if (is.element(measure, c("COR","UCOR","ZCOR"))) {
 
-         mf.ri <- mf[[match("ri", names(mf))]]
-         mf.ni <- mf[[match("ni", names(mf))]]
-         ri <- eval(mf.ri, data, enclos=sys.frame(sys.parent()))
-         ni <- eval(mf.ni, data, enclos=sys.frame(sys.parent()))
+         ri <- .getx("ri", mf=mf, data=data)
+         ni <- .getx("ni", mf=mf, data=data)
 
          k <- length(ri) ### number of outcomes before subsetting
          k.all <- k
@@ -461,20 +453,16 @@ level=95, digits, btt, att, tau2, verbose=FALSE, control, ...) {
             ni <- ni[subset]
          }
 
-         dat <- escalc(measure=measure, ri=ri, ni=ni, vtype=vtype)
+         args <- list(measure=measure, ri=ri, ni=ni, vtype=vtype)
 
       }
 
       if (is.element(measure, c("PCOR","ZPCOR","SPCOR"))) {
 
-         mf.ti  <- mf[[match("ti",  names(mf))]]
-         mf.r2i <- mf[[match("r2i", names(mf))]]
-         mf.mi  <- mf[[match("mi",  names(mf))]]
-         mf.ni  <- mf[[match("ni",  names(mf))]]
-         ti  <- eval(mf.ti,  data, enclos=sys.frame(sys.parent()))
-         r2i <- eval(mf.r2i, data, enclos=sys.frame(sys.parent()))
-         mi  <- eval(mf.mi,  data, enclos=sys.frame(sys.parent()))
-         ni  <- eval(mf.ni,  data, enclos=sys.frame(sys.parent()))
+         ti  <- .getx("ti",  mf=mf, data=data)
+         r2i <- .getx("r2i", mf=mf, data=data)
+         mi  <- .getx("mi",  mf=mf, data=data)
+         ni  <- .getx("ni",  mf=mf, data=data)
 
          k <- length(ti) ### number of outcomes before subsetting
          k.all <- k
@@ -487,18 +475,16 @@ level=95, digits, btt, att, tau2, verbose=FALSE, control, ...) {
             ni  <- ni[subset]
          }
 
-         dat <- escalc(measure=measure, ti=ti, r2i=r2i, mi=mi, ni=ni, vtype=vtype)
+         args <- list(measure=measure, ti=ti, r2i=r2i, mi=mi, ni=ni, vtype=vtype)
 
       }
 
       if (is.element(measure, c("PR","PLN","PLO","PAS","PFT"))) {
 
-         mf.xi <- mf[[match("xi", names(mf))]]
-         mf.mi <- mf[[match("mi", names(mf))]]
-         mf.ni <- mf[[match("ni", names(mf))]]
-         xi <- eval(mf.xi, data, enclos=sys.frame(sys.parent()))
-         mi <- eval(mf.mi, data, enclos=sys.frame(sys.parent()))
-         ni <- eval(mf.ni, data, enclos=sys.frame(sys.parent()))
+         xi <- .getx("xi", mf=mf, data=data)
+         mi <- .getx("mi", mf=mf, data=data)
+         ni <- .getx("ni", mf=mf, data=data)
+
          if (is.null(mi)) mi <- ni - xi
 
          k <- length(xi) ### number of outcomes before subsetting
@@ -510,16 +496,14 @@ level=95, digits, btt, att, tau2, verbose=FALSE, control, ...) {
             mi <- mi[subset]
          }
 
-         dat <- escalc(measure=measure, xi=xi, mi=mi, add=add, to=to, vtype=vtype, addyi=addyi, addvi=addvi)
+         args <- list(measure=measure, xi=xi, mi=mi, add=add, to=to, vtype=vtype, addyi=addyi, addvi=addvi)
 
       }
 
       if (is.element(measure, c("IR","IRLN","IRS","IRFT"))) {
 
-         mf.xi <- mf[[match("xi", names(mf))]]
-         mf.ti <- mf[[match("ti", names(mf))]]
-         xi <- eval(mf.xi, data, enclos=sys.frame(sys.parent()))
-         ti <- eval(mf.ti, data, enclos=sys.frame(sys.parent()))
+         xi <- .getx("xi", mf=mf, data=data)
+         ti <- .getx("ti", mf=mf, data=data)
 
          k <- length(xi) ### number of outcomes before subsetting
          k.all <- k
@@ -530,18 +514,15 @@ level=95, digits, btt, att, tau2, verbose=FALSE, control, ...) {
             ti <- ti[subset]
          }
 
-         dat <- escalc(measure=measure, xi=xi, ti=ti, add=add, to=to, vtype=vtype, addyi=addyi, addvi=addvi)
+         args <- list(measure=measure, xi=xi, ti=ti, add=add, to=to, vtype=vtype, addyi=addyi, addvi=addvi)
 
       }
 
-      if (is.element(measure, c("MN","MNLN","CVLN","SDLN","SMD1"))) {
+      if (is.element(measure, c("MN","MNLN","CVLN","SDLN","SMN"))) {
 
-         mf.mi  <- mf[[match("mi",  names(mf))]]
-         mf.sdi <- mf[[match("sdi", names(mf))]]
-         mf.ni  <- mf[[match("ni",  names(mf))]]
-         mi  <- eval(mf.mi,  data, enclos=sys.frame(sys.parent()))
-         sdi <- eval(mf.sdi, data, enclos=sys.frame(sys.parent()))
-         ni  <- eval(mf.ni,  data, enclos=sys.frame(sys.parent()))
+         mi  <- .getx("mi",  mf=mf, data=data)
+         sdi <- .getx("sdi", mf=mf, data=data)
+         ni  <- .getx("ni",  mf=mf, data=data)
 
          k <- length(ni) ### number of outcomes before subsetting
          k.all <- k
@@ -553,24 +534,18 @@ level=95, digits, btt, att, tau2, verbose=FALSE, control, ...) {
             ni  <- ni[subset]
          }
 
-         dat <- escalc(measure=measure, mi=mi, sdi=sdi, ni=ni, vtype=vtype)
+         args <- list(measure=measure, mi=mi, sdi=sdi, ni=ni, vtype=vtype)
 
       }
 
       if (is.element(measure, c("MC","SMCC","SMCR","SMCRH","ROMC","CVRC","VRC"))) {
 
-         mf.m1i  <- mf[[match("m1i",  names(mf))]]
-         mf.m2i  <- mf[[match("m2i",  names(mf))]]
-         mf.sd1i <- mf[[match("sd1i", names(mf))]]
-         mf.sd2i <- mf[[match("sd2i", names(mf))]]
-         mf.ri   <- mf[[match("ri",   names(mf))]]
-         mf.ni   <- mf[[match("ni",   names(mf))]]
-         m1i  <- eval(mf.m1i,  data, enclos=sys.frame(sys.parent()))
-         m2i  <- eval(mf.m2i,  data, enclos=sys.frame(sys.parent()))
-         sd1i <- eval(mf.sd1i, data, enclos=sys.frame(sys.parent()))
-         sd2i <- eval(mf.sd2i, data, enclos=sys.frame(sys.parent()))
-         ri   <- eval(mf.ri,   data, enclos=sys.frame(sys.parent()))
-         ni   <- eval(mf.ni,   data, enclos=sys.frame(sys.parent()))
+         m1i  <- .getx("m1i",  mf=mf, data=data)
+         m2i  <- .getx("m2i",  mf=mf, data=data)
+         sd1i <- .getx("sd1i", mf=mf, data=data)
+         sd2i <- .getx("sd2i", mf=mf, data=data)
+         ri   <- .getx("ri",   mf=mf, data=data)
+         ni   <- .getx("ni",   mf=mf, data=data)
 
          k <- length(m1i) ### number of outcomes before subsetting
          k.all <- k
@@ -585,18 +560,15 @@ level=95, digits, btt, att, tau2, verbose=FALSE, control, ...) {
             ri   <- ri[subset]
          }
 
-         dat <- escalc(measure=measure, m1i=m1i, m2i=m2i, sd1i=sd1i, sd2i=sd2i, ri=ri, ni=ni, vtype=vtype)
+         args <- list(measure=measure, m1i=m1i, m2i=m2i, sd1i=sd1i, sd2i=sd2i, ri=ri, ni=ni, vtype=vtype)
 
       }
 
       if (is.element(measure, c("ARAW","AHW","ABT"))) {
 
-         mf.ai <- mf[[match("ai",  names(mf))]]
-         mf.mi <- mf[[match("mi",  names(mf))]]
-         mf.ni <- mf[[match("ni",  names(mf))]]
-         ai <- eval(mf.ai,  data, enclos=sys.frame(sys.parent()))
-         mi <- eval(mf.mi,  data, enclos=sys.frame(sys.parent()))
-         ni <- eval(mf.ni,  data, enclos=sys.frame(sys.parent()))
+         ai <- .getx("ai", mf=mf, data=data)
+         mi <- .getx("mi", mf=mf, data=data)
+         ni <- .getx("ni", mf=mf, data=data)
 
          k <- length(ai) ### number of outcomes before subsetting
          k.all <- k
@@ -608,9 +580,31 @@ level=95, digits, btt, att, tau2, verbose=FALSE, control, ...) {
             ni <- ni[subset]
          }
 
-         dat <- escalc(measure=measure, ai=ai, mi=mi, ni=ni, vtype=vtype)
+         args <- list(measure=measure, ai=ai, mi=mi, ni=ni, vtype=vtype)
 
       }
+
+      if (measure == "REH") {
+
+         ai <- .getx("ai", mf=mf, data=data)
+         bi <- .getx("bi", mf=mf, data=data)
+         ci <- .getx("ci", mf=mf, data=data)
+
+         k <- length(ai) ### number of outcomes before subsetting
+         k.all <- k
+
+         if (!is.null(subset)) {
+            subset <- .setnafalse(subset, k=k)
+            ai <- ai[subset]
+            bi <- bi[subset]
+            ci <- ci[subset]
+         }
+
+         args <- list(measure=measure, ai=ai, bi=bi, ci=ci, vtype=vtype)
+
+      }
+
+      dat <- .do.call(escalc, args)
 
       if (is.element(measure, "GEN"))
          stop(mstyle$stop("Specify the desired outcome measure via the 'measure' argument."))
@@ -650,13 +644,18 @@ level=95, digits, btt, att, tau2, verbose=FALSE, control, ...) {
 
    if (inherits(mods, "formula")) {
       formula.mods <- mods
-      options(na.action = "na.pass")        ### set na.action to na.pass, so that NAs are not filtered out (we'll do that later)
-      mods <- model.matrix(mods, data=data) ### extract model matrix
-      attr(mods, "assign") <- NULL          ### strip assign attribute (not needed at the moment)
-      attr(mods, "contrasts") <- NULL       ### strip contrasts attribute (not needed at the moment)
-      options(na.action = na.act)           ### set na.action back to na.act
-      intercept <- FALSE                    ### set to FALSE since formula now controls whether the intercept is included or not
-   }                                        ### note: code further below ([b]) actually checks whether intercept is included or not
+      if (isTRUE(all.equal(formula.mods, ~1))) { ### needed so 'mods = ~ 1' without 'data' specified works
+         mods <- matrix(1, nrow=k, ncol=1)
+         intercept <- FALSE
+      } else {
+         options(na.action = "na.pass")        ### set na.action to na.pass, so that NAs are not filtered out (we'll do that later)
+         mods <- model.matrix(mods, data=data) ### extract model matrix
+         attr(mods, "assign") <- NULL          ### strip assign attribute (not needed at the moment)
+         attr(mods, "contrasts") <- NULL       ### strip contrasts attribute (not needed at the moment)
+         options(na.action = na.act)           ### set na.action back to na.act
+         intercept <- FALSE                    ### set to FALSE since formula now controls whether the intercept is included or not
+      }                                        ### note: code further below ([b]) actually checks whether intercept is included or not
+   }
 
    ### turn a vector for mods into a column vector
 
@@ -683,12 +682,17 @@ level=95, digits, btt, att, tau2, verbose=FALSE, control, ...) {
    if (model == "rma.ls") {
       if (inherits(scale, "formula")) {
          formula.scale <- scale
-         options(na.action = "na.pass")
-         Z <- model.matrix(scale, data=data)
-         colnames(Z)[grep("(Intercept)", colnames(Z))] <- "intrcpt"
-         attr(Z, "assign") <- NULL
-         attr(Z, "contrasts") <- NULL
-         options(na.action = na.act)
+         if (isTRUE(all.equal(formula.scale, ~1))) { ### needed so 'scale = ~ 1' without 'data' specified works
+            Z <- matrix(1, nrow=k, ncol=1)
+            colnames(Z) <- "intrcpt"
+         } else {
+            options(na.action = "na.pass")
+            Z <- model.matrix(scale, data=data)
+            colnames(Z)[grep("(Intercept)", colnames(Z), fixed=TRUE)] <- "intrcpt"
+            attr(Z, "assign") <- NULL
+            attr(Z, "contrasts") <- NULL
+            options(na.action = na.act)
+         }
       } else {
          Z <- scale
          if (.is.vector(Z))
@@ -696,7 +700,7 @@ level=95, digits, btt, att, tau2, verbose=FALSE, control, ...) {
          if (is.data.frame(Z))
             Z <- as.matrix(Z)
          if (is.character(Z))
-            stop(mstyle$stop("Model matrix contains character variables."))
+            stop(mstyle$stop("Scale model matrix contains character variables."))
       }
       if (nrow(Z) != k)
          stop(mstyle$stop(paste0("Number of rows in the model matrix specified via the 'scale' argument (", nrow(Z), ") does not match length of the outcome vector (", k, ").")))
@@ -756,21 +760,6 @@ level=95, digits, btt, att, tau2, verbose=FALSE, control, ...) {
    ### number of outcomes after subsetting
 
    k <- length(yi)
-
-   ### check for non-positive sampling variances (and set negative values to 0)
-
-   if (any(vi <= 0, na.rm=TRUE)) {
-      allvipos <- FALSE
-      if (!vi0)
-         warning(mstyle$warning("There are outcomes with non-positive sampling variances."), call.=FALSE)
-      vi.neg <- vi < 0
-      if (any(vi.neg, na.rm=TRUE)) {
-         vi[vi.neg] <- 0
-         warning(mstyle$warning("Negative sampling variances constrained to zero."), call.=FALSE)
-      }
-   } else {
-      allvipos <- TRUE
-   }
 
    ### check for (and correct?) negative/infinite weights
 
@@ -837,6 +826,25 @@ level=95, digits, btt, att, tau2, verbose=FALSE, control, ...) {
    if (k < 1L)
       stop(mstyle$stop("Processing terminated since k = 0."))
 
+   ### check for non-positive sampling variances (and set negative values to 0)
+   ### note: done after removing NAs since only the included studies are relevant
+
+   if (any(vi <= 0)) {
+      allvipos <- FALSE
+      if (!vi0)
+         warning(mstyle$warning("There are outcomes with non-positive sampling variances."), call.=FALSE)
+      vi.neg <- vi < 0
+      if (any(vi.neg)) {
+         vi[vi.neg] <- 0
+         warning(mstyle$warning("Negative sampling variances constrained to zero."), call.=FALSE)
+      }
+   } else {
+      allvipos <- TRUE
+   }
+
+   ### but even in vi.f, constrain negative sampling variances to 0 (not needed)
+   #vi.f[vi.f < 0] <- 0
+
    ### if k=1 and test != "z", set test="z" (other methods cannot be used)
 
    if (k == 1L && test != "z") {
@@ -847,7 +855,7 @@ level=95, digits, btt, att, tau2, verbose=FALSE, control, ...) {
    ### make sure that there is at least one column in X ([b])
 
    if (is.null(mods) && !intercept) {
-      warning(mstyle$warning("Must either include an intercept and/or moderators in model.\n  Coerced intercept into the model."), call.=FALSE)
+      warning(mstyle$warning("Must either include an intercept and/or moderators in model.\nCoerced intercept into the model."), call.=FALSE)
       intercept <- TRUE
    }
 
@@ -892,6 +900,11 @@ level=95, digits, btt, att, tau2, verbose=FALSE, control, ...) {
 
    p <- NCOL(X) ### number of columns in X (including the intercept if it is included)
 
+   ### make sure variable names in X and Z are unique
+
+   colnames(X) <- colnames(X.f) <- .make.unique(colnames(X))
+   colnames(Z) <- colnames(Z.f) <- .make.unique(colnames(Z))
+
    ### check whether this is an intercept-only model
 
    if ((p == 1L) && .is.intercept(X)) {
@@ -903,7 +916,7 @@ level=95, digits, btt, att, tau2, verbose=FALSE, control, ...) {
    ### check if there are too many parameters for given k
 
    if (!(int.only && k == 1L)) {
-      if (is.element(method, c("FE","EE","CE"))) { ### have to estimate p parms
+      if (is.element(method[1], c("FE","EE","CE"))) { ### have to estimate p parms
          if (p > k)
             stop(mstyle$stop("Number of parameters to be estimated is larger than the number of observations."))
       } else {
@@ -938,12 +951,15 @@ level=95, digits, btt, att, tau2, verbose=FALSE, control, ...) {
                REMLf = TRUE,              # should |X'X| term be included in the REML log likelihood?
                evtol = 1e-07,             # lower bound for eigenvalues to determine if model matrix is positive definite (also for checking if vimaxmin >= 1/con$evtol)
                alpha.init = NULL,         # initial values for scale parameters
-               optimizer = "nlminb",      # optimizer to use ("optim", "nlminb", "uobyqa", "newuoa", "bobyqa", "nloptr", "nlm", "hjk", "nmk", "mads", "ucminf", "optimParallel", "constrOptim") for location-scale models
+               alpha.min = -Inf,          # min possible value(s) for scale parameter(s)
+               alpha.max = Inf,           # max possible value(s) for scale parameter(s)
+               optimizer = "nlminb",      # optimizer to use ("optim","nlminb","uobyqa","newuoa","bobyqa","nloptr","nlm","hjk","nmk","mads","ucminf","lbfgsb3c","subplex","BBoptim","optimParallel","constrOptim") for location-scale models
                optmethod = "BFGS",        # argument 'method' for optim() ("Nelder-Mead" and "BFGS" are sensible options)
                parallel = list(),         # parallel argument for optimParallel() (note: 'cl' argument in parallel is not passed; this is directly specified via 'cl')
                cl = NULL,                 # arguments for optimParallel()
                ncpus = 1L,                # arguments for optimParallel()
                hessianCtrl=list(r=8),     # arguments passed on to 'method.args' of hessian()
+               hesspack = "numDeriv",     # package for computing the Hessian (numDeriv or pracma)
                scaleZ = TRUE)
 
    ### replace defaults with any user-defined values
@@ -956,17 +972,31 @@ level=95, digits, btt, att, tau2, verbose=FALSE, control, ...) {
 
    verbose <- con$verbose
 
-   ### constrain negative tau2.min values to -min(vi) (to ensure that the marginal variance is always >= 0)
+   if (model == "rma.uni") {
 
-   if (con$tau2.min < 0 && (-con$tau2.min > min(vi))) {
-      con$tau2.min <- -min(vi)
-      warning(mstyle$warning(paste0("Value of 'tau2.min' constrained to -min(vi) = ", .fcf(-min(vi), digits[["est"]]), ".")), call.=FALSE)
+      ### constrain negative tau2.min values to -min(vi) (to ensure that the marginal variance is always >= 0)
+
+      if (con$tau2.min < 0 && (-con$tau2.min > min(vi))) {
+         con$tau2.min <- -min(vi)
+         warning(mstyle$warning(paste0("Value of 'tau2.min' constrained to -min(vi) = ", .fcf(-min(vi), digits[["est"]]), ".")), call.=FALSE)
+      }
+
+   } else {
+
+      ### can also constrain the tau^2 values in location-scale models, but this is done in a very crude way
+      ### in the optimization (by returning Inf when any tau^2 value falls outside the bounds) and this is
+      ### not recommended / documented (instead, one can constrain the alpha values via alpha.min / alpha.max);
+      ### note: the tau^2 bounds are only in effect when either tau2.min or tau2.max was changed from their
+      ### defaults (if not, tau2.min and tau2.max are set to 0 and Inf, respectively)
+
+      if (con$tau2.min != 0 || con$tau2.max != 100) {
+         con$tau2.min[con$tau2.min < 0] <- 0
+      } else {
+         con$tau2.min <- 0
+         con$tau2.max <- Inf
+      }
+
    }
-
-   ### convergence indicator and change variable (for iterative estimators)
-
-   conv <- 1
-   change <- con$threshold + 1
 
    ### check whether model matrix is of full rank
 
@@ -982,19 +1012,11 @@ level=95, digits, btt, att, tau2, verbose=FALSE, control, ...) {
    if (!is.nan(vimaxmin) && !is.infinite(vimaxmin) && vimaxmin >= 1/con$evtol)
       warning(mstyle$warning("Ratio of largest to smallest sampling variance extremely large. May not be able to obtain stable results."), call.=FALSE)
 
-   ### iterations counter for iterative estimators (i.e., DLIT, SJIT, ML, REML, EB)
-   ### (note: PM, PMM, and GENQM are also iterative, but uniroot() handles that)
-
-   iter <- 0
-
    ### set some defaults
 
    se.tau2 <- I2 <- H2 <- QE <- QEp <- NA
-
    s2w <- 1
-
-   level <- ifelse(level == 0, 1, ifelse(level >= 1, (100-level)/100, ifelse(level > .5, 1-level, level)))
-
+   level <- .level(level)
    Y <- as.matrix(yi)
 
    #########################################################################
@@ -1003,7 +1025,7 @@ level=95, digits, btt, att, tau2, verbose=FALSE, control, ...) {
 
    if (model == "rma.uni") {
 
-      if (is.numeric(tau2) && !is.element(method, c("FE","EE","CE"))) { ### if user has fixed the tau2 value
+      if (is.numeric(tau2) && !is.element(method[1], c("FE","EE","CE"))) { # if user has fixed the tau2 value
          tau2.fix <- TRUE
          tau2.val <- tau2
       } else {
@@ -1011,483 +1033,515 @@ level=95, digits, btt, att, tau2, verbose=FALSE, control, ...) {
          tau2.val <- NA
       }
 
-      if (verbose > 1 && !tau2.fix && !is.element(method, c("FE","EE","CE")))
+      if (verbose > 1 && !tau2.fix && !is.element(method[1], c("FE","EE","CE")))
          message(mstyle$message("Estimating tau^2 value ...\n"))
 
       if (k == 1L) {
-         method.sav <- method
-         method = "k1" # set method to k1 so all of the stuff below is skipped
+         method.sav <- method[1]
+         method <- "k1" # set method to k1 so all of the stuff below is skipped
          if (!tau2.fix)
             tau2 <- 0
       }
 
-      ### Hunter & Schmidt (HS) estimator (or k-corrected HS estimator (HSk))
+      conv <- FALSE
 
-      if (is.element(method, c("HS", "HSk"))) {
+      while (!conv) {
 
-         if (!allvipos)
-            stop(mstyle$stop(method, " estimator cannot be used when there are non-positive sampling variances in the data."))
+         ### convergence indicator and change variable
 
-         wi    <- 1/vi
-         W     <- diag(wi, nrow=k, ncol=k)
-         stXWX <- .invcalc(X=X, W=W, k=k)
-         P     <- W - W %*% X %*% stXWX %*% crossprod(X,W)
-         RSS   <- crossprod(Y,P) %*% Y
-         if (method == "HS") {
-            tau2 <- ifelse(tau2.fix, tau2.val, (RSS - k) / sum(wi))
-         } else {
-            tau2 <- ifelse(tau2.fix, tau2.val, (k/(k-p)*RSS - k) / sum(wi))
-            ### HSk = (RSS - (k-p)) / sum(wi) * k/(k-p)
-            #trP  <- sum(wi) * (k-p) / k
-            #tau2 <- ifelse(tau2.fix, tau2.val, k/(k-p) * (RSS - (k-p)) / trP)
-            #tau2 <- ifelse(tau2.fix, tau2.val, (RSS - (k-p)) / trP)
-            #tau2 <- ifelse(tau2.fix, tau2.val, k/(k-p) * (RSS - (k-p)) / sum(wi))
+         conv   <- TRUE # assume TRUE for now unless things go wrong below
+         change <- con$threshold + 1
+
+         ### iterations counter for iterative estimators (i.e., DLIT, SJIT, ML, REML, EB)
+         ### (note: PM, PMM, and GENQM are also iterative, but uniroot() handles that)
+
+         iter <- 0
+
+         ### Hunter & Schmidt (HS) estimator (or k-corrected HS estimator (HSk))
+
+         if (is.element(method[1], c("HS","HSk"))) {
+
+            if (!allvipos)
+               stop(mstyle$stop(paste0(method[1], " estimator cannot be used when there are non-positive sampling variances in the data.")))
+
+            wi    <- 1/vi
+            W     <- diag(wi, nrow=k, ncol=k)
+            stXWX <- .invcalc(X=X, W=W, k=k)
+            P     <- W - W %*% X %*% stXWX %*% crossprod(X,W)
+            RSS   <- crossprod(Y,P) %*% Y
+            if (method[1] == "HS") {
+               tau2 <- ifelse(tau2.fix, tau2.val, (RSS - k) / sum(wi))
+            } else {
+               tau2 <- ifelse(tau2.fix, tau2.val, (k/(k-p)*RSS - k) / sum(wi))
+            }
+
          }
 
-      }
+         ### Hedges (HE) estimator (or initial value for ML, REML, EB)
 
-      ### Hedges (HE) estimator (or initial value for ML, REML, EB)
+         if (is.element(method[1], c("HE","ML","REML","EB"))) {
 
-      if (is.element(method, c("HE","ML","REML","EB"))) {
+            stXX  <- .invcalc(X=X, W=diag(k), k=k)
+            P     <- diag(k) - X %*% tcrossprod(stXX,X)
+            RSS   <- crossprod(Y,P) %*% Y
+            V     <- diag(vi, nrow=k, ncol=k)
+            PV    <- P %*% V # note: this is not symmetric
+            trPV  <- .tr(PV) # since PV needs to be computed anyway, can use .tr()
+            tau2  <- ifelse(tau2.fix, tau2.val, (RSS - trPV) / (k-p))
 
-         stXX  <- .invcalc(X=X, W=diag(k), k=k)
-         P     <- diag(k) - X %*% tcrossprod(stXX,X)
-         RSS   <- crossprod(Y,P) %*% Y
-         V     <- diag(vi, nrow=k, ncol=k)
-         PV    <- P %*% V ### note: this is not symmetric
-         trPV  <- .tr(PV) ### since PV needs to be computed anyway, can use .tr()
-         tau2  <- ifelse(tau2.fix, tau2.val, (RSS - trPV) / (k-p))
-
-      }
-
-      ### DerSimonian-Laird (DL) estimator
-
-      if (method == "DL") {
-
-         if (!allvipos)
-            stop(mstyle$stop("DL estimator cannot be used when there are non-positive sampling variances in the data."))
-
-         wi    <- 1/vi
-         W     <- diag(wi, nrow=k, ncol=k)
-         stXWX <- .invcalc(X=X, W=W, k=k)
-         P     <- W - W %*% X %*% stXWX %*% crossprod(X,W)
-         RSS   <- crossprod(Y,P) %*% Y
-         trP   <- .tr(P)
-         tau2  <- ifelse(tau2.fix, tau2.val, (RSS - (k-p)) / trP)
-
-      }
-
-      ### DerSimonian-Laird (DL) estimator with iteration
-
-      if (method == "DLIT") {
-
-         if (is.null(con$tau2.init)) {
-            tau2 <- 0
-         } else {
-            tau2 <- con$tau2.init
          }
 
-         while (change > con$threshold) {
+         ### DerSimonian-Laird (DL) estimator
 
-            if (verbose)
-               cat(mstyle$verbose(paste("Iteration", iter, "\ttau^2 =", .fcf(tau2, digits[["var"]]), "\n")))
+         if (method[1] == "DL") {
 
-            iter <- iter + 1
-            old2 <- tau2
-            wi   <- 1/(vi + tau2)
-            if (any(tau2 + vi < 0))
-               stop(mstyle$stop("Some marginal variances are negative."))
-            if (any(is.infinite(wi)))
-               stop(mstyle$stop("Division by zero when computing the inverse variance weights."))
+            if (!allvipos)
+               stop(mstyle$stop("DL estimator cannot be used when there are non-positive sampling variances in the data."))
+
+            wi    <- 1/vi
             W     <- diag(wi, nrow=k, ncol=k)
             stXWX <- .invcalc(X=X, W=W, k=k)
             P     <- W - W %*% X %*% stXWX %*% crossprod(X,W)
             RSS   <- crossprod(Y,P) %*% Y
             trP   <- .tr(P)
             tau2  <- ifelse(tau2.fix, tau2.val, (RSS - (k-p)) / trP)
-            tau2[tau2 < con$tau2.min] <- con$tau2.min
-            change <- abs(old2 - tau2)
 
-            if (iter > con$maxiter) {
-               conv <- 0
-               break
+         }
+
+         ### DerSimonian-Laird (DL) estimator with iteration
+
+         if (method[1] == "DLIT") {
+
+            if (is.null(con$tau2.init)) {
+               tau2 <- 0
+            } else {
+               tau2 <- con$tau2.init
+            }
+
+            while (change > con$threshold) {
+
+               if (verbose)
+                  cat(mstyle$verbose(paste("Iteration", iter, "\ttau^2 =", .fcf(tau2, digits[["var"]]), "\n")))
+
+               iter <- iter + 1
+               old2 <- tau2
+               wi   <- 1/(vi + tau2)
+               if (any(tau2 + vi < 0))
+                  stop(mstyle$stop("Some marginal variances are negative."))
+               if (any(is.infinite(wi)))
+                  stop(mstyle$stop("Division by zero when computing the inverse variance weights."))
+               W     <- diag(wi, nrow=k, ncol=k)
+               stXWX <- .invcalc(X=X, W=W, k=k)
+               P     <- W - W %*% X %*% stXWX %*% crossprod(X,W)
+               RSS   <- crossprod(Y,P) %*% Y
+               trP   <- .tr(P)
+               tau2  <- ifelse(tau2.fix, tau2.val, (RSS - (k-p)) / trP)
+               tau2[tau2 < con$tau2.min] <- con$tau2.min
+               change <- abs(old2 - tau2)
+
+               if (iter > con$maxiter) {
+                  conv <- FALSE
+                  break
+               }
+
+            }
+
+            if (!conv) {
+               if (length(method) == 1L) {
+                  stop(mstyle$stop("Iterative DL estimator did not converge."))
+               } else {
+                  if (verbose)
+                     warning(mstyle$warning("Iterative DL estimator did not converge."))
+               }
             }
 
          }
 
-         if (conv == 0L)
-            stop(mstyle$stop("Algorithm did not converge."))
+         ### generalized Q-statistic estimator
 
-      }
+         if (method[1] == "GENQ") {
 
-      ### generalized Q-statistic estimator
+            #if (!allvipos)
+            #   stop(mstyle$stop("GENQ estimator cannot be used when there are non-positive sampling variances in the data."))
 
-      if (method == "GENQ") {
+            if (is.null(weights))
+               stop(mstyle$stop("Must specify 'weights' when method='GENQ'."))
 
-         #if (!allvipos)
-         #   stop(mstyle$stop("GENQ estimator cannot be used when there are non-positive sampling variances in the data."))
-
-         if (is.null(weights))
-            stop(mstyle$stop("Must specify 'weights' when method='GENQ'."))
-
-         A     <- diag(weights, nrow=k, ncol=k)
-         stXAX <- .invcalc(X=X, W=A, k=k)
-         P     <- A - A %*% X %*% stXAX %*% t(X) %*% A
-         V     <- diag(vi, nrow=k, ncol=k)
-         PV    <- P %*% V ### note: this is not symmetric
-         trP   <- .tr(P)
-         trPV  <- .tr(PV)
-         RSS   <- crossprod(Y,P) %*% Y
-         tau2  <- ifelse(tau2.fix, tau2.val, (RSS - trPV) / trP)
-
-      }
-
-      ### generalized Q-statistic estimator (median unbiased version)
-
-      if (method == "GENQM") {
-
-         if (is.null(weights))
-            stop(mstyle$stop("Must specify 'weights' when method='GENQM'."))
-
-         A     <- diag(weights, nrow=k, ncol=k)
-         stXAX <- .invcalc(X=X, W=A, k=k)
-         P     <- A - A %*% X %*% stXAX %*% t(X) %*% A
-         V     <- diag(vi, nrow=k, ncol=k)
-         PV    <- P %*% V ### note: this is not symmetric
-         trP   <- .tr(P)
-
-         if (!tau2.fix) {
-
+            A     <- diag(weights, nrow=k, ncol=k)
+            stXAX <- .invcalc(X=X, W=A, k=k)
+            P     <- A - A %*% X %*% stXAX %*% crossprod(X,A)
+            V     <- diag(vi, nrow=k, ncol=k)
+            PV    <- P %*% V # note: this is not symmetric
+            trP   <- .tr(P)
+            trPV  <- .tr(PV)
             RSS   <- crossprod(Y,P) %*% Y
+            tau2  <- ifelse(tau2.fix, tau2.val, (RSS - trPV) / trP)
 
-            if (.GENQ.func(con$tau2.min, P=P, vi=vi, Q=RSS, level=0, k=k, p=p, getlower=TRUE) > 0.5) {
+         }
 
-               ### if GENQ.tau2.min is > 0.5, then estimate < tau2.min
+         ### generalized Q-statistic estimator (median unbiased version)
 
-               tau2 <- con$tau2.min
+         if (method[1] == "GENQM") {
 
-            } else {
+            if (is.null(weights))
+               stop(mstyle$stop("Must specify 'weights' when method='GENQM'."))
 
-               if (.GENQ.func(con$tau2.max, P=P, vi=vi, Q=RSS, level=0, k=k, p=p, getlower=TRUE) < 0.5) {
+            A     <- diag(weights, nrow=k, ncol=k)
+            stXAX <- .invcalc(X=X, W=A, k=k)
+            P     <- A - A %*% X %*% stXAX %*% crossprod(X,A)
+            V     <- diag(vi, nrow=k, ncol=k)
+            PV    <- P %*% V # note: this is not symmetric
+            trP   <- .tr(P)
 
-                  ### if GENQ.tau2.max is < 0.5, then estimate > tau2.max
+            if (!tau2.fix) {
 
-                  stop(mstyle$stop("Value of 'tau2.max' too low. Try increasing 'tau2.max' or switch to another 'method'."))
+               RSS <- crossprod(Y,P) %*% Y
+
+               if (.GENQ.func(con$tau2.min, P=P, vi=vi, Q=RSS, level=0, k=k, p=p, getlower=TRUE) > 0.5) {
+
+                  ### if GENQ.tau2.min is > 0.5, then estimate < tau2.min
+
+                  tau2 <- con$tau2.min
 
                } else {
 
-                  tau2 <- try(uniroot(.GENQ.func, interval=c(con$tau2.min, con$tau2.max), tol=con$tol, maxiter=con$maxiter, P=P, vi=vi, Q=RSS, level=0.5, k=k, p=p, getlower=FALSE, verbose=verbose, digits=digits, extendInt="no")$root, silent=TRUE)
+                  if (.GENQ.func(con$tau2.max, P=P, vi=vi, Q=RSS, level=0, k=k, p=p, getlower=TRUE) < 0.5) {
 
-                  if (inherits(tau2, "try-error"))
-                     stop(mstyle$stop("Error in iterative search for tau2 using uniroot()."))
+                     ### if GENQ.tau2.max is < 0.5, then estimate > tau2.max
+
+                     conv <- FALSE
+
+                     if (length(method) == 1L) {
+                        stop(mstyle$stop("Value of 'tau2.max' too low. Try increasing 'tau2.max' or switch to another 'method'."))
+                     } else {
+                        if (verbose)
+                           warning(mstyle$warning("Value of 'tau2.max' too low. Try increasing 'tau2.max' or switch to another 'method'."))
+                     }
+
+                  } else {
+
+                     tau2 <- try(uniroot(.GENQ.func, interval=c(con$tau2.min, con$tau2.max), tol=con$tol, maxiter=con$maxiter, P=P, vi=vi, Q=RSS, level=0.5, k=k, p=p, getlower=FALSE, verbose=verbose, digits=digits, extendInt="no")$root, silent=TRUE)
+
+                     if (inherits(tau2, "try-error")) {
+                        conv <- FALSE
+                        if (length(method) == 1L) {
+                           stop(mstyle$stop("Error in iterative search for tau2 using uniroot()."))
+                        } else {
+                           if (verbose)
+                              warning(mstyle$warning("Error in iterative search for tau2 using uniroot()."))
+                        }
+                     }
+
+                  }
 
                }
-
-            }
-
-         } else {
-
-            tau2 <- tau2.val
-
-         }
-
-         wi <- 1/(vi + tau2)
-
-      }
-
-      ### Sidik-Jonkman (SJ) estimator
-
-      if (method == "SJ") {
-
-         if (is.null(con$tau2.init)) {
-            tau2.0 <- c(var(yi) * (k-1)/k)
-         } else {
-            tau2.0 <- con$tau2.init
-         }
-
-         wi    <- 1/(vi + tau2.0)
-         W     <- diag(wi, nrow=k, ncol=k)
-         stXWX <- .invcalc(X=X, W=W, k=k)
-         P     <- W - W %*% X %*% stXWX %*% crossprod(X,W)
-         RSS   <- crossprod(Y,P) %*% Y
-         V     <- diag(vi, nrow=k, ncol=k)
-         PV    <- P %*% V ### note: this is not symmetric
-         tau2  <- ifelse(tau2.fix, tau2.val, tau2.0 * RSS / (k-p))
-
-      }
-
-      ### Sidik-Jonkman (SJ) estimator with iteration
-
-      if (method == "SJIT") {
-
-         if (is.null(con$tau2.init)) {
-            tau2 <- var(yi) * (k-1)/k
-         } else {
-            tau2 <- con$tau2.init
-         }
-
-         tau2.0 <- tau2
-
-         while (change > con$threshold) {
-
-            if (verbose)
-               cat(mstyle$verbose(paste("Iteration", iter, "\ttau^2 =", .fcf(tau2, digits[["var"]]), "\n")))
-
-            iter <- iter + 1
-            old2 <- tau2
-
-            wi     <- 1/(vi + tau2)
-            W      <- diag(wi, nrow=k, ncol=k)
-            stXWX  <- .invcalc(X=X, W=W, k=k)
-            P      <- W - W %*% X %*% stXWX %*% crossprod(X,W)
-            RSS    <- crossprod(Y,P) %*% Y
-            V      <- diag(vi, nrow=k, ncol=k)
-            PV     <- P %*% V ### note: this is not symmetric
-            tau2   <- ifelse(tau2.fix, tau2.val, tau2 * RSS / (k-p))
-            change <- abs(old2 - tau2)
-
-            if (iter > con$maxiter) {
-               conv <- 0
-               break
-            }
-
-         }
-
-         if (conv == 0L)
-            stop(mstyle$stop("Algorithm did not converge."))
-
-      }
-
-      ### Paule-Mandel (PM) estimator
-
-      if (method == "PM") {
-
-         if (!allvipos)
-            stop(mstyle$stop("PM estimator cannot be used when there are non-positive sampling variances in the data."))
-
-         if (!tau2.fix) {
-
-            if (.QE.func(con$tau2.min, Y=Y, vi=vi, X=X, k=k, objective=0) < k-p) {
-
-               tau2 <- con$tau2.min
 
             } else {
 
-               if (.QE.func(con$tau2.max, Y=Y, vi=vi, X=X, k=k, objective=0) > k-p) {
-
-                     stop(mstyle$stop("Value of 'tau2.max' too low. Try increasing 'tau2.max' or switch to another 'method'."))
-
-               } else {
-
-                  tau2 <- try(uniroot(.QE.func, interval=c(con$tau2.min, con$tau2.max), tol=con$tol, maxiter=con$maxiter, Y=Y, vi=vi, X=X, k=k, objective=k-p, verbose=verbose, digits=digits, extendInt="no")$root, silent=TRUE)
-
-                  if (inherits(tau2, "try-error"))
-                     stop(mstyle$stop("Error in iterative search for tau2 using uniroot()."))
-
-               }
+               tau2 <- tau2.val
 
             }
 
-            #W <- diag(wi, nrow=k, ncol=k)
-            #stXWX <- .invcalc(X=X, W=W, k=k)
-            #P <- W - W %*% X %*% stXWX %*% crossprod(X,W) ### needed for se.tau2 computation below (not when using the simpler equation)
-
-         } else {
-
-            tau2 <- tau2.val
-
          }
 
-         wi <- 1/(vi + tau2)
+         ### Sidik-Jonkman (SJ) estimator
 
-      }
+         if (method[1] == "SJ") {
 
-      ### Paule-Mandel (PM) estimator (median unbiased version)
-
-      if (method == "PMM") {
-
-         if (!allvipos)
-            stop(mstyle$stop("PMM estimator cannot be used when there are non-positive sampling variances in the data."))
-
-         if (!tau2.fix) {
-
-            if (.QE.func(con$tau2.min, Y=Y, vi=vi, X=X, k=k, objective=0) < qchisq(0.5, df=k-p)) {
-
-               tau2 <- con$tau2.min
-
+            if (is.null(con$tau2.init)) {
+               tau2.0 <- c(var(yi) * (k-1)/k)
             } else {
-
-               if (.QE.func(con$tau2.max, Y=Y, vi=vi, X=X, k=k, objective=0) > qchisq(0.5, df=k-p)) {
-
-                  stop(mstyle$stop("Value of 'tau2.max' too low. Try increasing 'tau2.max' or switch to another 'method'."))
-
-               } else {
-
-                  tau2 <- try(uniroot(.QE.func, interval=c(con$tau2.min, con$tau2.max), tol=con$tol, maxiter=con$maxiter, Y=Y, vi=vi, X=X, k=k, objective=qchisq(0.5, df=k-p), verbose=verbose, digits=digits, extendInt="no")$root, silent=TRUE)
-
-                  if (inherits(tau2, "try-error"))
-                     stop(mstyle$stop("Error in iterative search for tau2. Try increasing 'tau2.max' or switch to another 'method'."))
-
-               }
-
+               tau2.0 <- con$tau2.init
             }
 
-         } else {
-
-            tau2 <- tau2.val
-
-         }
-
-         wi <- 1/(vi + tau2)
-
-      }
-
-      ### maximum-likelihood (ML), restricted maximum-likelihood (REML), and empirical Bayes (EB) estimators
-
-      if (is.element(method, c("ML","REML","EB"))) {
-
-         if (is.null(con$tau2.init)) {         ### check if user specified initial value for tau2
-            tau2 <- max(0, tau2, con$tau2.min) ### if not, use HE estimate (or con$tau2.min) as initial estimate for tau2
-         } else {
-            tau2 <- con$tau2.init              ### if yes, use value specified by user
-         }
-
-         while (change > con$threshold) {
-
-            if (verbose)
-               cat(mstyle$verbose(paste(mstyle$verbose(paste("Iteration", iter, "\ttau^2 =", .fcf(tau2, digits[["var"]]), "\n")))))
-
-            iter <- iter + 1
-            old2 <- tau2
-            wi   <- 1/(vi + tau2)
-            if (any(tau2 + vi < 0))
-               stop(mstyle$stop("Some marginal variances are negative."))
-            if (any(is.infinite(wi)))
-               stop(mstyle$stop("Division by zero when computing the inverse variance weights."))
+            wi    <- 1/(vi + tau2.0)
             W     <- diag(wi, nrow=k, ncol=k)
             stXWX <- .invcalc(X=X, W=W, k=k)
             P     <- W - W %*% X %*% stXWX %*% crossprod(X,W)
+            RSS   <- crossprod(Y,P) %*% Y
+            V     <- diag(vi, nrow=k, ncol=k)
+            PV    <- P %*% V # note: this is not symmetric
+            tau2  <- ifelse(tau2.fix, tau2.val, tau2.0 * RSS / (k-p))
 
-            if (method == "ML") {
-               PP  <- P %*% P
-               adj <- (crossprod(Y,PP) %*% Y - sum(wi)) / sum(wi^2)
+         }
+
+         ### Sidik-Jonkman (SJ) estimator with iteration
+
+         if (method[1] == "SJIT") {
+
+            if (is.null(con$tau2.init)) {
+               tau2 <- c(var(yi) * (k-1)/k)
+            } else {
+               tau2 <- con$tau2.init
             }
-            if (method == "REML") {
-               PP  <- P %*% P
-               adj <- (crossprod(Y,PP) %*% Y - .tr(P)) / .tr(PP)
+
+            tau2.0 <- tau2
+
+            while (change > con$threshold) {
+
+               if (verbose)
+                  cat(mstyle$verbose(paste("Iteration", iter, "\ttau^2 =", .fcf(tau2, digits[["var"]]), "\n")))
+
+               iter <- iter + 1
+               old2 <- tau2
+
+               wi     <- 1/(vi + tau2)
+               W      <- diag(wi, nrow=k, ncol=k)
+               stXWX  <- .invcalc(X=X, W=W, k=k)
+               P      <- W - W %*% X %*% stXWX %*% crossprod(X,W)
+               RSS    <- crossprod(Y,P) %*% Y
+               V      <- diag(vi, nrow=k, ncol=k)
+               PV     <- P %*% V # note: this is not symmetric
+               tau2   <- ifelse(tau2.fix, tau2.val, tau2 * RSS / (k-p))
+               change <- abs(old2 - tau2)
+
+               if (iter > con$maxiter) {
+                  conv <- FALSE
+                  break
+               }
+
             }
-            if (method == "EB") {
-               adj <- (crossprod(Y,P) %*% Y * k/(k-p) - k) / sum(wi)
-            }
 
-            adj <- adj * con$stepadj ### apply (user-defined) step adjustment
-
-            while (tau2 + adj < con$tau2.min) ### use step-halving if necessary
-               adj <- adj / 2
-
-            tau2   <- ifelse(tau2.fix, tau2.val, tau2 + adj)
-            change <- abs(old2 - tau2)
-
-            if (iter > con$maxiter) {
-               conv <- 0
-               break
+            if (!conv) {
+               if (length(method) == 1L) {
+                  stop(mstyle$stop("Iterative SJ estimator did not converge."))
+               } else {
+                  if (verbose)
+                     warning(mstyle$warning("Iterative SJ estimator did not converge."))
+               }
             }
 
          }
 
-         if (conv == 0L)
-            stop(mstyle$stop("Fisher scoring algorithm did not converge. See 'help(rma)' for possible remedies."))
+         ### Paule-Mandel (PM) estimator (regular and median unbiased version)
 
-         ### check if ll is larger when tau^2 = 0 (only if ll0check=TRUE and only possible/sensible if allvipos and !tau2.fix)
-         ### note: this doesn't catch the case where tau^2 = 0 is a local maximum
+         if (is.element(method[1], c("PM","PMM"))) {
 
-         if (is.element(method, c("ML","REML")) && con$ll0check && allvipos && !tau2.fix) {
+            if (!allvipos)
+               stop(mstyle$stop(method[1], " estimator cannot be used when there are non-positive sampling variances in the data."))
 
-            wi    <- 1/vi
-            W     <- diag(wi, nrow=k, ncol=k)
-            stXWX <- .invcalc(X=X, W=W, k=k)
-            beta  <- stXWX %*% crossprod(X,W) %*% Y
-            RSS   <- sum(wi*(yi - X %*% beta)^2)
-            if (method == "ML")
-               ll0 <- -1/2 * (k)   * log(2*base::pi) - 1/2 * sum(log(vi)) - 1/2 * RSS
-            if (method == "REML")
-               ll0 <- -1/2 * (k-p) * log(2*base::pi) - 1/2 * sum(log(vi)) - 1/2 * determinant(crossprod(X,W) %*% X, logarithm=TRUE)$modulus - 1/2 * RSS
+            if (method[1] == "PM") {
+               target <- k-p
+            } else {
+               target <- qchisq(0.5, df=k-p)
+            }
 
-            wi    <- 1/(vi + tau2)
-            if (any(tau2 + vi < 0))
+            if (!tau2.fix) {
+
+               if (.QE.func(con$tau2.min, Y=Y, vi=vi, X=X, k=k, objective=0) < target) {
+
+                  tau2 <- con$tau2.min
+
+               } else {
+
+                  if (.QE.func(con$tau2.max, Y=Y, vi=vi, X=X, k=k, objective=0) > target) {
+
+                     conv <- FALSE
+
+                     if (length(method) == 1L) {
+                        stop(mstyle$stop("Value of 'tau2.max' too low. Try increasing 'tau2.max' or switch to another 'method'."))
+                     } else {
+                        if (verbose)
+                           warning(mstyle$warning("Value of 'tau2.max' too low. Try increasing 'tau2.max' or switch to another 'method'."))
+                     }
+
+                  } else {
+
+                     tau2 <- try(uniroot(.QE.func, interval=c(con$tau2.min, con$tau2.max), tol=con$tol, maxiter=con$maxiter, Y=Y, vi=vi, X=X, k=k, objective=target, verbose=verbose, digits=digits, extendInt="no")$root, silent=TRUE)
+
+                     if (inherits(tau2, "try-error")) {
+                        conv <- FALSE
+                        if (length(method) == 1L) {
+                           stop(mstyle$stop("Error in iterative search for tau2 using uniroot()."))
+                        } else {
+                           if (verbose)
+                              warning(mstyle$warning("Error in iterative search for tau2 using uniroot()."))
+                        }
+                     }
+
+                  }
+
+               }
+
+               #W <- diag(wi, nrow=k, ncol=k)
+               #stXWX <- .invcalc(X=X, W=W, k=k)
+               #P <- W - W %*% X %*% stXWX %*% crossprod(X,W) # needed for se.tau2 computation below (not when using the simpler equation)
+
+            } else {
+
+               tau2 <- tau2.val
+
+            }
+
+         }
+
+         ### maximum-likelihood (ML), restricted maximum-likelihood (REML), and empirical Bayes (EB) estimators
+
+         if (is.element(method[1], c("ML","REML","EB"))) {
+
+            if (is.null(con$tau2.init)) {         # check if user specified initial value for tau2
+               tau2 <- max(0, tau2, con$tau2.min) # if not, use HE estimate (or con$tau2.min) as initial estimate for tau2
+            } else {
+               tau2 <- con$tau2.init              # if yes, use value specified by user
+            }
+
+            while (change > con$threshold) {
+
+               if (verbose)
+                  cat(mstyle$verbose(paste(mstyle$verbose(paste("Iteration", iter, "\ttau^2 =", .fcf(tau2, digits[["var"]]), "\n")))))
+
+               iter <- iter + 1
+               old2 <- tau2
+               wi   <- 1/(vi + tau2)
+               if (any(tau2 + vi < 0))
+                  stop(mstyle$stop("Some marginal variances are negative."))
+               if (any(is.infinite(wi)))
+                  stop(mstyle$stop("Division by zero when computing the inverse variance weights."))
+               W     <- diag(wi, nrow=k, ncol=k)
+               stXWX <- .invcalc(X=X, W=W, k=k)
+               P     <- W - W %*% X %*% stXWX %*% crossprod(X,W)
+
+               if (method[1] == "ML") {
+                  PP  <- P %*% P
+                  adj <- (crossprod(Y,PP) %*% Y - sum(wi)) / sum(wi^2)
+               }
+               if (method[1] == "REML") {
+                  PP  <- P %*% P
+                  adj <- (crossprod(Y,PP) %*% Y - .tr(P)) / .tr(PP)
+               }
+               if (method[1] == "EB") {
+                  adj <- (crossprod(Y,P) %*% Y * k/(k-p) - k) / sum(wi)
+               }
+
+               adj <- c(adj) * con$stepadj # apply (user-defined) step adjustment
+
+               if (is.na(adj)) # can happen for a saturated model when fixing tau^2
+                  adj <- 0
+
+               while (tau2 + adj < con$tau2.min) # use step-halving if necessary
+                  adj <- adj / 2
+
+               tau2   <- ifelse(tau2.fix, tau2.val, tau2 + adj)
+               change <- abs(old2 - tau2)
+
+               if (iter > con$maxiter) {
+                  conv <- FALSE
+                  break
+               }
+
+            }
+
+            if (!conv) {
+               if (length(method) == 1L) {
+                  stop(mstyle$stop("Fisher scoring algorithm did not converge. See 'help(rma)' for possible remedies."))
+               } else {
+                  if (verbose)
+                     warning(mstyle$warning("Fisher scoring algorithm did not converge. See 'help(rma)' for possible remedies."))
+               }
+            }
+
+            ### check if ll is larger when tau^2 = 0 (only if ll0check=TRUE and only possible/sensible if allvipos and !tau2.fix)
+            ### note: this doesn't catch the case where tau^2 = 0 is a local maximum
+
+            if (conv && is.element(method[1], c("ML","REML")) && con$ll0check && allvipos && !tau2.fix) {
+
+               wi    <- 1/vi
+               W     <- diag(wi, nrow=k, ncol=k)
+               stXWX <- .invcalc(X=X, W=W, k=k)
+               beta  <- stXWX %*% crossprod(X,W) %*% Y
+               RSS   <- sum(wi*(yi - X %*% beta)^2)
+               if (method[1] == "ML")
+                  ll0 <- -1/2 * (k)   * log(2*base::pi) - 1/2 * sum(log(vi)) - 1/2 * RSS
+               if (method[1] == "REML")
+                  ll0 <- -1/2 * (k-p) * log(2*base::pi) - 1/2 * sum(log(vi)) - 1/2 * determinant(crossprod(X,W) %*% X, logarithm=TRUE)$modulus - 1/2 * RSS
+
+               wi    <- 1/(vi + tau2)
+               if (any(tau2 + vi < 0))
+                  stop(mstyle$stop("Some marginal variances are negative."))
+               if (any(is.infinite(wi)))
+                  stop(mstyle$stop("Division by zero when computing the inverse variance weights."))
+               W     <- diag(wi, nrow=k, ncol=k)
+               stXWX <- .invcalc(X=X, W=W, k=k)
+               beta  <- stXWX %*% crossprod(X,W) %*% Y
+               RSS   <- sum(wi*(yi - X %*% beta)^2)
+               if (method[1] == "ML")
+                  ll <- -1/2 * (k)   * log(2*base::pi) - 1/2 * sum(log(vi + tau2)) - 1/2 * RSS
+               if (method[1] == "REML")
+                  ll <- -1/2 * (k-p) * log(2*base::pi) - 1/2 * sum(log(vi + tau2)) - 1/2 * determinant(crossprod(X,W) %*% X, logarithm=TRUE)$modulus - 1/2 * RSS
+
+               if (ll0 - ll > con$tol && tau2 > con$threshold) {
+                  warning(mstyle$warning("Fisher scoring algorithm may have gotten stuck at a local maximum.\nSetting tau^2 = 0. Check the profile likelihood plot with profile()."), call.=FALSE)
+                  tau2 <- 0
+               }
+
+            }
+
+            ### need to run this so that wi and P are based on the final tau^2 value
+
+            if (conv) {
+               wi <- 1/(vi + tau2)
+               if (any(tau2 + vi < 0))
+                  stop(mstyle$stop("Some marginal variances are negative."))
+               if (any(is.infinite(wi)))
+                  stop(mstyle$stop("Division by zero when computing the inverse variance weights."))
+               W <- diag(wi, nrow=k, ncol=k)
+               stXWX <- .invcalc(X=X, W=W, k=k)
+               P <- W - W %*% X %*% stXWX %*% crossprod(X,W)
+            }
+
+         }
+
+         if (conv) {
+
+            ### make sure that tau2 is >= con$tau2.min
+
+            tau2 <- max(con$tau2.min, c(tau2))
+
+            ### check if any marginal variances are negative (only possible if user has changed tau2.min)
+
+            if (!is.na(tau2) && any(tau2 + vi < 0))
                stop(mstyle$stop("Some marginal variances are negative."))
-            if (any(is.infinite(wi)))
-               stop(mstyle$stop("Division by zero when computing the inverse variance weights."))
-            W     <- diag(wi, nrow=k, ncol=k)
-            stXWX <- .invcalc(X=X, W=W, k=k)
-            beta  <- stXWX %*% crossprod(X,W) %*% Y
-            RSS   <- sum(wi*(yi - X %*% beta)^2)
-            if (method == "ML")
-               ll <- -1/2 * (k)   * log(2*base::pi) - 1/2 * sum(log(vi + tau2)) - 1/2 * RSS
-            if (method == "REML")
-               ll <- -1/2 * (k-p) * log(2*base::pi) - 1/2 * sum(log(vi + tau2)) - 1/2 * determinant(crossprod(X,W) %*% X, logarithm=TRUE)$modulus - 1/2 * RSS
 
-            if (ll0 - ll > con$tol && tau2 > con$threshold) {
-               warning(mstyle$warning("Fisher scoring algorithm may have gotten stuck at a local maximum.\n  Setting tau^2 = 0. Check the profile likelihood plot with profile()."), call.=FALSE)
-               tau2 <- 0
+            ### verbose output upon convergence for ML/REML/EB estimators
+
+            if (verbose && is.element(method[1], c("ML","REML","EB"))) {
+               cat(mstyle$verbose(paste("Iteration", iter, "\ttau^2 =", .fcf(tau2, digits[["var"]]), "\n")))
+               cat(mstyle$verbose(paste("Fisher scoring algorithm converged after", iter, "iterations.\n")))
             }
+
+            ### standard error of the tau^2 estimators (also when the user has fixed/specified a tau^2 value)
+            ### see notes.pdf and note: .tr(P%*%P) = sum(P*t(P)) = sum(P*P) (since P is symmetric)
+
+            if (method[1] == "HS")
+               se.tau2 <- sqrt(1/sum(wi)^2 * (2*(k-p) + 4*max(tau2,0)*.tr(P) + 2*max(tau2,0)^2*sum(P*P))) # note: wi = 1/vi
+            if (method[1] == "HSk")
+               se.tau2 <- k/(k-p) * sqrt(1/sum(wi)^2 * (2*(k-p) + 4*max(tau2,0)*.tr(P) + 2*max(tau2,0)^2*sum(P*P)))
+            if (method[1] == "HE")
+               se.tau2 <- sqrt(1/(k-p)^2 * (2*sum(PV*t(PV)) + 4*max(tau2,0)*trPV + 2*max(tau2,0)^2*(k-p)))
+            if (is.element(method[1], c("DL","DLIT")))
+               se.tau2 <- sqrt(1/trP^2 * (2*(k-p) + 4*max(tau2,0)*trP + 2*max(tau2,0)^2*sum(P*P)))
+            if (is.element(method[1], c("GENQ","GENQM")))
+               se.tau2 <- sqrt(1/trP^2 * (2*sum(PV*t(PV)) + 4*max(tau2,0)*sum(PV*P) + 2*max(tau2,0)^2*sum(P*P)))
+            if (method[1] == "SJ")
+               se.tau2 <- sqrt(tau2.0^2/(k-p)^2 * (2*sum(PV*t(PV)) + 4*max(tau2,0)*sum(PV*P) + 2*max(tau2,0)^2*sum(P*P)))
+            if (method[1] == "ML")
+               se.tau2 <- sqrt(2/sum(wi^2)) # note: wi = 1/(vi + tau2) for ML, REML, EB, PM, PMM, and SJIT
+            if (method[1] == "REML")
+               se.tau2 <- sqrt(2/sum(P*P))
+            if (is.element(method[1], c("EB","PM","PMM","SJIT"))) {
+               wi  <- 1/(vi + tau2)
+               #V  <- diag(vi, nrow=k, ncol=k)
+               #PV <- P %*% V # note: this is not symmetric
+               #se.tau2 <- sqrt((k/(k-p))^2 / sum(wi)^2 * (2*sum(PV*t(PV)) + 4*max(tau2,0)*sum(PV*P) + 2*max(tau2,0)^2*sum(P*P)))
+               se.tau2 <- sqrt(2*k^2/(k-p) / sum(wi)^2) # these two equations are actually identical, but this one is much simpler
+            }
+
+         } else {
+
+            method <- method[-1]
 
          }
 
-         ### need to run this so that wi and P are based on the final tau^2 value
-
-         wi <- 1/(vi + tau2)
-         if (any(tau2 + vi < 0))
-            stop(mstyle$stop("Some marginal variances are negative."))
-         if (any(is.infinite(wi)))
-            stop(mstyle$stop("Division by zero when computing the inverse variance weights."))
-         W <- diag(wi, nrow=k, ncol=k)
-         stXWX <- .invcalc(X=X, W=W, k=k)
-         P <- W - W %*% X %*% stXWX %*% crossprod(X,W)
-
-      }
-
-      ### make sure that tau2 is >= con$tau2.min
-
-      tau2 <- max(con$tau2.min, c(tau2))
-
-      ### check if any marginal variances are negative (only possible if user has changed tau2.min)
-
-      if (!is.na(tau2) && any(tau2 + vi < 0))
-         stop(mstyle$stop("Some marginal variances are negative."))
-
-      ### verbose output upon convergence for ML/REML/EB estimators
-
-      if (verbose && is.element(method, c("ML","REML","EB"))) {
-         cat(mstyle$verbose(paste("Iteration", iter, "\ttau^2 =", .fcf(tau2, digits[["var"]]), "\n")))
-         cat(mstyle$verbose(paste("Fisher scoring algorithm converged after", iter, "iterations.\n")))
-      }
-
-      ### standard error of the tau^2 estimators (also when the user has fixed/specified a tau^2 value)
-      ### see notes.pdf and note: .tr(P%*%P) = sum(P*t(P)) = sum(P*P) (since P is symmetric)
-
-      if (method == "HS")
-         se.tau2 <- sqrt(1/sum(wi)^2 * (2*(k-p) + 4*max(tau2,0)*.tr(P) + 2*max(tau2,0)^2*sum(P*P))) ### note: wi = 1/vi
-      if (method == "HSk")
-         se.tau2 <- k/(k-p) * sqrt(1/sum(wi)^2 * (2*(k-p) + 4*max(tau2,0)*.tr(P) + 2*max(tau2,0)^2*sum(P*P)))
-         #se.tau2 <- sqrt(1/trP^2 * (2*(k-p) + 4*max(tau2,0)*.tr(P) + 2*max(tau2,0)^2*sum(P*P))) # trP <- sum(wi) * (k-p) / k
-      if (method == "HE")
-         se.tau2 <- sqrt(1/(k-p)^2 * (2*sum(PV*t(PV)) + 4*max(tau2,0)*trPV + 2*max(tau2,0)^2*(k-p)))
-      if (method == "DL" || method == "DLIT")
-         se.tau2 <- sqrt(1/trP^2 * (2*(k-p) + 4*max(tau2,0)*trP + 2*max(tau2,0)^2*sum(P*P)))
-      if (method == "GENQ" || method == "GENQM")
-         se.tau2 <- sqrt(1/trP^2 * (2*sum(PV*t(PV)) + 4*max(tau2,0)*sum(PV*P) + 2*max(tau2,0)^2*sum(P*P)))
-      if (method == "SJ")
-         se.tau2 <- sqrt(tau2.0^2/(k-p)^2 * (2*sum(PV*t(PV)) + 4*max(tau2,0)*sum(PV*P) + 2*max(tau2,0)^2*sum(P*P)))
-      if (method == "ML")
-         se.tau2 <- sqrt(2/sum(wi^2)) ### note: wi = 1/(vi + tau2) for ML, REML, EB, PM, and SJIT
-      if (method == "REML")
-         se.tau2 <- sqrt(2/sum(P*P))
-      if (method == "EB" || method == "PM" || method == "PMM" || method == "SJIT") {
-         #V  <- diag(vi, nrow=k, ncol=k)
-         #PV <- P %*% V ### note: this is not symmetric
-         #se.tau2 <- sqrt((k/(k-p))^2 / sum(wi)^2 * (2*sum(PV*t(PV)) + 4*max(tau2,0)*sum(PV*P) + 2*max(tau2,0)^2*sum(P*P)))
-         se.tau2 <- sqrt(2*k^2/(k-p) / sum(wi)^2) ### these two equations are actually identical, but this one is much simpler
       }
 
       if (k == 1L)
@@ -1501,7 +1555,7 @@ level=95, digits, btt, att, tau2, verbose=FALSE, control, ...) {
 
    if (model == "rma.ls") {
 
-      if (!is.element(method, c("ML","REML")))
+      if (!is.element(method[1], c("ML","REML")))
          stop(mstyle$stop("Location-scale models can only be fitted with ML or REML estimation."))
 
       tau2.fix <- FALSE
@@ -1511,8 +1565,12 @@ level=95, digits, btt, att, tau2, verbose=FALSE, control, ...) {
 
       ### get optimizer arguments from control argument
 
-      optimizer  <- match.arg(con$optimizer, c("optim","nlminb","uobyqa","newuoa","bobyqa","nloptr","nlm","hjk","nmk","mads","ucminf","optimParallel","constrOptim"))
-      optmethod  <- match.arg(con$optmethod, c("Nelder-Mead","BFGS","CG","L-BFGS-B","SANN","Brent"))
+      optimizer <- match.arg(con$optimizer, c("optim","nlminb","uobyqa","newuoa","bobyqa","nloptr","nlm","hjk","nmk","mads","ucminf","lbfgsb3c","subplex","BBoptim","optimParallel","constrOptim","Nelder-Mead","BFGS","CG","L-BFGS-B","SANN","Brent"))
+      optmethod <- match.arg(con$optmethod, c("Nelder-Mead","BFGS","CG","L-BFGS-B","SANN","Brent"))
+      if (optimizer %in% c("Nelder-Mead","BFGS","CG","L-BFGS-B","SANN","Brent")) {
+         optmethod <- optimizer
+         optimizer <- "optim"
+      }
       parallel   <- con$parallel
       cl         <- con$cl
       ncpus      <- con$ncpus
@@ -1534,24 +1592,34 @@ level=95, digits, btt, att, tau2, verbose=FALSE, control, ...) {
       if (link == "log" && optimizer == "constrOptim")
          stop(mstyle$stop("Cannot use 'constrOptim' optimizer when using a log link."))
 
-      reml <- ifelse(method=="REML", TRUE, FALSE)
+      reml <- ifelse(method[1]=="REML", TRUE, FALSE)
 
       ### set NLOPT_LN_BOBYQA as the default algorithm for nloptr optimizer
       ### and by default use a relative convergence criterion of 1e-8 on the function value
 
-      if (optimizer=="nloptr" && !is.element("algorithm", names(optcontrol)))
+      if (optimizer == "nloptr" && !is.element("algorithm", names(optcontrol)))
          optcontrol$algorithm <- "NLOPT_LN_BOBYQA"
 
-      if (optimizer=="nloptr" && !is.element("ftol_rel", names(optcontrol)))
+      if (optimizer == "nloptr" && !is.element("ftol_rel", names(optcontrol)))
          optcontrol$ftol_rel <- 1e-8
 
       ### for mads, set trace=FALSE and tol=1e-6 by default
 
-      if (optimizer=="mads" && !is.element("trace", names(optcontrol)))
+      if (optimizer == "mads" && !is.element("trace", names(optcontrol)))
          optcontrol$trace <- FALSE
 
-      if (optimizer=="mads" && !is.element("tol", names(optcontrol)))
+      if (optimizer == "mads" && !is.element("tol", names(optcontrol)))
          optcontrol$tol <- 1e-6
+
+      ### for subplex, set reltol=1e-8 by default (the default in subplex() is .Machine$double.eps)
+
+      if (optimizer == "subplex" && !is.element("reltol", names(optcontrol)))
+         optcontrol$reltol <- 1e-8
+
+      ### for BBoptim, set trace=FALSE by default
+
+      if (optimizer == "BBoptim" && !is.element("trace", names(optcontrol)))
+         optcontrol$trace <- FALSE
 
       ### check that the required packages are installed
 
@@ -1560,9 +1628,9 @@ level=95, digits, btt, att, tau2, verbose=FALSE, control, ...) {
             stop(mstyle$stop("Please install the 'minqa' package to use this optimizer."))
       }
 
-      if (optimizer == "nloptr") {
-         if (!requireNamespace("nloptr", quietly=TRUE))
-            stop(mstyle$stop("Please install the 'nloptr' package to use this optimizer."))
+      if (is.element(optimizer, c("nloptr","ucminf","lbfgsb3c","subplex","optimParallel"))) {
+         if (!requireNamespace(optimizer, quietly=TRUE))
+            stop(mstyle$stop(paste0("Please install the '", optimizer, "' package to use this optimizer.")))
       }
 
       if (is.element(optimizer, c("hjk","nmk","mads"))) {
@@ -1570,18 +1638,13 @@ level=95, digits, btt, att, tau2, verbose=FALSE, control, ...) {
             stop(mstyle$stop("Please install the 'dfoptim' package to use this optimizer."))
       }
 
-      if (optimizer == "ucminf") {
-         if (!requireNamespace("ucminf", quietly=TRUE))
-            stop(mstyle$stop("Please install the 'ucminf' package to use this optimizer."))
+      if (optimizer == "BBoptim") {
+         if (!requireNamespace("BB", quietly=TRUE))
+            stop(mstyle$stop("Please install the 'BB' package to use this optimizer."))
       }
 
-      if (optimizer == "optimParallel") {
-         if (!requireNamespace("optimParallel", quietly=TRUE))
-            stop(mstyle$stop("Please install the 'optimParallel' package to use this optimizer."))
-      }
-
-      if (!isTRUE(ddd$skiphes) && !requireNamespace("numDeriv", quietly=TRUE))
-         stop(mstyle$stop("Please install the 'numDeriv' package to compute the Hessian."))
+      if (!isTRUE(ddd$skiphes) && !requireNamespace(con$hesspack, quietly=TRUE))
+         stop(mstyle$stop(paste0("Please install the '", con$hesspack, "' package to compute the Hessian.")))
 
       ### drop redundant predictors
 
@@ -1637,9 +1700,9 @@ level=95, digits, btt, att, tau2, verbose=FALSE, control, ...) {
             stop(mstyle$stop(paste0("Length of 'alpha' argument (", length(alpha), ") does not match actual number of parameters (", q, ").")))
       }
 
-      ### rescale Z matrix (only for models with moderators and models including an intercept term and when alpha[1] is not fixed)
+      ### rescale Z matrix (only for models with moderators, models including a non-fixed intercept term, and when not placing constraints on the alpha values)
 
-      if (!Z.int.only && Z.int.incl && con$scaleZ && is.na(alpha[1])) {
+      if (!Z.int.only && Z.int.incl && con$scaleZ && is.na(alpha[1]) && all(is.infinite(con$alpha.min)) && all(is.infinite(con$alpha.max))) {
          Zsave <- Z
          meanZ <- colMeans(Z[, 2:q, drop=FALSE])
          sdZ   <- apply(Z[, 2:q, drop=FALSE], 2, sd) ### consider using colSds() from matrixStats package
@@ -1700,7 +1763,7 @@ level=95, digits, btt, att, tau2, verbose=FALSE, control, ...) {
 
          alpha.init <- con$alpha.init
 
-         if (!Z.int.only && Z.int.incl && con$scaleZ && is.na(alpha[1])) {
+         if (!is.null(mZ)) {
             if (inherits(imZ, "try-error"))
                stop(mstyle$stop("Unable to rescale starting values for the scale parameters."))
             alpha.init <- c(imZ %*% cbind(alpha.init))
@@ -1717,6 +1780,31 @@ level=95, digits, btt, att, tau2, verbose=FALSE, control, ...) {
       if (anyNA(alpha.init))
          stop(mstyle$stop("No missing values allowed in 'alpha.init'."))
 
+      ### set potential constraints on alpha values
+
+      if (length(con$alpha.min) == 1L)
+            con$alpha.min <- rep(con$alpha.min, q)
+
+      if (length(con$alpha.max) == 1L)
+            con$alpha.max <- rep(con$alpha.max, q)
+
+      if (length(con$alpha.min) != q)
+         stop(mstyle$stop(paste0("Length of 'alpha.min' argument (", length(alpha.min), ") does not match actual number of parameters (", q, ").")))
+
+      if (length(con$alpha.max) != q)
+         stop(mstyle$stop(paste0("Length of 'alpha.max' argument (", length(alpha.max), ") does not match actual number of parameters (", q, ").")))
+
+      if (any(xor(is.infinite(con$alpha.min),is.infinite(con$alpha.max))))
+         stop(mstyle$stop("Constraints on scale coefficients must be placed on both the lower and upper bound."))
+
+      alpha.min <- con$alpha.min
+      alpha.max <- con$alpha.max
+
+      alpha.init <- pmax(alpha.init, alpha.min)
+      alpha.init <- pmin(alpha.init, alpha.max)
+
+      alpha.init <- mapply(.mapinvfun.alpha, alpha.init, alpha.min, alpha.max)
+
       if (verbose > 1)
          message(mstyle$message("Estimating scale parameters ...\n"))
 
@@ -1731,37 +1819,50 @@ level=95, digits, btt, att, tau2, verbose=FALSE, control, ...) {
          par.arg <- "par"
          ctrl.arg <- ", control=optcontrol"
       }
-      if (optimizer=="nlminb") {
+
+      if (optimizer == "nlminb") {
          par.arg <- "start"
          ctrl.arg <- ", control=optcontrol"
       }
+
       if (is.element(optimizer, c("uobyqa","newuoa","bobyqa"))) {
          par.arg <- "par"
          optimizer <- paste0("minqa::", optimizer) ### need to use this since loading nloptr masks bobyqa() and newuoa() functions
          ctrl.arg <- ", control=optcontrol"
       }
-      if (optimizer=="nloptr") {
+
+      if (optimizer == "nloptr") {
          par.arg <- "x0"
          optimizer <- paste0("nloptr::nloptr") ### need to use this due to requireNamespace()
          ctrl.arg <- ", opts=optcontrol"
       }
-      if (optimizer=="nlm") {
+
+      if (optimizer == "nlm") {
          par.arg <- "p" ### because of this, must use argument name pX for p (number of columns in X matrix)
          ctrl.arg <- paste(names(optcontrol), unlist(optcontrol), sep="=", collapse=", ")
          if (nchar(ctrl.arg) != 0L)
             ctrl.arg <- paste0(", ", ctrl.arg)
       }
+
       if (is.element(optimizer, c("hjk","nmk","mads"))) {
          par.arg <- "par"
          optimizer <- paste0("dfoptim::", optimizer) ### need to use this so that the optimizers can be found
          ctrl.arg <- ", control=optcontrol"
       }
-      if (optimizer=="ucminf") {
+
+      if (is.element(optimizer, c("ucminf","lbfgsb3c","subplex"))) {
          par.arg <- "par"
-         optimizer <- paste0("ucminf::ucminf") ### need to use this due to requireNamespace()
+         optimizer <- paste0(optimizer, "::", optimizer) ### need to use this due to requireNamespace()
          ctrl.arg <- ", control=optcontrol"
       }
-      if (optimizer=="optimParallel") {
+
+      if (optimizer == "BBoptim") {
+         par.arg <- "par"
+         optimizer <- "BB::BBoptim"
+         ctrl.arg <- ", quiet=TRUE, control=optcontrol"
+      }
+
+      if (optimizer == "optimParallel") {
 
          par.arg <- "par"
          optimizer <- paste0("optimParallel::optimParallel") ### need to use this due to requireNamespace()
@@ -1806,25 +1907,27 @@ level=95, digits, btt, att, tau2, verbose=FALSE, control, ...) {
       if (link == "log") {
 
          optcall <- paste(optimizer, "(", par.arg, "=alpha.init, .ll.rma.ls, ", ifelse(optimizer=="optim", "method=optmethod, ", ""),
-                                                       "yi=yi, vi=vi, X=X, Z=Z, reml=reml, k=k, pX=p, alpha.val=alpha, verbose=verbose, digits=digits,
-                                                       #hessian=TRUE,
-                                                       REMLf=con$REMLf, link=link, mZ=mZ", ctrl.arg, ")\n", sep="")
+                          "yi=yi, vi=vi, X=X, Z=Z, reml=reml, k=k, pX=p, alpha.val=alpha, verbose=verbose, digits=digits,
+                          #hessian=TRUE,
+                          REMLf=con$REMLf, link=link, mZ=mZ, alpha.min=alpha.min, alpha.max=alpha.max, alpha.transf=TRUE,
+                          tau2.min=con$tau2.min, tau2.max=con$tau2.max", ctrl.arg, ")\n", sep="")
       }
 
       if (link == "identity") {
 
          optcall <- paste0("constrOptim(theta=alpha.init, f=.ll.rma.ls, grad=NULL, ui=Z, ci=rep(0,k),
-                                yi=yi, vi=vi, X=X, Z=Z, reml=reml, k=k, pX=p, alpha.val=alpha, verbose=verbose, digits=digits,
-                                REMLf=con$REMLf, link=link, mZ=mZ", ctrl.arg, ")\n")
+                           yi=yi, vi=vi, X=X, Z=Z, reml=reml, k=k, pX=p, alpha.val=alpha, verbose=verbose, digits=digits,
+                           REMLf=con$REMLf, link=link, mZ=mZ, alpha.min=alpha.min, alpha.max=alpha.max, alpha.transf=TRUE,
+                           tau2.min=con$tau2.min, tau2.max=con$tau2.max", ctrl.arg, ")\n")
 
       }
 
       #return(optcall)
 
       if (verbose) {
-         opt.res <- try(eval(parse(text=optcall)), silent=!verbose)
+         opt.res <- try(eval(str2lang(optcall)), silent=!verbose)
       } else {
-         opt.res <- try(suppressWarnings(eval(parse(text=optcall))), silent=!verbose)
+         opt.res <- try(suppressWarnings(eval(str2lang(optcall))), silent=!verbose)
       }
 
       #return(opt.res)
@@ -1839,7 +1942,7 @@ level=95, digits, btt, att, tau2, verbose=FALSE, control, ...) {
 
       ### convergence checks
 
-      if (is.element(optimizer, c("optim","constrOptim","nlminb","dfoptim::hjk","dfoptim::nmk","optimParallel::optimParallel")) && opt.res$convergence != 0)
+      if (is.element(optimizer, c("optim","constrOptim","nlminb","dfoptim::hjk","dfoptim::nmk","lbfgsb3c::lbfgsb3c","subplex::subplex","BB::BBoptim","optimParallel::optimParallel")) && opt.res$convergence != 0)
          stop(mstyle$stop(paste0("Optimizer (", optimizer, ") did not achieve convergence (convergence = ", opt.res$convergence, ").")))
 
       if (is.element(optimizer, c("dfoptim::mads")) && opt.res$convergence > optcontrol$tol)
@@ -1867,6 +1970,10 @@ level=95, digits, btt, att, tau2, verbose=FALSE, control, ...) {
       if (optimizer=="nlm")
          opt.res$par <- opt.res$estimate
 
+      ### back-transform in case constraints were placed on alpha values
+
+      opt.res$par <- mapply(.mapfun.alpha, opt.res$par, alpha.min, alpha.max)
+
       ### replace fixed alpha values in opt.res$par
 
       opt.res$par <- ifelse(is.na(alpha), opt.res$par, alpha)
@@ -1882,12 +1989,20 @@ level=95, digits, btt, att, tau2, verbose=FALSE, control, ...) {
          if (verbose > 1)
             message(mstyle$message("\nComputing Hessian ..."))
 
-         H <- try(numDeriv::hessian(func=.ll.rma.ls, x=opt.res$par, method.args=con$hessianCtrl, yi=yi, vi=vi, X=X,
-                                    Z=Z, reml=reml, k=k, pX=p, alpha.val=alpha, verbose=FALSE, digits=digits, REMLf=con$REMLf, link=link, mZ=mZ), silent=TRUE)
+         if (con$hesspack == "numDeriv")
+            H <- try(numDeriv::hessian(func=.ll.rma.ls, x=opt.res$par, method.args=con$hessianCtrl, yi=yi, vi=vi, X=X,
+                                       Z=Z, reml=reml, k=k, pX=p, alpha.val=alpha, verbose=FALSE, digits=digits,
+                                       REMLf=con$REMLf, link=link, mZ=mZ, alpha.min=alpha.min, alpha.max=alpha.max, alpha.transf=FALSE,
+                                       tau2.min=con$tau2.min, tau2.max=con$tau2.max), silent=TRUE)
+         if (con$hesspack == "pracma")
+            H <- try(pracma::hessian(f=.ll.rma.ls, x0=opt.res$par, yi=yi, vi=vi, X=X,
+                                     Z=Z, reml=reml, k=k, pX=p, alpha.val=alpha, verbose=FALSE, digits=digits,
+                                     REMLf=con$REMLf, link=link, mZ=mZ, alpha.min=alpha.min, alpha.max=alpha.max, alpha.transf=FALSE,
+                                     tau2.min=con$tau2.min, tau2.max=con$tau2.max), silent=TRUE)
 
          if (inherits(H, "try-error")) {
 
-            warning(mstyle$warning("Error when trying to compute Hessian."), call.=FALSE)
+            warning(mstyle$warning("Error when trying to compute the Hessian."), call.=FALSE)
 
          } else {
 
@@ -1896,7 +2011,7 @@ level=95, digits, btt, att, tau2, verbose=FALSE, control, ...) {
 
             if (inherits(iH.hest, "try-error") || anyNA(iH.hest) || any(is.infinite(iH.hest))) {
 
-               warning(mstyle$warning("Error when trying to invert Hessian."), call.=FALSE)
+               warning(mstyle$warning("Error when trying to invert the Hessian."), call.=FALSE)
 
             } else {
 
@@ -1913,9 +2028,12 @@ level=95, digits, btt, att, tau2, verbose=FALSE, control, ...) {
       alpha.val <- alpha
       alpha <- cbind(opt.res$par)
 
-      ### scale back alpha and va
+      if (any(alpha <= alpha.min + 10*.Machine$double.eps^0.25) || any(alpha >= alpha.max - 10*.Machine$double.eps^0.25))
+         warning(mstyle$warning("One or more 'alpha' estimates are (almost) equal to their lower or upper bound.\nTreat results with caution (or consider adjusting 'alpha.min' and/or 'alpha.max')."), call.=FALSE)
 
-      if (!Z.int.only && Z.int.incl && con$scaleZ && is.na(alpha.val[1])) {
+      ### scale back alpha and va when Z matrix was rescaled
+
+      if (!is.null(mZ)) {
          alpha <- mZ %*% alpha
          va[!hest,] <- 0
          va[,!hest] <- 0
@@ -1932,13 +2050,13 @@ level=95, digits, btt, att, tau2, verbose=FALSE, control, ...) {
 
       ### ddf calculation
 
-      if (test == "t") {
+      if (is.element(test, c("knha","adhoc","t"))) {
          ddf.alpha <- k-q
       } else {
          ddf.alpha <- NA
       }
 
-      ### QM calculation
+      ### QS calculation
 
       QS <- try(as.vector(t(alpha)[att] %*% chol2inv(chol(va[att,att])) %*% alpha[att]), silent=TRUE)
 
@@ -1952,7 +2070,7 @@ level=95, digits, btt, att, tau2, verbose=FALSE, control, ...) {
       names(se.alpha) <- NULL
       zval.alpha  <- c(alpha/se.alpha)
 
-      if (test == "t") {
+      if (is.element(test, c("knha","adhoc","t"))) {
          QS         <- QS / m.alpha
          QSdf       <- c(m.alpha, k-q)
          QSp        <- if (QSdf[2] > 0) pf(QS, df1=QSdf[1], df2=QSdf[2], lower.tail=FALSE) else NA
@@ -1975,9 +2093,9 @@ level=95, digits, btt, att, tau2, verbose=FALSE, control, ...) {
 
    }
 
-   ### fixed-effects model (note: sets tau2 to zero even when tau2 value is specified)
+   ### equal/fixed/common-effects model (note: sets tau2 to zero even when tau2 value is specified)
 
-   if (is.element(method, c("FE","EE","CE")))
+   if (is.element(method[1], c("FE","EE","CE")))
       tau2 <- 0
 
    #########################################################################
@@ -2012,7 +2130,7 @@ level=95, digits, btt, att, tau2, verbose=FALSE, control, ...) {
          stXWX <- .invcalc(X=X, W=W, k=k)
          beta  <- stXWX %*% crossprod(X,W) %*% Y
          vb    <- stXWX
-         RSS.f <- sum(wi*(yi - X %*% beta)^2)
+         RSS.f <- sum(wi*c(yi - X %*% beta)^2)
          #P     <- W - W %*% X %*% stXWX %*% crossprod(X,W)
          #RSS.f <- crossprod(Y,P) %*% Y
          RSS.knha <- RSS.f
@@ -2027,7 +2145,7 @@ level=95, digits, btt, att, tau2, verbose=FALSE, control, ...) {
          stXAX <- .invcalc(X=X, W=A, k=k)
          beta  <- stXAX %*% crossprod(X,A) %*% Y
          vb    <- stXAX %*% t(X) %*% A %*% M %*% A %*% X %*% stXAX
-         RSS.f <- sum(wi*(yi - X %*% beta)^2)
+         RSS.f <- sum(wi*c(yi - X %*% beta)^2)
          #P     <- W - W %*% X %*% stXAX %*% t(X) %*% A - A %*% X %*% stXAX %*% t(X) %*% W + A %*% X %*% stXAX %*% t(X) %*% W %*% X %*% stXAX %*% t(X) %*% A
          #RSS.f <- crossprod(Y,P) %*% Y
 
@@ -2094,7 +2212,7 @@ level=95, digits, btt, att, tau2, verbose=FALSE, control, ...) {
 
    ### the Knapp & Hartung method as described in the literature is for random/mixed-effects models
 
-   if (is.element(method, c("FE","EE","CE")) && is.element(test, c("knha","adhoc")))
+   if (is.element(method[1], c("FE","EE","CE")) && is.element(test, c("knha","adhoc")))
       warning(mstyle$warning("Knapp & Hartung method is not meant to be used in the context of FE models."), call.=FALSE)
 
    ### Knapp & Hartung method with ad-hoc correction so that the scale factor is always >= 1
@@ -2109,7 +2227,11 @@ level=95, digits, btt, att, tau2, verbose=FALSE, control, ...) {
    ### ddf calculation
 
    if (is.element(test, c("knha","adhoc","t"))) {
-      ddf <- k-p
+      if (is.null(ddd$dfs)) {
+         ddf <- k-p
+      } else {
+         ddf <- ddd$dfs[1] # would be nice to allow multiple dfs values, but tricky
+      }                    # since some methods are set up for a single df value
    } else {
       ddf <- NA
    }
@@ -2121,7 +2243,24 @@ level=95, digits, btt, att, tau2, verbose=FALSE, control, ...) {
    if (inherits(QM, "try-error"))
       QM <- NA
 
-   rownames(beta) <- rownames(vb) <- colnames(vb) <- colnames(X)
+   ### abbreviate some types of coefficient names
+
+   if (.isTRUE(ddd$abbrev)) {
+      tmp <- colnames(X)
+      tmp <- gsub("relevel(factor(", "", tmp, fixed=TRUE)
+      tmp <- gsub("\\), ref = \"[[:alnum:]]*\")", "", tmp)
+      tmp <- gsub("poly(", "", tmp, fixed=TRUE)
+      tmp <- gsub(", degree = [[:digit:]], raw = TRUE)", "^", tmp)
+      tmp <- gsub(", degree = [[:digit:]], raw = T)", "^", tmp)
+      tmp <- gsub(", degree = [[:digit:]])", "^", tmp)
+      tmp <- gsub("rcs\\([[:alnum:]]*, [[:digit:]]\\)", "", tmp)
+      tmp <- gsub("factor(", "", tmp, fixed=TRUE)
+      tmp <- gsub("I(", "", tmp, fixed=TRUE)
+      tmp <- gsub(")", "", tmp, fixed=TRUE)
+      colnames(X) <- tmp
+   }
+
+   rownames(beta) <- rownames(vb) <- colnames(vb) <- colnames(X.f) <- colnames(X)
 
    se <- sqrt(diag(vb))
    names(se) <- NULL
@@ -2173,13 +2312,15 @@ level=95, digits, btt, att, tau2, verbose=FALSE, control, ...) {
 
          ### calculation of 'typical' sampling variance
 
+         if (i2def == "1")
+            vt <- (k-p) / .tr(P)
+         if (i2def == "2")
+            vt <- 1/mean(wi) ### harmonic mean of vi's (see Takkouche et al., 1999)
          #vt <- (k-1) / (sum(wi) - sum(wi^2)/sum(wi)) ### this only applies to the RE model
-         #vt <- 1/mean(wi) ### harmonic mean of vi's (see Takkouche et al., 1999)
-         vt <- (k-p) / .tr(P)
 
          ### calculation of I^2 and H^2
 
-         if (is.element(method, c("FE","EE","CE"))) {
+         if (is.element(method[1], c("FE","EE","CE"))) {
             I2 <- max(0, 100 * (QE - (k-p)) / QE)
             H2 <- QE / (k-p)
          } else {
@@ -2208,55 +2349,25 @@ level=95, digits, btt, att, tau2, verbose=FALSE, control, ...) {
 
    #########################################################################
 
-   ### compute pseudo R^2 statistic for mixed-effects models with an intercept (only for rma.uni models)
-
-   if (!int.only && int.incl && !is.element(method, c("FE","EE","CE")) && model == "rma.uni" && !isTRUE(ddd$skipr2)) {
-
-      if (verbose > 1) {
-         message(mstyle$message("Fitting RE model for R^2 computation ..."))
-         res.RE <- try(rma.uni(yi, vi, weights=weights, method=method, weighted=weighted, test=test, verbose=ifelse(verbose, TRUE, FALSE), control=con, digits=digits), silent=FALSE)
-      } else {
-         res.RE <- try(suppressWarnings(rma.uni(yi, vi, weights=weights, method=method, weighted=weighted, test=test, verbose=ifelse(verbose, TRUE, FALSE), control=con, digits=digits)), silent=TRUE)
-      }
-
-      if (!inherits(res.RE, "try-error")) {
-
-         tau2.RE <- res.RE$tau2
-
-         if (identical(tau2.RE,0)) {
-            R2 <- 0
-         } else {
-            R2 <- max(0, 100 * (tau2.RE - tau2) / tau2.RE)
-         }
-
-      } else {
-
-         R2 <- NA
-
-      }
-
-   } else {
-
-      R2 <- NULL
-
-   }
-
-   #########################################################################
-
    ###### fit statistics
 
    if (verbose > 1)
       message(mstyle$message("Computing fit statistics and log likelihood ..."))
 
    ### note: tau2 is not counted as a parameter when it was fixed by the user (same for fixed alpha values)
-   parms <- p + ifelse(model == "rma.uni", ifelse(is.element(method, c("FE","EE","CE")) || tau2.fix, 0, 1), sum(is.na(alpha.val)))
+   q.est <- ifelse(model == "rma.uni", 0, sum(is.na(alpha.val)))
+   parms <- p + ifelse(model == "rma.uni", ifelse(is.element(method[1], c("FE","EE","CE")) || tau2.fix, 0, 1), q.est)
 
    ll.ML    <- -1/2 * (k) * log(2*base::pi) - 1/2 * sum(log(vi + tau2)) - 1/2 * RSS.f
    ll.REML  <- -1/2 * (k-p) * log(2*base::pi) + ifelse(con$REMLf, 1/2 * determinant(crossprod(X), logarithm=TRUE)$modulus, 0) +
                -1/2 * sum(log(vi + tau2)) - 1/2 * determinant(crossprod(X,W) %*% X, logarithm=TRUE)$modulus - 1/2 * RSS.f
 
    if (k > p) {
-      dev.ML <- -2 * (ll.ML - sum(dnorm(yi, mean=yi, sd=sqrt(vi), log=TRUE)))
+      if (allvipos) {
+         dev.ML <- -2 * (ll.ML - sum(dnorm(yi, mean=yi, sd=sqrt(vi), log=TRUE)))
+      } else {
+         dev.ML <- -2 * ll.ML
+      }
    } else {
       dev.ML <- 0
    }
@@ -2274,6 +2385,133 @@ level=95, digits, btt, att, tau2, verbose=FALSE, control, ...) {
 
    #########################################################################
 
+   ### compute pseudo R^2 statistic for mixed-effects models with an intercept (only for rma.uni models)
+
+   if (!int.only && int.incl && model == "rma.uni" && !isTRUE(ddd$skipr2)) {
+
+      if (verbose > 1)
+         message(mstyle$message("Computing R^2 ..."))
+
+      if (is.element(method[1], c("FE","EE","CE"))) {
+
+         if (identical(var(yi),0)) {
+            R2 <- 0
+         } else {
+            if (weighted) {
+               if (is.null(weights)) {
+                  R2 <- max(0, 100 * summary(lm(yi ~ X, weights=wi))$adj.r.squared)
+               } else {
+                  R2 <- max(0, 100 * summary(lm(yi ~ X, weights=weights))$adj.r.squared)
+               }
+            } else {
+               R2 <- max(0, 100 * summary(lm(yi ~ X))$adj.r.squared)
+            }
+         }
+
+      } else {
+
+         if (r2def %in% c("1","1v","3","3v","5","6","7","8")) {
+
+            args <- list(yi=yi, vi=vi, weights=weights, method=method, weighted=weighted, test=test, verbose=ifelse(verbose, TRUE, FALSE), control=con, digits=digits, outlist="minimal")
+
+            if (verbose > 1) {
+               res0 <- try(.do.call(rma.uni, args), silent=FALSE)
+            } else {
+               res0 <- try(suppressWarnings(.do.call(rma.uni, args)), silent=TRUE)
+            }
+
+            if (!inherits(res0, "try-error")) {
+
+               tau2.RE <- res0$tau2
+
+               if (identical(tau2.RE,0) && r2def %in% c("1","3")) {
+
+                  R2 <- 0
+
+               } else {
+
+                  ll0 <- logLik(res0)
+                  ll1 <- ifelse(method[1] == "ML", ll.ML, ll.REML)
+                  lls <- (ifelse(method[1] == "ML", dev.ML, dev.REML) + 2*ll1) / 2
+
+                  # based on Raudenbush (1994)
+                  if (r2def == "1")
+                     R2 <- (tau2.RE - tau2) / tau2.RE
+
+                  # like Raudenbush (1994) but with total variance (including sampling variance) in the denominator
+                  if (r2def == "1v")
+                     R2 <- (tau2.RE - tau2) / (tau2.RE + 1/mean(1/vi))
+
+                  # model component definition with tau^2_RE in the denominator
+                  if (r2def == "3")
+                     R2 <- var(c(X%*%beta)) / tau2.RE
+
+                  # model component definition with total variance (including sampling variance) in the denominator
+                  if (r2def == "3v")
+                     R2 <- var(c(X%*%beta)) / (tau2.RE + 1/mean(1/vi))
+
+                  # like McFadden's R^2
+                  if (r2def == "5")
+                     R2 <- 1 - ll1 / ll0
+
+                  # like Cox & Snell R^2
+                  if (r2def == "6")
+                     R2 <- 1 - (exp(ll0) / exp(ll1))^(2/k)
+
+                  # like Nagelkerke R^2
+                  if (r2def == "7")
+                     R2 <- (1 - (exp(ll0) / exp(ll1))^(2/k)) / (1 - exp(ll0)^(2/k))
+
+                  # how close ME model is to the saturated model in terms of ll (same as 5 for REML)
+                  if (r2def == "8")
+                     R2 <- (ll1 - ll0) / (lls - ll0)
+
+               }
+
+            } else {
+
+               R2 <- NA
+
+            }
+
+         } else {
+
+            # model component definition
+            if (r2def == "2")
+               R2 <- var(c(X%*%beta)) / (var(c(X%*%beta)) + tau2)
+
+            # model component definition with total variance (including sampling variance) in the denominator
+            if (r2def == "2v")
+               R2 <- var(c(X%*%beta)) / (var(c(X%*%beta)) + tau2 + 1/mean(1/vi))
+
+            # squared correlation between observed and fitted values
+            if (r2def == "4")
+               R2 <- cor(yi, c(X%*%beta))^2
+
+            # squared weighted correlation between observed and fitted values
+            if (r2def == "4w") {
+               if (is.null(weights)) {
+                  # identical to eta^2 = F * df1 / (F * df1 + df2) when test="knha"
+                  R2 <- cov.wt(cbind(dat$yi, c(X%*%beta)), cor=TRUE, wt=1/(vi+tau2))$cor[1,2]^2
+               } else {
+                  R2 <- cov.wt(cbind(dat$yi, c(X%*%beta)), cor=TRUE, wt=weights)$cor[1,2]^2
+               }
+            }
+
+         }
+
+         R2 <- max(0, 100 * R2)
+
+      }
+
+   } else {
+
+      R2 <- NULL
+
+   }
+
+   #########################################################################
+
    ###### prepare output
 
    if (verbose > 1)
@@ -2282,7 +2520,7 @@ level=95, digits, btt, att, tau2, verbose=FALSE, control, ...) {
    p.eff <- p
    k.eff <- k
 
-   if (is.null(ddd$outlist)) {
+   if (is.null(ddd$outlist) || ddd$outlist == "nodata") {
 
       res <- list(b=beta, beta=beta, se=se, zval=zval, pval=pval, ci.lb=ci.lb, ci.ub=ci.ub, vb=vb,
                   tau2=tau2, se.tau2=se.tau2, tau2.fix=tau2.fix, tau2.f=tau2,
@@ -2294,13 +2532,16 @@ level=95, digits, btt, att, tau2, verbose=FALSE, control, ...) {
                   ai.f=ai.f, bi.f=bi.f, ci.f=ci.f, di.f=di.f,
                   x1i.f=x1i.f, x2i.f=x2i.f, t1i.f=t1i.f, t2i.f=t2i.f, ni=ni, ni.f=ni.f,
                   ids=ids, not.na=not.na, subset=subset, slab=slab, slab.null=slab.null,
-                  measure=measure, method=method, model=model, weighted=weighted,
+                  measure=measure, method=method[1], model=model, weighted=weighted,
                   test=test, dfs=ddf, ddf=ddf, s2w=s2w, btt=btt, m=m,
                   digits=digits, level=level, control=control, verbose=verbose,
                   add=add, to=to, drop00=drop00,
                   fit.stats=fit.stats,
                   formula.yi=formula.yi, formula.mods=formula.mods,
                   version=packageVersion("metafor"), call=mf)
+
+      if (is.null(ddd$outlist))
+         res <- append(res, list(data=data), which(names(res) == "fit.stats"))
 
    }
 
@@ -2313,12 +2554,12 @@ level=95, digits, btt, att, tau2, verbose=FALSE, control, ...) {
                      QE=QE, QEp=QEp, QM=QM, QMdf=QMdf, QMp=QMp,
                      k=k, k.eff=k.eff, p=p, p.eff=p.eff, parms=parms,
                      int.only=int.only,
-                     measure=measure, method=method, model=model,
+                     measure=measure, method=method[1], model=model,
                      test=test, dfs=ddf, ddf=ddf, btt=btt, m=m,
                      digits=digits,
                      fit.stats=fit.stats)
       } else {
-         res <- eval(parse(text=paste0("list(", ddd$outlist, ")")))
+         res <- eval(str2lang(paste0("list(", ddd$outlist, ")")))
       }
 
    }
@@ -2368,6 +2609,7 @@ level=95, digits, btt, att, tau2, verbose=FALSE, control, ...) {
    } else {
       class(res) <- c("rma.uni", "rma")
    }
+
    return(res)
 
 }

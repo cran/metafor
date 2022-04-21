@@ -7,9 +7,9 @@
 # test="knha") directly to the function via the ci.lb and ci.ub (and pi.lb and
 # pi.ub) arguments.
 
-addpoly.default <- function(x, vi, sei, ci.lb, ci.ub, pi.lb, pi.ub,
-rows=-1, level=95, annotate=TRUE, digits=2, width, mlab, transf,
-atransf, targs, efac=1, col, border, fonts, cex, ...) {
+addpoly.default     <- function(x, vi, sei, ci.lb, ci.ub, pi.lb, pi.ub,
+rows=-1, level,         annotate,                digits, width, mlab,
+transf, atransf, targs, efac, col, border, lty, fonts, cex, ...) {
 
    #########################################################################
 
@@ -20,17 +20,40 @@ atransf, targs, efac=1, col, border, fonts, cex, ...) {
    if (!is.element(na.act, c("na.omit", "na.exclude", "na.fail", "na.pass")))
       stop(mstyle$stop("Unknown 'na.action' specified under options()."))
 
+   if (missing(x))
+      stop(mstyle$stop("Must specify the 'x' argument."))
+
+   k <- length(x)
+
+   if (missing(level))
+      level <- .getfromenv("forest", "level", default=95)
+
+   if (missing(annotate))
+      annotate <- .getfromenv("forest", "annotate", default=TRUE)
+
+   if (missing(digits))
+      digits <- .getfromenv("forest", "digits", default=2)
+
+   if (missing(width))
+      width <- .getfromenv("forest", "width", default=NULL)
+
    if (missing(transf))
-      transf <- FALSE
+      transf <- .getfromenv("forest", "transf", default=FALSE)
 
    if (missing(atransf))
-      atransf <- FALSE
+      atransf <- .getfromenv("forest", "atransf", default=FALSE)
 
    if (is.function(transf) && is.function(atransf))
       stop(mstyle$stop("Use either 'transf' or 'atransf' to specify a transformation (not both)."))
 
    if (missing(targs))
-      targs <- NULL
+      targs <- .getfromenv("forest", "targs", default=NULL)
+
+   if (missing(efac))
+      efac <- .getfromenv("forest", "efac", default=1)
+
+   if (missing(fonts))
+      fonts <- .getfromenv("forest", "fonts", default=NULL)
 
    if (missing(mlab))
       mlab <- NULL
@@ -41,8 +64,11 @@ atransf, targs, efac=1, col, border, fonts, cex, ...) {
    if (missing(border))
       border <- "black"
 
+   if (missing(lty))
+      lty <- "dotted"
+
    if (missing(cex))
-      cex <- NULL
+      cex <- .getfromenv("forest", "cex", default=NULL)
 
    ddd <- list(...)
 
@@ -51,30 +77,66 @@ atransf, targs, efac=1, col, border, fonts, cex, ...) {
    if (!is.null(ddd$cr.ub))
       pi.ub <- ddd$cr.ub
 
-   lsegments <- function(..., cr.lb, cr.ub, addcred, pi.type) segments(...)
-   ltext     <- function(..., cr.lb, cr.ub, addcred, pi.type) text(...)
-   lpolygon  <- function(..., cr.lb, cr.ub, addcred, pi.type) polygon(...)
+   if (is.null(mlab)) {
+      mlab <- rep("", k)
+   } else {
+      if (length(mlab) == 1L)
+         mlab <- rep(mlab, k)
+      if (length(mlab) != k)
+         stop(mstyle$stop(paste0("Length of the 'mlab' argument (", length(mlab), ") does not correspond to the number of polygons to be plotted (", k, ").")))
+   }
+
+   if (length(lty) == 1L)
+      lty <- c(lty, "solid")
+
+   ### annotation symbols vector
+
+   if (is.null(ddd$annosym)) {
+      annosym <- .getfromenv("forest", "annosym", default=NULL)
+   } else {
+      annosym <- ddd$annosym
+   }
+
+   if (is.null(annosym))
+      annosym <- c(" [", ", ", "]", "-") # 4th element for minus sign symbol
+   if (length(annosym) == 3L)
+      annosym <- c(annosym, "-")
+   if (length(annosym) != 4L)
+      stop(mstyle$stop("Argument 'annosym' must be a vector of length 3 (or 4)."))
+
+   if (!is.null(ddd$lcol)) {
+      lcol <- ddd$lcol
+   } else {
+      lcol <- "gray50"
+   }
+
+   lsegments <- function(..., cr.lb, cr.ub, addcred, pi.type, lcol, annosym, textpos) segments(...)
+   ltext     <- function(..., cr.lb, cr.ub, addcred, pi.type, lcol, annosym, textpos) text(...)
+   lpolygon  <- function(..., cr.lb, cr.ub, addcred, pi.type, lcol, annosym, textpos) polygon(...)
 
    ### set/get fonts (1st for labels, 2nd for annotations)
    ### when passing a named vector, the names are for 'family' and the values are for 'font'
 
-   if (missing(fonts) || is.null(fonts)) {
-      fonts <- rep(par("family"), 2)
+   if (is.null(fonts)) {
+      fonts <- rep(par("family"), 2L)
    } else {
       if (length(fonts) == 1L)
-         fonts <- rep(fonts, 2)
+         fonts <- rep(fonts, 2L)
    }
 
    if (is.null(names(fonts)))
-      fonts <- structure(c(1L,1L), names=fonts)
+      fonts <- setNames(c(1L,1L), nm=fonts)
 
    par(family=names(fonts)[1], font=fonts[1])
 
    #########################################################################
 
-   level <- ifelse(level == 0, 1, ifelse(level >= 1, (100-level)/100, ifelse(level > .5, 1-level, level)))
+   level <- .level(level)
 
    yi <- x
+
+   if (!missing(vi) && is.function(vi)) # if vi is utils::vi()
+      stop(mstyle$stop("Cannot find variable specified for 'vi' argument."), call.=FALSE)
 
    if (hasArg(ci.lb) && hasArg(ci.ub)) {
 
@@ -115,7 +177,7 @@ atransf, targs, efac=1, col, border, fonts, cex, ...) {
          }
       }
 
-      if (length(yi) != length(vi))
+      if (length(vi) != k)
          stop(mstyle$stop("Length of 'vi' (or 'sei') does not match length of 'x'."))
 
       ci.lb <- yi - qnorm(level/2, lower.tail=FALSE) * sqrt(vi)
@@ -128,17 +190,15 @@ atransf, targs, efac=1, col, border, fonts, cex, ...) {
       if (length(pi.lb) != length(pi.ub))
          stop(mstyle$stop("Length of 'pi.lb' and 'pi.ub' is not the same."))
 
-      if (length(pi.lb) != length(yi))
+      if (length(pi.lb) != k)
          stop(mstyle$stop("Length of ('pi.lb', 'pi.ub') does not match length of 'x'."))
 
    } else {
 
-      pi.lb <- rep(NA, length(yi))
-      pi.ub <- rep(NA, length(yi))
+      pi.lb <- rep(NA, k)
+      pi.ub <- rep(NA, k)
 
    }
-
-   k <- length(yi)
 
    ### set rows value
 
@@ -149,8 +209,8 @@ atransf, targs, efac=1, col, border, fonts, cex, ...) {
          rows <- rows:(rows-k+1)
    }
 
-   if (length(rows) != length(yi))
-      stop(mstyle$stop(paste0("Length of the 'rows' argument (", length(rows), ") does not correspond to the number of polygons to be plotted (", length(yi), ").")))
+   if (length(rows) != k)
+      stop(mstyle$stop(paste0("Length of the 'rows' argument (", length(rows), ") does not correspond to the number of polygons to be plotted (", k, ").")))
 
    ### check for NAs in yi/vi and act accordingly
 
@@ -227,6 +287,23 @@ atransf, targs, efac=1, col, border, fonts, cex, ...) {
    if (is.null(cex))
       cex <- par("cex") * cex.adj
 
+   ### allow adjustment of position of study labels and annotations via textpos argument
+
+   if (is.null(ddd$textpos)) {
+      textpos <- .getfromenv("forest", "textpos", default=xlim)
+   } else {
+      textpos <- ddd$textpos
+   }
+
+   if (length(textpos) != 2L)
+      stop(mstyle$stop("Argument 'textpos' must be of length 2."))
+
+   if (is.na(textpos[1]))
+      textpos[1] <- xlim[1]
+
+   if (is.na(textpos[2]))
+      textpos[2] <- xlim[2]
+
    ### add annotations
 
    if (annotate) {
@@ -250,8 +327,9 @@ atransf, targs, efac=1, col, border, fonts, cex, ...) {
       }
 
       annotext <- .fcf(annotext, digits)
+      annotext <- sub("-", annosym[4], annotext, fixed=TRUE)
 
-      if (missing(width) || is.null(width)) {
+      if (is.null(width)) {
          width <- apply(annotext, 2, function(x) max(nchar(x)))
       } else {
          if (length(width) == 1L)
@@ -262,10 +340,10 @@ atransf, targs, efac=1, col, border, fonts, cex, ...) {
          annotext[,j] <- formatC(annotext[,j], width=width[j])
       }
 
-      annotext <- cbind(annotext[,1], " [", annotext[,2], ", ", annotext[,3], "]")
+      annotext <- cbind(annotext[,1], annosym[1], annotext[,2], annosym[2], annotext[,3], annosym[3])
       annotext <- apply(annotext, 1, paste, collapse="")
       par(family=names(fonts)[2], font=fonts[2])
-      ltext(x=xlim[2], rows, labels=annotext, pos=2, cex=cex, ...)
+      ltext(x=textpos[2], rows, labels=annotext, pos=2, cex=cex, ...)
       par(family=names(fonts)[1], font=fonts[1])
 
    }
@@ -276,21 +354,27 @@ atransf, targs, efac=1, col, border, fonts, cex, ...) {
    if (length(border) == 1L)
       border <- rep(border, k)
 
+   if (length(lcol) == 1L)
+      lcol <- rep(lcol, k)
+
    ### add polygon(s)
 
    for (i in seq_len(k)) {
 
-      lsegments(pi.lb[i], rows[i], pi.ub[i], rows[i], lty="dotted", col="gray50", ...)
-      lsegments(pi.lb[i], rows[i]-(height/150)*cex*efac, pi.lb[i], rows[i]+(height/150)*cex*efac, col="gray50", ...)
-      lsegments(pi.ub[i], rows[i]-(height/150)*cex*efac, pi.ub[i], rows[i]+(height/150)*cex*efac, col="gray50", ...)
+      ### prediction interval(s)
+      lsegments(pi.lb[i], rows[i], pi.ub[i], rows[i], lty=lty[1], col=lcol[i], ...)
+      lsegments(pi.lb[i], rows[i]-(height/150)*cex*efac, pi.lb[i], rows[i]+(height/150)*cex*efac, col=lcol[i], lty=lty[2], ...)
+      lsegments(pi.ub[i], rows[i]-(height/150)*cex*efac, pi.ub[i], rows[i]+(height/150)*cex*efac, col=lcol[i], lty=lty[2], ...)
 
+      ### polygon(s)
       lpolygon(x=c(ci.lb[i], yi[i], ci.ub[i], yi[i]), y=c(rows[i], rows[i]+(height/100)*cex*efac, rows[i], rows[i]-(height/100)*cex*efac), col=col[i], border=border[i], ...)
 
+      ### label(s)
       if (!is.null(mlab)) {
          if (is.list(mlab)) {
-            ltext(xlim[1], rows[i], mlab[[i]], pos=4, cex=cex, ...)
+            ltext(x=textpos[1], rows[i], mlab[[i]], pos=4, cex=cex, ...)
          } else {
-            ltext(xlim[1], rows[i], mlab[i], pos=4, cex=cex, ...)
+            ltext(x=textpos[1], rows[i], mlab[i], pos=4, cex=cex, ...)
          }
       }
 

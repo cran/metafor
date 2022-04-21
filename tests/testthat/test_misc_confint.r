@@ -2,11 +2,10 @@
 
 context("Checking misc: confint() function")
 
-source("tolerances.r") # read in tolerances
+source("settings.r")
 
 test_that("confint() works correctly for 'rma.uni' objects.", {
 
-   data(dat.bcg, package="metafor")
    dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
    res <- rma(yi, vi, data=dat, method="DL")
    sav <- confint(res, fixed=TRUE, transf=exp)
@@ -20,7 +19,6 @@ test_that("confint() works correctly for 'rma.uni' objects.", {
 
 test_that("confint() works correctly for 'rma.mh' objects.", {
 
-   data(dat.bcg, package="metafor")
    res <- rma.mh(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
    sav <- confint(res, transf=exp)
 
@@ -30,10 +28,11 @@ test_that("confint() works correctly for 'rma.mh' objects.", {
 
 test_that("confint() works correctly for 'rma.peto' objects.", {
 
-   data(dat.bcg, package="metafor")
    res <- rma.peto(ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
    sav <- confint(res, transf=exp)
 
    expect_equivalent(sav$fixed, c(0.6222, 0.5746, 0.6738), tolerance=.tol[["ci"]])
 
 })
+
+rm(list=ls())

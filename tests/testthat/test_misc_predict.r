@@ -2,11 +2,10 @@
 
 context("Checking misc: predict() function")
 
-source("tolerances.r") # read in tolerances
+source("settings.r")
 
 test_that("predict() correctly matches named vectors in 'newmods'", {
 
-   data(dat.bcg, package="metafor")
    dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
    dat$alloc[dat$alloc == "systematic"] <- "system"
 
@@ -48,7 +47,6 @@ test_that("predict() correctly matches named vectors in 'newmods'", {
 
 test_that("predict() gives correct results when vcov=TRUE", {
 
-   data(dat.bcg, package="metafor")
    dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
 
    res <- rma(yi, vi, data=dat)
@@ -60,3 +58,5 @@ test_that("predict() gives correct results when vcov=TRUE", {
    expect_equivalent(sav$pred$se, c(sqrt(diag(sav$vcov))), tolerance=.tol[["se"]])
 
 })
+
+rm(list=ls())

@@ -18,13 +18,13 @@ vif(x, \dots)
    \item{btt}{optional vector of indices to specify a set of coefficients for which a generalized variance inflation factor (GVIF) should be computed. Can also be a string to grep for. See \sQuote{Details}.}
    \item{intercept}{logical to specify whether to include the intercept (if the model includes one) in the computation of the VIFs (the default is \code{FALSE}). See \sQuote{Note}.}
    \item{table}{logical to specify whether the VIFs should be added to the model coefficient table (the default is \code{FALSE}).}
-   \item{digits}{integer to specify the number of decimal places to which the printed results should be rounded. If unspecified, the default is to take the value from the object.}
+   \item{digits}{optional integer to specify the number of decimal places to which the printed results should be rounded. If unspecified, the default is to take the value from the object.}
    \item{\dots}{other arguments.}
 }
 \details{
    The function computes variance inflation factors (VIFs) for meta-regression models. Hence, the model specified via argument \code{x} must include moderator variables (and more than one for this to be useful, as the VIF for a model with a single moderator variable will always be equal to 1).
 
-   Let \mjseqn{b_j} denote the estimate of the \mjseqn{j}th model coefficient of a particular meta-regression model and \mjeqn{\mbox{Var}[b_j]}{Var[b_j]} its variance (i.e., the corresponding diagonal element from the matrix obtained with the \code{\link{vcov.rma}} function). Moreover, let \mjseqn{b'_j} denote the estimate of the same model coefficient if the other moderator variables in the model had \emph{not} been included in the model and \mjeqn{\mbox{Var}[b'_j]}{Var[b'_j]} the corresponding variance. Then the VIF for the model coefficient is given by \mjdeqn{\mbox{VIF}[b_j] = \frac{\mbox{Var}[b_j]}{\mbox{Var}[b'_j]},}{VIF[b_j] = Var[b_j] / Var[b'_j],} which indicates the inflation in the variance of the estimated model coefficient due to potential collinearity of the \mjseqn{j}th moderator variable with the other moderator variables in the model. Taking the square root of a VIF gives the corresponding standard error inflation factor (SIF).
+   Let \mjseqn{b_j} denote the estimate of the \mjeqn{j\textrm{th}}{jth} model coefficient of a particular meta-regression model and \mjeqn{\mbox{Var}[b_j]}{Var[b_j]} its variance (i.e., the corresponding diagonal element from the matrix obtained with the \code{\link[=vcov.rma]{vcov}} function). Moreover, let \mjseqn{b'_j} denote the estimate of the same model coefficient if the other moderator variables in the model had \emph{not} been included in the model and \mjeqn{\mbox{Var}[b'_j]}{Var[b'_j]} the corresponding variance. Then the VIF for the model coefficient is given by \mjdeqn{\mbox{VIF}[b_j] = \frac{\mbox{Var}[b_j]}{\mbox{Var}[b'_j]},}{VIF[b_j] = Var[b_j] / Var[b'_j],} which indicates the inflation in the variance of the estimated model coefficient due to potential collinearity of the \mjeqn{j\textrm{th}}{jth} moderator variable with the other moderator variables in the model. Taking the square root of a VIF gives the corresponding standard error inflation factor (SIF).
 
    If \code{btt} is not specified, then the VIF is computed for each individual model coefficient. However, if the model includes factors (coded in terms of multiple dummy variables) or other sets of moderator variables that belong together (e.g., for polynomials or cubic splines), one may want to examine how much the variance in all of the coefficients in the set is jointly impacted by collinearity with the other moderator variables in the model. For this, we can compute a generalized variance inflation factor (GVIF) (Fox & Monette, 1992) by setting the \code{btt} argument equal to the indices of those coefficients for which the GVIF should be computed. The square root of a GVIF indicates the inflation in the confidence ellipse/(hyper)ellipsoid for the set of coefficients corresponding to the set due to collinearity. However, to make this value more directly comparable to SIFs (based on single coefficients) or when the set includes a different number of coefficients, the function computes the generalized standard error inflation factor (GSIF) by raising the GVIF to the power of \mjseqn{1/(2m)} (where \mjseqn{m} denotes the number of coefficients in the set).
 }
@@ -58,7 +58,7 @@ vif(x, \dots)
    Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \verb{https://doi.org/10.18637/jss.v036.i03}
 }
 \seealso{
-   \code{\link{rma.uni}}, \code{\link{rma.mv}}, \code{\link{rma.glmm}}
+   \code{\link{rma.uni}}, \code{\link{rma.glmm}}, and \code{\link{rma.mv}} for functions to fit models for which variance inflation factors can be computed.
 }
 \examples{
 ### copy data from Bangert-Drowns et al. (2004) into 'dat'

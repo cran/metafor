@@ -1,3 +1,65 @@
+# metafor 3.4-0 (2022-04-21)
+
+- added `misc-models`, `misc-recs`, and `misc-options` help pages
+
+- added `as.data.frame.confint.rma()` and `as.data.frame.list.confint.rma` methods
+
+- `permutest()` can now also do permutation tests for location-scale models; it also always returns the permutation distributions; hence, argument `retpermdist` was removed
+
+- added `plot.permutest.rma.uni()` function to plot the permutation distributions
+
+- simplified `regtest()`, `ranktest()`, and `tes()` to single functions instead of using generics and methods; this way, a `data` argument could be added
+
+- added `vcalc()` and `blsplit()` functions
+
+- `robust()` gains `clubSandwich` argument; if set to `TRUE`, the methods from the `clubSandwich` package (https://cran.r-project.org/package=clubSandwich) are used to obtain the cluster-robust results; `anova.rma()` and `predict.rma()` updated to work appropriately in this case
+
+- results from `robust()` are no longer printed with `print.robust.rma()` but with the print methods `print.rma.uni()` and `print.rma.mv()`
+
+- `anova.rma()` now gives a warning when running LRTs not based on ML/REML estimation and gains `rhs` argument; it also now has a `refit` argument (to refit REML fits with ML in case the fixed effects of the models differ)
+
+- setting `dfs="contain"` in `rma.mv()` automatically sets `test="t"` for convenience
+
+- elements of `rho` and `phi` in `rma.mv()` are now based on the lower triangular part of the respective correlation matrix (instead of the upper triangular part) for consistency with other functions; note that this is in principle a backwards incompatible change, although this should only be a concern in very special circumstances
+
+- `rma.mv()` gains `cvvc` argument (for calculating the var-cov matrix of the variance/correlation/covariance components)
+
+- added measure `"MPORM"` to `escalc()` for computing marginal log odds ratios based on marginal 2x2 tables directly (which requires specification of the correlation coefficients in the paired tables for the calculation of the sampling variances via the `ri` argument)
+
+- added measure `"REH"` to `escalc()` for computing the (log transformed) relative excess heterozygosity (to assess deviations from the Hardy-Weinberg equilibrium)
+
+- `aggregate.escalc()` gains `checkpd` argument and `struct="CS+CAR"`
+
+- `rma.glmm()` now has entire array of optimizers available for `model="CM.EL"` and `measure="OR"`; switched the default from `optim()` with method `BFGS` to `nlminb()` for consistency with `rma.mv()`, `rma.uni()`, and `selmodel.rma.uni()`
+
+- `rma.glmm()` gains `coding` and `cor` arguments and hence more flexibility how the group variable should be coded in the random effects structure and whether the random study effects should be allowed to be correlated with the random group effects
+
+- `rma.uni()` now also provides R^2 for fixed-effects models
+
+- `matreg()` can now also analyze a covariance matrix with a corresponding `V` matrix; can also specify variable names (instead of indices) for arguments `x` and `y`
+
+- renamed argument `nearPD` to `nearpd` in `matreg()` (but `nearPD` continues to work)
+
+- `plot.profile.rma()` gains `refline` argument
+
+- added `addpoly.rma.predict()` method
+
+- `addpoly.default()` and `addpoly.rma()` gain `lty` and `annosym` arguments; if unspecified, arguments `annotate`, `digits`, `width`, `transf`, `atransf`, `targs`, `efac`, `fonts`, `cex`, and `annosym` are now automatically set equal to the same values that were used when creating the forest plot
+
+- documented `textpos` and `rowadj` arguments for the various `forest` functions and moved the `top` and `annosym` arguments to 'additional arguments'
+
+- fixed that `level` argument in `addpoly.rma()` did not affect the CI width
+
+- `points.regplot()` function now also redraws the labels (if there were any to begin with)
+
+- added `lbfgsb3c`, `subplex`, and `BBoptim` as possible optimizer in `rma.mv()`, `rma.glmm()`, `rma.uni()`, and `selmodel.rma.uni()`
+
+- the object returned by model fitting functions now includes the data frame specified via the `data` argument; various method functions now automatically look for specified variables within this data frame first
+
+- datasets moved to the `metadat` package (https://cran.r-project.org/package=metadat)
+
+- improved the documentation a bit
+
 # metafor 3.0-2 (2021-06-09)
 
 - the `metafor` package now makes use of the `mathjaxr` package to nicely render equations shown in the HTML help pages
@@ -218,7 +280,7 @@
 
 - various method functions (`fitted()`, `resid()`, `predict()`, etc.) behave in a more consistent manner when model omitted studies with missings
 
-- `predict.rma()` gains `vcov` argument; when set to `TRUE`, the variance- covariance matrix of the predicted values is also returned
+- `predict.rma()` gains `vcov` argument; when set to `TRUE`, the variance-covariance matrix of the predicted values is also returned
 
 - `vcov.rma()` can now also return the variance-covariance matrix of the fitted values (`type="fitted"`) and the residuals (`type="resid"`)
 
@@ -298,7 +360,7 @@
 
 # metafor 1.9-9 (2016-09-25)
 
-- started to use git as version control system, GitHub to host the repository (https://github.com/wviechtb/metafor) for the development version of the package, Travis CI as continuous integration service (https://travis-ci.org/wviechtb/metafor), and Codecov for automated code coverage reporting (https://codecov.io/github/wviechtb/metafor)
+- started to use git as version control system, GitHub to host the repository (https://github.com/wviechtb/metafor) for the development version of the package, Travis CI as continuous integration service (https://travis-ci.org/wviechtb/metafor), and Codecov for automated code coverage reporting (https://app.codecov.io/gh/wviechtb/metafor)
 
 - argument `knha` in `rma.uni()` and argument `tdist` in `rma.glmm()` and `rma.mv()` are now superseded by argument `test` in all three functions; for backwards compatibility, the `knha` and `tdist` arguments still work, but are no longer documented
 
@@ -450,7 +512,7 @@
 
 - added a new dataset (`dat.senn2013`) as another illustration of a network meta-analysis
 
-- metafor now depends on at least version 3.1.0 of R
+- `metafor` now depends on at least version 3.1.0 of R
 
 # metafor 1.9-5 (2014-11-24)
 
@@ -682,7 +744,7 @@
 
 - vignette renamed to `metafor` so `vignette("metafor")` works now
 
-- added a diagram to the documentation, showing the various functions in the metafor package (and how they relate to each other); can be loaded with `vignette("metafor_diagram")`
+- added a diagram to the documentation, showing the various functions in the `metafor` package (and how they relate to each other); can be loaded with `vignette("metafor_diagram")`
 
 - `anova.rma.uni()` function can now also be used to test (sub)sets of model coefficients with a Wald-type test when a single model is passed to the function
 
@@ -883,7 +945,7 @@
 
 # metafor 1.5-0 (2010-12-16)
 
-- the `metafor` package now has its own project website at: http://www.metafor-project.org/
+- the `metafor` package now has its own project website at: https://www.metafor-project.org/
 
 - added `labbe()` function to create L'Abbe plots
 

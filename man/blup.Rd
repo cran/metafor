@@ -3,7 +3,7 @@
 \alias{blup.rma.uni}
 \title{Best Linear Unbiased Predictions for 'rma.uni' Objects}
 \description{
-   The function calculates best linear unbiased predictions (BLUPs) of the study-specific true effect sizes or outcomes by combining the fitted values based on the fixed effects and the estimated contributions of the random effects for objects of class \code{"rma.uni"}. Corresponding standard errors and prediction interval bounds are also provided. \loadmathjax
+   The function computes best linear unbiased predictions (BLUPs) of the study-specific true effect sizes or outcomes by combining the fitted values based on the fixed effects and the estimated contributions of the random effects for objects of class \code{"rma.uni"}. Corresponding standard errors and prediction interval bounds are also provided. \loadmathjax
 }
 \usage{
 blup(x, \dots)
@@ -13,7 +13,7 @@ blup(x, \dots)
 \arguments{
    \item{x}{an object of class \code{"rma.uni"}.}
    \item{level}{numeric value between 0 and 100 to specify the prediction interval level. If unspecified, the default is to take the value from the object.}
-   \item{digits}{integer to specify the number of decimal places to which the printed results should be rounded. If unspecified, the default is to take the value from the object.}
+   \item{digits}{optional integer to specify the number of decimal places to which the printed results should be rounded. If unspecified, the default is to take the value from the object.}
    \item{transf}{optional argument to specify a function that should be used to transform the predicted values and interval bounds (e.g., \code{transf=exp}; see also \link{transf}). If unspecified, no transformation is used.}
    \item{targs}{optional arguments needed by the function specified under \code{transf}.}
    \item{\dots}{other arguments.}
@@ -26,22 +26,22 @@ blup(x, \dots)
    \item{pi.ub}{upper bound of the prediction intervals.}
    \item{\dots}{some additional elements/values.}
 
-   The object is formatted and printed with \code{\link{print.list.rma}}.
+   The object is formatted and printed with the \code{\link[=print.list.rma]{print}} function.
 }
 \note{
    For best linear unbiased predictions of only the random effects, see \code{\link{ranef}}.
 
-   For predicted/fitted values that are based only on the fixed effects of the model, see \code{\link{fitted.rma}} and \code{\link{predict.rma}}.
+   For predicted/fitted values that are based only on the fixed effects of the model, see \code{\link[=fitted.rma]{fitted}} and \code{\link[=predict.rma]{predict}}.
 
    For conditional residuals (the deviations of the observed effect sizes or outcomes from the BLUPs), see \code{rstandard.rma.uni} with \code{type="conditional"}.
 
-   Fixed-effects models (with or without moderators) do not contain random study effects. The BLUPs for these models will therefore be equal to the fitted values, that is, those obtained with \code{\link{fitted.rma}} and \code{\link{predict.rma}}.
+   Equal-effects models do not contain random study effects. The BLUPs for these models will therefore be equal to the fitted values, that is, those obtained with \code{\link[=fitted.rma]{fitted}} and \code{\link[=predict.rma]{predict}}.
 
    When using the \code{transf} argument, the transformation is applied to the predicted values and the corresponding interval bounds. The standard errors are then set equal to \code{NA} and are omitted from the printed output.
 
-   By default, a standard normal distribution is used to calculate the prediction intervals. When the model was fitted with \code{test="t"} or \code{test="knha"}, then a t-distribution with \mjseqn{k-p} degrees of freedom is used.
+   By default, a standard normal distribution is used to construct the prediction intervals. When the model was fitted with \code{test="t"} or \code{test="knha"}, then a t-distribution with \mjseqn{k-p} degrees of freedom is used.
 
-   To be precise, it should be noted that the function actually calculates empirical BLUPs (eBLUPs), since the predicted values are a function of the estimated value of \mjseqn{\tau^2}.
+   To be precise, it should be noted that the function actually computes empirical BLUPs (eBLUPs), since the predicted values are a function of the estimated value of \mjseqn{\tau^2}.
 }
 \author{
    Wolfgang Viechtbauer \email{wvb@metafor-project.org} \url{https://www.metafor-project.org}
@@ -56,7 +56,9 @@ blup(x, \dots)
    Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \verb{https://doi.org/10.18637/jss.v036.i03}
 }
 \seealso{
-   \code{\link{rma.uni}}, \code{\link{predict.rma}}, \code{\link{fitted.rma}}, \code{\link{ranef.rma.uni}}
+   \code{\link{rma.uni}} for the function to fit models for which BLUPs can be extracted.
+
+   \code{\link{predict.rma}} and \code{\link{fitted.rma}} for functions to compute the predicted/fitted values based only on the fixed effects and \code{\link{ranef.rma.uni}} for a function to compute the BLUPs based only on the random effects.
 }
 \examples{
 ### calculate log risk ratios and corresponding sampling variances
@@ -77,7 +79,7 @@ segments(rep(1,13), dat$yi, rep(2,13), blups, col="darkgray")
 points(rep(1,13), dat$yi, pch=19)
 points(rep(2,13), blups, pch=19)
 axis(side=1, at=c(1,2), labels=c("Observed\nValues", "BLUPs"), lwd=0)
-segments(.7, res$beta, 2.15, res$beta, lty="dotted")
-text(2.3, res$beta, expression(hat(mu)==-0.71), cex=1)
+segments(0, res$beta, 2.15, res$beta, lty="dotted")
+text(2.3, res$beta, substitute(hat(mu)==muhat, list(muhat=round(res$beta[[1]], 2))), cex=1)
 }
 \keyword{models}

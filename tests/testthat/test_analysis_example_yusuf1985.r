@@ -4,7 +4,7 @@
 
 context("Checking analysis example: yusuf1985")
 
-source("tolerances.r") # read in tolerances
+source("settings.r")
 
 ### create dataset for example
 dat <- dat.yusuf1985
@@ -43,7 +43,7 @@ test_that("results are correct for the analysis using the inverse-variance metho
    expect_warning(dat <- escalc(measure="PETO", ai=ai, n1i=n1i, ci=ci, n2i=n2i,
                          data=dat, subset=(table=="6"), add=0))
 
-   expect_warning(res <- rma(yi, vi, data=dat, method="FE"))
+   expect_warning(res <- rma(yi, vi, data=dat, method="EE"))
    sav <- predict(res, transf=exp)
    tmp <- c(sav$pred, sav$ci.lb, sav$ci.ub)
 
@@ -51,3 +51,5 @@ test_that("results are correct for the analysis using the inverse-variance metho
    expect_equivalent(tmp, c(.9332, .7385, 1.1792), tolerance=.tol[["pred"]])
 
 })
+
+rm(list=ls())

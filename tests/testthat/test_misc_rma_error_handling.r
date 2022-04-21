@@ -2,11 +2,10 @@
 
 context("Checking misc: proper handling of errors in rma()")
 
-source("tolerances.r") # read in tolerances
+source("settings.r")
 
 test_that("rma() handles NAs correctly.", {
 
-   data(dat.bcg, package="metafor")
    dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
 
    dat$yi[1] <- NA
@@ -25,3 +24,5 @@ test_that("rma() handles NAs correctly.", {
    ### TODO: complete this ...
 
 })
+
+rm(list=ls())

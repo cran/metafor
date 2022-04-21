@@ -2,6 +2,8 @@
 
 ### see also: https://www.metafor-project.org/doku.php/plots:baujat_plot
 
+source("settings.r")
+
 context("Checking plots example: Baujat plot")
 
 test_that("plot can be drawn.", {
@@ -23,7 +25,7 @@ test_that("plot can be drawn.", {
    dat$vi <- with(dat, 1/V)
 
    ### meta-analysis based on all 65 trials
-   res <- rma(yi, vi, data=dat, method="FE", slab=id)
+   res <- rma(yi, vi, data=dat, method="EE", slab=id)
 
    ### create Baujat plot
    baujat(res, xlim=c(0,20), ylim=c(0,.20))
@@ -31,3 +33,5 @@ test_that("plot can be drawn.", {
    par(opar)
 
 })
+
+rm(list=ls())

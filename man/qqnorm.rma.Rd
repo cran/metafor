@@ -35,7 +35,7 @@
    \item{\dots}{other arguments.}
 }
 \details{
-   The plot shows the theoretical quantiles of a normal distribution on the horizontal axis against the observed quantiles for either the standardized residuals (\code{type="rstandard"}, the default) or the externally standardized residuals (\code{type="rstudent"}) on the vertical axis (see \code{\link{residuals.rma}} for details on the definition of these residual types).
+   The plot shows the theoretical quantiles of a normal distribution on the horizontal axis against the observed quantiles for either the standardized residuals (\code{type="rstandard"}, the default) or the externally standardized residuals (\code{type="rstudent"}) on the vertical axis (see \code{\link[=residuals.rma]{residuals}} for details on the definition of these residual types).
 
    For reference, a line is added to the plot with slope of 1, going through the (0,0) point.
 
@@ -57,10 +57,12 @@
 
    Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \verb{https://doi.org/10.18637/jss.v036.i03}
 
+   Viechtbauer, W. (2021). Model checking in meta-analysis. In C. H. Schmid, T. Stijnen, & I. R. White (Eds.), \emph{Handbook of meta-analysis} (pp. 219--254). Boca Raton, FL: CRC Press. \verb{https://doi.org/10.1201/9781315119403}
+
    Wang, M. C., & Bushman, B. J. (1998). Using the normal quantile plot to explore meta-analytic data sets. \emph{Psychological Methods}, \bold{3}(1), 46--54. \verb{https://doi.org/10.1037/1082-989X.3.1.46}
 }
 \seealso{
-   \code{\link{rma.uni}}, \code{\link{rma.mh}}, \code{\link{rma.peto}}, \code{\link{rma.glmm}}, \code{\link{rma.mv}}
+   \code{\link{rma.uni}}, \code{\link{rma.mh}}, and \code{\link{rma.peto}} for functions to fit models for which normal QQ plots can be drawn.
 }
 \examples{
 ### calculate log risk ratios and corresponding sampling variances

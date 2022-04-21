@@ -10,7 +10,7 @@
       lty=c("solid","dotted"), lwd=c(2,1), \dots)
 }
 \arguments{
-   \item{x}{an object of class \code{"rma.uni.selmodel"}.}
+   \item{x}{an object of class \code{"rma.uni.selmodel"} obtained with \code{\link{selmodel}}.}
    \item{xlim}{x-axis limits. Essentially the range of p-values for which the selection function should be drawn. If unspecified, the function sets the limits automatically.}
    \item{ylim}{y-axis limits. If unspecified, the function sets the limits automatically.}
    \item{n}{numeric value to specify for how many p-values within the x-axis limits the function value should be computed (the default is 1000).}
@@ -40,7 +40,7 @@
    Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \verb{https://doi.org/10.18637/jss.v036.i03}
 }
 \seealso{
-   \code{\link{selmodel.rma.uni}}
+   \code{\link{selmodel.rma.uni}} for the function to fit models for which the estimated selection function can be drawn.
 }
 \examples{
 ### copy data into 'dat' and examine data

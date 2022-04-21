@@ -8,9 +8,9 @@
 \alias{cooks.distance.rma.uni}
 \alias{dfbetas.rma.uni}
 \alias{hatvalues.rma.uni}
-\title{Outlier and Influential Case Diagnostics for 'rma.uni' Objects}
+\title{Model Diagnostics for 'rma.uni' Objects}
 \description{
-   The functions can be used to compute various outlier and influential case diagnostics (some of which indicate the influence of deleting one case at a time on the model fit or the fitted/residual values) for objects of class \code{"rma.uni"}. For the corresponding help file for \code{"rma.mv"} objects, see \code{\link{influence.rma.mv}}. \loadmathjax
+   The functions can be used to compute various outlier and influential case diagnostics (some of which indicate the influence of deleting one case at a time on the model fit or the fitted/residual values) for objects of class \code{"rma.uni"}. For the corresponding documentation for \code{"rma.mv"} objects, see \code{\link{influence.rma.mv}}. \loadmathjax
 }
 \usage{
 \method{influence}{rma.uni}(model, digits, progbar=FALSE, \dots)
@@ -24,7 +24,7 @@
 \arguments{
    \item{model}{an object of class \code{"rma.uni"}.}
    \item{x}{an object of class \code{"infl.rma.uni"} (for \code{print}).}
-   \item{digits}{integer to specify the number of decimal places to which the printed results should be rounded. If unspecified, the default is to take the value from the object.}
+   \item{digits}{optional integer to specify the number of decimal places to which the printed results should be rounded. If unspecified, the default is to take the value from the object.}
    \item{progbar}{logical to specify whether a progress bar should be shown (the default is \code{FALSE}).}
    \item{infonly}{logical to specify whether only the influential cases should be printed (the default is \code{FALSE}).}
    \item{type}{character string to specify whether only the diagonal of the hat matrix (\code{"diagonal"}) or the entire hat matrix (\code{"matrix"}) should be returned.}
@@ -46,17 +46,17 @@
 
    For details on externally standardized residuals, see \code{\link{rstudent.rma.uni}}.
 
-   The DFFITS value essentially indicates how many standard deviations the predicted (average) effect or outcome for the \mjseqn{i}th case changes after excluding the \mjseqn{i}th case from the model fitting.
+   The DFFITS value essentially indicates how many standard deviations the predicted (average) effect or outcome for the \mjeqn{i\textrm{th}}{ith} case changes after excluding the \mjeqn{i\textrm{th}}{ith} case from the model fitting.
 
-   Cook's distance can be interpreted as the Mahalanobis distance between the entire set of predicted values once with the \mjseqn{i}th case included and once with the \mjseqn{i}th case excluded from the model fitting.
+   Cook's distance can be interpreted as the Mahalanobis distance between the entire set of predicted values once with the \mjeqn{i\textrm{th}}{ith} case included and once with the \mjeqn{i\textrm{th}}{ith} case excluded from the model fitting.
 
-   The covariance ratio is defined as the determinant of the variance-covariance matrix of the parameter estimates based on the dataset with the \mjseqn{i}th case removed divided by the determinant of the variance-covariance matrix of the parameter estimates based on the complete dataset. A value below 1 therefore indicates that removal of the \mjseqn{i}th case yields more precise estimates of the model coefficients.
+   The covariance ratio is defined as the determinant of the variance-covariance matrix of the parameter estimates based on the dataset with the \mjeqn{i\textrm{th}}{ith} case removed divided by the determinant of the variance-covariance matrix of the parameter estimates based on the complete dataset. A value below 1 therefore indicates that removal of the \mjeqn{i\textrm{th}}{ith} case yields more precise estimates of the model coefficients.
 
-   The leave-one-out amount of (residual) heterogeneity is the estimated value of \mjseqn{\tau^2} based on the dataset with the \mjseqn{i}th case removed. This is always equal to 0 for fixed-effects models.
+   The leave-one-out amount of (residual) heterogeneity is the estimated value of \mjseqn{\tau^2} based on the dataset with the \mjeqn{i\textrm{th}}{ith} case removed. This is always equal to 0 for equal-effects models.
 
-   Similarly, the leave-one-out test statistic of the test for (residual) heterogeneity is the value of the test statistic of the test for (residual) heterogeneity calculated based on the dataset with the \mjseqn{i}th case removed.
+   Similarly, the leave-one-out test statistic of the test for (residual) heterogeneity is the value of the test statistic of the test for (residual) heterogeneity calculated based on the dataset with the \mjeqn{i\textrm{th}}{ith} case removed.
 
-   Finally, the DFBETAS value(s) essentially indicate(s) how many standard deviations the estimated coefficient(s) change(s) after excluding the \mjseqn{i}th case from the model fitting.
+   Finally, the DFBETAS value(s) essentially indicate(s) how many standard deviations the estimated coefficient(s) change(s) after excluding the \mjeqn{i\textrm{th}}{ith} case from the model fitting.
 
    A case may be considered to be \sQuote{influential} if at least one of the following is true:
    \itemize{
@@ -68,18 +68,18 @@
 }
 \value{
    An object of class \code{"infl.rma.uni"}, which is a list containing the following components:
-   \item{inf}{an element of class \code{"list.rma"} with the externally standardized residuals, DFFITS values, Cook's distances, covariance ratios, leave-one-out \mjseqn{\tau^2} estimates, leave-one-out (residual) heterogeneity test statistics, hat values, weights, and an indicator whether a case is influential or not.}
-   \item{dfbs}{an element of class \code{"list.rma"} with the the DFBETAS values.}
+   \item{inf}{an element of class \code{"list.rma"} with the externally standardized residuals, DFFITS values, Cook's distances, covariance ratios, leave-one-out \mjseqn{\tau^2} estimates, leave-one-out (residual) heterogeneity test statistics, hat values, weights, and an indicator whether a case is influential.}
+   \item{dfbs}{an element of class \code{"list.rma"} with the DFBETAS values.}
    \item{\dots}{some additional elements/values.}
 
    The results are printed with \code{print.infl.rma.uni} and plotted with \code{\link{plot.infl.rma.uni}}.
 }
 \note{
-   Right now, leave-one-out diagnostics are calculated by refitting the model \mjseqn{k} times. Depending on how large \mjseqn{k} is, it may take a few moments to finish the calculations. There are shortcuts for calculating at least some of these values without refitting the model each time, but these are currently not implemented (and may not exist for all of the leave-one-out diagnostics calculated by the function).
+   Leave-one-out diagnostics are calculated by refitting the model \mjseqn{k} times. Depending on how large \mjseqn{k} is, it may take a few moments to finish the calculations. There are shortcuts for calculating at least some of these values without refitting the model each time, but these are currently not implemented (and may not exist for all of the leave-one-out diagnostics calculated by the function).
 
-   It may not be possible to fit the model after deletion of the \mjseqn{i}th case from the dataset. This will result in \code{NA} values for that case.
+   It may not be possible to fit the model after deletion of the \mjeqn{i\textrm{th}}{ith} case from the dataset. This will result in \code{NA} values for that case.
 
-   Certain relationships between the leave-one-out diagnostics and the (internally or externally) standardized residuals (Belsley, Kuh, & Welsch, 1980; Cook & Weisberg, 1982) no longer hold for the meta-analytic models. Maybe there are other relationships. These remain to be determined.
+   Certain relationships between the leave-one-out diagnostics and the (internally or externally) standardized residuals (Belsley, Kuh, & Welsch, 1980; Cook & Weisberg, 1982) no longer hold for meta-analytic models. Maybe there are other relationships. These remain to be determined.
 }
 \author{
    Wolfgang Viechtbauer \email{wvb@metafor-project.org} \url{https://www.metafor-project.org}
@@ -93,10 +93,14 @@
 
    Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \verb{https://doi.org/10.18637/jss.v036.i03}
 
+   Viechtbauer, W. (2021). Model checking in meta-analysis. In C. H. Schmid, T. Stijnen, & I. R. White (Eds.), \emph{Handbook of meta-analysis} (pp. 219--254). Boca Raton, FL: CRC Press. \verb{https://doi.org/10.1201/9781315119403}
+
    Viechtbauer, W., & Cheung, M. W.-L. (2010). Outlier and influence diagnostics for meta-analysis. \emph{Research Synthesis Methods}, \bold{1}(2), 112--125. \verb{https://doi.org/10.1002/jrsm.11}
 }
 \seealso{
-   \code{\link{plot.infl.rma.uni}}, \code{\link{rstudent.rma.uni}}, \code{\link{weights.rma.uni}}
+   \code{\link{plot.infl.rma.uni}} for a method to plot the outlier and influential case diagnostics.
+
+   \code{\link{rstudent.rma.uni}} for externally standardized residuals and \code{\link{weights.rma.uni}} for model fitting weights.
 }
 \examples{
 ### calculate log risk ratios and corresponding sampling variances

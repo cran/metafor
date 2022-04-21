@@ -16,18 +16,19 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
 
    if (!is.element(measure, c("RR","OR","PETO","RD","AS","PHI","YUQ","YUY","RTET", ### 2x2 table measures
                               "PBIT","OR2D","OR2DN","OR2DL",                       ### - transformations to SMD
-                              "MPRD","MPRR","MPOR","MPORC","MPPETO",               ### - measures for matched pairs / pre-post data
+                              "MPRD","MPRR","MPOR","MPORC","MPPETO","MPORM",       ### - measures for matched pairs / pre-post data
                               "IRR","IRD","IRSD",                                  ### two-group person-time data measures
-                              "MD","SMD","SMDH","ROM",                             ### two-group mean/SD measures
+                              "MD","SMD","SMDH","SMD1","ROM",                      ### two-group mean/SD measures
                               "CVR","VR",                                          ### coefficient of variation ratio, variability ratio
                               "RPB","RBIS","D2OR","D2ORN","D2ORL",                 ### - transformations to r_PB, r_BIS, and log(OR)
                               "COR","UCOR","ZCOR",                                 ### correlations (raw and r-to-z transformed)
                               "PCOR","ZPCOR","SPCOR",                              ### partial and semi-partial correlations
                               "PR","PLN","PLO","PAS","PFT",                        ### single proportions (and transformations thereof)
                               "IR","IRLN","IRS","IRFT",                            ### single-group person-time data (and transformations thereof)
-                              "MN","MNLN","CVLN","SDLN","SMD1",                    ### mean, log(mean), log(CV), log(SD), single-group SMD
+                              "MN","MNLN","CVLN","SDLN","SMN",                     ### mean, log(mean), log(CV), log(SD), standardized mean
                               "MC","SMCC","SMCR","SMCRH","ROMC","CVRC","VRC",      ### raw/standardized mean change, log(ROM), CVR, and VR for dependent samples
                               "ARAW","AHW","ABT",                                  ### alpha (and transformations thereof)
+                              "REH",                                               ### relative excess heterozygosity
                               "GEN")))
       stop(mstyle$stop("Unknown 'measure' specified."))
 
@@ -47,7 +48,7 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
 
       if (any(var.names != make.names(var.names, unique=TRUE))) {
          var.names <- make.names(var.names, unique=TRUE)
-         warning(mstyle$warning(paste0("Argument 'var.names' does not contain syntactically valid variable names.\n  Variable names adjusted to: var.names = c('", var.names[1], "', '", var.names[2], "', '", var.names[3], "').")))
+         warning(mstyle$warning(paste0("Argument 'var.names' does not contain syntactically valid variable names.\nVariable names adjusted to: var.names = c('", var.names[1], "', '", var.names[2], "', '", var.names[3], "').")), call.=FALSE)
       }
 
    } else {
@@ -60,7 +61,7 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
 
       if (any(var.names != make.names(var.names, unique=TRUE))) {
          var.names <- make.names(var.names, unique=TRUE)
-         warning(mstyle$warning(paste0("Argument 'var.names' does not contain syntactically valid variable names.\n  Variable names adjusted to: var.names = c('", var.names[1], "', '", var.names[2], "').")))
+         warning(mstyle$warning(paste0("Argument 'var.names' does not contain syntactically valid variable names.\nVariable names adjusted to: var.names = c('", var.names[1], "', '", var.names[2], "').")), call.=FALSE)
       }
 
    }
@@ -111,19 +112,15 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
 
    mf <- match.call()
 
-   ### get slab and subset arguments (will be NULL when unspecified)
+   ### get slab, subset, and include arguments (NULL when unspecified)
 
-   mf.slab    <- mf[[match("slab",    names(mf))]]
-   mf.subset  <- mf[[match("subset",  names(mf))]]
-   mf.include <- mf[[match("include", names(mf))]]
-   slab       <- eval(mf.slab,    data, enclos=sys.frame(sys.parent()))
-   subset     <- eval(mf.subset,  data, enclos=sys.frame(sys.parent()))
-   include    <- eval(mf.include, data, enclos=sys.frame(sys.parent()))
+   slab    <- .getx("slab",    mf=mf, data=data)
+   subset  <- .getx("subset",  mf=mf, data=data)
+   include <- .getx("include", mf=mf, data=data)
 
    ### get yi (in case it has been specified)
 
-   mf.yi <- mf[[match("yi", names(mf))]]
-   yi    <- eval(mf.yi, data, enclos=sys.frame(sys.parent()))
+   yi <- .getx("yi", mf=mf, data=data)
 
    ### for certain measures, set add=0 by default unless user explicitly sets the add argument
 
@@ -138,32 +135,41 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
 
    if (is.null(yi)) {
 
-      if (is.element(measure, c("RR","OR","RD","AS","PETO","PHI","YUQ","YUY","RTET","PBIT","OR2D","OR2DN","OR2DL","MPRD","MPRR","MPOR","MPORC","MPPETO"))) {
+      if (is.element(measure, c("RR","OR","RD","AS","PETO","PHI","YUQ","YUY","RTET","PBIT","OR2D","OR2DN","OR2DL","MPRD","MPRR","MPOR","MPORC","MPPETO","MPORM"))) {
 
-         mf.ai  <- mf[[match("ai",  names(mf))]]
+         mf.ai <- mf[[match("ai", names(mf))]]
          if (any("~" %in% as.character(mf.ai)))
             stop(mstyle$stop("The 'formula interface' to escalc() has been deprecated."))
-         mf.bi  <- mf[[match("bi",  names(mf))]]
-         mf.ci  <- mf[[match("ci",  names(mf))]]
-         mf.di  <- mf[[match("di",  names(mf))]]
-         mf.n1i <- mf[[match("n1i", names(mf))]]
-         mf.n2i <- mf[[match("n2i", names(mf))]]
-         ai     <- eval(mf.ai,  data, enclos=sys.frame(sys.parent()))
-         bi     <- eval(mf.bi,  data, enclos=sys.frame(sys.parent()))
-         ci     <- eval(mf.ci,  data, enclos=sys.frame(sys.parent()))
-         di     <- eval(mf.di,  data, enclos=sys.frame(sys.parent()))
-         n1i    <- eval(mf.n1i, data, enclos=sys.frame(sys.parent()))
-         n2i    <- eval(mf.n2i, data, enclos=sys.frame(sys.parent()))
-         if (is.null(bi)) bi <- n1i - ai
-         if (is.null(di)) di <- n2i - ci
+
+         ai  <- .getx("ai",  mf=mf, data=data)
+         bi  <- .getx("bi",  mf=mf, data=data)
+         ci  <- .getx("ci",  mf=mf, data=data)
+         di  <- .getx("di",  mf=mf, data=data)
+         n1i <- .getx("n1i", mf=mf, data=data)
+         n2i <- .getx("n2i", mf=mf, data=data)
+         ri  <- .getx("ri",  mf=mf, data=data)
+
+         if (!.equal.length(ai, bi, ci, di, n1i, n2i, ri))
+            stop(mstyle$stop("Supplied data vectors are not all of the same length."))
+
+         n1i.inc <- n1i != ai + bi
+         n2i.inc <- n2i != ci + di
+
+         if (any(n1i.inc, na.rm=TRUE))
+            stop(mstyle$stop("One or more 'n1i' values are not equal to 'ai + bi'."))
+         if (any(n2i.inc, na.rm=TRUE))
+            stop(mstyle$stop("One or more 'n2i' values are not equal to 'ci + di'."))
+
+         bi <- replmiss(bi, n1i-ai)
+         di <- replmiss(di, n2i-ci)
+
+         if (!.all.specified(ai, bi, ci, di))
+            stop(mstyle$stop("Cannot compute outcomes. Check that all of the required\n  information is specified via the appropriate arguments."))
+
+         if (measure == "MPORM" && !.all.specified(ri))
+            stop(mstyle$stop("Cannot compute outcomes. Check that all of the required\n  information is specified via the appropriate arguments."))
 
          k.all <- length(ai)
-
-         if (length(ai)==0L || length(bi)==0L || length(ci)==0L || length(di)==0L)
-            stop(mstyle$stop("Cannot compute outcomes. Check that all of the required \n  information is specified via the appropriate arguments."))
-
-         if (!all(k.all == c(length(ai),length(bi),length(ci),length(di))))
-            stop(mstyle$stop("Supplied data vectors are not all of the same length."))
 
          if (!is.null(subset)) {
             subset <- .setnafalse(subset, k=k.all)
@@ -182,10 +188,16 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
          if (any(c(ai, bi, ci, di) < 0, na.rm=TRUE))
             stop(mstyle$stop("One or more counts are negative."))
 
-         if (any(c(n1i < 0, n2i < 0), na.rm=TRUE))
-            stop(mstyle$stop("One or more group sizes are < 0."))
+         if (any(c(n1i < 0, n2i < 0), na.rm=TRUE)) # note: in cross-sectional sampling, group sizes could be 0
+            stop(mstyle$stop("One or more group sizes are negative."))
+
+         if (measure == "MPORM" && any(abs(ri) > 1, na.rm=TRUE))
+               stop(mstyle$stop("One or more correlations are > 1 or < -1."))
 
          ni.u <- ai + bi + ci + di ### unadjusted total sample sizes
+
+         if (measure == "MPORM")
+            ni.u <- round(ni.u / 2)
 
          k <- length(ai)
 
@@ -267,7 +279,10 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
 
          n1i <- ai + bi
          n2i <- ci + di
-         ni <- n1i + n2i ### ni.u computed earlier is always the 'unadjusted' total sample size
+         ni  <- n1i + n2i ### ni.u computed earlier is always the 'unadjusted' total sample size
+
+         if (measure == "MPORM")
+            ni <- round(ni / 2)
 
          ### compute proportions for the two groups (unadjusted and adjusted)
 
@@ -293,7 +308,7 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
 
          ### log odds ratio
 
-         if (is.element(measure, c("OR","OR2D","OR2DN","OR2DL"))) {
+         if (is.element(measure, c("OR","OR2D","OR2DN","OR2DL","MPORM"))) {
             if (addyi) {
                yi <- log(p1i/(1-p1i)) - log(p2i/(1-p2i))
             } else {
@@ -489,6 +504,8 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
             vi <- vi / 1.65^2
          }
 
+         ### matched pairs / pre-post 2x2 table measures
+
          if (is.element(measure, c("MPRD","MPRR","MPOR"))) {
             pi12 <- bi/ni
             pi21 <- ci/ni
@@ -509,6 +526,18 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
          if (measure == "MPOR") {
             yi <- log(pi1./(1-pi1.)) - log(pi.1/(1-pi.1))
             vi <- (pi12*(1-pi12) + pi21*(1-pi21) + 2*pi12*pi21) / (ni * pi1.*(1-pi1.) * pi.1*(1-pi.1))
+         }
+
+         if (measure == "MPORM") {
+            if (addvi) {
+               si <- (ri * sqrt(ai * bi * ci * di) + (ai * bi)) / ni
+               deltai <- ni^2 * (ni * si - ai * bi) / (ai * bi * ci * di)
+               vi <- vi - 2*deltai / ni
+            } else {
+               si.u <- (ri * sqrt(ai.u * bi.u * ci.u * di.u) + (ai.u * bi.u)) / ni.u
+               deltai.u <- ni.u^2 * (ni.u * si.u - ai.u * bi) / (ai.u * bi.u * ci.u * di.u)
+               vi <- vi - 2*deltai.u / ni.u
+            }
          }
 
          if (measure == "MPORC") {
@@ -551,22 +580,18 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
 
       if (is.element(measure, c("IRR","IRD","IRSD"))) {
 
-         mf.x1i <- mf[[match("x1i", names(mf))]]
-         mf.x2i <- mf[[match("x2i", names(mf))]]
-         mf.t1i <- mf[[match("t1i", names(mf))]]
-         mf.t2i <- mf[[match("t2i", names(mf))]]
-         x1i    <- eval(mf.x1i, data, enclos=sys.frame(sys.parent()))
-         x2i    <- eval(mf.x2i, data, enclos=sys.frame(sys.parent()))
-         t1i    <- eval(mf.t1i, data, enclos=sys.frame(sys.parent()))
-         t2i    <- eval(mf.t2i, data, enclos=sys.frame(sys.parent()))
+         x1i <- .getx("x1i", mf=mf, data=data)
+         x2i <- .getx("x2i", mf=mf, data=data)
+         t1i <- .getx("t1i", mf=mf, data=data)
+         t2i <- .getx("t2i", mf=mf, data=data)
+
+         if (!.all.specified(x1i, x2i, t1i, t2i))
+            stop(mstyle$stop("Cannot compute outcomes. Check that all of the required\n  information is specified via the appropriate arguments."))
+
+         if (!.equal.length(x1i, x2i, t1i, t2i))
+            stop(mstyle$stop("Supplied data vectors are not all of the same length."))
 
          k.all <- length(x1i)
-
-         if (length(x1i)==0L || length(x2i)==0L || length(t1i)==0L || length(t2i)==0L)
-            stop(mstyle$stop("Cannot compute outcomes. Check that all of the required \n  information is specified via the appropriate arguments."))
-
-         if (!all(k.all == c(length(x1i),length(x2i),length(t1i),length(t2i))))
-            stop(mstyle$stop("Supplied data vectors are not all of the same length."))
 
          if (!is.null(subset)) {
             subset <- .setnafalse(subset, k=k.all)
@@ -692,46 +717,52 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
 
       ######################################################################
 
-      if (is.element(measure, c("MD","SMD","SMDH","ROM","RPB","RBIS","D2OR","D2ORN","D2ORL","CVR","VR"))) {
+      if (is.element(measure, c("MD","SMD","SMDH","SMD1","ROM","RPB","RBIS","D2OR","D2ORN","D2ORL","CVR","VR"))) {
 
-         mf.m1i  <- mf[[match("m1i",  names(mf))]] ### for VR, do not need to supply this
-         mf.m2i  <- mf[[match("m2i",  names(mf))]] ### for VR, do not need to supply this
-         mf.sd1i <- mf[[match("sd1i", names(mf))]]
-         mf.sd2i <- mf[[match("sd2i", names(mf))]]
-         mf.n1i  <- mf[[match("n1i",  names(mf))]]
-         mf.n2i  <- mf[[match("n2i",  names(mf))]]
-         m1i     <- eval(mf.m1i,  data, enclos=sys.frame(sys.parent()))
-         m2i     <- eval(mf.m2i,  data, enclos=sys.frame(sys.parent()))
-         sd1i    <- eval(mf.sd1i, data, enclos=sys.frame(sys.parent()))
-         sd2i    <- eval(mf.sd2i, data, enclos=sys.frame(sys.parent()))
-         n1i     <- eval(mf.n1i,  data, enclos=sys.frame(sys.parent()))
-         n2i     <- eval(mf.n2i,  data, enclos=sys.frame(sys.parent()))
-
-         k.all <- length(n1i)
+         m1i  <- .getx("m1i",  mf=mf, data=data) ### for VR, do not need to supply this
+         m2i  <- .getx("m2i",  mf=mf, data=data) ### for VR, do not need to supply this
+         sd1i <- .getx("sd1i", mf=mf, data=data) ### for SMD1, do not need to supply this
+         sd2i <- .getx("sd2i", mf=mf, data=data)
+         n1i  <- .getx("n1i",  mf=mf, data=data)
+         n2i  <- .getx("n2i",  mf=mf, data=data)
 
          ### for these measures, need m1i, m2i, sd1i, sd2i, n1i, and n2i
 
          if (is.element(measure, c("MD","SMD","SMDH","ROM","RPB","RBIS","D2OR","D2ORN","D2ORL","CVR"))) {
 
-            if (length(m1i)==0L || length(m2i)==0L || length(sd1i)==0L || length(sd2i)==0L || length(n1i)==0L || length(n2i)==0L)
-               stop(mstyle$stop("Cannot compute outcomes. Check that all of the required \n  information is specified via the appropriate arguments."))
+            if (!.all.specified(m1i, m2i, sd1i, sd2i, n1i, n2i))
+               stop(mstyle$stop("Cannot compute outcomes. Check that all of the required\n  information is specified via the appropriate arguments."))
 
-            if (!all(k.all == c(length(m1i),length(m2i),length(sd1i),length(sd2i),length(n1i),length(n2i))))
+            if (!.equal.length(m1i, m2i, sd1i, sd2i, n1i, n2i))
                stop(mstyle$stop("Supplied data vectors are not all of the same length."))
 
          }
 
          ### for this measure, need sd1i, sd2i, n1i, and n2i
 
-         if (is.element(measure, c("VR"))) {
+         if (measure == "VR") {
 
-            if (length(sd1i)==0L || length(sd2i)==0L || length(n1i)==0L || length(n2i)==0L)
-               stop(mstyle$stop("Cannot compute outcomes. Check that all of the required \n  information is specified via the appropriate arguments."))
+            if (!.all.specified(sd1i, sd2i, n1i, n2i))
+               stop(mstyle$stop("Cannot compute outcomes. Check that all of the required\n  information is specified via the appropriate arguments."))
 
-            if (!all(k.all == c(length(sd1i),length(sd2i),length(n1i),length(n2i))))
+            if (!.equal.length(sd1i, sd2i, n1i, n2i))
                stop(mstyle$stop("Supplied data vectors are not all of the same length."))
 
          }
+
+         ### for this measure, need m1i, m2i, sdi, n1i, and n2i
+
+         if (measure == "SMD1") {
+
+            if (!.all.specified(m1i, m2i, sd2i, n1i, n2i))
+               stop(mstyle$stop("Cannot compute outcomes. Check that all of the required\n  information is specified via the appropriate arguments."))
+
+            if (!.equal.length(m1i, m2i, sd2i, n1i, n2i))
+               stop(mstyle$stop("Supplied data vectors are not all of the same length."))
+
+         }
+
+         k.all <- length(n1i)
 
          if (!is.null(subset)) {
             subset <- .setnafalse(subset, k=k.all)
@@ -746,16 +777,23 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
          if (any(c(sd1i, sd2i) < 0, na.rm=TRUE))
             stop(mstyle$stop("One or more standard deviations are negative."))
 
-         if (any(c(n1i, n2i) < 1, na.rm=TRUE))
-            stop(mstyle$stop("One or more sample sizes are < 1."))
+         if (any(c(n1i, n2i) <= 0, na.rm=TRUE))
+            stop(mstyle$stop("One or more group sizes are <= 0."))
 
          ni.u <- n1i + n2i ### unadjusted total sample sizes
 
          k <- length(n1i)
 
          ni <- ni.u
-         mi <- ni - 2
-         sdpi <- sqrt(((n1i-1)*sd1i^2 + (n2i-1)*sd2i^2)/mi)
+         if (measure == "SMD1") {
+            mi <- n2i - 1
+            sdpi <- sd2i
+            npi <- n2i
+         } else {
+            mi <- ni - 2
+            sdpi <- sqrt(((n1i-1)*sd1i^2 + (n2i-1)*sd2i^2)/mi)
+            npi <- ni
+         }
          di <- (m1i - m2i) / sdpi
 
          ### (raw) mean difference (with heteroscedastic variances)
@@ -787,9 +825,9 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
 
          }
 
-         ### standardized mean difference (with pooled SDs)
+         ### standardized mean difference (with pooled SDs or just the SD of group 2)
 
-         if (measure == "SMD") {
+         if (is.element(measure, c("SMD","SMD1"))) {
 
             ### apply bias-correction to di values
 
@@ -814,15 +852,15 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
 
                ### large sample approximation to the sampling variance
                if (vtype[i] == "LS")
-                  vi[i] <- 1/n1i[i] + 1/n2i[i] + yi[i]^2/(2*ni[i])
+                  vi[i] <- 1/n1i[i] + 1/n2i[i] + yi[i]^2/(2*npi[i])
 
                ### estimator assuming homogeneity (using sample size weighted average of the yi's)
                if (vtype[i] == "AV")
-                  vi[i] <- 1/n1i[i] + 1/n2i[i] + mnwyi^2/(2*ni[i])
+                  vi[i] <- 1/n1i[i] + 1/n2i[i] + mnwyi^2/(2*npi[i])
 
-               ### large sample approximation to the sampling variance (using equation from Borenstein, 2009)
+               ### large sample approximation to the sampling variance (using equation 4.24 from Borenstein, 2009)
                if (vtype[i] == "LS2")
-                  vi[i] <- cmi[i]^2 * (1/n1i[i] + 1/n2i[i] + di[i]^2/(2*ni[i]))
+                  vi[i] <- cmi[i]^2 * (1/n1i[i] + 1/n2i[i] + di[i]^2/(2*npi[i]))
 
             }
 
@@ -969,18 +1007,16 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
 
       if (is.element(measure, c("COR","UCOR","ZCOR"))) {
 
-         mf.ri <- mf[[match("ri", names(mf))]]
-         mf.ni <- mf[[match("ni", names(mf))]]
-         ri    <- eval(mf.ri, data, enclos=sys.frame(sys.parent()))
-         ni    <- eval(mf.ni, data, enclos=sys.frame(sys.parent()))
+         ri <- .getx("ri", mf=mf, data=data)
+         ni <- .getx("ni", mf=mf, data=data)
+
+         if (!.all.specified(ri, ni))
+            stop(mstyle$stop("Cannot compute outcomes. Check that all of the required\n  information is specified via the appropriate arguments."))
+
+         if (!.equal.length(ri, ni))
+            stop(mstyle$stop("Supplied data vectors are not all of the same length."))
 
          k.all <- length(ri)
-
-         if (length(ri)==0L || length(ni)==0L)
-            stop(mstyle$stop("Cannot compute outcomes. Check that all of the required \n  information is specified via the appropriate arguments."))
-
-         if (length(ri) != length(ni))
-            stop(mstyle$stop("Supplied data vectors are not of the same length."))
 
          if (!is.null(subset)) {
             subset <- .setnafalse(subset, k=k.all)
@@ -991,8 +1027,8 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
          if (any(abs(ri) > 1, na.rm=TRUE))
             stop(mstyle$stop("One or more correlations are > 1 or < -1."))
 
-         if (any(ni < 1, na.rm=TRUE))
-            stop(mstyle$stop("One or more sample sizes are < 1."))
+         if (any(ni <= 0, na.rm=TRUE))
+            stop(mstyle$stop("One or more sample sizes are <= 0."))
 
          if (measure != "UCOR" && vtype == "UB")
             stop(mstyle$stop("Use of vtype='UB' only permitted when measure='UCOR'."))
@@ -1071,28 +1107,24 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
 
       if (is.element(measure, c("PCOR","ZPCOR","SPCOR"))) {
 
-         mf.ti  <- mf[[match("ti",  names(mf))]]
-         mf.r2i <- mf[[match("r2i", names(mf))]]
-         mf.mi  <- mf[[match("mi",  names(mf))]]
-         mf.ni  <- mf[[match("ni",  names(mf))]]
-         ti     <- eval(mf.ti,  data, enclos=sys.frame(sys.parent()))
-         r2i    <- eval(mf.r2i, data, enclos=sys.frame(sys.parent()))
-         mi     <- eval(mf.mi,  data, enclos=sys.frame(sys.parent()))
-         ni     <- eval(mf.ni,  data, enclos=sys.frame(sys.parent()))
+         ti  <- .getx("ti",  mf=mf, data=data)
+         r2i <- .getx("r2i", mf=mf, data=data)
+         mi  <- .getx("mi",  mf=mf, data=data)
+         ni  <- .getx("ni",  mf=mf, data=data)
+
+         if (measure=="PCOR" && !.all.specified(ti, ni, mi))
+            stop(mstyle$stop("Cannot compute outcomes. Check that all of the required\n  information is specified via the appropriate arguments."))
+
+         if (measure=="SPCOR" && !.all.specified(ti, ni, mi, r2i))
+            stop(mstyle$stop("Cannot compute outcomes. Check that all of the required\n  information is specified via the appropriate arguments."))
+
+         if (measure=="PCOR" && !.equal.length(ti, ni, mi))
+            stop(mstyle$stop("Supplied data vectors are not all of the same length."))
+
+         if (measure=="SPCOR" && !.equal.length(ti, ni, mi, r2i))
+            stop(mstyle$stop("Supplied data vectors are not all of the same length."))
 
          k.all <- length(ti)
-
-         if (measure=="PCOR" && (length(ti)==0L || length(ni)==0L || length(mi)==0L))
-            stop(mstyle$stop("Cannot compute outcomes. Check that all of the required \n  information is specified via the appropriate arguments."))
-
-         if (measure=="SPCOR" && (length(ti)==0L || length(ni)==0L || length(mi)==0L || length(r2i)==0L))
-            stop(mstyle$stop("Cannot compute outcomes. Check that all of the required \n  information is specified via the appropriate arguments."))
-
-         if (measure=="PCOR" && !all(k.all == c(length(ni),length(mi))))
-            stop(mstyle$stop("Supplied data vectors are not all of the same length."))
-
-         if (measure=="SPCOR" && !all(k.all == c(length(ni),length(mi),length(r2i))))
-            stop(mstyle$stop("Supplied data vectors are not all of the same length."))
 
          if (!is.null(subset)) {
             subset <- .setnafalse(subset, k=k.all)
@@ -1105,14 +1137,14 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
          if (measure=="SPCOR" && any(r2i > 1 | r2i < 0, na.rm=TRUE))
             stop(mstyle$stop("One or more R^2 values are > 1 or < 0."))
 
-         if (any(ni < 1, na.rm=TRUE))
-            stop(mstyle$stop("One or more sample sizes are < 1."))
+         if (any(ni <= 0, na.rm=TRUE))
+            stop(mstyle$stop("One or more sample sizes are <= 0."))
 
          if (any(mi < 0, na.rm=TRUE))
             stop(mstyle$stop("One or more mi values are negative."))
 
-         if (any(ni - mi - 1 < 1, na.rm=TRUE))
-            stop(mstyle$stop("One or more dfs are < 1."))
+         if (any(ni - mi - 1 <= 0, na.rm=TRUE))
+            stop(mstyle$stop("One or more dfs are <= 0."))
 
          ni.u <- ni ### unadjusted total sample sizes
 
@@ -1192,21 +1224,24 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
 
       if (is.element(measure, c("PR","PLN","PLO","PAS","PFT"))) {
 
-         mf.xi <- mf[[match("xi", names(mf))]]
-         mf.mi <- mf[[match("mi", names(mf))]]
-         mf.ni <- mf[[match("ni", names(mf))]]
-         xi    <- eval(mf.xi, data, enclos=sys.frame(sys.parent()))
-         mi    <- eval(mf.mi, data, enclos=sys.frame(sys.parent()))
-         ni    <- eval(mf.ni, data, enclos=sys.frame(sys.parent()))
-         if (is.null(mi)) mi <- ni - xi
+         xi <- .getx("xi", mf=mf, data=data)
+         mi <- .getx("mi", mf=mf, data=data)
+         ni <- .getx("ni", mf=mf, data=data)
+
+         if (!.equal.length(xi, mi, ni))
+            stop(mstyle$stop("Supplied data vectors are not all of the same length."))
+
+         ni.inc <- ni != xi + mi
+
+         if (any(ni.inc, na.rm=TRUE))
+            stop(mstyle$stop("One or more 'ni' values are not equal to 'xi + mi'."))
+
+         mi <- replmiss(mi, ni-xi)
+
+         if (!.all.specified(xi, mi))
+            stop(mstyle$stop("Cannot compute outcomes. Check that all of the required\n  information is specified via the appropriate arguments."))
 
          k.all <- length(xi)
-
-         if (length(xi)==0L || length(mi)==0L)
-            stop(mstyle$stop("Cannot compute outcomes. Check that all of the required \n  information is specified via the appropriate arguments."))
-
-         if (length(xi) != length(mi))
-            stop(mstyle$stop("Supplied data vectors are not all of the same length."))
 
          if (!is.null(subset)) {
             subset <- .setnafalse(subset, k=k.all)
@@ -1222,8 +1257,8 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
          if (any(c(xi, mi) < 0, na.rm=TRUE))
             stop(mstyle$stop("One or more counts are negative."))
 
-         if (any(ni < 1, na.rm=TRUE))
-            stop(mstyle$stop("One or more group sizes are < 1."))
+         if (any(ni <= 0, na.rm=TRUE))
+            stop(mstyle$stop("One or more group sizes are <= 0."))
 
          ni.u <- ni ### unadjusted total sample sizes
 
@@ -1460,18 +1495,16 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
 
       if (is.element(measure, c("IR","IRLN","IRS","IRFT"))) {
 
-         mf.xi <- mf[[match("xi", names(mf))]]
-         mf.ti <- mf[[match("ti", names(mf))]]
-         xi    <- eval(mf.xi, data, enclos=sys.frame(sys.parent()))
-         ti    <- eval(mf.ti, data, enclos=sys.frame(sys.parent()))
+         xi <- .getx("xi", mf=mf, data=data)
+         ti <- .getx("ti", mf=mf, data=data)
+
+         if (!.all.specified(xi, ti))
+            stop(mstyle$stop("Cannot compute outcomes. Check that all of the required\n  information is specified via the appropriate arguments."))
+
+         if (!.equal.length(xi, ti))
+            stop(mstyle$stop("Supplied data vectors are not all of the same length."))
 
          k.all <- length(xi)
-
-         if (length(xi)==0L || length(ti)==0L)
-            stop(mstyle$stop("Cannot compute outcomes. Check that all of the required \n  information is specified via the appropriate arguments."))
-
-         if (length(xi) != length(ti))
-            stop(mstyle$stop("Supplied data vectors are not all of the same length."))
 
          if (!is.null(subset)) {
             subset <- .setnafalse(subset, k=k.all)
@@ -1587,40 +1620,37 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
 
       ######################################################################
 
-      if (is.element(measure, c("MN","MNLN","CVLN","SDLN","SMD1"))) {
+      if (is.element(measure, c("MN","MNLN","CVLN","SDLN","SMN"))) {
 
-         mf.mi  <- mf[[match("mi",  names(mf))]] ### for SDLN, do not need to supply this
-         mf.sdi <- mf[[match("sdi", names(mf))]]
-         mf.ni  <- mf[[match("ni",  names(mf))]]
-         mi     <- eval(mf.mi,  data, enclos=sys.frame(sys.parent()))
-         sdi    <- eval(mf.sdi, data, enclos=sys.frame(sys.parent()))
-         ni     <- eval(mf.ni,  data, enclos=sys.frame(sys.parent()))
-
-         k.all <- length(ni)
+         mi  <- .getx("mi",  mf=mf, data=data) ### for SDLN, do not need to supply this
+         sdi <- .getx("sdi", mf=mf, data=data)
+         ni  <- .getx("ni",  mf=mf, data=data)
 
          ### for these measures, need mi, sdi, and ni
 
-         if (is.element(measure, c("MN","MNLN","CVLN","SMD1"))) {
+         if (is.element(measure, c("MN","MNLN","CVLN","SMN"))) {
 
-            if (length(mi)==0L || length(sdi)==0L || length(ni)==0L)
-               stop(mstyle$stop("Cannot compute outcomes. Check that all of the required \n  information is specified via the appropriate arguments."))
+            if (!.all.specified(mi, sdi, ni))
+               stop(mstyle$stop("Cannot compute outcomes. Check that all of the required\n  information is specified via the appropriate arguments."))
 
-            if (!all(k.all == c(length(mi),length(sdi),length(ni))))
+            if (!.equal.length(mi, sdi, ni))
                stop(mstyle$stop("Supplied data vectors are not all of the same length."))
 
          }
 
          ### for this measure, need sdi and ni
 
-         if (is.element(measure, c("SDLN"))) {
+         if (measure == "SDLN") {
 
-            if (length(sdi)==0L || length(ni)==0L)
-               stop(mstyle$stop("Cannot compute outcomes. Check that all of the required \n  information is specified via the appropriate arguments."))
+            if (!.all.specified(sdi, ni))
+               stop(mstyle$stop("Cannot compute outcomes. Check that all of the required\n  information is specified via the appropriate arguments."))
 
-            if (length(sdi) != length(ni))
+            if (!.equal.length(sdi, ni))
                stop(mstyle$stop("Supplied data vectors are not all of the same length."))
 
          }
+
+         k.all <- length(ni)
 
          if (!is.null(subset)) {
             subset <- .setnafalse(subset, k=k.all)
@@ -1632,8 +1662,8 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
          if (any(sdi < 0, na.rm=TRUE))
             stop(mstyle$stop("One or more standard deviations are negative."))
 
-         if (any(ni < 1, na.rm=TRUE))
-            stop(mstyle$stop("One or more sample sizes are < 1."))
+         if (any(ni <= 0, na.rm=TRUE))
+            stop(mstyle$stop("One or more sample sizes are <= 0."))
 
          if (is.element(measure, c("MNLN","CVLN")) && any(mi < 0, na.rm=TRUE))
             stop(mstyle$stop("One or more means are negative."))
@@ -1672,9 +1702,9 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
             vi <- 1/(2*(ni-1))
          }
 
-         ### single-group SMD
+         ### single-group standardized mean
 
-         if (measure == "SMD1") {
+         if (measure == "SMN") {
             cmi <- .cmicalc(ni-1)
             yi <- cmi * mi / sdi
             vi <- 1/ni + yi^2/(2*ni)
@@ -1686,56 +1716,50 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
 
       if (is.element(measure, c("MC","SMCC","SMCR","SMCRH","ROMC","CVRC","VRC"))) {
 
-         mf.m1i  <- mf[[match("m1i",  names(mf))]] ### for VRC, do not need to supply this
-         mf.m2i  <- mf[[match("m2i",  names(mf))]] ### for VRC, do not need to supply this
-         mf.sd1i <- mf[[match("sd1i", names(mf))]]
-         mf.sd2i <- mf[[match("sd2i", names(mf))]] ### for SMCR, do not need to supply this
-         mf.ni   <- mf[[match("ni",   names(mf))]]
-         mf.ri   <- mf[[match("ri",   names(mf))]]
-         m1i     <- eval(mf.m1i,  data, enclos=sys.frame(sys.parent()))
-         m2i     <- eval(mf.m2i,  data, enclos=sys.frame(sys.parent()))
-         sd1i    <- eval(mf.sd1i, data, enclos=sys.frame(sys.parent()))
-         sd2i    <- eval(mf.sd2i, data, enclos=sys.frame(sys.parent()))
-         ni      <- eval(mf.ni,   data, enclos=sys.frame(sys.parent()))
-         ri      <- eval(mf.ri,   data, enclos=sys.frame(sys.parent()))
-
-         k.all <- length(ni)
+         m1i  <- .getx("m1i",  mf=mf, data=data) ### for VRC, do not need to supply this
+         m2i  <- .getx("m2i",  mf=mf, data=data) ### for VRC, do not need to supply this
+         sd1i <- .getx("sd1i", mf=mf, data=data)
+         sd2i <- .getx("sd2i", mf=mf, data=data) ### for SMCR, do not need to supply this
+         ri   <- .getx("ri",   mf=mf, data=data)
+         ni   <- .getx("ni",   mf=mf, data=data)
 
          if (is.element(measure, c("MC","SMCC","SMCRH","ROMC","CVRC"))) {
 
             ### for these measures, need m1i, m2i, sd1i, sd2i, ni, and ri
 
-            if (length(m1i)==0L || length(m2i)==0L || length(sd1i)==0L || length(sd2i)==0L || length(ni)==0L || length(ri)==0L)
-               stop(mstyle$stop("Cannot compute outcomes. Check that all of the required \n  information is specified via the appropriate arguments."))
+            if (!.all.specified(m1i, m2i, sd1i, sd2i, ni, ri))
+               stop(mstyle$stop("Cannot compute outcomes. Check that all of the required\n  information is specified via the appropriate arguments."))
 
-            if (!all(k.all == c(length(m1i),length(m2i),length(sd1i),length(sd2i),length(ni),length(ri))))
+            if (!.equal.length(m1i, m2i, sd1i, sd2i, ni, ri))
                stop(mstyle$stop("Supplied data vectors are not all of the same length."))
 
          }
 
-         if (is.element(measure, c("SMCR"))) {
+         if (measure == "SMCR") {
 
             ### for this measure, need m1i, m2i, sd1i, ni, and ri (do not need sd2i)
 
-            if (length(m1i)==0L || length(m2i)==0L || length(sd1i)==0L || length(ni)==0L || length(ri)==0L)
-               stop(mstyle$stop("Cannot compute outcomes. Check that all of the required \n  information is specified via the appropriate arguments."))
+            if (!.all.specified(m1i, m2i, sd1i, ni, ri))
+               stop(mstyle$stop("Cannot compute outcomes. Check that all of the required\n  information is specified via the appropriate arguments."))
 
-            if (!all(k.all == c(length(m1i),length(m2i),length(sd1i),length(ni),length(ri))))
+            if (!.equal.length(m1i, m2i, sd1i, ni, ri))
                stop(mstyle$stop("Supplied data vectors are not all of the same length."))
 
          }
 
-         if (is.element(measure, c("VRC"))) {
+         if (measure == "VRC") {
 
             ### for this measure, need sd1i, sd2i, ni, and ri
 
-            if (length(sd1i)==0L || length(sd2i)==0L || length(ni)==0L || length(ri)==0L)
-               stop(mstyle$stop("Cannot compute outcomes. Check that all of the required \n  information is specified via the appropriate arguments."))
+            if (!.all.specified(sd1i, sd2i, ni, ri))
+               stop(mstyle$stop("Cannot compute outcomes. Check that all of the required\n  information is specified via the appropriate arguments."))
 
-            if (!all(k.all == c(length(sd1i),length(sd2i),length(ni),length(ri))))
+            if (!.equal.length(sd1i, sd2i, ni, ri))
                stop(mstyle$stop("Supplied data vectors are not all of the same length."))
 
          }
+
+         k.all <- length(ni)
 
          if (!is.null(subset)) {
             subset <- .setnafalse(subset, k=k.all)
@@ -1752,7 +1776,7 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
                stop(mstyle$stop("One or more standard deviations are negative."))
          }
 
-         if (is.element(measure, c("SMCR"))) {
+         if (measure == "SMCR") {
             if (any(sd1i < 0, na.rm=TRUE))
                stop(mstyle$stop("One or more standard deviations are negative."))
          }
@@ -1760,8 +1784,8 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
          if (any(abs(ri) > 1, na.rm=TRUE))
             stop(mstyle$stop("One or more correlations are > 1 or < -1."))
 
-         if (any(ni < 1, na.rm=TRUE))
-            stop(mstyle$stop("One or more sample sizes are < 1."))
+         if (any(ni <= 0, na.rm=TRUE))
+            stop(mstyle$stop("One or more sample sizes are <= 0."))
 
          ni.u <- ni ### unadjusted total sample sizes
 
@@ -1801,7 +1825,7 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
                if (vtype[i] == "LS")
                   vi[i] <- 1/ni[i] + yi[i]^2 / (2*ni[i])
 
-               ### large sample approximation to the sampling variance
+               ### large sample approximation to the sampling variance (analogous to LS2 for SMD and SMCR)
                if (vtype[i] == "LS2")
                   vi[i] <- cmi[i]^2 * (1/ni[i] + di[i]^2 / (2*ni[i]))
 
@@ -1832,10 +1856,10 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
                if (vtype[i] == "LS")
                   vi[i] <- 2*(1-ri[i])/ni[i] + yi[i]^2 / (2*ni[i])
 
-               ### large sample approximation to the sampling variance (using corrected (!) equation from Borenstein, 2009)
+               ### large sample approximation to the sampling variance (using corrected (!) equation from Borenstein et al., 2009)
                if (vtype[i] == "LS2")
                   vi[i] <- cmi[i]^2 * (2*(1-ri[i])/ni[i] + di[i]^2 / (2*ni[i]))
-                  #vi[i] <- cmi[i]^2 * 2*(1-ri[i]) * (1/ni[i] + di[i]^2 / (2*ni[i])) # as in  Borenstein (2009) but this is incorrect
+                  #vi[i] <- cmi[i]^2 * 2*(1-ri[i]) * (1/ni[i] + di[i]^2 / (2*ni[i])) # as in Borenstein et al. (2009) but this is incorrect
 
             }
 
@@ -1882,20 +1906,17 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
 
       if (is.element(measure, c("ARAW","AHW","ABT"))) {
 
-         mf.ai <- mf[[match("ai", names(mf))]]
-         mf.mi <- mf[[match("mi", names(mf))]]
-         mf.ni <- mf[[match("ni", names(mf))]]
-         ai    <- eval(mf.ai, data, enclos=sys.frame(sys.parent()))
-         mi    <- eval(mf.mi, data, enclos=sys.frame(sys.parent()))
-         ni    <- eval(mf.ni, data, enclos=sys.frame(sys.parent()))
+         ai <- .getx("ai", mf=mf, data=data)
+         mi <- .getx("mi", mf=mf, data=data)
+         ni <- .getx("ni", mf=mf, data=data)
+
+         if (!.all.specified(ai, mi, ni))
+            stop(mstyle$stop("Cannot compute outcomes. Check that all of the required\n  information is specified via the appropriate arguments."))
+
+         if (!.equal.length(ai, mi, ni))
+            stop(mstyle$stop("Supplied data vectors are not all of the same length."))
 
          k.all <- length(ai)
-
-         if (length(ai)==0L || length(mi)==0L || length(ni)==0L)
-            stop(mstyle$stop("Cannot compute outcomes. Check that all of the required \n  information is specified via the appropriate arguments."))
-
-         if (!all(k.all == c(length(ai),length(mi),length(ni))))
-            stop(mstyle$stop("Supplied data vectors are not all of the same length."))
 
          if (!is.null(subset)) {
             subset <- .setnafalse(subset, k=k.all)
@@ -1910,8 +1931,8 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
          if (any(mi < 2, na.rm=TRUE))
             stop(mstyle$stop("One or more mi values are < 2."))
 
-         if (any(ni < 1, na.rm=TRUE))
-            stop(mstyle$stop("One or more sample sizes are < 1."))
+         if (any(ni <= 0, na.rm=TRUE))
+            stop(mstyle$stop("One or more sample sizes are <= 0."))
 
          ni.u <- ni ### unadjusted total sample sizes
 
@@ -1945,20 +1966,56 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
 
       ######################################################################
 
+      if (measure == "REH") {
+
+         ai <- .getx("ai", mf=mf, data=data)
+         bi <- .getx("bi", mf=mf, data=data)
+         ci <- .getx("ci", mf=mf, data=data)
+
+         if (!.all.specified(ai, bi, ci))
+            stop(mstyle$stop("Cannot compute outcomes. Check that all of the required\n  information is specified via the appropriate arguments."))
+
+         if (!.equal.length(ai, bi, ci))
+            stop(mstyle$stop("Supplied data vectors are not all of the same length."))
+
+         k.all <- length(ai)
+
+         if (!is.null(subset)) {
+            subset <- .setnafalse(subset, k=k.all)
+            ai <- ai[subset]
+            bi <- bi[subset]
+            ci <- ci[subset]
+         }
+
+         if (any(ai < 0, na.rm=TRUE) || any(bi < 0, na.rm=TRUE) || any(ci < 0, na.rm=TRUE))
+            stop(mstyle$stop("One or more group sizes are negative."))
+
+         ni <- ai + bi + ci
+
+         ni.u <- ni ### unadjusted total sample sizes
+
+         k <- length(ai)
+
+         p0i <- ai / ni
+         p1i <- bi / ni
+         p2i <- ci / ni
+
+         yi <- log(p1i) - log(2 * sqrt(p0i * p2i))
+         vi <- ((1-p1i) / (4 * p0i * p2i) + 1 / p1i) / ni
+
+      }
+
+      ######################################################################
+
    } else {
 
       ### in case yi is not NULL (so user wants to convert a regular data frame to an 'escalc' object)
 
       ### get vi, sei, and ni
 
-      mf.vi  <- mf[[match("vi",  names(mf))]]
-      mf.sei <- mf[[match("sei", names(mf))]]
-      mf.ni  <- mf[[match("ni", names(mf))]]
-      vi     <- eval(mf.vi,  data, enclos=sys.frame(sys.parent()))
-      sei    <- eval(mf.sei, data, enclos=sys.frame(sys.parent()))
-      ni     <- eval(mf.ni,  data, enclos=sys.frame(sys.parent()))
-
-      k.all <- length(yi)
+      vi  <- .getx("vi",  mf=mf, data=data)
+      sei <- .getx("sei", mf=mf, data=data)
+      ni  <- .getx("ni",  mf=mf, data=data)
 
       ### if neither vi nor sei is specified, then throw an error
       ### if only sei is specified, then square those values to get vi
@@ -1972,11 +2029,10 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
          }
       }
 
-      if (length(yi) != length(vi))
-         stop(mstyle$stop("Supplied data vectors are not of the same length."))
+      if (!.equal.length(yi, vi, ni))
+         stop(mstyle$stop("Supplied data vectors are not all of the same length."))
 
-      if (!is.null(ni) && (length(yi) != length(ni)))
-         stop(mstyle$stop("Supplied data vectors are not of the same length."))
+      k.all <- length(yi)
 
       if (!is.null(subset)) {
          subset <- .setnafalse(subset, k=k.all)

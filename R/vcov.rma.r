@@ -5,7 +5,7 @@ vcov.rma <- function(object, type="fixed", ...) {
    .chkclass(class(object), must="rma")
 
    na.act <- getOption("na.action")
-   on.exit(options(na.action=na.act))
+   on.exit(options(na.action=na.act), add=TRUE)
 
    if (!is.element(na.act, c("na.omit", "na.exclude", "na.fail", "na.pass")))
       stop(mstyle$stop("Unknown 'na.action' specified under options()."))
@@ -32,7 +32,7 @@ vcov.rma <- function(object, type="fixed", ...) {
       if (inherits(object, c("rma.uni","rma.mv"))) {
 
          out <- matrix(NA_real_, nrow=object$k.f, ncol=object$k.f)
-         out[object$not.na, object$not.na] <- object$M
+         out[object$not.na, object$not.na] <- as.matrix(object$M) # as.matrix() needed when sparse=TRUE
 
          rownames(out) <- colnames(out) <- object$slab
 
@@ -76,6 +76,11 @@ vcov.rma <- function(object, type="fixed", ...) {
 
    if (type=="resid") {
 
+      ### don't allow this; the SEs of the residuals cannot be estimated consistently for "robust.rma" objects
+
+      if (inherits(object, "robust.rma"))
+         stop(mstyle$stop("Extraction of var-cov matrix of the residuals not available for objects of this type."))
+
       options(na.action="na.omit")
       H <- hatvalues(object, type="matrix")
       options(na.action = na.act)
@@ -85,7 +90,7 @@ vcov.rma <- function(object, type="fixed", ...) {
       if (inherits(object, "robust.rma")) {
          ve <- ImH %*% tcrossprod(object$meat,ImH)
       } else {
-         ve <- ImH %*% tcrossprod(object$M,ImH)
+         ve <- ImH %*% tcrossprod(as.matrix(object$M),ImH) # as.matrix() needed when sparse=TRUE
       }
 
       if (na.act == "na.omit") {

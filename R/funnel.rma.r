@@ -1,8 +1,8 @@
 funnel.rma <- function(x, yaxis="sei", xlim, ylim, xlab, ylab,
 steps=5, at, atransf, targs, digits, level=x$level, addtau2=FALSE,
 type="rstandard", back="lightgray", shade="white", hlines="white",
-refline, lty=3, pch=19, pch.fill=21, col, bg,
-label=FALSE, offset=0.4, legend=FALSE, ci.res=1000, ...) {
+refline, lty=3, pch, pch.fill, col, bg,
+label=FALSE, offset=0.4, legend=FALSE, ...) {
 
    #########################################################################
 
@@ -11,7 +11,7 @@ label=FALSE, offset=0.4, legend=FALSE, ci.res=1000, ...) {
    .chkclass(class(x), must="rma")
 
    na.act <- getOption("na.action")
-   on.exit(options(na.action=na.act))
+   on.exit(options(na.action=na.act), add=TRUE)
 
    yaxis <- match.arg(yaxis, c("sei", "vi", "seinv", "vinv", "ni", "ninv", "sqrtni", "sqrtninv", "lni", "wi"))
    type  <- match.arg(type,  c("rstandard", "rstudent"))
@@ -19,7 +19,18 @@ label=FALSE, offset=0.4, legend=FALSE, ci.res=1000, ...) {
    if (missing(atransf))
       atransf <- FALSE
 
-   atransf.char <- deparse(substitute(atransf))
+   atransf.char <- deparse(atransf)
+
+   mf <- match.call()
+
+   if (missing(pch)) {
+      pch <- 19
+   } else {
+      pch <- .getx("pch", mf=mf, data=x$data)
+   }
+
+   if (missing(pch.fill))
+      pch.fill <- 21
 
    ### check if sample size information is available if plotting (some function of) the sample sizes on the y-axis
 
@@ -27,7 +38,7 @@ label=FALSE, offset=0.4, legend=FALSE, ci.res=1000, ...) {
       if (is.null(x$ni))
          stop(mstyle$stop("No sample size information stored in model object."))
       if (anyNA(x$ni))
-         warning(mstyle$warning("Sample size information stored in model object \n  contains NAs. Not all studies will be plotted."), call.=FALSE)
+         warning(mstyle$warning("Sample size information stored in model object\ncontains NAs. Not all studies will be plotted."), call.=FALSE)
    }
 
    ### set y-axis label if not specified
@@ -92,7 +103,7 @@ label=FALSE, offset=0.4, legend=FALSE, ci.res=1000, ...) {
    ### note: digits can also be a list (e.g., digits=list(2L,3)); trailing 0's are dropped for intergers
 
    if (length(lty) == 1L)
-      lty <- rep(lty, 2) ### 1st value = funnel lines, 2nd value = reference line
+      lty <- rep(lty, 2L) ### 1st value = funnel lines, 2nd value = reference line
 
    ### note: pch, col, and bg must be of the same length as the original data passed to rma()
    ###       so we have to apply the same subsetting (if necessary) and removing of NAs as was
@@ -104,6 +115,7 @@ label=FALSE, offset=0.4, legend=FALSE, ci.res=1000, ...) {
    } else {
       pch.vec <- TRUE
    }
+
    if (length(pch) != x$k.all)
       stop(mstyle$stop(paste0("Length of the 'pch' argument (", length(pch), ") does not correspond to the size of the original dataset (", x$k.all, ").")))
 
@@ -112,8 +124,12 @@ label=FALSE, offset=0.4, legend=FALSE, ci.res=1000, ...) {
 
    if (!inherits(x, "rma.uni.trimfill")) {
 
-      if (missing(col))
+      if (missing(col)) {
          col <- "black"
+      } else {
+         col <- .getx("col", mf=mf, data=x$data)
+      }
+
       if (length(col) == 1L) {
          col.vec <- FALSE
          col <- rep(col, x$k.all)
@@ -126,8 +142,12 @@ label=FALSE, offset=0.4, legend=FALSE, ci.res=1000, ...) {
       if (!is.null(x$subset))
          col <- col[x$subset]
 
-      if (missing(bg))
+      if (missing(bg)) {
          bg <- "white"
+      } else {
+         bg <- .getx("bg", mf=mf, data=x$data)
+      }
+
       if (length(bg) == 1L) {
          bg.vec <- FALSE
          bg <- rep(bg, x$k.all)
@@ -163,15 +183,18 @@ label=FALSE, offset=0.4, legend=FALSE, ci.res=1000, ...) {
 
    ddd <- list(...)
 
-   lplot     <- function(..., refline2, level2, lty2) plot(...)
-   labline   <- function(..., refline2, level2, lty2) abline(...)
-   lsegments <- function(..., refline2, level2, lty2) segments(...)
-   laxis     <- function(..., refline2, level2, lty2) axis(...)
-   lpolygon  <- function(..., refline2, level2, lty2) polygon(...)
-   llines    <- function(..., refline2, level2, lty2) lines(...)
-   lpoints   <- function(..., refline2, level2, lty2) points(...)
-   lrect     <- function(..., refline2, level2, lty2) rect(...)
-   ltext     <- function(..., refline2, level2, lty2) text(...)
+   if (!is.null(ddd$transf))
+      warning("Function does not have a 'transf' argument (use 'atransf' instead).", call.=FALSE)
+
+   lplot     <- function(..., refline2, level2, lty2, transf, ci.res) plot(...)
+   labline   <- function(..., refline2, level2, lty2, transf, ci.res) abline(...)
+   lsegments <- function(..., refline2, level2, lty2, transf, ci.res) segments(...)
+   laxis     <- function(..., refline2, level2, lty2, transf, ci.res) axis(...)
+   lpolygon  <- function(..., refline2, level2, lty2, transf, ci.res) polygon(...)
+   llines    <- function(..., refline2, level2, lty2, transf, ci.res) lines(...)
+   lpoints   <- function(..., refline2, level2, lty2, transf, ci.res) points(...)
+   lrect     <- function(..., refline2, level2, lty2, transf, ci.res) rect(...)
+   ltext     <- function(..., refline2, level2, lty2, transf, ci.res) text(...)
 
    ### refline2, level2, and lty2 for adding a second reference line / funnel
 
@@ -191,6 +214,14 @@ label=FALSE, offset=0.4, legend=FALSE, ci.res=1000, ...) {
       lty2 <- ddd$lty2
    } else {
       lty2 <- 3
+   }
+
+   ### number of y-axis values at which to calculate the bounds of the pseudo confidence interval
+
+   if (!is.null(ddd$ci.res)) {
+      ci.res <- ddd$ci.res
+   } else {
+      ci.res <- 1000
    }
 
    #########################################################################
@@ -655,7 +686,7 @@ label=FALSE, offset=0.4, legend=FALSE, ci.res=1000, ...) {
       pval2 <- NULL
       phantom <- NULL
 
-      ltxt <- sapply(1:lvals, function(i) {
+      ltxt <- sapply(seq_len(lvals), function(i) {
          if (i == 1)
             return(as.expression(bquote(paste(.(pval1) < p, phantom() <= .(pval2)), list(pval1=.fcf(level[i], lchars), pval2=.fcf(1, lchars)))))
             #return(as.expression(bquote(p > .(pval), list(pval=.fcf(level[i], lchars)))))
