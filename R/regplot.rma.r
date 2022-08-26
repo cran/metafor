@@ -1,7 +1,7 @@
 regplot.rma <- function(x, mod, pred=TRUE, ci=TRUE, pi=FALSE, shade=TRUE,
 xlim, ylim, predlim, olim, xlab, ylab, at, digits=2L,
 transf, atransf, targs, level=x$level,
-pch=21, psize, plim=c(0.5,3), col="black", bg="darkgray",
+pch, psize, plim=c(0.5,3), col, bg, slab,
 grid=FALSE, refline, label=FALSE, offset=c(1,1), labsize=1,
 lcol, lwd, lty, legend=FALSE, xvals, ...) {
 
@@ -32,6 +32,47 @@ lcol, lwd, lty, legend=FALSE, xvals, ...) {
    if (is.function(transf) && is.function(atransf))
       stop(mstyle$stop("Use either 'transf' or 'atransf' to specify a transformation (not both)."))
 
+   mf <- match.call()
+
+   if (missing(pch)) {
+      pch <- 21
+   } else {
+      pch <- .getx("pch", mf=mf, data=x$data)
+   }
+
+   if (missing(psize)) {
+      psize <- NULL
+   } else {
+      psize <- .getx("psize", mf=mf, data=x$data)
+   }
+
+   if (missing(col)) {
+      col <- "black"
+   } else {
+      col <- .getx("col", mf=mf, data=x$data)
+   }
+
+   if (missing(bg)) {
+      bg <- "darkgray"
+   } else {
+      bg <- .getx("bg", mf=mf, data=x$data)
+   }
+
+   if (missing(slab)) {
+      slab <- x$slab
+   } else {
+      slab <- .getx("slab", mf=mf, data=x$data)
+      if (length(slab) != x$k.all)
+         stop(mstyle$stop(paste0("Length of the 'slab' argument (", length(slab), ") does not correspond to the size of the original dataset (", x$k.all, ").")))
+      slab <- .getsubset(slab, x$subset)
+   }
+
+   if (missing(label)) {
+      label <- NULL
+   } else {
+      label <- .getx("label", mf=mf, data=x$data)
+   }
+
    if (missing(targs))
       targs <- NULL
 
@@ -40,12 +81,6 @@ lcol, lwd, lty, legend=FALSE, xvals, ...) {
 
    if (missing(at))
       at <- NULL
-
-   if (missing(psize))
-      psize <- NULL
-
-   if (missing(label))
-      label <- NULL
 
    ### grid argument can either be a logical or a color
 
@@ -72,7 +107,7 @@ lcol, lwd, lty, legend=FALSE, xvals, ...) {
    if (inherits(pred, "list.rma")) {
       addpred <- TRUE
       if (missing(xvals))
-         stop(mstyle$stop("Need to specify the 'xvals' argument."))
+         stop(mstyle$stop("Must specify 'xvals' argument when passing an object from predict() to 'pred'."))
       if (length(xvals) != length(pred$pred))
          stop(mstyle$stop(paste0("Length of the 'xvals' argument (", length(xvals), ") does not correspond to the number of predicted values (", length(pred$pred), ").")))
    } else {
@@ -152,7 +187,11 @@ lcol, lwd, lty, legend=FALSE, xvals, ...) {
       if (x$p == 2L && x$int.incl) {
          mod <- 2
       } else {
-         stop(mstyle$stop("Need to specify the 'mod' argument."))
+         if (x$p == 1L) {
+            mod <- 1
+         } else {
+            stop(mstyle$stop("Must specify 'mod' argument for models with multiple predictors."))
+         }
       }
    }
 
@@ -169,14 +208,14 @@ lcol, lwd, lty, legend=FALSE, xvals, ...) {
          mod.pos <- grep(mod, colnames(x$X), fixed=fixed)
 
          if (length(mod.pos) != 1L)
-            stop(mstyle$stop("Could not find or uniquely identify moderator variable specified via the 'mod' argument."))
+            stop(mstyle$stop("Could not find or uniquely identify the moderator variable specified via the 'mod' argument."))
 
       } else {
 
          mod.pos <- charmatch(mod, colnames(x$X))
 
          if (is.na(mod.pos) || mod.pos == 0L)
-            stop(mstyle$stop("Could not find or uniquely identify moderator variable specified via the 'mod' argument."))
+            stop(mstyle$stop("Could not find or uniquely identify the moderator variable specified via the 'mod' argument."))
 
       }
 
@@ -189,12 +228,11 @@ lcol, lwd, lty, legend=FALSE, xvals, ...) {
 
    }
 
-   ### extract the observed outcomes, corresponding sampling variances, model matrix, slab, and ids
+   ### extract the observed outcomes, corresponding sampling variances, model matrix, and ids
 
    yi   <- c(x$yi.f)
    vi   <- x$vi.f
    X    <- x$X.f
-   slab <- x$slab
    ids  <- x$ids
 
    ### get weights
@@ -219,8 +257,7 @@ lcol, lwd, lty, legend=FALSE, xvals, ...) {
    if (length(pch) != x$k.all)
       stop(mstyle$stop(paste0("Length of the 'pch' argument (", length(pch), ") does not correspond to the size of the original dataset (", x$k.all, ").")))
 
-   if (!is.null(x$subset))
-      pch <- pch[x$subset]
+   pch <- .getsubset(pch, x$subset)
 
    psize.char <- FALSE
 
@@ -246,8 +283,7 @@ lcol, lwd, lty, legend=FALSE, xvals, ...) {
          if (length(psize) != x$k.all)
             stop(mstyle$stop(paste0("Length of the 'psize' argument (", length(psize), ") does not correspond to the size of the original dataset (", x$k.all, ").")))
 
-         if (!is.null(x$subset))
-            psize <- psize[x$subset]
+         psize <- .getsubset(psize, x$subset)
 
       }
 
@@ -259,8 +295,7 @@ lcol, lwd, lty, legend=FALSE, xvals, ...) {
    if (length(col) != x$k.all)
       stop(mstyle$stop(paste0("Length of the 'col' argument (", length(col), ") does not correspond to the size of the original dataset (", x$k.all, ").")))
 
-   if (!is.null(x$subset))
-      col <- col[x$subset]
+   col <- .getsubset(col, x$subset)
 
    if (length(bg) == 1L)
       bg <- rep(bg, x$k.all)
@@ -268,8 +303,7 @@ lcol, lwd, lty, legend=FALSE, xvals, ...) {
    if (length(bg) != x$k.all)
       stop(mstyle$stop(paste0("Length of the 'bg' argument (", length(bg), ") does not correspond to the size of the original dataset (", x$k.all, ").")))
 
-   if (!is.null(x$subset))
-      bg <- bg[x$subset]
+   bg <- .getsubset(bg, x$subset)
 
    if (!is.null(label)) {
 
@@ -281,15 +315,14 @@ lcol, lwd, lty, legend=FALSE, xvals, ...) {
 
             label <- rep(TRUE, x$k.all)
 
-            if (!is.null(x$subset))
-               label <- label[x$subset]
+            label <- .getsubset(label, x$subset)
 
          }
 
       } else if (is.logical(label)) {
 
-         if (!is.logical(label))
-            stop(mstyle$stop("Argument 'label' must be a logical vector (or a single character string)."))
+         #if (!is.logical(label))
+         #   stop(mstyle$stop("Argument 'label' must be a logical vector (or a single character string)."))
 
          if (length(label) == 1L)
             label <- rep(label, x$k.all)
@@ -297,13 +330,14 @@ lcol, lwd, lty, legend=FALSE, xvals, ...) {
          if (length(label) != x$k.all)
             stop(mstyle$stop(paste0("Length of the 'label' argument (", length(label), ") does not correspond to the size of the original dataset (", x$k.all, ").")))
 
-         if (!is.null(x$subset))
-            label <- label[x$subset]
+         label <- .getsubset(label, x$subset)
 
       } else if (is.numeric(label)) {
 
          label <- round(label)
          label <- seq(x$k.all) %in% label
+
+         label <- .getsubset(label, x$subset)
 
       }
 

@@ -441,22 +441,22 @@
 
       ### create distance matrix
 
-      if (is.matrix(distspec)) {
+      if (.is.matrix(distspec)) {
 
          if (anyNA(distspec))
-            stop(mstyle$stop("No missing values allowed in matrices specified via 'dist'."))
+            stop(mstyle$stop("No missing values allowed in matrices specified via 'dist'."), call.=FALSE)
          if (!.is.square(distspec))
-            stop(mstyle$stop("Distance matrices specified via 'dist' must be square matrices."))
+            stop(mstyle$stop("Distance matrices specified via 'dist' must be square matrices."), call.=FALSE)
          if (!isSymmetric(unname(distspec)))
-            stop(mstyle$stop("Distance matrices specified via 'dist' must be symmetric matrices."))
+            stop(mstyle$stop("Distance matrices specified via 'dist' must be symmetric matrices."), call.=FALSE)
          if (is.null(rownames(distspec)))
             rownames(distspec) <- colnames(distspec)
          if (is.null(colnames(distspec)))
             colnames(distspec) <- rownames(distspec)
          if (length(colnames(distspec)) != length(unique(colnames(distspec))))
-            stop(mstyle$stop("Distance matrices specified via 'dist' must have unique dimension names."))
+            stop(mstyle$stop("Distance matrices specified via 'dist' must have unique dimension names."), call.=FALSE)
          if (any(!is.element(as.character(mf.g[[1]]), colnames(distspec))))
-            stop(mstyle$stop(paste0("There are levels in '", colnames(mf.g)[1], "' for which there are no matching rows/columns in the corresponding 'dist' matrix.")))
+            stop(mstyle$stop(paste0("There are levels in '", colnames(mf.g)[1], "' for which there are no matching rows/columns in the corresponding 'dist' matrix.")), call.=FALSE)
 
          if (is.element(struct, c("PHYBM","PHYPL","PHYPD")) && !all.equal(min(distspec), 0))
             warning(mstyle$warning("Minimum value in the distance matrix is not 0."), call.=FALSE)
@@ -469,7 +469,7 @@
       } else {
 
          if (is.element(struct, c("PHYBM","PHYPL","PHYPD")))
-            stop(mstyle$stop("Must supply distance matrix via 'dist' for phylogenetic correlation structures."))
+            stop(mstyle$stop("Must supply distance matrix via 'dist' for phylogenetic correlation structures."), call.=FALSE)
 
          Cmat <- model.matrix(formula, data=mf.g[-nvars])
 
@@ -825,7 +825,7 @@
 
 ### -1 times the log likelihood (regular or restricted) for rma.mv models
 
-.ll.rma.mv <- function(par, reml, Y, M, A, X.fit, k, pX, # note: X.fit due to hessian(); pX due to nlm(); M=V to begin with
+.ll.rma.mv <- function(par, reml, Y, M, A, X, k, pX, # note: pX due to nlm(); M=V to begin with
                        D.S, Z.G1, Z.G2, Z.H1, Z.H2, g.Dmat, h.Dmat,
                        sigma2.val, tau2.val, rho.val, gamma2.val, phi.val,
                        sigma2s, tau2s, rhos, gamma2s, phis,
@@ -922,7 +922,7 @@
       ### move the parameter estimates away from values that create the non-positive-definite M matrix)
 
       if (dofit) {
-         stop(mstyle$stop("Final variance-covariance matrix not positive definite."))
+         stop(mstyle$stop("Final variance-covariance matrix not positive definite."), call.=FALSE)
       } else {
          llval <- -Inf
       }
@@ -941,7 +941,7 @@
       if (inherits(U, "try-error")) {
 
          if (dofit) {
-            stop(mstyle$stop("Cannot fit model based on estimated marginal variance-covariance matrix."))
+            stop(mstyle$stop("Cannot fit model based on estimated marginal variance-covariance matrix."), call.=FALSE)
          } else {
             llval <- -Inf
          }
@@ -950,7 +950,7 @@
 
          if (!dofit || is.null(A)) {
 
-            sX   <- U %*% X.fit
+            sX   <- U %*% X
             sY   <- U %*% Y
             beta <- solve(crossprod(sX), crossprod(sX, sY))
             RSS  <- sum(as.vector(sY - sX %*% beta)^2)
@@ -959,11 +959,11 @@
 
          } else {
 
-            stXAX <- chol2inv(chol(as.matrix(t(X.fit) %*% A %*% X.fit)))
+            stXAX <- chol2inv(chol(as.matrix(t(X) %*% A %*% X)))
             #stXAX <- tcrossprod(qr.solve(sX, diag(k)))
-            beta  <- matrix(stXAX %*% crossprod(X.fit,A) %*% Y, ncol=1)
-            RSS   <- as.vector(t(Y - X.fit %*% beta) %*% W %*% (Y - X.fit %*% beta))
-            vb    <- matrix(stXAX %*% t(X.fit) %*% A %*% M %*% A %*% X.fit %*% stXAX, nrow=pX, ncol=pX)
+            beta  <- matrix(stXAX %*% crossprod(X,A) %*% Y, ncol=1)
+            RSS   <- as.vector(t(Y - X %*% beta) %*% W %*% (Y - X %*% beta))
+            vb    <- matrix(stXAX %*% t(X) %*% A %*% M %*% A %*% X %*% stXAX, nrow=pX, ncol=pX)
 
          }
 
@@ -973,8 +973,8 @@
             llvals[1]  <- -1/2 * (k) * log(2*base::pi) - 1/2 * determinant(M, logarithm=TRUE)$modulus - 1/2 * RSS
 
          if (dofit || reml)
-            llvals[2]  <- -1/2 * (k-pX) * log(2*base::pi) + ifelse(REMLf, 1/2 * determinant(crossprod(X.fit), logarithm=TRUE)$modulus, 0) +
-                          -1/2 * determinant(M, logarithm=TRUE)$modulus - 1/2 * determinant(crossprod(X.fit,W) %*% X.fit, logarithm=TRUE)$modulus - 1/2 * RSS
+            llvals[2]  <- -1/2 * (k-pX) * log(2*base::pi) + ifelse(REMLf, 1/2 * determinant(crossprod(X), logarithm=TRUE)$modulus, 0) +
+                          -1/2 * determinant(M, logarithm=TRUE)$modulus - 1/2 * determinant(crossprod(X,W) %*% X, logarithm=TRUE)$modulus - 1/2 * RSS
 
          if (dofit) {
 
@@ -1251,7 +1251,7 @@
          if (length(ddf) == 1L)
             ddf <- rep(ddf, p)
          if (length(ddf) != p)
-            stop(mstyle$stop(paste0("Length of 'dfs' argument (", length(dfs), ") does not match the number of model coefficient (", p, ").")))
+            stop(mstyle$stop(paste0("Length of 'dfs' argument (", length(dfs), ") does not match the number of model coefficient (", p, ").")), call.=FALSE)
       }
 
       if (is.character(dfs) && dfs == "residual")

@@ -8,7 +8,7 @@
 rma.peto(ai, bi, ci, di, n1i, n2i,
          data, slab, subset,
          add=1/2, to="only0", drop00=TRUE,
-         level=95, digits, verbose=FALSE, \dots)
+         level=95, verbose=FALSE, digits, \dots)
 }
 \arguments{
    \item{ai}{vector to specify the \mjeqn{2 \times 2}{2x2} table frequencies (upper left cell). See below and the documentation of the \code{\link{escalc}} function for more details.}
@@ -24,8 +24,8 @@ rma.peto(ai, bi, ci, di, n1i, n2i,
    \item{to}{character string to specify when the values under \code{add} should be added (either \code{"only0"}, \code{"all"}, \code{"if0all"}, or \code{"none"}). Can also be a character vector, where the first string again applies when calculating the observed effect sizes or outcomes and the second string when applying Peto's method. See below and the documentation of the \code{\link{escalc}} function for more details.}
    \item{drop00}{logical to specify whether studies with no cases (or only cases) in both groups should be dropped when calculating the observed effect sizes or outcomes (the outcomes for such studies are set to \code{NA}). Can also be a vector of two logicals, where the first applies to the calculation of the observed effect sizes or outcomes and the second when applying Peto's method. See below and the documentation of the \code{\link{escalc}} function for more details.}
    \item{level}{numeric value between 0 and 100 to specify the confidence interval level (the default is 95).}
-   \item{digits}{optional integer to specify the number of decimal places to which the printed results should be rounded. If unspecified, the default is 4. See also \link[=misc-options]{here} for further details on how to control the number of digits in the output.}
    \item{verbose}{logical to specify whether output should be generated on the progress of the model fitting (the default is \code{FALSE}).}
+   \item{digits}{optional integer to specify the number of decimal places to which the printed results should be rounded. If unspecified, the default is 4. See also \link[=misc-options]{here} for further details on how to control the number of digits in the output.}
    \item{\dots}{additional arguments.}
 }
 \details{
@@ -33,11 +33,11 @@ rma.peto(ai, bi, ci, di, n1i, n2i,
    \subsection{Specifying the Data}{
 
       The studies are assumed to provide data in terms of \mjeqn{2 \times 2}{2x2} tables of the form:
-      \tabular{lccc}{
-              \tab outcome 1 \tab outcome 2 \tab total      \cr
-      group 1 \tab \code{ai} \tab \code{bi} \tab \code{n1i} \cr
-      group 2 \tab \code{ci} \tab \code{di} \tab \code{n2i}
-      } where \code{ai}, \code{bi}, \code{ci}, and \code{di} denote the cell frequencies and \code{n1i} and \code{n2i} the row totals. For example, in a set of randomized clinical trials (RCTs) or cohort studies, group 1 and group 2 may refer to the treatment (exposed) and placebo/control (not exposed) group, with outcome 1 denoting some event of interest (e.g., death) and outcome 2 its complement. In a set of case-control studies, group 1 and group 2 may refer to the group of cases and the group of controls, with outcome 1 denoting, for example, exposure to some risk factor and outcome 2 non-exposure.
+      \tabular{lcccccc}{
+              \tab \ics \tab outcome 1 \tab \ics \tab outcome 2 \tab \ics \tab total      \cr
+      group 1 \tab \ics \tab \code{ai} \tab \ics \tab \code{bi} \tab \ics \tab \code{n1i} \cr
+      group 2 \tab \ics \tab \code{ci} \tab \ics \tab \code{di} \tab \ics \tab \code{n2i}}
+      where \code{ai}, \code{bi}, \code{ci}, and \code{di} denote the cell frequencies and \code{n1i} and \code{n2i} the row totals. For example, in a set of randomized clinical trials (RCTs) or cohort studies, group 1 and group 2 may refer to the treatment (exposed) and placebo/control (not exposed) group, with outcome 1 denoting some event of interest (e.g., death) and outcome 2 its complement. In a set of case-control studies, group 1 and group 2 may refer to the group of cases and the group of controls, with outcome 1 denoting, for example, exposure to some risk factor and outcome 2 non-exposure.
 
    }
 
@@ -49,7 +49,7 @@ rma.peto(ai, bi, ci, di, n1i, n2i,
 
    \subsection{Observed Effect Sizes or Outcomes of the Individual Studies}{
 
-      Peto's method itself does not require the calculation of the observed (log) odds ratios of the individual studies and directly makes use of the \mjeqn{2 \times 2}{2x2} table counts. Zero cells are not a problem (except in extreme cases, such as when one of the two outcomes never occurs in any of the tables). Therefore, it is unnecessary to add some constant to the cell counts when there are zero cells.
+      Peto's method itself does not require the calculation of the observed log odds ratios of the individual studies and directly makes use of the \mjeqn{2 \times 2}{2x2} table counts. Zero cells are not a problem (except in extreme cases, such as when one of the two outcomes never occurs in any of the tables). Therefore, it is unnecessary to add some constant to the cell counts when there are zero cells.
 
       However, for plotting and various other functions, it is necessary to calculate the observed (log) odds ratios for the \mjseqn{k} studies. Here, zero cells can be problematic, so adding a constant value to the cell counts ensures that all \mjseqn{k} values can be calculated. The \code{add} and \code{to} arguments are used to specify what value should be added to the cell frequencies and under what circumstances when calculating the observed (log) odds ratios and when applying Peto's method. Similarly, the \code{drop00} argument is used to specify how studies with no cases (or only cases) in both groups should be handled. The documentation of the \code{\link{escalc}} function explains how the \code{add}, \code{to}, and \code{drop00} arguments work. If only a single value for these arguments is specified (as per default), then these values are used when calculating the observed (log) odds ratios and no adjustment to the cell counts is made when applying Peto's method. Alternatively, when specifying two values for these arguments, the first value applies when calculating the observed (log) odds ratios and the second value when applying Peto's method.
 

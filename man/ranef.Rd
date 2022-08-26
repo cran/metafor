@@ -14,7 +14,7 @@
    \item{object}{an object of class \code{"rma.uni"} or \code{"rma.mv"}.}
    \item{level}{numeric value between 0 and 100 to specify the prediction interval level. If unspecified, the default is to take the value from the object.}
    \item{digits}{optional integer to specify the number of decimal places to which the printed results should be rounded. If unspecified, the default is to take the value from the object.}
-   \item{transf}{optional argument to specify a function that should be used to transform the predicted values and interval bounds (e.g., \code{transf=exp}; see also \link{transf}). If unspecified, no transformation is used.}
+   \item{transf}{optional argument to specify a function to transform the predicted values and interval bounds (e.g., \code{transf=exp}; see also \link{transf}). If unspecified, no transformation is used.}
    \item{targs}{optional arguments needed by the function specified under \code{transf}.}
    \item{verbose}{logical to specify whether output should be generated on the progress of the computations (the default is \code{FALSE}).}
    \item{\dots}{other arguments.}
@@ -27,7 +27,7 @@
    \item{pi.ub}{upper bound of the prediction intervals.}
    \item{\dots}{some additional elements/values.}
 
-   The object is formatted and printed with the \code{\link[=print.list.rma]{print}} function.
+   The object is formatted and printed with the \code{\link[=print.list.rma]{print}} function. To format the results as a data frame, one can use the \code{\link[=as.data.frame.list.rma]{as.data.frame}} function.
 
    For objects of class \code{"rma.mv"}, a list of data frames with the same components as described above.
 }

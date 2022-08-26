@@ -3,7 +3,7 @@ add=x$add, to=x$to, transf, targs, pch=21, psize, plim=c(0.5,3.5), col, bg, grid
 
    mstyle <- .get.mstyle("crayon" %in% .packages())
 
-   .chkclass(class(x), must="rma", notav=c("rma.ls", "rma.uni.selmodel"))
+   .chkclass(class(x), must="rma", notav=c("rma.ls", "rma.gen", "rma.uni.selmodel"))
 
    if (!x$int.only)
       stop(mstyle$stop("L'Abbe plots can only be drawn for models without moderators."))
@@ -74,8 +74,7 @@ add=x$add, to=x$to, transf, targs, pch=21, psize, plim=c(0.5,3.5), col, bg, grid
    if (length(pch) != x$k.all)
       stop(mstyle$stop(paste0("Length of the 'pch' argument (", length(pch), ") does not correspond to the size of the original dataset (", x$k.all, ").")))
 
-   if (!is.null(x$subset))
-      pch <- pch[x$subset]
+   pch <- .getsubset(pch, x$subset)
 
    ### if user has set the point sizes
 
@@ -84,8 +83,7 @@ add=x$add, to=x$to, transf, targs, pch=21, psize, plim=c(0.5,3.5), col, bg, grid
          psize <- rep(psize, x$k.all)
       if (length(psize) != x$k.all)
          stop(mstyle$stop(paste0("Length of the 'psize' argument (", length(psize), ") does not correspond to the size of the original dataset (", x$k.all, ").")))
-      if (!is.null(x$subset))
-         psize <- psize[x$subset]
+      psize <- .getsubset(psize, x$subset)
    }
 
    if (missing(col))
@@ -97,8 +95,7 @@ add=x$add, to=x$to, transf, targs, pch=21, psize, plim=c(0.5,3.5), col, bg, grid
    if (length(col) != x$k.all)
       stop(mstyle$stop(paste0("Length of the 'col' argument (", length(col), ") does not correspond to the size of the original dataset (", x$k.all, ").")))
 
-   if (!is.null(x$subset))
-      col <- col[x$subset]
+   col <- .getsubset(col, x$subset)
 
    if (missing(bg))
       bg <- "gray"
@@ -109,21 +106,20 @@ add=x$add, to=x$to, transf, targs, pch=21, psize, plim=c(0.5,3.5), col, bg, grid
    if (length(bg) != x$k.all)
       stop(mstyle$stop(paste0("Length of the 'bg' argument (", length(bg), ") does not correspond to the size of the original dataset (", x$k.all, ").")))
 
-   if (!is.null(x$subset))
-      bg <- bg[x$subset]
+   bg <- .getsubset(bg, x$subset)
 
    #########################################################################
 
    ### these vectors may contain NAs
 
-   ai  <- x$ai.f
-   bi  <- x$bi.f
-   ci  <- x$ci.f
-   di  <- x$di.f
-   x1i <- x$x1i.f
-   x2i <- x$x2i.f
-   t1i <- x$t1i.f
-   t2i <- x$t2i.f
+   ai  <- x$outdat.f$ai
+   bi  <- x$outdat.f$bi
+   ci  <- x$outdat.f$ci
+   di  <- x$outdat.f$di
+   x1i <- x$outdat.f$x1i
+   x2i <- x$outdat.f$x2i
+   t1i <- x$outdat.f$t1i
+   t2i <- x$outdat.f$t2i
 
    ### drop00=TRUE may induce that the contrast-based yi value is NA; so
    ### make sure that the corresponding arm-based yi values are also NA

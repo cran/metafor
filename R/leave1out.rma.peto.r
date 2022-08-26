@@ -10,7 +10,7 @@ leave1out.rma.peto <- function(x, digits, transf, targs, progbar=FALSE, ...) {
       stop(mstyle$stop("Unknown 'na.action' specified under options()."))
 
    if (!x$int.only)
-      stop(mstyle$stop("Method only applicable for models without moderators."))
+      stop(mstyle$stop("Method only applicable to models without moderators."))
 
    if (x$k == 1)
       stop(mstyle$stop("Stopped because k = 1."))
@@ -65,7 +65,7 @@ leave1out.rma.peto <- function(x, digits, transf, targs, progbar=FALSE, ...) {
       if (!x$not.na[i])
          next
 
-      args <- list(ai=x$ai.f, bi=x$bi.f, ci=x$ci.f, di=x$di.f, add=x$add, to=x$to, drop00=x$drop00, level=x$level, subset=-i, outlist=outlist)
+      args <- list(ai=x$outdat.f$ai, bi=x$outdat.f$bi, ci=x$outdat.f$ci, di=x$outdat.f$di, add=x$add, to=x$to, drop00=x$drop00, level=x$level, subset=-i, outlist=outlist)
       res <- try(suppressWarnings(.do.call(rma.peto, args)), silent=TRUE)
 
       if (inherits(res, "try-error"))

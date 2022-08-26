@@ -2,7 +2,7 @@ cumul.rma.uni <- function(x, order, digits, transf, targs, progbar=FALSE, ...) {
 
    mstyle <- .get.mstyle("crayon" %in% .packages())
 
-   .chkclass(class(x), must="rma.uni", notav=c("robust.rma", "rma.ls", "rma.uni.selmodel"))
+   .chkclass(class(x), must="rma.uni", notav=c("robust.rma", "rma.ls", "rma.gen", "rma.uni.selmodel"))
 
    na.act <- getOption("na.action")
 
@@ -10,7 +10,7 @@ cumul.rma.uni <- function(x, order, digits, transf, targs, progbar=FALSE, ...) {
       stop(mstyle$stop("Unknown 'na.action' specified under options()."))
 
    if (!x$int.only)
-      stop(mstyle$stop("Method only applicable for models without moderators."))
+      stop(mstyle$stop("Method only applicable to models without moderators."))
 
    if (missing(digits)) {
       digits <- .get.digits(xdigits=x$digits, dmiss=TRUE)
@@ -56,18 +56,21 @@ cumul.rma.uni <- function(x, order, digits, transf, targs, progbar=FALSE, ...) {
    ###       original dataset passed to the model fitting function and so we apply
    ###       the same subsetting (if necessary) as was done during model fitting
 
-   if (!is.null(x$subset))
-      order <- order[x$subset]
+   order <- .getsubset(order, x$subset)
 
    order <- order(order, decreasing=decreasing)
 
    yi.f      <- x$yi.f[order]
    vi.f      <- x$vi.f[order]
-   X.f       <- cbind(x$X.f[order,])
    weights.f <- x$weights.f[order]
    not.na    <- x$not.na[order]
    slab      <- x$slab[order]
    ids       <- x$ids[order]
+   if (inherits(x$data, "environment")) {
+      data <- NULL
+   } else {
+      data <- x$data[order,]
+   }
 
    beta  <- rep(NA_real_, x$k.f)
    se    <- rep(NA_real_, x$k.f)
@@ -153,12 +156,14 @@ cumul.rma.uni <- function(x, order, digits, transf, targs, progbar=FALSE, ...) {
       out <- list(estimate=beta[not.na], se=se[not.na], zval=zval[not.na], pvals=pval[not.na], ci.lb=ci.lb[not.na], ci.ub=ci.ub[not.na], Q=QE[not.na], Qp=QEp[not.na], tau2=tau2[not.na], I2=I2[not.na], H2=H2[not.na])
       out$slab <- slab[not.na]
       out$ids  <- ids[not.na]
+      out$data <- data[not.na,]
    }
 
    if (na.act == "na.exclude" || na.act == "na.pass") {
       out <- list(estimate=beta, se=se, zval=zval, pvals=pval, ci.lb=ci.lb, ci.ub=ci.ub, Q=QE, Qp=QEp, tau2=tau2, I2=I2, H2=H2)
       out$slab <- slab
       out$ids  <- ids
+      out$data <- data
    }
 
    if (na.act == "na.fail" && any(!x$not.na))

@@ -38,7 +38,7 @@ regtest <- function(x, vi, sei, ni, subset, data, model="rma", predictor="sei", 
 
    if (inherits(x, "rma")) {
 
-      .chkclass(class(x), must="rma", notav=c("robust.rma", "rma.glmm", "rma.mv", "rma.ls", "rma.uni.selmodel"))
+      .chkclass(class(x), must="rma", notav=c("robust.rma", "rma.glmm", "rma.mv", "rma.ls", "rma.gen", "rma.uni.selmodel"))
 
       if (!missing(vi) || !missing(sei) || !missing(subset))
          warning(mstyle$warning("Arguments 'vi', 'sei', and 'subset' ignored when 'x' is a model object."), call.=FALSE)
@@ -52,15 +52,14 @@ regtest <- function(x, vi, sei, ni, subset, data, model="rma", predictor="sei", 
 
       } else {
 
-         ni <- .getx("ni", mf=mf, data=data)
+         ni <- .getx("ni", mf=mf, data=data, checknumeric=TRUE)
 
          if (!is.null(ni)) {
 
             if (length(ni) != x$k.all)
                stop(mstyle$stop(paste0("Length of variable specified via 'ni' (", length(ni), ") does not correspond to the size of the original dataset (", x$k.all, ").")))
 
-            if (!is.null(x$subset))
-               ni <- ni[x$subset]
+            ni <- .getsubset(ni, x$subset)
 
             if (inherits(x, "rma.mh") || inherits(x, "rma.peto")) {
                ni <- ni[x$not.na.yivi]
@@ -109,6 +108,11 @@ regtest <- function(x, vi, sei, ni, subset, data, model="rma", predictor="sei", 
 
       yi <- x
 
+      ### check if yi is numeric
+
+      if (!is.numeric(yi))
+         stop(mstyle$stop("The object/variable specified for the 'x' argument is not numeric."))
+
       ### set defaults for digits
 
       if (missing(digits)) {
@@ -125,9 +129,9 @@ regtest <- function(x, vi, sei, ni, subset, data, model="rma", predictor="sei", 
 
       k <- length(yi)
 
-      vi     <- .getx("vi",     mf=mf, data=data)
-      sei    <- .getx("sei",    mf=mf, data=data)
-      ni     <- .getx("ni",     mf=mf, data=data)
+      vi     <- .getx("vi",     mf=mf, data=data, checknumeric=TRUE)
+      sei    <- .getx("sei",    mf=mf, data=data, checknumeric=TRUE)
+      ni     <- .getx("ni",     mf=mf, data=data, checknumeric=TRUE)
       subset <- .getx("subset", mf=mf, data=data)
 
       if (is.null(vi)) {
@@ -152,9 +156,9 @@ regtest <- function(x, vi, sei, ni, subset, data, model="rma", predictor="sei", 
 
       .chkviarg(mf$vi)
 
-      ### if ni has not been specified but is an attribute of yi, get it
+      ### if ni has not been specified, try to get it from the attributes of yi
 
-      if (is.null(ni) && !is.null(attr(yi, "ni")))
+      if (is.null(ni))
          ni <- attr(yi, "ni")
 
       ### check length of yi and ni (only if ni is not NULL)
@@ -171,10 +175,10 @@ regtest <- function(x, vi, sei, ni, subset, data, model="rma", predictor="sei", 
       ### if a subset of studies is specified
 
       if (!is.null(subset)) {
-         subset <- .setnafalse(subset, k=k)
-         yi <- yi[subset]
-         vi <- vi[subset]
-         ni <- ni[subset]
+         subset <- .chksubset(subset, k)
+         yi <- .getsubset(yi, subset)
+         vi <- .getsubset(vi, subset)
+         ni <- .getsubset(ni, subset)
       }
 
       ### check for NAs and act accordingly

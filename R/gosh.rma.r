@@ -2,7 +2,7 @@ gosh.rma <- function(x, subsets, progbar=TRUE, parallel="no", ncpus=1, cl, ...) 
 
    mstyle <- .get.mstyle("crayon" %in% .packages())
 
-   .chkclass(class(x), must="rma", notav=c("rma.glmm", "rma.mv", "robust.rma", "rma.ls", "rma.uni.selmodel"))
+   .chkclass(class(x), must="rma", notav=c("rma.glmm", "rma.mv", "robust.rma", "rma.ls", "rma.gen", "rma.uni.selmodel"))
 
    na.act <- getOption("na.action")
 
@@ -68,6 +68,9 @@ gosh.rma <- function(x, subsets, progbar=TRUE, parallel="no", ncpus=1, cl, ...) 
          N.tot <- 10^6
       }
    } else {
+      subsets <- round(subsets)
+      if (subsets <= 1)
+         stop(mstyle$stop("Argument 'subsets' must be >= 2."))
       if (N.tot <= subsets) {
          exact <- TRUE
       } else {

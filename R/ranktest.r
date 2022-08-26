@@ -62,6 +62,11 @@ ranktest <- function(x, vi, sei, subset, data, digits, ...) {
 
       yi <- x
 
+      ### check if yi is numeric
+
+      if (!is.numeric(yi))
+         stop(mstyle$stop("The object/variable specified for the 'x' argument is not numeric."))
+
       ### set defaults for digits
 
       if (missing(digits)) {
@@ -70,8 +75,8 @@ ranktest <- function(x, vi, sei, subset, data, digits, ...) {
          digits <- .set.digits(digits, dmiss=FALSE)
       }
 
-      vi     <- .getx("vi",     mf=mf, data=data)
-      sei    <- .getx("sei",    mf=mf, data=data)
+      vi     <- .getx("vi",     mf=mf, data=data, checknumeric=TRUE)
+      sei    <- .getx("sei",    mf=mf, data=data, checknumeric=TRUE)
       subset <- .getx("subset", mf=mf, data=data)
 
       if (is.null(vi)) {
@@ -96,9 +101,9 @@ ranktest <- function(x, vi, sei, subset, data, digits, ...) {
       ### if a subset of studies is specified
 
       if (!is.null(subset)) {
-         subset <- .setnafalse(subset, k=length(yi))
-         yi <- yi[subset]
-         vi <- vi[subset]
+         subset <- .chksubset(subset, length(yi))
+         yi <- .getsubset(yi, subset)
+         vi <- .getsubset(vi, subset)
       }
 
       ### check for NAs and act accordingly

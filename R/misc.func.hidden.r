@@ -2,7 +2,7 @@
 
 ### function to set default 'btt' value(s) or check specified 'btt' values
 
-.set.btt <- function(btt, p, int.incl, Xnames) {
+.set.btt <- function(btt, p, int.incl, Xnames, fixed=FALSE) {
 
    mstyle <- .get.mstyle("crayon" %in% .packages())
 
@@ -15,26 +15,26 @@
             btt <- seq_len(p)                ### and the model does not have an intercept term, test all coefficients
          }
       } else {
-         btt <- 1                         ### if the model matrix has a single column, test that single coefficient
+         btt <- 1L                        ### if the model matrix has a single column, test that single coefficient
       }
 
    } else {
 
       if (is.character(btt)) {
 
-         btt <- grep(btt, Xnames)
+         btt <- grep(btt, Xnames, fixed=fixed)
 
          if (length(btt) == 0L)
-            stop(mstyle$stop("Cannot identify coefficient(s) corresponding to the specified 'btt' string."))
+            stop(mstyle$stop("Cannot identify coefficient(s) corresponding to the specified 'btt' string."), call.=FALSE)
 
       } else {
 
-         ### round, take unique values, and sort
-         btt <- sort(unique(round(btt)))
+         ### round, take unique values, sort, and turn into integer(s)
+         btt <- as.integer(sort(unique(round(btt))))
 
          ### check for mix of positive and negative values
          if (any(btt < 0) && any(btt > 0))
-            stop(mstyle$stop("Cannot mix positive and negative 'btt' values."))
+            stop(mstyle$stop("Cannot mix positive and negative 'btt' values."), call.=FALSE)
 
          ### keep/remove from 1:p vector as specified
          btt <- seq_len(p)[btt]
@@ -44,7 +44,7 @@
 
          ### make sure that at least one valid value is left
          if (length(btt) == 0L)
-            stop(mstyle$stop("Non-existent coefficients specified via 'btt'."))
+            stop(mstyle$stop("Non-existent coefficients specified via 'btt'."), call.=FALSE)
 
       }
 
@@ -54,13 +54,15 @@
 
 }
 
-### function to format 'btt' values for printing
+### function to format 'btt' value(s) for printing
 
 .format.btt <- function(btt) {
 
    sav <- c()
 
    if (length(btt) > 1L) {
+
+      btt <- sort(btt)
 
       while (length(btt) > 0L) {
 
@@ -172,6 +174,11 @@
    return(x)
 }
 
+### function to test if x is a matrix and that also covers Matrix objects
+
+.is.matrix <- function(x)
+   is.matrix(x) || inherits(x, "Matrix")
+
 ############################################################################
 
 ### function to format p-values
@@ -196,7 +203,8 @@
 .fcf <- function(x, digits) {
 
    if (all(is.na(x))) { # since formatC(NA, format="f", digits=2) fails
-      x
+      #x
+      rep("NA", length(x))
    } else {
       trimws(formatC(x, format="f", digits=digits))
    }
@@ -209,7 +217,12 @@
 
    if (!allow.vector && length(level) != 1L) {
       mstyle <- .get.mstyle("crayon" %in% .packages())
-      stop(mstyle$stop("Argument 'level' must specify a single value."))
+      stop(mstyle$stop("Argument 'level' must specify a single value."), call.=FALSE)
+   }
+
+   if (!is.numeric(level)) {
+      mstyle <- .get.mstyle("crayon" %in% .packages())
+      stop(mstyle$stop("The 'level' argument must be numeric."), call.=FALSE)
    }
 
    ifelse(level == 0, 1, ifelse(level >= 1, (100-level)/100, ifelse(level > .5, 1-level, level)))
@@ -221,29 +234,59 @@
 ### function to print a named (character) vector right aligned with
 ### a gap of two spaces between adjacent values and no padding
 
-.print.vector <- function(x) {
+.print.vector <- function(x, minfoot=NA, print.gap=2) {
+
+   empty.last.colname <- colnames(x)[length(colnames(x))] == ""
 
    if (is.null(names(x)))
       names(x) <- seq_along(x)
+
+   gap <- paste0(rep(" ", print.gap), collapse="")
 
    len.n   <- nchar(names(x))
    len.x   <- nchar(x, keepNA=FALSE)
    len.max <- pmax(len.n, len.x)
    #format  <- sapply(len.max, function(x) paste("%", x, "s", sep=""))
 
-   #row.n <- paste(sprintf(format, names(x)), collapse="  ") # sprintf("%3s", "\u00b9") isn't right
-   #row.x <- paste(sprintf(format, x), collapse="  ")
+   #row.n <- paste(sprintf(format, names(x)), collapse=gap) # sprintf("%3s", "\u00b9") isn't right
+   #row.x <- paste(sprintf(format, x), collapse=gap)
 
    #f <- function(x, n)
    #   paste0(paste0(rep(" ", n-nchar(x)), collapse=""), x, collapse="")
-   #row.n <- paste(mapply(f, names(x), len.max), collapse="  ")
-   #row.x <- paste(mapply(f, unname(x), len.max), collapse="  ")
+   #row.n <- paste(mapply(f, names(x), len.max), collapse=gap)
+   #row.x <- paste(mapply(f, unname(x), len.max), collapse=gap)
 
-   row.n <- paste(mapply(formatC, names(x), width=len.max), collapse="  ") # formatC("\u00b9", width=3) works
-   row.x <- paste(mapply(formatC, x, width=len.max), collapse="  ")
+   if (is.na(minfoot)) {
+      row.n <- paste(mapply(formatC, names(x), width=len.max), collapse=gap) # formatC("\u00b9", width=3) works
+      row.x <- paste(mapply(formatC, x, width=len.max), collapse=gap)
+   } else {
+      row.n <- mapply(formatC, names(x), width=len.max)
+      row.n[minfoot] <- paste0(" ", row.n[minfoot])
+      row.n <- paste(row.n, collapse=gap)
+      row.x <- mapply(formatC, x, width=len.max)
+      if (empty.last.colname) {
+         row.x[length(row.x)] <- paste0(" ", row.x[length(row.x)])
+      } else {
+         row.x[length(row.x)] <- paste0(row.x[length(row.x)], " ")
+      }
+      row.x <- paste(row.x, collapse=gap)
+   }
 
    cat(row.n, "\n", row.x, "\n", sep="")
 
+}
+
+.addfootsym <- function(x, cols, footsym) {
+   nc <- length(cols)
+   if (length(footsym) == 1L)
+      footsym <- rep(footsym, nc)
+   if (length(footsym) != nc)
+      stop(paste0("Length of 'cols' not the same as length of 'footsym' in .addfootsym()."), call.=FALSE)
+   for (i in seq_along(cols)) {
+      colnames(x)[cols[i]] <- paste0(colnames(x)[cols[i]], footsym[i])
+      x[[cols[i]]] <- paste0(x[[cols[i]]], " ")
+   }
+   return(x)
 }
 
 ############################################################################
@@ -251,6 +294,8 @@
 .space <- function(x=TRUE) {
    no.rmspace <- !exists(".rmspace")
    if (no.rmspace && x)
+      cat("\n")
+   if (!no.rmspace && !x)
       cat("\n")
 }
 
@@ -329,29 +374,36 @@
 
 ############################################################################
 
-.getx <- function(x, mf, data, enclos=sys.frame(sys.parent(n=2))) {
+.getx <- function(x, mf, data, enclos=sys.frame(sys.parent(n=2)), checknull=TRUE, checknumeric=FALSE) {
 
    mstyle <- .get.mstyle("crayon" %in% .packages())
 
    mf.x <- mf[[match(x, names(mf))]]
    out <- try(eval(mf.x, data, enclos), silent=TRUE) # NULL if x was not specifified
 
-   spec <- x %in% names(mf)
-
    if (inherits(out, "try-error") || is.function(out))
       stop(mstyle$stop(paste0("Cannot find the object/variable ('", deparse(mf.x), "') specified for the '", x, "' argument.")), call.=FALSE)
 
    # note: is.function() check catches case where 'vi' is the utils::vi() function and other shenanigans
 
-   if (spec && is.null(out)) {
-      mf.txt <- deparse(mf.x)
-      if (mf.txt == "NULL") {
-         mf.txt <- " "
-      } else {
-         mf.txt <- paste0(" ('", mf.txt, "') ")
+   if (checknull) {
+
+      spec <- x %in% names(mf)
+
+      if (spec && is.null(out)) {
+         mf.txt <- deparse(mf.x)
+         if (mf.txt == "NULL") {
+            mf.txt <- " "
+         } else {
+            mf.txt <- paste0(" ('", mf.txt, "') ")
+         }
+         stop(mstyle$stop(paste0(deparse(mf)[1], ":\nThe object/variable", mf.txt, "specified for the '", x, "' argument is NULL.")), call.=FALSE)
       }
-      stop(mstyle$stop(paste0(deparse(mf)[1], ":\nThe object/variable", mf.txt, "specified for the '", x, "' argument is NULL.")), call.=FALSE)
+
    }
+
+   if (checknumeric && !is.null(out) && !is.list(out) && !is.numeric(out[1])) # using [1] so is.numeric(Matrix(1:3)[1]) works
+      stop(mstyle$stop(paste0("The object/variable specified for the '", x, "' argument is not numeric.")), call.=FALSE)
 
    return(out)
 
@@ -460,25 +512,24 @@
 .equal.length <- function(...) {
 
    ddd <- list(...)
-   #ddd <- ddd[!sapply(ddd, is.null)] # length(NULL) is 0 anyway
-   ddd <- ddd[sapply(ddd, function(x) length(x) > 0)]
-   if (length(ddd) == 0L) { # if nothing left, return TRUE
+   ks <- lengths(ddd)    # get the length of each element in ddd
+   if (all(ks == 0L)) { # if all elements have length 0 (are NULL), return TRUE
       return(TRUE)
    } else {
-      ks <- lengths(ddd)
-      return(length(unique(ks)) == 1L)
+      ks <- ks[ks > 0L]  # keep the non-zero lengths
+      return(length(unique(ks)) == 1L) # check that they are all identical
    }
 
 }
 
-### check that all elements are not of length 0 (NULL)
+### check that all elements given via ... are not of length 0 (are not NULL)
 
 .all.specified <- function(...) {
 
-   ddd  <- list(...)
-   not0  <- lengths(ddd) != 0L
-   all(not0)
+   ddd <- list(...)
    #all(!sapply(ddd, is.null))
+   not0 <- lengths(ddd) != 0L
+   all(not0)
 
 }
 
@@ -594,7 +645,7 @@
             lab <- ifelse(short, lab, "Transformed Mean Difference")
          }
       }
-      if (is.element(measure, c("SMD","SMDH","SMD1","PBIT","OR2D","OR2DN","OR2DL"))) {
+      if (is.element(measure, c("SMD","SMDH","SMD1","SMD1H","PBIT","OR2D","OR2DN","OR2DL"))) {
          if (identical(transf.char, "FALSE") && identical(atransf.char, "FALSE")) {
             lab <- ifelse(short, "SMD", "Standardized Mean Difference")
          } else {
@@ -1064,12 +1115,13 @@
 
 .print.table <- function(x, mstyle) {
 
-   is.header <- !grepl(" [-0-9]", x)
+   #is.header <- !grepl(" [-0-9]", x)
+   is.header <- !grepl("^\\s*[0-9]", x)
    has.header <- any(is.header)
 
    for (i in seq_along(x)) {
       if (is.header[i]) {
-         x[i] <- trimws(x[i], which="right")
+         #x[i] <- trimws(x[i], which="right")
          x[i] <- mstyle$header(x[i])
       } else {
          x[i] <- gsub("NA", mstyle$na("NA"), x[i], fixed=TRUE)
@@ -1292,39 +1344,76 @@ tidy.rma <- function (x, ...) {
 
 ############################################################################
 
-.setnafalse <- function(x, arg="subset", k, stoponk0=TRUE) {
+### check subset argument (if logical, make sure it's of the right length and set NAs to FALSE; if
+### numeric, remove NAs and 0's and check that values are not beyond k)
+
+.chksubset <- function(x, k, stoponk0=TRUE) {
+
+   if (is.null(x)) # if x is NULL, return x (i.e., NULL)
+      return(x)
 
    mstyle <- .get.mstyle("crayon" %in% .packages())
 
    if (is.logical(x)) {
-      x <- x[seq_len(k)]
-      if (anyNA(x))
-         x[is.na(x)] <- FALSE
+      if (length(x) != k)
+         stop(mstyle$stop(paste0("Length of the specified 'subset' (", length(x), ") is not of length k = ", k, ".")), call.=FALSE)
+      #x <- x[seq_len(k)]     # keep only elements 1:k from x
+      if (anyNA(x))           # if x includes any NA elements
+         x[is.na(x)] <- FALSE # set NA elements to FALSE
    }
 
    if (is.numeric(x)) {
-      if (anyNA(x))
-         x <- x[!is.na(x)]
+      if (anyNA(x))             # if x includes any NA elements
+         x <- x[!is.na(x)]      # remove them
       x <- as.integer(round(x))
-      x <- x[x != 0L]
+      x <- x[x != 0L]           # also remove any 0's
       if (any(x > 0L) && any(x < 0L))
-         stop(mstyle$stop(paste0("Cannot mix positive and negative values for subsetting.")), call.=FALSE)
-      if (all(x > 0L))
+         stop(mstyle$stop("Cannot mix positive and negative values in 'subset'."), call.=FALSE)
+      if (all(x > 0L)) {
+         if (any(x > k))
+            stop(mstyle$stop(paste0("Specified 'subset' includes values larger than k = ", k, ".")), call.=FALSE)
          x <- is.element(seq_len(k), x)
-      if (all(x < 0L))
+      } else {
+         if (any(x < -k))
+            stop(mstyle$stop(paste0("Specified 'subset' includes values larger than k = ", k, ".")), call.=FALSE)
          x <- !is.element(seq_len(k), abs(x))
+      }
    }
 
    if (stoponk0 && !any(x))
       stop(mstyle$stop(paste0("Stopped because k = 0 after subsetting.")), call.=FALSE)
 
-   #if (anyNA(x)) {
-   #   if (is.logical(x))
-   #      x[is.na(x)] <- FALSE
-   #   if (is.numeric(x))
-   #      x <- x[!is.na(x)]
-   #   #warning(mstyle$warning(paste0("Missing values in '", arg, "' argument treated as non-selected.")), call.=FALSE)
-   #}
+   return(x)
+
+}
+
+### get subset function that works for matrices and data frames (selecting rows by default but rows
+### and columns when col=TRUE) and vectors and also checks that x is of the same length as subset
+
+.getsubset <- function(x, subset, col=FALSE, drop=FALSE) {
+
+   if (is.null(x) || is.null(subset)) # if x or subset is NULL, return x (i.e., NULL)
+      return(x)
+
+   mstyle <- .get.mstyle("crayon" %in% .packages())
+
+   xname <- deparse(substitute(x))
+
+   k <- length(subset)
+
+   if (.is.matrix(x) || is.data.frame(x)) {
+      if (nrow(x) != k)
+         stop(mstyle$stop(paste0("Element '", xname, "' is not of length ", k, ".")), call.=FALSE)
+      if (col) {
+         x <- x[subset,subset,drop=drop]
+      } else {
+         x <- x[subset,,drop=drop]
+      }
+   } else {
+      if (length(x) != k)
+         stop(mstyle$stop(paste0("Element '", xname, "' is not of length ", k, ".")), call.=FALSE)
+      x <- x[subset]
+   }
 
    return(x)
 
@@ -1419,6 +1508,248 @@ tidy.rma <- function (x, ...) {
    if (verbose)
       cat("fsnum =", formatC(fsnum, width=4, format="d"), "  est =", .fcf(est, 4), "  target =", .fcf(target, 4),  "  diff =", formatC(diff, format="f", digits=4, flag=" "), "\n")
    return(diff)
+
+}
+
+############################################################################
+
+.chkopt <- function(optimizer, optcontrol) {
+
+   mstyle <- .get.mstyle("crayon" %in% .packages())
+
+   ### set NLOPT_LN_BOBYQA as the default algorithm for nloptr optimizer
+   ### and by default use a relative convergence criterion of 1e-8 on the function value
+
+   if (optimizer == "nloptr" && !is.element("algorithm", names(optcontrol)))
+      optcontrol$algorithm <- "NLOPT_LN_BOBYQA"
+
+   if (optimizer == "nloptr" && !is.element("ftol_rel", names(optcontrol)))
+      optcontrol$ftol_rel <- 1e-8
+
+   ### for mads, set trace=FALSE and tol=1e-6 by default
+
+   if (optimizer == "mads" && !is.element("trace", names(optcontrol)))
+      optcontrol$trace <- FALSE
+
+   if (optimizer == "mads" && !is.element("tol", names(optcontrol)))
+      optcontrol$tol <- 1e-6
+
+   ### for subplex, set reltol=1e-8 by default (the default in subplex() is .Machine$double.eps)
+
+   if (optimizer == "subplex" && !is.element("reltol", names(optcontrol)))
+      optcontrol$reltol <- 1e-8
+
+   ### for BBoptim, set trace=FALSE by default
+
+   if (optimizer == "BBoptim" && !is.element("trace", names(optcontrol)))
+      optcontrol$trace <- FALSE
+
+   ### for solnp, set trace=FALSE by default
+
+   if (optimizer == "solnp" && !is.element("trace", names(optcontrol)))
+      optcontrol$trace <- FALSE
+
+   ### check that the required packages are installed
+
+   if (is.element(optimizer, c("uobyqa","newuoa","bobyqa"))) {
+      if (!requireNamespace("minqa", quietly=TRUE))
+         stop(mstyle$stop("Please install the 'minqa' package to use this optimizer."), call.=FALSE)
+   }
+
+   if (is.element(optimizer, c("nloptr","ucminf","lbfgsb3c","subplex","optimParallel"))) {
+      if (!requireNamespace(optimizer, quietly=TRUE))
+         stop(mstyle$stop(paste0("Please install the '", optimizer, "' package to use this optimizer.")), call.=FALSE)
+   }
+
+   if (is.element(optimizer, c("hjk","nmk","mads"))) {
+      if (!requireNamespace("dfoptim", quietly=TRUE))
+         stop(mstyle$stop("Please install the 'dfoptim' package to use this optimizer."), call.=FALSE)
+   }
+
+   if (optimizer == "BBoptim") {
+      if (!requireNamespace("BB", quietly=TRUE))
+         stop(mstyle$stop("Please install the 'BB' package to use this optimizer."), call.=FALSE)
+   }
+
+   if (optimizer == "solnp") {
+      if (!requireNamespace("Rsolnp", quietly=TRUE))
+         stop(mstyle$stop("Please install the 'Rsolnp' package to use this optimizer."), call.=FALSE)
+   }
+
+   if (optimizer == "constrOptim.nl") {
+      if (!requireNamespace("alabama", quietly=TRUE))
+         stop(mstyle$stop("Please install the 'alabama' package to use this optimizer."), call.=FALSE)
+   }
+
+   #########################################################################
+
+   if (is.element(optimizer, c("optim","constrOptim"))) {
+      par.arg <- "par"
+      ctrl.arg <- ", control=optcontrol"
+   }
+
+   if (optimizer == "nlminb") {
+      par.arg <- "start"
+      ctrl.arg <- ", control=optcontrol"
+   }
+
+   if (is.element(optimizer, c("uobyqa","newuoa","bobyqa"))) {
+      par.arg <- "par"
+      optimizer <- paste0("minqa::", optimizer) # need to use this since loading nloptr masks bobyqa() and newuoa() functions
+      ctrl.arg <- ", control=optcontrol"
+   }
+
+   if (optimizer == "nloptr") {
+      par.arg <- "x0"
+      optimizer <- paste0("nloptr::nloptr") # need to use this due to requireNamespace()
+      ctrl.arg <- ", opts=optcontrol"
+   }
+
+   if (optimizer == "nlm") {
+      par.arg <- "p" # because of this, must use argument name pX for p (number of columns in X matrix)
+      ctrl.arg <- paste(names(optcontrol), unlist(optcontrol), sep="=", collapse=", ")
+      if (nchar(ctrl.arg) != 0L)
+         ctrl.arg <- paste0(", ", ctrl.arg)
+   }
+
+   if (is.element(optimizer, c("hjk","nmk","mads"))) {
+      par.arg <- "par"
+      optimizer <- paste0("dfoptim::", optimizer) # need to use this so that the optimizers can be found
+      ctrl.arg <- ", control=optcontrol"
+   }
+
+   if (is.element(optimizer, c("ucminf","lbfgsb3c","subplex"))) {
+      par.arg <- "par"
+      optimizer <- paste0(optimizer, "::", optimizer) # need to use this due to requireNamespace()
+      ctrl.arg <- ", control=optcontrol"
+   }
+
+   if (optimizer == "BBoptim") {
+      par.arg <- "par"
+      optimizer <- "BB::BBoptim"
+      ctrl.arg <- ", quiet=TRUE, control=optcontrol"
+   }
+
+   if (optimizer == "solnp") {
+      par.arg <- "pars"
+      optimizer <- "Rsolnp::solnp"
+      ctrl.arg <- ", control=optcontrol"
+   }
+
+   if (optimizer == "constrOptim.nl") {
+      par.arg <- "par"
+      optimizer <- "alabama::constrOptim.nl"
+      if ("control.outer" %in% names(optcontrol)) {
+         # can specify 'control.outer' to be passed to constrOptim.nl(), but when using
+         # the 'method' argument, must escape " or use ' for this to work; for example:
+         # control=list(optimizer="constrOptim.nl", control.outer=list(method="'Nelder-Mead'"))
+         control.outer <- paste0("control.outer=list(", paste(names(optcontrol$control.outer), unlist(optcontrol$control.outer), sep="=", collapse=", "), ")")
+         ctrl.arg <- paste0(", control.optim=optcontrol, ", control.outer)
+         optcontrol$control.outer <- NULL
+      } else {
+         ctrl.arg <- ", control.optim=optcontrol, control.outer=list(trace=FALSE)"
+      }
+   }
+
+   if (optimizer == "optimParallel") {
+      par.arg <- "par"
+      optimizer <- "optimParallel::optimParallel"
+      ctrl.arg <- ", control=optcontrol, parallel=parallel"
+   }
+
+   return(list(optimizer=optimizer, optcontrol=optcontrol, par.arg=par.arg, ctrl.arg=ctrl.arg))
+
+}
+
+.chkconv <- function(optimizer, opt.res, optcontrol, fun, verbose) {
+
+   mstyle <- .get.mstyle("crayon" %in% .packages())
+
+   if (optimizer == "optimParallel::optimParallel" && verbose) {
+      tmp <- capture.output(print(opt.res$loginfo))
+      .print.output(tmp, mstyle$verbose)
+   }
+
+   ### convergence checks
+
+   if (inherits(opt.res, "try-error"))
+      stop(mstyle$stop(paste0("Error during the optimization. Use verbose=TRUE and see help(", fun, ") for more details on the optimization routines.")), call.=FALSE)
+
+   if (is.element(optimizer, c("optim","constrOptim","nlminb","dfoptim::hjk","dfoptim::nmk","lbfgsb3c::lbfgsb3c","subplex::subplex","BB::BBoptim","Rsolnp::solnp","alabama::constrOptim.nl","optimParallel::optimParallel")) && opt.res$convergence != 0)
+      stop(mstyle$stop(paste0("Optimizer (", optimizer, ") did not achieve convergence (convergence = ", opt.res$convergence, ").")), call.=FALSE)
+
+   if (is.element(optimizer, c("dfoptim::mads")) && opt.res$convergence > optcontrol$tol)
+      stop(mstyle$stop(paste0("Optimizer (", optimizer, ") did not achieve convergence (convergence = ", opt.res$convergence, ").")), call.=FALSE)
+
+   if (is.element(optimizer, c("minqa::uobyqa","minqa::newuoa","minqa::bobyqa")) && opt.res$ierr != 0)
+      stop(mstyle$stop(paste0("Optimizer (", optimizer, ") did not achieve convergence (ierr = ", opt.res$ierr, ").")), call.=FALSE)
+
+   if (optimizer=="nloptr::nloptr" && !(opt.res$status >= 1 && opt.res$status <= 4))
+      stop(mstyle$stop(paste0("Optimizer (", optimizer, ") did not achieve convergence (status = ", opt.res$status, ").")), call.=FALSE)
+
+   if (optimizer=="ucminf::ucminf" && !(opt.res$convergence == 1 || opt.res$convergence == 2))
+      stop(mstyle$stop(paste0("Optimizer (", optimizer, ") did not achieve convergence (convergence = ", opt.res$convergence, ").")), call.=FALSE)
+
+   if (verbose > 2) {
+      cat("\n")
+      tmp <- capture.output(print(opt.res))
+      .print.output(tmp, mstyle$verbose)
+   }
+
+   ### copy estimated values to 'par'
+
+   if (optimizer=="nloptr::nloptr")
+      opt.res$par <- opt.res$solution
+   if (optimizer=="nlm")
+      opt.res$par <- opt.res$estimate
+   if (optimizer=="Rsolnp::solnp")
+      opt.res$par <- opt.res$pars
+
+   return(opt.res$par)
+
+}
+
+############################################################################
+
+.coltail <- function(h, val, tail="upper", mult=1, col, border, freq, ...) {
+
+   h$counts  <- h$counts  * mult
+   h$density <- h$density * mult
+
+   if (tail == "lower") {
+
+      above <- which(h$breaks > val)
+      if (length(above) > 0L) {
+         pos <- above[1]
+         h$breaks[pos] <- val
+      }
+      sel <- h$breaks <= val
+      if (sum(sel) >= 2L) {
+         h$breaks  <- h$breaks[sel]
+         h$counts  <- h$counts[sel[-1]]
+         h$density <- h$density[sel[-1]]
+         h$mids    <- h$mids[sel[-1]]
+         lines(h, col=col, border=border, freq=freq, ...)
+      }
+
+   } else {
+
+      below <- which(h$breaks < val)
+      if (length(below) > 0L) {
+         pos <- below[length(below)]
+         h$breaks[pos] <- val
+      }
+      sel <- h$breaks >= val
+      if (sum(sel) >= 2L) {
+         len <- length(below)
+         h$breaks  <- h$breaks[sel]
+         h$counts  <- h$counts[sel[-len]]
+         h$density <- h$density[sel[-len]]
+         h$mids    <- h$mids[sel[-len]]
+         lines(h, col=col, border=border, freq=freq, ...)
+      }
+
+   }
 
 }
 

@@ -2,7 +2,7 @@ leave1out.rma.uni <- function(x, digits, transf, targs, progbar=FALSE, ...) {
 
    mstyle <- .get.mstyle("crayon" %in% .packages())
 
-   .chkclass(class(x), must="rma.uni", notav=c("robust.rma", "rma.ls", "rma.uni.selmodel"))
+   .chkclass(class(x), must="rma.uni", notav=c("robust.rma", "rma.ls", "rma.gen", "rma.uni.selmodel"))
 
    na.act <- getOption("na.action")
 
@@ -10,7 +10,7 @@ leave1out.rma.uni <- function(x, digits, transf, targs, progbar=FALSE, ...) {
       stop(mstyle$stop("Unknown 'na.action' specified under options()."))
 
    if (!x$int.only)
-      stop(mstyle$stop("Method only applicable for models without moderators."))
+      stop(mstyle$stop("Method only applicable to models without moderators."))
 
    if (x$k == 1)
       stop(mstyle$stop("Stopped because k = 1."))

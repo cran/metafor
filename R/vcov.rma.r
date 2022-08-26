@@ -10,7 +10,7 @@ vcov.rma <- function(object, type="fixed", ...) {
    if (!is.element(na.act, c("na.omit", "na.exclude", "na.fail", "na.pass")))
       stop(mstyle$stop("Unknown 'na.action' specified under options()."))
 
-   type <- match.arg(type, c("fixed", "obs", "fitted", "resid"))
+   type <- match.arg(type, c("fixed", "beta", "alpha", "delta", "obs", "fitted", "resid"))
 
    #########################################################################
 
@@ -21,6 +21,36 @@ vcov.rma <- function(object, type="fixed", ...) {
       if (inherits(object, "rma.ls"))
          out <- list(beta = object$vb, alpha = object$va)
 
+      if (inherits(object, "rma.uni.selmodel"))
+         out <- list(beta = object$vb, delta = object$vd)
+
+      return(out)
+
+   }
+
+   if (type=="beta") {
+
+      out <- object$vb
+      return(out)
+
+   }
+
+   if (type=="alpha") {
+
+      if (!inherits(object, "rma.ls"))
+         stop(mstyle$stop("Can only extract var-cov matrix of alpha coefficients for location-scale models."))
+
+      out <- object$va
+      return(out)
+
+   }
+
+   if (type=="delta") {
+
+      if (!inherits(object, "rma.uni.selmodel"))
+         stop(mstyle$stop("Can only extract var-cov matrix of delta coefficients for selection models."))
+
+      out <- object$vd
       return(out)
 
    }
@@ -76,9 +106,9 @@ vcov.rma <- function(object, type="fixed", ...) {
 
    if (type=="resid") {
 
-      ### don't allow this; the SEs of the residuals cannot be estimated consistently for "robust.rma" objects
+      ### the SEs of the residuals cannot be estimated consistently for "robust.rma" objects
 
-      if (inherits(object, "robust.rma"))
+      if (inherits(object, c("robust.rma", "rma.gen")))
          stop(mstyle$stop("Extraction of var-cov matrix of the residuals not available for objects of this type."))
 
       options(na.action="na.omit")

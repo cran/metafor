@@ -76,9 +76,9 @@ lty, lwd, col, level=99.99, refline=0, ...) {
 
    if (measure == "GEN") {
 
-      yi  <- .getx("yi",  mf=mf, data=data)
-      vi  <- .getx("vi",  mf=mf, data=data)
-      sei <- .getx("sei", mf=mf, data=data)
+      yi  <- .getx("yi",  mf=mf, data=data, checknumeric=TRUE)
+      vi  <- .getx("vi",  mf=mf, data=data, checknumeric=TRUE)
+      sei <- .getx("sei", mf=mf, data=data, checknumeric=TRUE)
 
       if (is.null(vi)) {
          if (is.null(sei)) {
@@ -99,21 +99,21 @@ lty, lwd, col, level=99.99, refline=0, ...) {
       ### subsetting
 
       if (!is.null(subset)) {
-         subset <- .setnafalse(subset, k=k)
-         yi <- yi[subset]
-         vi <- vi[subset]
+         subset <- .chksubset(subset, k)
+         yi <- .getsubset(yi, subset)
+         vi <- .getsubset(vi, subset)
       }
 
    }
 
    if (measure == "OR") {
 
-      ai  <- .getx("ai",  mf=mf, data=data)
-      bi  <- .getx("bi",  mf=mf, data=data)
-      ci  <- .getx("ci",  mf=mf, data=data)
-      di  <- .getx("di",  mf=mf, data=data)
-      n1i <- .getx("n1i", mf=mf, data=data)
-      n2i <- .getx("n2i", mf=mf, data=data)
+      ai  <- .getx("ai",  mf=mf, data=data, checknumeric=TRUE)
+      bi  <- .getx("bi",  mf=mf, data=data, checknumeric=TRUE)
+      ci  <- .getx("ci",  mf=mf, data=data, checknumeric=TRUE)
+      di  <- .getx("di",  mf=mf, data=data, checknumeric=TRUE)
+      n1i <- .getx("n1i", mf=mf, data=data, checknumeric=TRUE)
+      n2i <- .getx("n2i", mf=mf, data=data, checknumeric=TRUE)
 
       if (!.equal.length(ai, bi, ci, di, n1i, n2i))
          stop(mstyle$stop("Supplied data vectors are not all of the same length."))
@@ -168,11 +168,11 @@ lty, lwd, col, level=99.99, refline=0, ...) {
       ### subsetting
 
       if (!is.null(subset)) {
-         subset <- .setnafalse(subset, k=k)
-         ai <- ai[subset]
-         bi <- bi[subset]
-         ci <- ci[subset]
-         di <- di[subset]
+         subset <- .chksubset(subset, k)
+         ai <- .getsubset(ai, subset)
+         bi <- .getsubset(bi, subset)
+         ci <- .getsubset(ci, subset)
+         di <- .getsubset(di, subset)
       }
 
       dat <- .do.call(escalc, measure="OR", ai=ai, bi=bi, ci=ci, di=di, drop00=drop00, onlyo1=onlyo1, addyi=addyi, addvi=addvi)
@@ -221,12 +221,12 @@ lty, lwd, col, level=99.99, refline=0, ...) {
    ### if a subset of studies is specified
 
    if (!is.null(subset)) {
-      ids  <- ids[subset]
-      lty  <- lty[subset]
-      lwd  <- lwd[subset]
-      col  <- col[subset]
-      id0  <- id0[subset]
-      id00 <- id00[subset]
+      ids  <- .getsubset(ids,  subset)
+      lty  <- .getsubset(lty,  subset)
+      lwd  <- .getsubset(lwd,  subset)
+      col  <- .getsubset(col,  subset)
+      id0  <- .getsubset(id0,  subset)
+      id00 <- .getsubset(id00, subset)
    }
 
    ### number of outcomes after subsetting

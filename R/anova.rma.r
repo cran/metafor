@@ -12,10 +12,16 @@ anova.rma <- function(object, object2, btt, X, att, Z, rhs, digits, refit=FALSE,
 
    ddd <- list(...)
 
-   .chkdots(ddd, c("test", "L", "verbose"))
+   .chkdots(ddd, c("test", "L", "verbose", "fixed"))
 
    if (!is.null(ddd$L))
       X <- ddd$L
+
+   if (is.null(ddd$fixed)) {
+      fixed <- FALSE
+   } else {
+      fixed <- .isTRUE(ddd$fixed)
+   }
 
    if (!missing(att) && !inherits(object, "rma.ls"))
       stop(mstyle$stop("Can only specify 'att' for location-scale models."))
@@ -45,10 +51,31 @@ anova.rma <- function(object, object2, btt, X, att, Z, rhs, digits, refit=FALSE,
             if (missing(att) || is.null(att)) {
                att <- x$att
             } else {
-               att <- .set.btt(att, x$q, x$Z.int.incl, colnames(x$Z))
+               if (is.character(att) && length(att) > 1L)
+                  att <- as.list(att)
+               if (is.list(att)) {
+                  if (!missing(rhs))
+                     stop(mstyle$stop("Cannot use 'rhs' argument when specifying a list for 'att'."))
+                  sav <- lapply(att, function(attj) anova(x, att=attj, digits=digits, fixed=fixed))
+                  names(sav) <- sapply(att, .format.btt)
+                  class(sav) <- "list.anova.rma"
+                  return(sav)
+               }
+               att <- .set.btt(att, x$q, x$Z.int.incl, colnames(x$Z), fixed=fixed)
             }
 
             m <- length(att)
+
+            if (missing(rhs)) {
+               rhs <- rep(0, m)
+            } else {
+               if (length(rhs) == 1L)
+                  rhs <- rep(rhs, m)
+               if (length(rhs) != m)
+                  stop(mstyle$stop(paste0("Length of 'rhs' (", length(rhs), ") does not match the number of coefficients tested (", m, ").")))
+            }
+
+            x$alpha[att,] <- x$alpha[att,] - rhs
 
             QS <- try(as.vector(t(x$alpha)[att] %*% chol2inv(chol(x$va[att,att])) %*% x$alpha[att]), silent=TRUE)
 
@@ -73,10 +100,31 @@ anova.rma <- function(object, object2, btt, X, att, Z, rhs, digits, refit=FALSE,
             if (missing(btt) || is.null(btt)) {
                btt <- x$btt
             } else {
-               btt <- .set.btt(btt, x$p, x$int.incl, colnames(x$X))
+               if (is.character(btt) && length(btt) > 1L)
+                  btt <- as.list(btt)
+               if (is.list(btt)) {
+                  if (!missing(rhs))
+                     stop(mstyle$stop("Cannot use 'rhs' argument when specifying a list for 'btt'."))
+                  sav <- lapply(btt, function(bttj) anova(x, btt=bttj, digits=digits, fixed=fixed))
+                  names(sav) <- sapply(btt, .format.btt)
+                  class(sav) <- "list.anova.rma"
+                  return(sav)
+               }
+               btt <- .set.btt(btt, x$p, x$int.incl, colnames(x$X), fixed=fixed)
             }
 
             m <- length(btt)
+
+            if (missing(rhs)) {
+               rhs <- rep(0, m)
+            } else {
+               if (length(rhs) == 1L)
+                  rhs <- rep(rhs, m)
+               if (length(rhs) != m)
+                  stop(mstyle$stop(paste0("Length of 'rhs' (", length(rhs), ") does not match the number of coefficients tested (", m, ").")))
+            }
+
+            x$b[btt,] <- x$beta[btt,] <- x$b[btt,] - rhs
 
             if (inherits(x, "robust.rma") && x$robumethod == "clubSandwich") {
 
@@ -91,6 +139,7 @@ anova.rma <- function(object, object2, btt, X, att, Z, rhs, digits, refit=FALSE,
 
             } else {
 
+               #QM <- try(as.vector(t((x$beta)[btt]-rhs) %*% chol2inv(chol(x$vb[btt,btt])) %*% (x$beta[btt]-rhs)), silent=TRUE)
                QM <- try(as.vector(t(x$beta)[btt] %*% chol2inv(chol(x$vb[btt,btt])) %*% x$beta[btt]), silent=TRUE)
 
                if (inherits(QM, "try-error"))
@@ -200,7 +249,11 @@ anova.rma <- function(object, object2, btt, X, att, Z, rhs, digits, refit=FALSE,
             if (identical(rhs, rep(0,m))) {
                hyp <- paste0(hyp, " = 0") ### add '= 0' at the right
             } else {
-               hyp <- paste0(hyp, " = ", .fcf(rhs, digits=digits[["est"]])) ### add '= rhs' at the right
+               if (length(unique(rhs)) == 1L) {
+                  hyp <- paste0(hyp, " = ", round(rhs, digits=digits[["est"]])) ### add '= rhs' at the right
+               } else {
+                  hyp <- paste0(hyp, " = ", .fcf(rhs, digits=digits[["est"]])) ### add '= rhs' at the right
+               }
             }
             hyp <- data.frame(hyp, stringsAsFactors=FALSE)
             colnames(hyp) <- ""
@@ -356,7 +409,11 @@ anova.rma <- function(object, object2, btt, X, att, Z, rhs, digits, refit=FALSE,
             if (identical(rhs, rep(0,m))) {
                hyp <- paste0(hyp, " = 0") ### add '= 0' at the right
             } else {
-               hyp <- paste0(hyp, " = ", .fcf(rhs, digits=digits[["est"]])) ### add '= rhs' at the right
+               if (length(unique(rhs)) == 1L) {
+                  hyp <- paste0(hyp, " = ", round(rhs, digits=digits[["est"]])) ### add '= rhs' at the right
+               } else {
+                  hyp <- paste0(hyp, " = ", .fcf(rhs, digits=digits[["est"]])) ### add '= rhs' at the right
+               }
             }
             hyp <- data.frame(hyp, stringsAsFactors=FALSE)
             colnames(hyp) <- ""
@@ -377,7 +434,7 @@ anova.rma <- function(object, object2, btt, X, att, Z, rhs, digits, refit=FALSE,
          stop(mstyle$stop("Argument 'object2' must be an object of class \"rma\"."))
 
       if (inherits(object2, c("rma.mh","rma.peto")))
-         stop(mstyle$stop("Function not applicable for objects of class \"rma.mh\" or \"rma.peto\"."))
+         stop(mstyle$stop("Function not applicable to objects of class \"rma.mh\" or \"rma.peto\"."))
 
       if (inherits(object2, "rma.glmm"))
          stop(mstyle$stop("Method not available for objects of class \"rma.glmm\"."))
@@ -476,7 +533,7 @@ anova.rma <- function(object, object2, btt, X, att, Z, rhs, digits, refit=FALSE,
       ### for 'rma.uni' objects, calculate pseudo R^2 value (based on the
       ### proportional reduction in tau^2) comparing full vs. reduced model
 
-      if (inherits(object, "rma.uni") && !inherits(object, "rma.ls") && !inherits(object2, "rma.ls")) {
+      if (inherits(object, "rma.uni") && !inherits(object, "rma.ls") && !inherits(object, "rma.gen")) {
          if (is.element(model.f$method, c("FE","EE","CE"))) {
             if (model.f$weighted) {
                if (is.null(model.f$weights)) {
@@ -510,7 +567,7 @@ anova.rma <- function(object, object2, btt, X, att, Z, rhs, digits, refit=FALSE,
 
       ### for 'rma.uni' objects, extract tau^2 estimates
 
-      if (inherits(object, "rma.uni") && !inherits(object, "rma.ls") && !inherits(object2, "rma.ls")) {
+      if (inherits(object, "rma.uni") && !inherits(object, "rma.ls") && !inherits(object, "rma.gen")) {
          tau2.f <- model.f$tau2
          tau2.r <- model.r$tau2
       } else {

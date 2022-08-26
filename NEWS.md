@@ -1,3 +1,33 @@
+# metafor 3.8-1 (2022-08-26)
+
+- `funnel.default()`, `funnel.rma()`, and `regplot.rma()` gain `slab` argument
+
+- `vif()` was completely refactored and gains `reestimate`, `sim`, and `parallel` arguments; added `as.data.frame.vif.rma()` and `plot.vif.rma()` methods
+
+- `plot.permutest.rma.uni()` function sets the y-axis limits automatically and in a smarter way when also drawing the reference/null distribution and the density estimate
+
+- added possibility to specify a list for `btt` in `anova.rma()`; added `print.list.anova.rma()` to print the resulting object
+
+- added `as.data.frame.anova.rma()` and `as.data.frame.list.anova.rma()` methods
+
+- documented the possibility to use an identity link (with `link="identity"`) in `rma.uni()` when fitting location-scale models (although this will often lead to estimation problems); added `solnp()` as an additional optimizer for this case
+
+- optimizers `nloptr` and `constrOptim.nl` (the latter from the `alabama` package) are now available in `rma.uni()` for location-scale models when using an identity link
+
+- added measure `SMD1H` to `escalc()`
+
+- for `measure="SMD"`, `escalc()` now also allows the user to specify d-values and t-test statistics via arguments `di` and `ti`, respectively
+
+- `aggregate.escalc()` gains `addk` argument
+
+- added (experimental!) support for measures `"RR"`, `"RD"`, `"PLN"`, and `"PR"` to `rma.glmm()` (but using these measures will often lead to estimation problems)
+
+- `replmiss()` gains `data` argument
+
+- `cumul()` functions also store data, so that arguments `ilab`, `col`, `pch`, and `psize` in the `forest.cumul.rma()` function can look for variables therein
+
+- fixed issue with rendering Rmarkdown documents with `metafor` output due to the use of a zero-width space
+
 # metafor 3.4-0 (2022-04-21)
 
 - added `misc-models`, `misc-recs`, and `misc-options` help pages

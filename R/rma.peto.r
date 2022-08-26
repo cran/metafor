@@ -1,7 +1,7 @@
 rma.peto <- function(ai, bi, ci, di, n1i, n2i,
 data, slab, subset,
 add=1/2, to="only0", drop00=TRUE, ### for add/to/drop00, 1st element for escalc(), 2nd for Peto's method
-level=95, digits, verbose=FALSE, ...) {
+level=95, verbose=FALSE, digits, ...) {
 
    #########################################################################
 
@@ -93,12 +93,12 @@ level=95, digits, verbose=FALSE, ...) {
 
    ### extract/calculate ai,bi,ci,di,n1i,n2i values
 
-   ai  <- .getx("ai",  mf=mf, data=data)
-   bi  <- .getx("bi",  mf=mf, data=data)
-   ci  <- .getx("ci",  mf=mf, data=data)
-   di  <- .getx("di",  mf=mf, data=data)
-   n1i <- .getx("n1i", mf=mf, data=data)
-   n2i <- .getx("n2i", mf=mf, data=data)
+   ai  <- .getx("ai",  mf=mf, data=data, checknumeric=TRUE)
+   bi  <- .getx("bi",  mf=mf, data=data, checknumeric=TRUE)
+   ci  <- .getx("ci",  mf=mf, data=data, checknumeric=TRUE)
+   di  <- .getx("di",  mf=mf, data=data, checknumeric=TRUE)
+   n1i <- .getx("n1i", mf=mf, data=data, checknumeric=TRUE)
+   n2i <- .getx("n2i", mf=mf, data=data, checknumeric=TRUE)
 
    if (is.null(bi)) bi <- n1i - ai
    if (is.null(di)) di <- n2i - ci
@@ -108,7 +108,7 @@ level=95, digits, verbose=FALSE, ...) {
    k.all <- k
 
    if (length(ai)==0L || length(bi)==0L || length(ci)==0L || length(di)==0L)
-      stop(mstyle$stop("Need to specify arguments ai, bi, ci, di (or ai, ci, n1i, n2i)."))
+      stop(mstyle$stop("Must specify arguments ai, bi, ci, di (or ai, ci, n1i, n2i)."))
 
    ids <- seq_len(k)
 
@@ -144,16 +144,17 @@ level=95, digits, verbose=FALSE, ...) {
       if (verbose)
          message(mstyle$message("Subsetting ..."))
 
-      subset <- .setnafalse(subset, k=k)
+      subset <- .chksubset(subset, k)
 
-      ai   <- ai[subset]
-      bi   <- bi[subset]
-      ci   <- ci[subset]
-      di   <- di[subset]
-      ni   <- ni[subset]
-      slab <- slab[subset]
-      ids  <- ids[subset]
-      k    <- length(ai)
+      ai   <- .getsubset(ai,   subset)
+      bi   <- .getsubset(bi,   subset)
+      ci   <- .getsubset(ci,   subset)
+      di   <- .getsubset(di,   subset)
+      ni   <- .getsubset(ni,   subset)
+      slab <- .getsubset(slab, subset)
+      ids  <- .getsubset(ids,  subset)
+
+      k <- length(ai)
 
    }
 
@@ -181,10 +182,8 @@ level=95, digits, verbose=FALSE, ...) {
 
    ### save the actual cell frequencies and yi/vi values (including potential NAs)
 
-   ai.f <- ai
-   bi.f <- bi
-   ci.f <- ci
-   di.f <- di
+   outdat.f <- list(ai=ai, bi=bi, ci=ci, di=di)
+
    yi.f <- yi
    vi.f <- vi
    ni.f <- ni
@@ -402,13 +401,15 @@ level=95, digits, verbose=FALSE, ...) {
 
    if (is.null(ddd$outlist) || ddd$outlist == "nodata") {
 
+      outdat <- list(ai=ai, bi=bi, ci=ci, di=di)
+
       res <- list(b=beta, beta=beta, se=se, zval=zval, pval=pval, ci.lb=ci.lb, ci.ub=ci.ub, vb=vb,
                   tau2=tau2, tau2.f=tau2,
                   I2=I2, H2=H2,
                   QE=QE, QEp=QEp,
                   k=k, k.f=k.f, k.yi=k.yi, k.pos=k.pos, k.eff=k.eff, k.all=k.all, p=p, p.eff=p.eff, parms=parms,
                   int.only=int.only, intercept=intercept, coef.na=coef.na,
-                  yi=yi, vi=vi, yi.f=yi.f, vi.f=vi.f, X.f=X.f, ai=ai, bi=bi, ci=ci, di=di, ai.f=ai.f, bi.f=bi.f, ci.f=ci.f, di.f=di.f, ni=ni, ni.f=ni.f,
+                  yi=yi, vi=vi, yi.f=yi.f, vi.f=vi.f, X.f=X.f, outdat.f=outdat.f, outdat=outdat, ni=ni, ni.f=ni.f,
                   ids=ids, not.na=not.na, subset=subset, not.na.yivi=not.na.yivi, slab=slab, slab.null=slab.null,
                   measure=measure, method=method, weighted=weighted,
                   test=test, ddf=ddf, dfs=ddf, btt=btt, m=m,
@@ -420,9 +421,7 @@ level=95, digits, verbose=FALSE, ...) {
       if (is.null(ddd$outlist))
          res <- append(res, list(data=data), which(names(res) == "fit.stats"))
 
-   }
-
-   if (!is.null(ddd$outlist)) {
+   } else {
 
       if (ddd$outlist == "minimal") {
          res <- list(b=beta, beta=beta, se=se, zval=zval, pval=pval, ci.lb=ci.lb, ci.ub=ci.ub, vb=vb,

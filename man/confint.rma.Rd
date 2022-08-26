@@ -45,7 +45,7 @@
    \item{alpha}{integer to specify for which \mjseqn{\alpha} parameter a confidence interval should be obtained.}
    \item{level}{numeric value between 0 and 100 to specify the confidence interval level. If unspecified, the default is to take the value from the object.}
    \item{digits}{optional integer to specify the number of decimal places to which the results should be rounded. If unspecified, the default is to take the value from the object.}
-   \item{transf}{optional argument to specify a function that should be used to transform the model coefficients and interval bounds (e.g., \code{transf=exp}; see also \link{transf}). If unspecified, no transformation is used.}
+   \item{transf}{optional argument to specify a function to transform the model coefficients and interval bounds (e.g., \code{transf=exp}; see also \link{transf}). If unspecified, no transformation is used.}
    \item{targs}{optional arguments needed by the function specified under \code{transf}.}
    \item{verbose}{logical to specify whether output should be generated on the progress of the iterative algorithms used to obtain the confidence intervals (the default is \code{FALSE}). See \sQuote{Details}.}
    \item{control}{list of control values for the iterative algorithms. If unspecified, default values are defined inside the function. See \sQuote{Note}.}
@@ -77,7 +77,7 @@
 
    When obtaining confidence intervals for multiple components, the object is a list of class \code{"list.confint.rma"}, where each element is a \code{"confint.rma"} object as described above.
 
-   The results are formatted and printed with the \code{\link[=print.confint.rma]{print}} function.
+   The results are formatted and printed with the \code{\link[=print.confint.rma]{print}} function. To format the results as a data frame, one can use the \code{\link[=as.data.frame.confint.rma]{as.data.frame}} function.
 }
 \note{
    When computing a CI for \mjseqn{\tau^2} for objects of class \code{"rma.uni"}, the estimate of \mjseqn{\tau^2} will usually fall within the CI bounds provided by the Q-profile method. However, this is not guaranteed. Depending on the method used to estimate \mjseqn{\tau^2} and the width of the CI, it can happen that the CI does not actually contain the estimate. Using the empirical Bayes or Paule-Mandel estimator of \mjseqn{\tau^2} when fitting the model (i.e., using \code{method="EB"} or \code{method="PM"}) usually ensures that the estimate of \mjseqn{\tau^2} falls within the CI (for \code{method="PMM"}, this is guaranteed). When \code{method="GENQ"} was used to fit the model, the corresponding CI obtained via the generalized Q-statistic method also usually contains the estimate \mjseqn{\tau^2} (for \code{method="GENQM"}, this is guaranteed). When using ML/REML estimation, the profile likelihood CI (obtained when setting \code{type="PL"}) is guaranteed to contain the estimate of \mjseqn{\tau^2}.

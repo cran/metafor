@@ -1,7 +1,7 @@
 rma.mh   <- function(ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, measure="OR",
 data, slab, subset,
 add=1/2, to="only0", drop00=TRUE, ### for add/to/drop00, 1st element for escalc(), 2nd for MH method
-correct=TRUE, level=95, digits, verbose=FALSE, ...) {
+correct=TRUE, level=95, verbose=FALSE, digits, ...) {
 
    #########################################################################
 
@@ -104,14 +104,14 @@ correct=TRUE, level=95, digits, verbose=FALSE, ...) {
 
    if (is.element(measure, c("RR","OR","RD"))) {
 
-      x1i <- x2i <- t1i <- t2i <- x1i.f <- x2i.f <- t1i.f <- t2i.f <- NA
+      x1i <- x2i <- t1i <- t2i <- NA
 
-      ai  <- .getx("ai",  mf=mf, data=data)
-      bi  <- .getx("bi",  mf=mf, data=data)
-      ci  <- .getx("ci",  mf=mf, data=data)
-      di  <- .getx("di",  mf=mf, data=data)
-      n1i <- .getx("n1i", mf=mf, data=data)
-      n2i <- .getx("n2i", mf=mf, data=data)
+      ai  <- .getx("ai",  mf=mf, data=data, checknumeric=TRUE)
+      bi  <- .getx("bi",  mf=mf, data=data, checknumeric=TRUE)
+      ci  <- .getx("ci",  mf=mf, data=data, checknumeric=TRUE)
+      di  <- .getx("di",  mf=mf, data=data, checknumeric=TRUE)
+      n1i <- .getx("n1i", mf=mf, data=data, checknumeric=TRUE)
+      n2i <- .getx("n2i", mf=mf, data=data, checknumeric=TRUE)
 
       if (is.null(bi)) bi <- n1i - ai
       if (is.null(di)) di <- n2i - ci
@@ -121,7 +121,7 @@ correct=TRUE, level=95, digits, verbose=FALSE, ...) {
       k.all <- k
 
       if (length(ai)==0L || length(bi)==0L || length(ci)==0L || length(di)==0L)
-         stop(mstyle$stop("Need to specify arguments ai, bi, ci, di (or ai, ci, n1i, n2i)."))
+         stop(mstyle$stop("Must specify arguments ai, bi, ci, di (or ai, ci, n1i, n2i) for this measure."))
 
       ids <- seq_len(k)
 
@@ -157,16 +157,17 @@ correct=TRUE, level=95, digits, verbose=FALSE, ...) {
          if (verbose)
             message(mstyle$message("Subsetting ..."))
 
-         subset <- .setnafalse(subset, k=k)
+         subset <- .chksubset(subset, k)
 
-         ai   <- ai[subset]
-         bi   <- bi[subset]
-         ci   <- ci[subset]
-         di   <- di[subset]
-         ni   <- ni[subset]
-         slab <- slab[subset]
-         ids  <- ids[subset]
-         k    <- length(ai)
+         ai   <- .getsubset(ai,   subset)
+         bi   <- .getsubset(bi,   subset)
+         ci   <- .getsubset(ci,   subset)
+         di   <- .getsubset(di,   subset)
+         ni   <- .getsubset(ni,   subset)
+         slab <- .getsubset(slab, subset)
+         ids  <- .getsubset(ids,  subset)
+
+         k <- length(ai)
 
       }
 
@@ -194,10 +195,8 @@ correct=TRUE, level=95, digits, verbose=FALSE, ...) {
 
       ### save the actual cell frequencies and yi/vi values (including potential NAs)
 
-      ai.f <- ai
-      bi.f <- bi
-      ci.f <- ci
-      di.f <- di
+      outdat.f <- list(ai=ai, bi=bi, ci=ci, di=di)
+
       yi.f <- yi
       vi.f <- vi
       ni.f <- ni
@@ -318,7 +317,7 @@ correct=TRUE, level=95, digits, verbose=FALSE, ...) {
 
    if (is.element(measure, c("IRR","IRD"))) {
 
-      ai <- bi <- ci <- di <- ai.f <- bi.f <- ci.f <- di.f <- NA
+      ai <- bi <- ci <- di <- NA
 
       x1i <- .getx("x1i", mf=mf, data=data)
       x2i <- .getx("x2i", mf=mf, data=data)
@@ -331,7 +330,7 @@ correct=TRUE, level=95, digits, verbose=FALSE, ...) {
       k.all <- k
 
       if (length(x1i)==0L || length(x2i)==0L || length(t1i)==0L || length(t2i)==0L)
-         stop(mstyle$stop("Need to specify arguments x1i, x2i, t1i, t2i"))
+         stop(mstyle$stop("Must specify arguments x1i, x2i, t1i, t2i for this measure."))
 
       ids <- seq_len(k)
 
@@ -364,16 +363,17 @@ correct=TRUE, level=95, digits, verbose=FALSE, ...) {
          if (verbose)
             message(mstyle$message("Subsetting ..."))
 
-         subset <- .setnafalse(subset, k=k)
+         subset <- .chksubset(subset, k)
 
-         x1i  <- x1i[subset]
-         x2i  <- x2i[subset]
-         t1i  <- t1i[subset]
-         t2i  <- t2i[subset]
-         ni   <- ni[subset]
-         slab <- slab[subset]
-         ids  <- ids[subset]
-         k    <- length(x1i)
+         x1i  <- .getsubset(x1i,  subset)
+         x2i  <- .getsubset(x2i,  subset)
+         t1i  <- .getsubset(t1i,  subset)
+         t2i  <- .getsubset(t2i,  subset)
+         ni   <- .getsubset(ni,   subset)
+         slab <- .getsubset(slab, subset)
+         ids  <- .getsubset(ids,  subset)
+
+         k <- length(x1i)
 
       }
 
@@ -399,13 +399,11 @@ correct=TRUE, level=95, digits, verbose=FALSE, ...) {
 
       ### save the actual cell frequencies and yi/vi values (including potential NAs)
 
-      x1i.f <- x1i
-      x2i.f <- x2i
-      t1i.f <- t1i
-      t2i.f <- t2i
-      yi.f  <- yi
-      vi.f  <- vi
-      ni.f  <- ni
+      outdat.f <- list(x1i=x1i, x2i=x2i, t1i=t1i, t2i=t2i)
+
+      yi.f <- yi
+      vi.f <- vi
+      ni.f <- ni
 
       k.f <- k ### total number of tables including all NAs
 
@@ -778,6 +776,8 @@ correct=TRUE, level=95, digits, verbose=FALSE, ...) {
 
    if (is.null(ddd$outlist) || ddd$outlist == "nodata") {
 
+      outdat <- list(ai=ai, bi=bi, ci=ci, di=di, x1i=x1i, x2i=x2i, t1i=t1i, t2i=t2i)
+
       res <- list(b=beta, beta=beta, se=se, zval=zval, pval=pval, ci.lb=ci.lb, ci.ub=ci.ub, vb=vb,
                   tau2=tau2, tau2.f=tau2,
                   I2=I2, H2=H2,
@@ -785,8 +785,7 @@ correct=TRUE, level=95, digits, verbose=FALSE, ...) {
                   k=k, k.f=k.f, k.yi=k.yi, k.pos=k.pos, k.eff=k.eff, k.all=k.all, p=p, p.eff=p.eff, parms=parms,
                   int.only=int.only, intercept=intercept, coef.na=coef.na,
                   yi=yi, vi=vi, yi.f=yi.f, vi.f=vi.f, X.f=X.f,
-                  ai=ai, bi=bi, ci=ci, di=di, ai.f=ai.f, bi.f=bi.f, ci.f=ci.f, di.f=di.f,
-                  x1i=x1i, x2i=x2i, t1i=t1i, t2i=t2i, x1i.f=x1i.f, x2i.f=x2i.f, t1i.f=t1i.f, t2i.f=t2i.f, ni=ni, ni.f=ni.f,
+                  outdat.f=outdat.f, outdat=outdat, ni=ni, ni.f=ni.f,
                   ids=ids, not.na=not.na, subset=subset, not.na.yivi=not.na.yivi, slab=slab, slab.null=slab.null,
                   measure=measure, method=method, weighted=weighted,
                   test=test, ddf=ddf, dfs=ddf, btt=btt, m=m,
@@ -798,9 +797,8 @@ correct=TRUE, level=95, digits, verbose=FALSE, ...) {
       if (is.null(ddd$outlist))
          res <- append(res, list(data=data), which(names(res) == "fit.stats"))
 
-   }
+   } else {
 
-   if (!is.null(ddd$outlist)) {
       if (ddd$outlist == "minimal") {
          res <- list(b=beta, beta=beta, se=se, zval=zval, pval=pval, ci.lb=ci.lb, ci.ub=ci.ub, vb=vb,
                      tau2=tau2,
@@ -815,6 +813,7 @@ correct=TRUE, level=95, digits, verbose=FALSE, ...) {
       } else {
          res <- eval(str2lang(paste0("list(", ddd$outlist, ")")))
       }
+
    }
 
    time.end <- proc.time()

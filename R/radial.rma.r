@@ -6,7 +6,7 @@ back="lightgray", transf, targs, pch=19, arc.res=100, cex, ...) {
 
    mstyle <- .get.mstyle("crayon" %in% .packages())
 
-   .chkclass(class(x), must="rma", notav=c("robust.rma", "rma.ls", "rma.uni.selmodel"))
+   .chkclass(class(x), must="rma", notav=c("robust.rma", "rma.ls", "rma.gen", "rma.uni.selmodel"))
 
    if (missing(transf))
       transf <- FALSE
@@ -42,7 +42,7 @@ back="lightgray", transf, targs, pch=19, arc.res=100, cex, ...) {
       }
 
    } else {
-      stop(mstyle$stop("Radial plots only applicable for models without moderators."))
+      stop(mstyle$stop("Radial plots only available for models without moderators."))
    }
 
    if (center) {

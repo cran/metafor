@@ -2,7 +2,7 @@ permutest.rma.uni <- function(x, exact=FALSE, iter=1000, permci=FALSE, progbar=T
 
    mstyle <- .get.mstyle("crayon" %in% .packages())
 
-   .chkclass(class(x), must="rma.uni", notav=c("robust.rma", "rma.ls", "rma.uni.selmodel"))
+   .chkclass(class(x), must="rma.uni", notav=c("robust.rma", "rma.ls", "rma.gen", "rma.uni.selmodel"))
 
    if (missing(digits)) {
       digits <- .get.digits(xdigits=x$digits, dmiss=TRUE)
@@ -16,6 +16,11 @@ permutest.rma.uni <- function(x, exact=FALSE, iter=1000, permci=FALSE, progbar=T
 
    if (!is.null(ddd$tol)) # in case user specifies comptol in the old manner
       comptol <- ddd$tol
+
+   iter <- round(iter)
+
+   if (iter <= 1)
+      stop(mstyle$stop("Argument 'iter' must be >= 2."))
 
    if (.isTRUE(ddd$time))
       time.start <- proc.time()
@@ -61,6 +66,9 @@ permutest.rma.uni <- function(x, exact=FALSE, iter=1000, permci=FALSE, progbar=T
       #X.exact.iter <- round(factorial(x$k) / prod(factorial(ind.table)))       # definitional formula
       #X.exact.iter <- round(exp(lfactorial(x$k) - sum(lfactorial(ind.table)))) # using log of definitional formula and then round(exp())
 
+      if (is.na(X.exact.iter))
+         X.exact.iter <- Inf
+
    }
 
    ### if 'exact=TRUE' or if the number of iterations for an exact test are smaller
@@ -91,7 +99,7 @@ permutest.rma.uni <- function(x, exact=FALSE, iter=1000, permci=FALSE, progbar=T
 
    con <- list(comptol=.Machine$double.eps^0.5, tol=.Machine$double.eps^0.25,
                maxiter=100, alternative="two.sided", p2defn="abs", stat="test",
-               cialt="one.sided", distfac=1)
+               cialt="one.sided", distfac=1, extendInt="no")
    con.pos <- pmatch(names(control), names(con))
    con[c(na.omit(con.pos))] <- control[!is.na(con.pos)]
 
@@ -444,8 +452,7 @@ permutest.rma.uni <- function(x, exact=FALSE, iter=1000, permci=FALSE, progbar=T
                con$alternative <- "two.sided"
             }
 
-            #tmp <- try(uniroot(.permci, interval=c(x$ci.lb[j], x$beta[j,1]), extendInt="upX", tol=con$tol, maxiter=con$maxiter, obj=x, j=j, exact=X.exact, iter=X.iter, progbar=progbar, level=level, digits=digits, control=con)$root, silent=TRUE)
-            tmp <- try(uniroot(.permci, interval=c(x$ci.lb[j] - con$distfac*(x$beta[j,1] - x$ci.lb[j]), x$beta[j,1]), extendInt="no", tol=con$tol, maxiter=con$maxiter, obj=x, j=j, exact=X.exact, iter=X.iter, progbar=progbar, level=level, digits=digits, control=con)$root, silent=TRUE)
+            tmp <- try(uniroot(.permci, interval=c(x$ci.lb[j] - con$distfac*(x$beta[j,1] - x$ci.lb[j]), x$beta[j,1]), extendInt=ifelse(con$extendInt == "no", "no", "upX"), tol=con$tol, maxiter=con$maxiter, obj=x, j=j, exact=X.exact, iter=X.iter, progbar=progbar, level=level, digits=digits, control=con)$root, silent=TRUE)
 
             if (inherits(tmp, "try-error")) {
                ci.lb[j] <- NA
@@ -462,8 +469,7 @@ permutest.rma.uni <- function(x, exact=FALSE, iter=1000, permci=FALSE, progbar=T
                con$alternative <- "two.sided"
             }
 
-            #tmp <- try(uniroot(.permci, interval=c(x$beta[j,1], x$ci.ub[j]), extendInt="downX", tol=con$tol, maxiter=con$maxiter, obj=x, j=j, exact=X.exact, iter=X.iter, progbar=progbar, level=level, digits=digits, control=con)$root, silent=TRUE)
-            tmp <- try(uniroot(.permci, interval=c(x$beta[j,1], x$ci.ub[j] + con$distfac*(x$ci.ub[j] - x$beta[j,1])), extendInt="no", tol=con$tol, maxiter=con$maxiter, obj=x, j=j, exact=X.exact, iter=X.iter, progbar=progbar, level=level, digits=digits, control=con)$root, silent=TRUE)
+            tmp <- try(uniroot(.permci, interval=c(x$beta[j,1], x$ci.ub[j] + con$distfac*(x$ci.ub[j] - x$beta[j,1])), extendInt=ifelse(con$extendInt == "no", "no", "downX"), tol=con$tol, maxiter=con$maxiter, obj=x, j=j, exact=X.exact, iter=X.iter, progbar=progbar, level=level, digits=digits, control=con)$root, silent=TRUE)
 
             if (inherits(tmp, "try-error")) {
                ci.ub[j] <- NA
@@ -485,6 +491,7 @@ permutest.rma.uni <- function(x, exact=FALSE, iter=1000, permci=FALSE, progbar=T
                digits=digits, exact.iter=X.exact.iter,
                permci=permci, alternative=con$alternative, p2defn=con$p2defn, stat=con$stat)
 
+   out$skip.beta <- FALSE
    out$QM.perm <- QM.perm
    out$zval.perm <- data.frame(zval.perm)
    out$beta.perm <- data.frame(beta.perm)

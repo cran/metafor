@@ -41,7 +41,7 @@ tes <- function(x, vi, sei, subset, data,
 
       on.exit(options(na.action=na.act), add=TRUE)
 
-      .chkclass(class(x), must="rma", notav=c("rma.glmm", "rma.mv", "robust.rma", "rma.ls", "rma.uni.selmodel"))
+      .chkclass(class(x), must="rma", notav=c("rma.glmm", "rma.mv", "robust.rma", "rma.ls", "rma.gen", "rma.uni.selmodel"))
 
       ### set defaults for digits
 
@@ -76,6 +76,11 @@ tes <- function(x, vi, sei, subset, data,
 
       yi <- x
 
+      ### check if yi is numeric
+
+      if (!is.numeric(yi))
+         stop(mstyle$stop("The object/variable specified for the 'x' argument is not numeric."))
+
       ### set defaults for digits
 
       if (missing(digits)) {
@@ -84,8 +89,8 @@ tes <- function(x, vi, sei, subset, data,
          digits <- .set.digits(digits, dmiss=FALSE)
       }
 
-      vi     <- .getx("vi",     mf=mf, data=data)
-      sei    <- .getx("sei",    mf=mf, data=data)
+      vi     <- .getx("vi",     mf=mf, data=data, checknumeric=TRUE)
+      sei    <- .getx("sei",    mf=mf, data=data, checknumeric=TRUE)
       subset <- .getx("subset", mf=mf, data=data)
 
       if (is.null(vi)) {
@@ -200,10 +205,10 @@ tes <- function(x, vi, sei, subset, data,
       ### if a subset of studies is specified
 
       if (!is.null(subset)) {
-         subset <- .setnafalse(subset, k=k.f)
-         yi <- yi[subset]
-         vi <- vi[subset]
-         theta <- theta[subset]
+         subset <- .chksubset(subset, k.f)
+         yi    <- .getsubset(yi,    subset)
+         vi    <- .getsubset(vi,    subset)
+         theta <- .getsubset(theta, subset)
       }
 
       ### check for NAs and act accordingly

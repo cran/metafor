@@ -46,6 +46,9 @@ confint.rma.ls <- function(object, parm, level, fixed=FALSE, alpha, digits, tran
       control$vc.max <- ddd$xlim[2]
    }
 
+   if (x$optbeta)
+      stop(mstyle$stop("CI calculation not yet implemented for 'optbeta=TRUE'."))
+
    ### check if user has specified alpha argument
 
    random <- !missing(alpha)
@@ -117,7 +120,7 @@ confint.rma.ls <- function(object, parm, level, fixed=FALSE, alpha, digits, tran
       ### check if user specified a logical
 
       if (!missing(alpha) && is.logical(alpha))
-         stop(mstyle$stop("Must specify the number for the 'alpha' component."))
+         stop(mstyle$stop("Must specify a number for the 'alpha' component."))
 
       ### check if user specified a component that does not exist
 

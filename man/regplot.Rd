@@ -12,7 +12,7 @@ regplot(x, \dots)
 \method{regplot}{rma}(x, mod, pred=TRUE, ci=TRUE, pi=FALSE, shade=TRUE,
         xlim, ylim, predlim, olim, xlab, ylab, at, digits=2L,
         transf, atransf, targs, level=x$level,
-        pch=21, psize, plim=c(0.5,3), col="black", bg="darkgray",
+        pch, psize, plim=c(0.5,3), col, bg, slab,
         grid=FALSE, refline, label=FALSE, offset=c(1,1), labsize=1,
         lcol, lwd, lty, legend=FALSE, xvals, \dots)
 
@@ -33,15 +33,16 @@ regplot(x, \dots)
    \item{ylab}{title for the y-axis. If unspecified, the function tries to set an appropriate axis title.}
    \item{at}{position of the y-axis tick marks and corresponding labels. If unspecified, the function tries to set the tick mark positions/labels to some sensible values.}
    \item{digits}{integer to specify the number of decimal places to which the tick mark labels of the y-axis should be rounded. When specifying an integer (e.g., \code{2L}), trailing zeros after the decimal mark are dropped for the y-axis labels. When specifying a numeric value (e.g., \code{2}), trailing zeros are retained.}
-   \item{transf}{optional argument to specify a function that should be used to transform the observed outcomes, predicted values, and confidence/prediction interval bounds (e.g., \code{transf=exp}; see also \link{transf}). If unspecified, no transformation is used.}
-   \item{atransf}{optional argument to specify a function that should be used to transform the y-axis labels (e.g., \code{atransf=exp}; see also \link{transf}). If unspecified, no transformation is used.}
+   \item{transf}{optional argument to specify a function to transform the observed outcomes, predicted values, and confidence/prediction interval bounds (e.g., \code{transf=exp}; see also \link{transf}). If unspecified, no transformation is used.}
+   \item{atransf}{optional argument to specify a function to transform the y-axis labels (e.g., \code{atransf=exp}; see also \link{transf}). If unspecified, no transformation is used.}
    \item{targs}{optional arguments needed by the function specified via \code{transf} or \code{atransf}.}
    \item{level}{numeric value between 0 and 100 to specify the confidence/prediction interval level (the default is to take the value from the object).}
    \item{pch}{plotting symbol to use for the observed outcomes. By default, a filled circle is used. Can also be a vector of values. See \code{\link{points}} for other options.}
    \item{psize}{optional numeric value to specify the point sizes for the observed outcomes. If unspecified, the point sizes are a function of the model weights. Can also be a vector of values. Can also be a character string (either \code{"seinv"} or \code{"vinv"}) to make the point sizes proportional to the inverse standard errors or inverse sampling variances.}
    \item{plim}{numeric vector of length 2 to scale the point sizes (ignored when a numeric value or vector is specified for \code{psize}). See \sQuote{Details}.}
-   \item{col}{character string to specify the color to use for plotting the observed outcomes (the default is \code{"black"}). Can also be a vector.}
-   \item{bg}{character string to specify the background color for open plot symbols (the default is \code{"darkgray"}). Can also be a vector.}
+   \item{col}{character string to specify the color to use for plotting the observed outcomes (\code{"black"} is used by default if not specified). Can also be a vector.}
+   \item{bg}{character string to specify the background color for open plot symbols (\code{"darkgray"} is used by default if not specified). Can also be a vector.}
+   \item{slab}{optional vector with labels for the \mjseqn{k} studies. If unspecified, the function tries to extract study labels from \code{x}.}
    \item{grid}{logical to specify whether a grid should be added to the plot. Can also be a color name for the grid.}
    \item{refline}{optional numeric value to specify the location of a horizontal reference line that should be added to the plot.}
    \item{label}{argument to control the labeling of the points (the default is \code{FALSE}). See \sQuote{Details}.}
@@ -70,7 +71,7 @@ regplot(x, \dots)
 \note{
    For certain types of models, it may not be possible to draw the prediction interval bounds (if this is the case, a warning will be issued).
 
-   When specifying vectors for arguments \code{pch}, \code{psize}, \code{col}, \code{bg}, and/or \code{label}, the variables specified are assumed to be of the same length as the data passed to the model fitting function. Any subsetting and removal of studies with missing values is automatically applied to the variables specified via these arguments.
+   Argument \code{slab} and when specifying vectors for arguments \code{pch}, \code{psize}, \code{col}, \code{bg}, and/or \code{label} (for a logical vector), the variables specified are assumed to be of the same length as the data passed to the model fitting function (and if the \code{data} argument was used in the original model fit, then the variables will be searched for within this data frame first). Any subsetting and removal of studies with missing values is automatically applied to the variables specified via these arguments.
 
    If the outcome measure used for creating the plot is bounded (e.g., correlations are bounded between -1 and +1, proportions are bounded between 0 and 1), one can use the \code{olim} argument to enforce those limits (the observed outcomes and confidence/prediction intervals cannot exceed those bounds then).
 }

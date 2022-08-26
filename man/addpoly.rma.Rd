@@ -18,8 +18,8 @@
    \item{digits}{optional integer to specify the number of decimal places to which the annotations should be rounded.}
    \item{width}{optional integer to manually adjust the width of the columns for the annotations.}
    \item{mlab}{optional character string giving a label for the summary estimate polygon. If unspecified, the function sets a default label.}
-   \item{transf}{optional argument to specify a function that should be used to transform the summary estimate and confidence interval bound (e.g., \code{transf=exp}; see also \link{transf}).}
-   \item{atransf}{optional argument to specify a function that should be used to transform the annotations (e.g., \code{atransf=exp}; see also \link{transf}).}
+   \item{transf}{optional argument to specify a function to transform the summary estimate and confidence interval bound (e.g., \code{transf=exp}; see also \link{transf}).}
+   \item{atransf}{optional argument to specify a function to transform the annotations (e.g., \code{atransf=exp}; see also \link{transf}).}
    \item{targs}{optional arguments needed by the function specified via \code{transf} or \code{atransf}.}
    \item{efac}{optional vertical expansion factor for the polygon.}
    \item{col}{optional character string to specify color to use for the polygon. If unspecified, the function sets a default color.}
@@ -60,13 +60,13 @@ addpoly(res)
 ### forest plot with subgrouping of studies and summaries per subgroup
 res <- rma(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg,
            slab=paste(author, year, sep=", "))
-forest(res, xlim=c(-16, 4.6), at=log(c(.05, .25, 1, 4)), atransf=exp,
-       ilab=cbind(tpos, tneg, cpos, cneg), ilab.xpos=c(-9.5,-8,-6,-4.5),
-       cex=.75, ylim=c(-1, 27), order=alloc, rows=c(3:4,9:15,20:23),
-       mlab="RE Model for All Studies", header="Author(s) and Year")
+tmp <- forest(res, xlim=c(-16, 4.6), at=log(c(.05, .25, 1, 4)), atransf=exp,
+              ilab=cbind(tpos, tneg, cpos, cneg), ilab.xpos=c(-9.5,-8,-6,-4.5),
+              cex=.75, ylim=c(-1, 27), order=alloc, rows=c(3:4,9:15,20:23),
+              mlab="RE Model for All Studies", header="Author(s) and Year")
 op <- par(cex=.75, font=2)
-text(c(-9.5,-8,-6,-4.5), 26, c("TB+", "TB-", "TB+", "TB-"))
-text(c(-8.75,-5.25),     27, c("Vaccinated", "Control"))
+text(c(-9.5,-8,-6,-4.5), tmp$ylim[2]-1, c("TB+", "TB-", "TB+", "TB-"))
+text(c(-8.75,-5.25),     tmp$ylim[2],   c("Vaccinated", "Control"))
 par(font=4)
 text(-16, c(24,16,5), c("Systematic Allocation", "Random Allocation",
                         "Alternate Allocation"), pos=4)

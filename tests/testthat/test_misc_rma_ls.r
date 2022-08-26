@@ -35,6 +35,8 @@ test_that("location-scale model works correctly for two subgroups with different
    expect_warning(res5 <- rma(yi, vi, data=dat, scale = ~  0 + factor(meta), link="identity"))
    expect_equivalent(res1$tau2, res5$alpha, tolerance=.tol[["var"]])
 
+   skip_on_cran()
+
    conf1 <- confint(res1)
    conf5 <- confint(res5, control=list(vc.min=0, vc.max=.5))
    expect_equivalent(conf1[[1]]$random[1,], conf5[[1]]$random, tolerance=.tol[["var"]])
@@ -43,6 +45,8 @@ test_that("location-scale model works correctly for two subgroups with different
 })
 
 test_that("profile() and confint() work correctly for location-scale models", {
+
+   skip_on_cran()
 
    opar <- par(no.readonly=TRUE)
 
@@ -82,6 +86,8 @@ test_that("profile() and confint() work correctly for location-scale models", {
 })
 
 test_that("location-scale model works correctly for a continuous predictor", {
+
+   skip_on_cran()
 
    opar <- par(no.readonly=TRUE)
 
@@ -142,6 +148,8 @@ test_that("location-scale model works correctly for a continuous predictor", {
 
 test_that("location-scale model works correctly for multiple predictors", {
 
+   skip_on_cran()
+
    expect_warning(res1 <- rma(yi, vi, data=dat, scale = ~ grade + meta + sqrt(ni)))
    expect_equivalent(res1$beta, 0.1110317, tolerance=.tol[["coef"]])
    expect_equivalent(res1$alpha, c(-1.08826059, -0.03429344, 2.09197456, -0.28439165), tolerance=.tol[["coef"]])
@@ -152,15 +160,60 @@ test_that("location-scale model works correctly for multiple predictors", {
 
    out <- capture.output(print(res1))
 
+   expect_warning(res2  <- rma(yi, vi, data=dat, scale = ~ grade + meta + sqrt(ni), control=list(optimizer="Nelder-Mead")))
+   expect_warning(res3  <- rma(yi, vi, data=dat, scale = ~ grade + meta + sqrt(ni), control=list(optimizer="BFGS")))
+   expect_warning(res4  <- rma(yi, vi, data=dat, scale = ~ grade + meta + sqrt(ni), control=list(optimizer="bobyqa")))
+   expect_warning(res5  <- rma(yi, vi, data=dat, scale = ~ grade + meta + sqrt(ni), control=list(optimizer="nloptr")))
+   expect_warning(res6  <- rma(yi, vi, data=dat, scale = ~ grade + meta + sqrt(ni), control=list(optimizer="hjk")))
+   expect_warning(res7  <- rma(yi, vi, data=dat, scale = ~ grade + meta + sqrt(ni), control=list(optimizer="nmk")))
+   expect_warning(res8  <- rma(yi, vi, data=dat, scale = ~ grade + meta + sqrt(ni), control=list(optimizer="mads")))
+   expect_warning(res9  <- rma(yi, vi, data=dat, scale = ~ grade + meta + sqrt(ni), control=list(optimizer="ucminf")))
+   expect_warning(res10 <- rma(yi, vi, data=dat, scale = ~ grade + meta + sqrt(ni), control=list(optimizer="lbfgsb3c")))
+   expect_warning(res11 <- rma(yi, vi, data=dat, scale = ~ grade + meta + sqrt(ni), control=list(optimizer="subplex")))
+   expect_warning(res12 <- rma(yi, vi, data=dat, scale = ~ grade + meta + sqrt(ni), control=list(optimizer="BBoptim")))
+
+   expect_equivalent(res1$alpha,  c(-1.08826059, -0.03429344, 2.09197456, -0.28439165), tolerance=.tol[["coef"]])
+   expect_equivalent(res2$alpha,  c(-1.08879415, -0.03426271, 2.09166227, -0.28432946), tolerance=.tol[["coef"]])
+   expect_equivalent(res3$alpha,  c(-1.08791095, -0.03439789, 2.09179476, -0.28438389), tolerance=.tol[["coef"]])
+   expect_equivalent(res4$alpha,  c(-1.08826099, -0.03429340, 2.09197460, -0.28439162), tolerance=.tol[["coef"]])
+   expect_equivalent(res5$alpha,  c(-1.09036615, -0.03393392, 2.09205708, -0.28429889), tolerance=.tol[["coef"]])
+   expect_equivalent(res6$alpha,  c(-1.08825599, -0.03429422, 2.09197166, -0.28439180), tolerance=.tol[["coef"]])
+   expect_equivalent(res7$alpha,  c(-1.08867491, -0.03415188, 2.09213170, -0.28436838), tolerance=.tol[["coef"]])
+   expect_equivalent(res8$alpha,  c(-1.08825988, -0.03429568, 2.09198084, -0.28439174), tolerance=.tol[["coef"]])
+   expect_equivalent(res9$alpha,  c(-1.08826216, -0.03429383, 2.09197932, -0.28439198), tolerance=.tol[["coef"]])
+   expect_equivalent(res10$alpha, c(-1.08847719, -0.03428306, 2.09219886, -0.28439198), tolerance=.tol[["coef"]])
+   expect_equivalent(res11$alpha, c(-1.08826074, -0.03429341, 2.09197437, -0.28439162), tolerance=.tol[["coef"]])
+   expect_equivalent(res11$alpha, c(-1.08824263, -0.03429451, 2.09195305, -0.28439121), tolerance=.tol[["coef"]])
+
+})
+
+test_that("permutation tests work correctly for a location-scale model", {
+
+   skip_on_cran()
+
+   expect_warning(res <- rma(yi, vi, data=dat, scale = ~ grade + meta + sqrt(ni)))
+
+   set.seed(1234)
+   sav <- permutest(res, iter=100, progbar=FALSE)
+
+   out <- capture.output(print(sav))
+
+   expect_equivalent(sav$pval, 0.01, tolerance=.tol[["pval"]])
+   expect_equivalent(sav$pval.alpha, c(0.81, 0.95, 0.02, 0.04), tolerance=.tol[["coef"]])
+
+   plot(sav)
+
 })
 
 test_that("predict() works correctly for location-scale models", {
+
+   skip_on_cran()
 
    expect_warning(res <- rma(yi, vi, data=dat, mods = ~ meta, scale = ~ meta))
    res0 <- rma(yi, vi, data=dat, subset=meta==0)
    res1 <- rma(yi, vi, data=dat, subset=meta==1)
 
-   pred <- predict(res, addx=TRUE, addz=TRUE)
+   pred  <- predict(res, addx=TRUE, addz=TRUE)
    pred0 <- predict(res0)
    pred1 <- predict(res1)
 
@@ -195,6 +248,8 @@ test_that("predict() works correctly for location-scale models", {
 
 test_that("anova() works correctly for location-scale models", {
 
+   skip_on_cran()
+
    expect_warning(res1 <- rma(yi, vi, data=dat, mods = ~ factor(grade) + meta + sqrt(ni), scale = ~ factor(grade) + meta + sqrt(ni)))
    expect_warning(res0 <- rma(yi, vi, data=dat, mods = ~ factor(grade) + meta + sqrt(ni), scale = ~ 1))
 
@@ -225,6 +280,16 @@ test_that("anova() works correctly for location-scale models", {
    expect_equivalent(sav$Za[1,1], tmp$pred, tolerance=.tol[["test"]])
 
    expect_error(anova(res1, X=c(0,1,-1,0,0,0), Z=c(0,1,-1,0,0,0)))
+
+})
+
+test_that("vif() works correctly for location-scale models", {
+
+   skip_on_cran()
+
+   expect_warning(res <- rma(yi, vi, data=dat, scale = ~ grade + meta + sqrt(ni)))
+   sav <- round(vif(res)$vifs, 4)
+   expect_equivalent(sav, c(grade = 1.3087, meta = 1.06, `sqrt(ni)` = 1.2847))
 
 })
 

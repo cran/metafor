@@ -10,7 +10,7 @@
 funnel(x, \dots)
 
 \method{funnel}{rma}(x, yaxis="sei",
-       xlim, ylim, xlab, ylab,
+       xlim, ylim, xlab, ylab, slab,
        steps=5, at, atransf, targs, digits, level=x$level,
        addtau2=FALSE, type="rstandard",
        back="lightgray", shade="white", hlines="white",
@@ -18,7 +18,7 @@ funnel(x, \dots)
        label=FALSE, offset=0.4, legend=FALSE, \dots)
 
 \method{funnel}{default}(x, vi, sei, ni, subset, yaxis="sei",
-       xlim, ylim, xlab, ylab,
+       xlim, ylim, xlab, ylab, slab,
        steps=5, at, atransf, targs, digits, level=95,
        back="lightgray", shade="white", hlines="white",
        refline=0, lty=3, pch, col, bg,
@@ -35,9 +35,10 @@ funnel(x, \dots)
    \item{ylim}{y-axis limits. If unspecified, the function tries to set the y-axis limits to some sensible values.}
    \item{xlab}{title for the x-axis. If unspecified, the function tries to set an appropriate axis title.}
    \item{ylab}{title for the y-axis. If unspecified, the function tries to set an appropriate axis title.}
+   \item{slab}{optional vector with labels for the \mjseqn{k} studies. If unspecified, the function tries to extract study labels from \code{x}.}
    \item{steps}{the number of tick marks for the y-axis (the default is 5).}
    \item{at}{position of the x-axis tick marks and corresponding labels. If unspecified, the function tries to set the tick mark positions/labels to some sensible values.}
-   \item{atransf}{optional argument to specify a function that should be used to transform the x-axis labels (e.g., \code{atransf=exp}; see also \link{transf}). If unspecified, no transformation is used.}
+   \item{atransf}{optional argument to specify a function to transform the x-axis labels (e.g., \code{atransf=exp}; see also \link{transf}). If unspecified, no transformation is used.}
    \item{targs}{optional arguments needed by the function specified via \code{atransf}.}
    \item{digits}{optional integer to specify the number of decimal places to which the tick mark labels of the x- and y-axis should be rounded. Can also be a vector of two integers, the first to specify the number of decimal places for the x-axis, the second for the y-axis labels (e.g., \code{digits=c(2,3)}). If unspecified, the function tries to set the argument to some sensible values.}
    \item{level}{numeric value between 0 and 100 to specify the level of the pseudo confidence interval region (for \code{"rma"} objects, the default is to take the value from the object). May also be a vector of values to obtain multiple regions. See \sQuote{Examples}.}
@@ -83,14 +84,14 @@ funnel(x, \dots)
 
    The arguments \code{back}, \code{shade}, and \code{hlines} can be set to \code{NULL} to suppress the shading and the horizontal reference line.
 
-   With the \code{label} argument, one can control whether points in the plot will be labeled. If \code{label="all"} (or \code{label=TRUE}), all points in the plot will be labeled. If \code{label="out"}, points falling outside of the pseudo confidence region will be labeled. Finally, one can also set this argument to a numeric value (between 1 and \mjseqn{k}) to specify how many of the most extreme points should be labeled (e.g., with \code{label=1} only the most extreme point would be labeled, while with \code{label=3}, the most extreme, and the second and third most extreme points would be labeled). With the \code{offset} argument, one can adjust the distance between the labels and the corresponding points.
+   With the \code{label} argument, one can control whether points in the plot will be labeled. If \code{label="all"} (or \code{label=TRUE}), all points in the plot will be labeled. If \code{label="out"}, points falling outside of the pseudo confidence region will be labeled. Finally, one can also set this argument to a numeric value (between 1 and \mjseqn{k}) to specify how many of the most extreme points should be labeled (e.g., with \code{label=1} only the most extreme point are labeled, while with \code{label=3}, the most extreme, and the second and third most extreme points are labeled). With the \code{offset} argument, one can adjust the distance between the labels and the corresponding points.
 }
 \note{
    Placing (a function of) the sample sizes on the y-axis (i.e., using \code{yaxis="ni"}, \code{yaxis="ninv"}, \code{yaxis="sqrtni"}, \code{yaxis="sqrtninv"}, or \code{yaxis="lni"}) is only possible when information about the sample sizes is actually stored within the object passed to the \code{funnel} function. That should automatically be the case when the observed effect sizes or outcomes were computed with the \code{\link{escalc}} function or when the observed effect sizes or outcomes were computed within the model fitting function. On the other hand, this will not be the case when \code{\link{rma.uni}} was used together with the \code{yi} and \code{vi} arguments and the \code{yi} and \code{vi} values were \emph{not} computed with \code{\link{escalc}}. In that case, it is still possible to pass information about the sample sizes to the \code{\link{rma.uni}} function (e.g., use \code{rma.uni(yi, vi, ni=ni, data=dat)}, where data frame \code{dat} includes a variable called \code{ni} with the sample sizes).
 
    When using unweighted estimation, using \code{yaxis="wi"} will place all points on a horizontal line. When directly passing a vector with the observed effect sizes or outcomes to the function, \code{yaxis="wi"} is equivalent to \code{yaxis="vinv"}, except that the weights are expressed in percent.
 
-   When specifying vectors for arguments \code{pch}, \code{col}, and/or \code{bg} and \code{x} is an object of class \code{"rma"}, the variables specified are assumed to be of the same length as the data passed to the model fitting function (and if the \code{data} argument was used in the original model fit, then the variables will be searched for within this data frame first). Any subsetting and removal of studies with missing values is automatically applied to the variables specified via these arguments.
+   Argument \code{slab} and when specifying vectors for arguments \code{pch}, \code{col}, and/or \code{bg} and \code{x} is an object of class \code{"rma"}, the variables specified are assumed to be of the same length as the data passed to the model fitting function (and if the \code{data} argument was used in the original model fit, then the variables will be searched for within this data frame first). Any subsetting and removal of studies with missing values is automatically applied to the variables specified via these arguments.
 }
 \value{
    A data frame with components:

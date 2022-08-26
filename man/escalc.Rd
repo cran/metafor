@@ -54,11 +54,11 @@ escalc(measure, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
    \item{\dots}{other arguments.}
 }
 \details{
-   Before a meta-analysis can be conducted, the relevant results from each study must be quantified in such a way that the resulting values can be further aggregated and compared. Depending on (a) the goals of the meta-analysis, (b) the design and types of studies included, and (c) the information provided therein, one of the various effect size or outcome measures described below may be appropriate for the meta-analysis and can be computed with the \code{escalc} function.
+   Before a meta-analysis can be conducted, the relevant results from each study must be quantified in such a way that the resulting values can be further aggregated and compared. Depending on (a) the goals of the meta-analysis, (b) the design and types of studies included, and (c) the information provided therein, one of the various effect sizes or outcome measures described below may be appropriate for the meta-analysis and can be computed with the \code{escalc} function.
 
    The \code{measure} argument is a character string to specify the outcome measure that should be calculated (see below for the various options), arguments \code{ai} through \code{ni} are then used to specify the information needed to calculate the various measures (depending on the chosen outcome measure, different arguments need to be specified), and \code{data} can be used to specify a data frame containing the variables given to the previous arguments. The \code{add}, \code{to}, and \code{drop00} arguments may be needed when dealing with frequency or count data that may need special handling when some of the frequencies or counts are equal to zero (see below for details). Finally, the \code{vtype} argument is used to specify how the sampling variances should be estimated (again, see below for details).
 
-   To provide a structure to the various effect size or outcome measures that can be calculated with the \code{escalc} function, we can distinguish between measures that are used to:
+   To provide a structure to the various effect sizes or outcome measures that can be calculated with the \code{escalc} function, we can distinguish between measures that are used to:
    \itemize{
    \item contrast two independent (either experimentally created or naturally occurring) groups,
    \item describe the direction and strength of the association between two variables,
@@ -80,11 +80,11 @@ escalc(measure, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
       \subsection{Measures for Dichotomous Variables}{
 
          In various fields (such as the health and medical sciences), the response variable measured is often dichotomous (binary), so that the data from a study comparing two different groups can be expressed in terms of a \mjeqn{2 \times 2}{2x2} table, such as:
-         \tabular{lccc}{
-                 \tab outcome 1 \tab outcome 2 \tab total      \cr
-         group 1 \tab \code{ai} \tab \code{bi} \tab \code{n1i} \cr
-         group 2 \tab \code{ci} \tab \code{di} \tab \code{n2i}
-         } where \code{ai}, \code{bi}, \code{ci}, and \code{di} denote the cell frequencies (i.e., the number of people falling into a particular category) and \code{n1i} and \code{n2i} are the row totals (i.e., the group sizes).
+         \tabular{lcccccc}{
+                 \tab \ics \tab outcome 1 \tab \ics \tab outcome 2 \tab \ics \tab total      \cr
+         group 1 \tab \ics \tab \code{ai} \tab \ics \tab \code{bi} \tab \ics \tab \code{n1i} \cr
+         group 2 \tab \ics \tab \code{ci} \tab \ics \tab \code{di} \tab \ics \tab \code{n2i}}
+         where \code{ai}, \code{bi}, \code{ci}, and \code{di} denote the cell frequencies (i.e., the number of people falling into a particular category) and \code{n1i} and \code{n2i} are the row totals (i.e., the group sizes).
 
          For example, in a set of randomized clinical trials, group 1 and group 2 may refer to the treatment and placebo/control group, respectively, with outcome 1 denoting some event of interest (e.g., death, complications, failure to improve under the treatment) and outcome 2 its complement. Similarly, in a set of cohort studies, group 1 and group 2 may denote those who engage in and those who do not engage in a potentially harmful behavior (e.g., smoking), with outcome 1 denoting the development of a particular disease (e.g., lung cancer) during the follow-up period. Finally, in a set of case-control studies, group 1 and group 2 may refer to those with the disease (i.e., cases) and those free of the disease (i.e., controls), with outcome 1 denoting, for example, exposure to some environmental risk factor in the past and outcome 2 non-exposure. Note that in all of these examples, the stratified sampling scheme fixes the row totals (i.e., the group sizes) by design.
 
@@ -123,11 +123,11 @@ escalc(measure, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
       \subsection{Measures for Event Counts}{
 
          In medical and epidemiological studies comparing two different groups (e.g., treated versus untreated patients, exposed versus unexposed individuals), results are sometimes reported in terms of event counts (i.e., the number of events, such as strokes or myocardial infarctions) over a certain period of time. Data of this type are also referred to as \sQuote{person-time data}. Assume that the studies report data in the form:
-         \tabular{lcc}{
-                 \tab number of events \tab total person-time \cr
-         group 1 \tab \code{x1i}       \tab \code{t1i} \cr
-         group 2 \tab \code{x2i}       \tab \code{t2i}
-         } where \code{x1i} and \code{x2i} denote the number of events in the first and the second group, respectively, and \code{t1i} and \code{t2i} the corresponding total person-times at risk. Often, the person-time is measured in years, so that \code{t1i} and \code{t2i} denote the total number of follow-up years in the two groups.
+         \tabular{lcccc}{
+                 \tab \ics \tab number of events \tab \ics \tab total person-time \cr
+         group 1 \tab \ics \tab \code{x1i}       \tab \ics \tab \code{t1i} \cr
+         group 2 \tab \ics \tab \code{x2i}       \tab \ics \tab \code{t2i}}
+         where \code{x1i} and \code{x2i} denote the number of events in the first and the second group, respectively, and \code{t1i} and \code{t2i} the corresponding total person-times at risk. Often, the person-time is measured in years, so that \code{t1i} and \code{t2i} denote the total number of follow-up years in the two groups.
 
          This form of data is fundamentally different from what was described in the previous section, since the total follow-up time may differ even for groups of the same size and the individuals studied may experience the event of interest multiple times. Hence, different outcome measures than the ones described in the previous section need to be considered when data are reported in this format. These include the incidence rate ratio, the incidence rate difference, and the square root transformed incidence rate difference (Bagos & Nikolopoulos, 2009; Rothman et al., 2008). For any of these outcome measures, one needs to specify the total number of events via the \code{x1i} and \code{x2i} arguments and the corresponding total person-time values via the \code{t1i} and \code{t2i} arguments.
 
@@ -149,28 +149,28 @@ escalc(measure, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
       \subsection{Measures for Quantitative Variables}{
 
          When the response or dependent variable assessed in the individual studies is measured on some quantitative scale, it is customary to report certain summary statistics, such as the mean and standard deviation of the observations. The data layout for a study comparing two groups with respect to such a variable is then of the form:
-         \tabular{lccc}{
-                 \tab mean       \tab standard deviation \tab group size \cr
-         group 1 \tab \code{m1i} \tab \code{sd1i}        \tab \code{n1i} \cr
-         group 2 \tab \code{m2i} \tab \code{sd2i}        \tab \code{n2i}
-         } where \code{m1i} and \code{m2i} are the observed means of the two groups, \code{sd1i} and \code{sd2i} are the observed standard deviations, and \code{n1i} and \code{n2i} denote the number of individuals in each group. Again, the two groups may be experimentally created (e.g., a treatment and control group based on random assignment) or naturally occurring (e.g., men and women). In either case, the raw mean difference, the standardized mean difference, and the (log transformed) ratio of means (also called log response ratio) are useful outcome measures when meta-analyzing studies of this type.
+         \tabular{lcccccc}{
+                 \tab \ics \tab mean       \tab \ics \tab standard deviation \tab \ics \tab group size \cr
+         group 1 \tab \ics \tab \code{m1i} \tab \ics \tab \code{sd1i}        \tab \ics \tab \code{n1i} \cr
+         group 2 \tab \ics \tab \code{m2i} \tab \ics \tab \code{sd2i}        \tab \ics \tab \code{n2i}}
+         where \code{m1i} and \code{m2i} are the observed means of the two groups, \code{sd1i} and \code{sd2i} are the observed standard deviations, and \code{n1i} and \code{n2i} denote the number of individuals in each group. Again, the two groups may be experimentally created (e.g., a treatment and control group based on random assignment) or naturally occurring (e.g., men and women). In either case, the raw mean difference, the standardized mean difference, and the (log transformed) ratio of means (also called the log \sQuote{response ratio}) are useful outcome measures when meta-analyzing studies of this type.
 
          The options for the \code{measure} argument are then:
          \itemize{
          \item \code{"MD"} for the \emph{raw mean difference} (e.g., Borenstein, 2009),
          \item \code{"SMD"} for the \emph{standardized mean difference} (Hedges, 1981),
          \item \code{"SMDH"} for the \emph{standardized mean difference} with heteroscedastic population variances in the two groups (Bonett, 2008, 2009),
-         \item \code{"SMD1"} for the \emph{standardized mean difference} where the mean difference is divided by the standard deviation of a single group,
+         \item \code{"SMD1"} for the \emph{standardized mean difference} where the mean difference is divided by the standard deviation of the second group (and \code{"SMD1H"} for the same but with heteroscedastic population variances),
          \item \code{"ROM"} for the \emph{log transformed ratio of means} (Hedges et al., 1999; Lajeunesse, 2011).
          }
 
-         For \code{measure="SMD"}, the standardized mean difference is computed with \code{(m1i - m2i) / sdpi}, where \code{sdpi = sqrt(((n1i-1)*sd1i^2 + (n2i-1)*sd2i^2) / (n1i+n2i-2))} is the pooled standard deviation of the two groups. For \code{measure="SMDH"}, \code{sdpi = sqrt((sd1i^2 + sd2i^2)/2)} is the square root of the average variance, and for \code{measure="SMD1"}, we simply use \code{sdpi = sd2i} (hence, for this measure, only \code{sd2i} needs to be specified and \code{sd1i} is ignored).
+         The standardized mean difference is computed with \code{(m1i - m2i) / sdpi}. For \code{measure="SMD"}, \code{sdpi = sqrt(((n1i-1)*sd1i^2 + (n2i-1)*sd2i^2) / (n1i+n2i-2))} is the pooled standard deviation of the two groups. For \code{measure="SMDH"}, \code{sdpi = sqrt((sd1i^2 + sd2i^2) / 2)} is the square root of the average variance. Finally, for \code{measure="SMD1"} and \code{measure="SMD1H"}, we simply use \code{sdpi = sd2i} (note: for \code{measure="SMD1"}, only \code{sd2i} needs to be specified and \code{sd1i} is ignored).
 
-         For \code{measure="SMD"}, the positive bias in the standardized mean difference (i.e., in a Cohen's d value) is automatically corrected for within the function, yielding Hedges' g (Hedges, 1981). Similarly, the same bias correction is applied for \code{measure="SMDH"} (Bonett, 2009) and \code{measure="SMD1"} (Hedges, 1981).
+         For \code{measure="SMD"}, the positive bias in the standardized mean difference (i.e., in a Cohen's d value) is automatically corrected for within the function, yielding Hedges' g (Hedges, 1981). Similarly, the same bias correction is applied for \code{measure="SMDH"} (Bonett, 2009), \code{measure="SMD1"} (Hedges, 1981), and \code{measure="SMD1H"}.
 
-         For \code{measure="ROM"}, the log is taken of the ratio of means, which makes this outcome measure symmetric around 0 and yields a corresponding sampling distribution that is closer to normality. Hence, this measure cannot be computed when \code{m1i} and \code{m2i} have opposite signs (i.e., it is meant to be used for ratio scale measurements, where both means should be positive anyway).
+         For \code{measure="ROM"}, the log is taken of the ratio of means, which makes this outcome measure symmetric around 0 and yields a corresponding sampling distribution that is closer to normality. Hence, this measure cannot be computed when \code{m1i} and \code{m2i} have opposite signs (in fact, this measure is only meant to be used for ratio scale measurements, where both means should be positive anyway).
 
-         For \code{measure="SMD"}, if the means and standard deviations are unknown for a study, but the t-statistic from an independent samples t-test is reported (or the corresponding p-value, which can be transformed into the t-statistic), one can easily transform the t-statistic to a d-value directly. See \href{https://www.metafor-project.org/doku.php/tips:assembling_data_smd}{here} for an illustration/discussion of this.
+         For \code{measure="SMD"}, if the means and standard deviations are unknown for some studies, but the standardized mean differences (Cohen's d values) are directly available (e.g., if they are reported in those studies), then these can be specified via argument \code{di}. Also, if the t-statistics from an independent samples t-test is available for some studies (or the corresponding p-values, which can be easily transformed into the t-statistics), one can specify those values via argument \code{ti}, which are then transformed into the corresponding standardized mean differences within the function. See \href{https://www.metafor-project.org/doku.php/tips:assembling_data_smd}{here} for an illustration/discussion of this.
 
          For \code{measure="MD"}, one can choose between \code{vtype="LS"} (the default) and \code{vtype="HO"}. The former computes the sampling variances without assuming homoscedasticity (i.e., that the true variances of the measurements are the same in group 1 and group 2 within each study), while the latter assumes homoscedasticity (equations 12.5 and 12.3 in Borenstein, 2009, respectively). For \code{measure="SMD"}, one can choose between \code{vtype="LS"} (the default) for the usual large-sample approximation to compute the sampling variances (equation 8 in Hedges, 1982), \code{vtype="UB"} to compute unbiased estimates of the sampling variances (equation 9 in Hedges, 1983), \code{vtype="LS2"} to compute the sampling variances as described in Borenstein (2009) (i.e., equation 12.17), and \code{vtype="AV"} to compute the sampling variances with the usual large-sample approximation but plugging the sample-size weighted average of the Hedges' g values into the equation. The same choices also apply to \code{measure="SMD1"}. For \code{measure="ROM"}, one can choose between \code{vtype="LS"} (the default) for the usual large-sample approximation to compute the sampling variances (equation 1 in Hedges et al., 1999), \code{vtype="HO"} to compute the sampling variances assuming homoscedasticity (the unnumbered equation after equation 1 in Hedges et al., 1999), \code{vtype="AV"} to compute the sampling variances assuming homoscedasticity of the coefficient of variation within each group across studies, and \code{vtype="AVHO"} to compute the sampling variances assuming homoscedasticity of the coefficient of variation for both groups across studies.
 
@@ -320,16 +320,16 @@ escalc(measure, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
       \subsection{Measures for Dichotomous Variables}{
 
          For dichotomous variables, the data for a study of this type gives rise to a paired \mjeqn{2 \times 2}{2x2} table, which is of the form:
-         \tabular{lcc}{
-                         \tab trt 2 outcome 1 \tab trt 2 outcome 2 \cr
-         trt 1 outcome 1 \tab \code{ai}       \tab \code{bi} \cr
-         trt 1 outcome 2 \tab \code{ci}       \tab \code{di}
-         } where \code{ai}, \code{bi}, \code{ci}, and \code{di} denote the cell frequencies. Note that \sQuote{trt1} and \sQuote{trt2} may be applied to a single group of subjects or to matched pairs of subjects. Also, \sQuote{trt1} and \sQuote{trt2} might refer to two different time points (e.g., before and after a treatment). In any case, the data from such a study can be rearranged into a marginal table of the form:
-         \tabular{lcc}{
-               \tab outcome 1    \tab outcome 2 \cr
-         trt 1 \tab \code{ai+bi} \tab \code{ci+di} \cr
-         trt 2 \tab \code{ai+ci} \tab \code{bi+di}
-         } which is of the same form as a \mjeqn{2 \times 2}{2x2} table that would arise in a study comparing/contrasting two independent groups.
+         \tabular{lcccc}{
+                         \ics \tab \tab trt 2 outcome 1 \tab \ics \tab trt 2 outcome 2 \cr
+         trt 1 outcome 1 \ics \tab \tab \code{ai}       \tab \ics \tab \code{bi} \cr
+         trt 1 outcome 2 \ics \tab \tab \code{ci}       \tab \ics \tab \code{di}}
+         where \code{ai}, \code{bi}, \code{ci}, and \code{di} denote the cell frequencies. Note that \sQuote{trt1} and \sQuote{trt2} may be applied to a single group of subjects or to matched pairs of subjects. Also, \sQuote{trt1} and \sQuote{trt2} might refer to two different time points (e.g., before and after a treatment). In any case, the data from such a study can be rearranged into a marginal table of the form:
+         \tabular{lcccc}{
+               \tab \ics \tab outcome 1    \tab \ics \tab outcome 2 \cr
+         trt 1 \tab \ics \tab \code{ai+bi} \tab \ics \tab \code{ci+di} \cr
+         trt 2 \tab \ics \tab \code{ai+ci} \tab \ics \tab \code{bi+di}}
+         which is of the same form as a \mjeqn{2 \times 2}{2x2} table that would arise in a study comparing/contrasting two independent groups.
 
          The options for the \code{measure} argument that will compute outcome measures based on the marginal table are:
          \itemize{

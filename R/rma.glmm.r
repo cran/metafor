@@ -2,8 +2,8 @@ rma.glmm <- function(ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi, ti, n
 measure, intercept=TRUE,
 data, slab, subset,
 add=1/2, to="only0", drop00=TRUE, vtype="LS",
-model="UM.FS", method="ML", coding=1/2, cor=FALSE, test="z", #tdist=FALSE, #weighted=TRUE,
-level=95, digits, btt, nAGQ=7, verbose=FALSE, control, ...) { # tau2,
+model="UM.FS", method="ML", coding=1/2, cor=FALSE,
+test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
 
    #########################################################################
 
@@ -17,7 +17,7 @@ level=95, digits, btt, nAGQ=7, verbose=FALSE, control, ...) { # tau2,
    if (missing(measure))
       stop(mstyle$stop("Must specify 'measure' argument."))
 
-   if (!is.element(measure, c("OR","IRR","PLO","IRLN")))
+   if (!is.element(measure, c("OR","RR","RD","IRR","PLO","PR","PLN","IRLN")))
       stop(mstyle$stop("Unknown 'measure' specified."))
 
    if (!is.element(method, c("FE","EE","CE","ML")))
@@ -47,6 +47,19 @@ level=95, digits, btt, nAGQ=7, verbose=FALSE, control, ...) { # tau2,
 
    if (model == "CM.AL" && measure == "IRR")
       model <- "CM.EL"
+
+   ### check if user changed model for measures where this is not relevant; if so, issue a warning
+
+   if (is.element(measure, c("PLO","PR","PLN","IRLN")) && model != "UM.FS")
+      warning(mstyle$warning("Argument 'model' not relevant for this outcome measure."), call.=FALSE)
+
+   ### warning about experimental measures
+
+   if (!is.element(measure, c("OR","IRR","PLO","IRLN")))
+      warning(mstyle$warning("The use of this 'measure' is experimental - treat results with caution."), call.=FALSE)
+
+   if (is.element(model, c("CM.EL","CM.AL")) && is.element(measure, c("RR","RD")))
+      stop(mstyle$stop("Cannot use this measure with model='CM.EL' or model='CM.AL'."))
 
    na.act <- getOption("na.action")
    on.exit(options(na.action=na.act), add=TRUE)
@@ -131,18 +144,18 @@ level=95, digits, btt, nAGQ=7, verbose=FALSE, control, ...) { # tau2,
    subset <- .getx("subset", mf=mf, data=data)
    mods   <- .getx("mods",   mf=mf, data=data)
 
-   ai <- bi <- ci <- di <- x1i <- x2i <- t1i <- t2i <- xi <- mi <- ti <- ni <- NA
+   ai <- bi <- ci <- di <- x1i <- x2i <- t1i <- t2i <- xi <- mi <- ti <- NA
 
    ### calculate yi and vi values
 
-   if (is.element(measure, "OR")) {
+   if (is.element(measure, c("OR","RR","RD"))) {
 
-      ai  <- .getx("ai",  mf=mf, data=data)
-      bi  <- .getx("bi",  mf=mf, data=data)
-      ci  <- .getx("ci",  mf=mf, data=data)
-      di  <- .getx("di",  mf=mf, data=data)
-      n1i <- .getx("n1i", mf=mf, data=data)
-      n2i <- .getx("n2i", mf=mf, data=data)
+      ai  <- .getx("ai",  mf=mf, data=data, checknumeric=TRUE)
+      bi  <- .getx("bi",  mf=mf, data=data, checknumeric=TRUE)
+      ci  <- .getx("ci",  mf=mf, data=data, checknumeric=TRUE)
+      di  <- .getx("di",  mf=mf, data=data, checknumeric=TRUE)
+      n1i <- .getx("n1i", mf=mf, data=data, checknumeric=TRUE)
+      n2i <- .getx("n2i", mf=mf, data=data, checknumeric=TRUE)
 
       if (is.null(bi)) bi <- n1i - ai
       if (is.null(di)) di <- n2i - ci
@@ -151,44 +164,44 @@ level=95, digits, btt, nAGQ=7, verbose=FALSE, control, ...) { # tau2,
       k.all <- k
 
       if (!is.null(subset)) {
-         subset <- .setnafalse(subset, k=k)
-         ai <- ai[subset]
-         bi <- bi[subset]
-         ci <- ci[subset]
-         di <- di[subset]
+         subset <- .chksubset(subset, k)
+         ai <- .getsubset(ai, subset)
+         bi <- .getsubset(bi, subset)
+         ci <- .getsubset(ci, subset)
+         di <- .getsubset(di, subset)
       }
 
       args <- list(measure=measure, ai=ai, bi=bi, ci=ci, di=di, add=add, to=to, drop00=drop00, vtype=vtype, onlyo1=onlyo1, addyi=addyi, addvi=addvi)
 
    }
 
-   if (is.element(measure, "IRR")) {
+   if (is.element(measure, c("IRR"))) {
 
-      x1i <- .getx("x1i", mf=mf, data=data)
-      x2i <- .getx("x2i", mf=mf, data=data)
-      t1i <- .getx("t1i", mf=mf, data=data)
-      t2i <- .getx("t2i", mf=mf, data=data)
+      x1i <- .getx("x1i", mf=mf, data=data, checknumeric=TRUE)
+      x2i <- .getx("x2i", mf=mf, data=data, checknumeric=TRUE)
+      t1i <- .getx("t1i", mf=mf, data=data, checknumeric=TRUE)
+      t2i <- .getx("t2i", mf=mf, data=data, checknumeric=TRUE)
 
       k <- length(x1i) # number of outcomes before subsetting
       k.all <- k
 
       if (!is.null(subset)) {
-         subset <- .setnafalse(subset, k=k)
-         x1i <- x1i[subset]
-         x2i <- x2i[subset]
-         t1i <- t1i[subset]
-         t2i <- t2i[subset]
+         subset <- .chksubset(subset, k)
+         x1i <- .getsubset(x1i, subset)
+         x2i <- .getsubset(x2i, subset)
+         t1i <- .getsubset(t1i, subset)
+         t2i <- .getsubset(t2i, subset)
       }
 
       args <- list(measure=measure, x1i=x1i, x2i=x2i, t1i=t1i, t2i=t2i, add=add, to=to, drop00=drop00, vtype=vtype, onlyo1=onlyo1, addyi=addyi, addvi=addvi)
 
    }
 
-   if (is.element(measure, "PLO")) {
+   if (is.element(measure, c("PLO","PR","PLN"))) {
 
-      xi <- .getx("xi", mf=mf, data=data)
-      mi <- .getx("mi", mf=mf, data=data)
-      ni <- .getx("ni", mf=mf, data=data)
+      xi <- .getx("xi", mf=mf, data=data, checknumeric=TRUE)
+      mi <- .getx("mi", mf=mf, data=data, checknumeric=TRUE)
+      ni <- .getx("ni", mf=mf, data=data, checknumeric=TRUE)
 
       if (is.null(mi)) mi <- ni - xi
 
@@ -196,27 +209,27 @@ level=95, digits, btt, nAGQ=7, verbose=FALSE, control, ...) { # tau2,
       k.all <- k
 
       if (!is.null(subset)) {
-         subset <- .setnafalse(subset, k=k)
-         xi <- xi[subset]
-         mi <- mi[subset]
+         subset <- .chksubset(subset, k)
+         xi <- .getsubset(xi, subset)
+         mi <- .getsubset(mi, subset)
       }
 
       args <- list(measure=measure, xi=xi, mi=mi, add=add, to=to, vtype=vtype, onlyo1=onlyo1, addyi=addyi, addvi=addvi)
 
    }
 
-   if (is.element(measure, "IRLN")) {
+   if (is.element(measure, c("IRLN"))) {
 
-      xi <- .getx("xi", mf=mf, data=data)
-      ti <- .getx("ti", mf=mf, data=data)
+      xi <- .getx("xi", mf=mf, data=data, checknumeric=TRUE)
+      ti <- .getx("ti", mf=mf, data=data, checknumeric=TRUE)
 
       k <- length(xi) # number of outcomes before subsetting
       k.all <- k
 
       if (!is.null(subset)) {
-         subset <- .setnafalse(subset, k=k)
-         xi <- xi[subset]
-         ti <- ti[subset]
+         subset <- .chksubset(subset, k)
+         xi <- .getsubset(xi, subset)
+         ti <- .getsubset(ti, subset)
       }
 
       args <- list(measure=measure, xi=xi, ti=ti, add=add, to=to, vtype=vtype, onlyo1=onlyo1, addyi=addyi, addvi=addvi)
@@ -242,7 +255,7 @@ level=95, digits, btt, nAGQ=7, verbose=FALSE, control, ...) { # tau2,
 
    if (inherits(mods, "formula")) {
       formula.mods <- mods
-      if (isTRUE(all.equal(formula.mods, ~1))) { # needed so 'mods = ~ 1' without 'data' specified works
+      if (isTRUE(all.equal(formula.mods, ~ 1))) { # needed so 'mods = ~ 1' without 'data' specified works
          mods <- matrix(1, nrow=k, ncol=1)
          intercept <- FALSE
       } else {
@@ -306,9 +319,9 @@ level=95, digits, btt, nAGQ=7, verbose=FALSE, control, ...) { # tau2,
       if (verbose > 1)
          message(mstyle$message("Subsetting ..."))
 
-      mods <- mods[subset,,drop=FALSE]
-      slab <- slab[subset]
-      ids  <- ids[subset]
+      mods <- .getsubset(mods, subset, col=TRUE)
+      slab <- .getsubset(slab, subset)
+      ids  <- .getsubset(ids,  subset)
 
    }
 
@@ -325,7 +338,7 @@ level=95, digits, btt, nAGQ=7, verbose=FALSE, control, ...) { # tau2,
 
    ### if drop00=TRUE, set counts to NA for studies that have no events (or all events) in both arms (corresponding yi/vi will also be NA/NA then)
 
-   if (measure=="OR") {
+   if (is.element(measure, c("OR","RR","RD"))) {
       if (drop00) {
          id00 <- c(ai == 0L & ci == 0L) | c(bi == 0L & di == 0L)
          id00[is.na(id00)] <- FALSE
@@ -336,7 +349,7 @@ level=95, digits, btt, nAGQ=7, verbose=FALSE, control, ...) { # tau2,
       }
    }
 
-   if (measure=="IRR") {
+   if (is.element(measure, c("IRR"))) {
       if (drop00) {
          id00 <- c(x1i == 0L & x2i == 0L)
          id00[is.na(id00)] <- FALSE
@@ -347,27 +360,18 @@ level=95, digits, btt, nAGQ=7, verbose=FALSE, control, ...) { # tau2,
 
    ### save full data (including potential NAs in table data, yi/vi/ni/mods) (after subsetting)
 
-   ai.f   <- ai
-   bi.f   <- bi
-   ci.f   <- ci
-   di.f   <- di
-   x1i.f  <- x1i
-   x2i.f  <- x2i
-   t1i.f  <- t1i
-   t2i.f  <- t2i
-   xi.f   <- xi
-   mi.f   <- mi
-   ti.f   <- ti
-   yi.f   <- yi
-   vi.f   <- vi
-   ni.f   <- ni
+   outdat.f <- list(ai=ai, bi=bi, ci=ci, di=di, x1i=x1i, x2i=x2i, t1i=t1i, t2i=t2i, xi=xi, mi=mi, ni=ni, ti=ti)
+
+   yi.f <- yi
+   vi.f <- vi
+   ni.f <- ni
    mods.f <- mods
 
    k.f <- k # total number of tables/outcomes and rows in the model matrix (including all NAs)
 
    ### check for NAs in tables (and corresponding mods) and act accordingly
 
-   if (is.element(measure, "OR")) {
+   if (is.element(measure, c("OR","RR","RD"))) {
 
       has.na <- is.na(ai) | is.na(bi) | is.na(ci) | is.na(di) | (if (is.null(mods)) FALSE else apply(is.na(mods), 1, any))
       not.na <- !has.na
@@ -421,7 +425,7 @@ level=95, digits, btt, nAGQ=7, verbose=FALSE, control, ...) { # tau2,
 
    }
 
-   if (is.element(measure, "PLO")) {
+   if (is.element(measure, c("PLO","PR","PLN"))) {
 
       has.na <- is.na(xi) | is.na(mi) | (if (is.null(mods)) FALSE else apply(is.na(mods), 1, any))
       not.na <- !has.na
@@ -643,8 +647,8 @@ level=95, digits, btt, nAGQ=7, verbose=FALSE, control, ...) { # tau2,
    if (is.element(optimizer, c("clogit","clogistic")) && method == "ML")
       stop(mstyle$stop("Cannot use 'clogit' or 'clogistic' with method='ML'."))
 
-   if (package == "lme4" && is.element(measure, c("OR","IRR")) && model == "UM.RS" && method == "ML" && nAGQ > 1) {
-      warning(mstyle$warning("Currently not possible to fit RE/ME model='UM.RS' with nAGQ > 1. nAGQ automatically set to 1."), call.=FALSE)
+   if (package == "lme4" && is.element(measure, c("OR","RR","RD","IRR")) && model == "UM.RS" && method == "ML" && nAGQ > 1) {
+      warning(mstyle$warning("Not possible to fit RE/ME model='UM.RS' with nAGQ > 1 with glmer(). nAGQ automatically set to 1."), call.=FALSE)
       nAGQ <- 1
    }
 
@@ -776,14 +780,14 @@ level=95, digits, btt, nAGQ=7, verbose=FALSE, control, ...) { # tau2,
 
    ### check that the required packages are installed
 
-   if (is.element(measure, c("OR","IRR"))) {
+   if (is.element(measure, c("OR","RR","RD","IRR"))) {
       if ((model == "UM.FS" && method == "ML") || (model == "UM.RS") || (model == "CM.AL" && method == "ML") || (model == "CM.EL" && method == "ML")) {
          if (!requireNamespace(package, quietly=TRUE))
             stop(mstyle$stop(paste0("Please install the '", package, "' package to fit this model.")))
       }
    }
 
-   if (is.element(measure, c("PLO","IRLN")) && method == "ML") {
+   if (is.element(measure, c("PLO","PR","PLN","IRLN")) && method == "ML") {
       if (!requireNamespace(package, quietly=TRUE))
          stop(mstyle$stop(paste0("Please install the '", package, "' package to fit this model.")))
    }
@@ -793,8 +797,6 @@ level=95, digits, btt, nAGQ=7, verbose=FALSE, control, ...) { # tau2,
       if (is.element(optimizer, c("uobyqa","newuoa","bobyqa"))) {
          if (!requireNamespace("minqa", quietly=TRUE))
             stop(mstyle$stop("Please install the 'minqa' package to fit this model."))
-         #minqa <- get(optimizer, envir=loadNamespace("minqa"))
-         #optimizer <- "minqa"
       }
 
       if (is.element(optimizer, c("nloptr","ucminf","lbfgsb3c","subplex","optimParallel"))) {
@@ -813,6 +815,7 @@ level=95, digits, btt, nAGQ=7, verbose=FALSE, control, ...) { # tau2,
       }
 
       if (is.element(optimizer, c("optim","nlminb","uobyqa","newuoa","bobyqa","nloptr","nlm","hjk","nmk","mads","ucminf","lbfgsb3c","subplex","BBoptim","optimParallel"))) {
+         con$hesspack <- match.arg(con$hesspack, c("numDeriv","pracma"))
          if (!requireNamespace(con$hesspack, quietly=TRUE))
          stop(mstyle$stop(paste0("Please install the '", con$hesspack, "' package to fit this model.")))
          if (con$dnchgcalc == "dFNCHypergeo") {
@@ -875,7 +878,7 @@ level=95, digits, btt, nAGQ=7, verbose=FALSE, control, ...) { # tau2,
 
    ### two group outcomes (odds ratios and incidence rate ratios)
 
-   if (is.element(measure, c("OR","IRR"))) {
+   if (is.element(measure, c("OR","RR","RD","IRR"))) {
 
       ######################################################################
 
@@ -883,18 +886,23 @@ level=95, digits, btt, nAGQ=7, verbose=FALSE, control, ...) { # tau2,
 
          ### prepare data for the unconditional models
 
-         if (measure == "OR") {                                      #                           xi   mi   study   group1  group2  group12  offset  intrcpt  mod1
+         if (is.element(measure, c("OR","RR","RD"))) {               #                           xi   mi   study   group1  group2  group12  offset  intrcpt  mod1
             dat.grp <- cbind(xi=c(rbind(ai,ci)), mi=c(rbind(bi,di))) # grp-level outcome data    ai   bi   i       1       0       +1/2     NULL    1        x1i
                                                                      #                           ci   di   i       0       1       -1/2     NULL    0        0
             if (is.null(ddd$family)) {
-               dat.fam <- binomial
+               if (measure == "OR")
+                  dat.fam <- binomial
+               if (measure == "RR")
+                  dat.fam <- binomial(link=log)
+               if (measure == "RD")
+                  dat.fam <- eval(parse(text="binomial(link=\"identity\")"))
             } else {
                dat.fam <- ddd$family
             }
             dat.off <- NULL
          }
 
-         if (measure == "IRR") {                                     #                           xi   ti   study   group1  group2  group12  offset  intrcpt  mod1
+         if (is.element(measure, c("IRR"))) {                        #                           xi   ti   study   group1  group2  group12  offset  intrcpt  mod1
             dat.grp <- c(rbind(x1i,x2i))                             # grp-level outcome data    x1i  t1i  i       1       0       +1/2     t1i     1        x1i
                                                                      # log(ti) for offset        x2i  t2i  i       0       1       -1/2     t2i     0        0
             if (is.null(ddd$family)) {
@@ -1010,7 +1018,7 @@ level=95, digits, btt, nAGQ=7, verbose=FALSE, control, ...) { # tau2,
                }
 
                if (package == "GLMMadaptive") {
-                  if (measure == "OR") {
+                  if (is.element(measure, c("OR","RR","RD"))) {
                      dat.mm <- data.frame(xi=dat.grp[,"xi"], mi=dat.grp[,"mi"], study=study, group=group)
                      res.ML <- try(GLMMadaptive::mixed_model(cbind(xi,mi) ~ -1 + X.fit + study, random = ~ group - 1 | study, data=dat.mm, family=dat.fam, nAGQ=nAGQ, verbose=verbose, control=glmerCtrl), silent=!verbose)
                   } else {
@@ -1021,9 +1029,9 @@ level=95, digits, btt, nAGQ=7, verbose=FALSE, control, ...) { # tau2,
 
                if (package == "glmmTMB") {
                   if (verbose) {
-                     res.ML <- try(glmmTMB::glmmTMB(dat.grp ~ -1 + X.fit + study + (group - 1 | study), offset=dat.off, family=dat.fam, verbose=verbose, control=do.call(glmmTMB::glmmTMBControl, glmerCtrl)), silent=!verbose)
+                     res.ML <- try(glmmTMB::glmmTMB(dat.grp ~ -1 + X.fit + study + (group - 1 | study), offset=dat.off, family=dat.fam, verbose=verbose, data=NULL, control=do.call(glmmTMB::glmmTMBControl, glmerCtrl)), silent=!verbose)
                   } else {
-                     res.ML <- suppressMessages(try(glmmTMB::glmmTMB(dat.grp ~ -1 + X.fit + study + (group - 1 | study), offset=dat.off, family=dat.fam, verbose=verbose, control=do.call(glmmTMB::glmmTMBControl, glmerCtrl)), silent=!verbose))
+                     res.ML <- suppressMessages(try(glmmTMB::glmmTMB(dat.grp ~ -1 + X.fit + study + (group - 1 | study), offset=dat.off, family=dat.fam, verbose=verbose, data=NULL, control=do.call(glmmTMB::glmmTMBControl, glmerCtrl)), silent=!verbose))
                   }
                }
 
@@ -1113,7 +1121,7 @@ level=95, digits, btt, nAGQ=7, verbose=FALSE, control, ...) { # tau2,
             }
 
             if (package == "GLMMadaptive") {
-               if (measure == "OR") {
+               if (is.element(measure, c("OR","RR","RD"))) {
                   dat.mm <- data.frame(xi=dat.grp[,"xi"], mi=dat.grp[,"mi"], study=study, const=const)
                   res.FE <- try(GLMMadaptive::mixed_model(cbind(xi,mi) ~ -1 + X.fit + const, random = ~ 1 | study, data=dat.mm, family=dat.fam, nAGQ=nAGQ, verbose=verbose, control=glmerCtrl), silent=!verbose)
                } else {
@@ -1124,9 +1132,9 @@ level=95, digits, btt, nAGQ=7, verbose=FALSE, control, ...) { # tau2,
 
             if (package == "glmmTMB") {
                if (verbose) {
-                  res.FE <- try(glmmTMB::glmmTMB(dat.grp ~ -1 + X.fit + const + (1 | study), offset=dat.off, family=dat.fam, verbose=verbose, control=do.call(glmmTMB::glmmTMBControl, glmerCtrl)), silent=!verbose)
+                  res.FE <- try(glmmTMB::glmmTMB(dat.grp ~ -1 + X.fit + const + (1 | study), offset=dat.off, family=dat.fam, verbose=verbose, data=NULL, control=do.call(glmmTMB::glmmTMBControl, glmerCtrl)), silent=!verbose)
                } else {
-                  res.FE <- suppressMessages(try(glmmTMB::glmmTMB(dat.grp ~ -1 + X.fit + const + (1 | study), offset=dat.off, family=dat.fam, verbose=verbose, control=do.call(glmmTMB::glmmTMBControl, glmerCtrl)), silent=!verbose))
+                  res.FE <- suppressMessages(try(glmmTMB::glmmTMB(dat.grp ~ -1 + X.fit + const + (1 | study), offset=dat.off, family=dat.fam, verbose=verbose, data=NULL, control=do.call(glmmTMB::glmmTMBControl, glmerCtrl)), silent=!verbose))
                }
             }
 
@@ -1165,7 +1173,7 @@ level=95, digits, btt, nAGQ=7, verbose=FALSE, control, ...) { # tau2,
 
                   if (package == "GLMMadaptive") {
                      glmerCtrl$max_coef_value <- 50
-                     if (measure == "OR") {
+                     if (is.element(measure, c("OR","RR","RD"))) {
                         dat.mm <- data.frame(xi=dat.grp[,"xi"], mi=dat.grp[,"mi"], study=study)
                         res.QE <- try(GLMMadaptive::mixed_model(cbind(xi,mi) ~ -1 + X.QE, random = ~ 1 | study, data=dat.mm, family=dat.fam, nAGQ=nAGQ, verbose=verbose, control=glmerCtrl, initial_values=list(D=matrix(res.FE$D[1,1]))), silent=!verbose)
                      } else {
@@ -1176,9 +1184,9 @@ level=95, digits, btt, nAGQ=7, verbose=FALSE, control, ...) { # tau2,
 
                   if (package == "glmmTMB") {
                      if (verbose) {
-                        res.QE <- try(glmmTMB::glmmTMB(dat.grp ~ -1 + X.QE + (1 | study), offset=dat.off, family=dat.fam, start=list(theta=sqrt(glmmTMB::VarCorr(res.FE)[[1]][[1]][[1]])), verbose=verbose, control=do.call(glmmTMB::glmmTMBControl, glmerCtrl)), silent=!verbose)
+                        res.QE <- try(glmmTMB::glmmTMB(dat.grp ~ -1 + X.QE + (1 | study), offset=dat.off, family=dat.fam, start=list(theta=sqrt(glmmTMB::VarCorr(res.FE)[[1]][[1]][[1]])), verbose=verbose, data=NULL, control=do.call(glmmTMB::glmmTMBControl, glmerCtrl)), silent=!verbose)
                      } else {
-                        res.QE <- suppressMessages(try(glmmTMB::glmmTMB(dat.grp ~ -1 + X.QE + (1 | study), offset=dat.off, family=dat.fam, start=list(theta=sqrt(glmmTMB::VarCorr(res.FE)[[1]][[1]][[1]])), verbose=verbose, control=do.call(glmmTMB::glmmTMBControl, glmerCtrl)), silent=!verbose))
+                        res.QE <- suppressMessages(try(glmmTMB::glmmTMB(dat.grp ~ -1 + X.QE + (1 | study), offset=dat.off, family=dat.fam, start=list(theta=sqrt(glmmTMB::VarCorr(res.FE)[[1]][[1]][[1]])), verbose=verbose, data=NULL, control=do.call(glmmTMB::glmmTMBControl, glmerCtrl)), silent=!verbose))
                      }
                   }
 
@@ -1247,7 +1255,7 @@ level=95, digits, btt, nAGQ=7, verbose=FALSE, control, ...) { # tau2,
                }
 
                if (package == "GLMMadaptive") {
-                  if (measure == "OR") {
+                  if (is.element(measure, c("OR","RR","RD"))) {
                      dat.mm <- data.frame(xi=dat.grp[,"xi"], mi=dat.grp[,"mi"], study=study, const=const, group=group)
                      if (cor) {
                         res.ML <- try(GLMMadaptive::mixed_model(cbind(xi,mi) ~ -1 + X.fit + const, random = ~ group | study,  data=dat.mm, family=dat.fam, nAGQ=nAGQ, verbose=verbose, control=glmerCtrl), silent=!verbose)
@@ -1267,15 +1275,15 @@ level=95, digits, btt, nAGQ=7, verbose=FALSE, control, ...) { # tau2,
                if (package == "glmmTMB") {
                   if (verbose) {
                      if (cor) {
-                        res.ML <- try(glmmTMB::glmmTMB(dat.grp ~ -1 + X.fit + const + (group | study),                   offset=dat.off, family=dat.fam, verbose=verbose, control=do.call(glmmTMB::glmmTMBControl, glmerCtrl)), silent=!verbose)
+                        res.ML <- try(glmmTMB::glmmTMB(dat.grp ~ -1 + X.fit + const + (group | study),                   offset=dat.off, family=dat.fam, verbose=verbose, data=NULL, control=do.call(glmmTMB::glmmTMBControl, glmerCtrl)), silent=!verbose)
                      } else {
-                        res.ML <- try(glmmTMB::glmmTMB(dat.grp ~ -1 + X.fit + const + (1 | study) + (group - 1 | study), offset=dat.off, family=dat.fam, verbose=verbose, control=do.call(glmmTMB::glmmTMBControl, glmerCtrl)), silent=!verbose)
+                        res.ML <- try(glmmTMB::glmmTMB(dat.grp ~ -1 + X.fit + const + (1 | study) + (group - 1 | study), offset=dat.off, family=dat.fam, verbose=verbose, data=NULL, control=do.call(glmmTMB::glmmTMBControl, glmerCtrl)), silent=!verbose)
                      }
                   } else {
                      if (cor) {
-                        res.ML <- suppressMessages(try(glmmTMB::glmmTMB(dat.grp ~ -1 + X.fit + const + (group | study),                   offset=dat.off, family=dat.fam, verbose=verbose, control=do.call(glmmTMB::glmmTMBControl, glmerCtrl)), silent=!verbose))
+                        res.ML <- suppressMessages(try(glmmTMB::glmmTMB(dat.grp ~ -1 + X.fit + const + (group | study),                   offset=dat.off, family=dat.fam, verbose=verbose, data=NULL, control=do.call(glmmTMB::glmmTMBControl, glmerCtrl)), silent=!verbose))
                      } else {
-                        res.ML <- suppressMessages(try(glmmTMB::glmmTMB(dat.grp ~ -1 + X.fit + const + (1 | study) + (group - 1 | study), offset=dat.off, family=dat.fam, verbose=verbose, control=do.call(glmmTMB::glmmTMBControl, glmerCtrl)), silent=!verbose))
+                        res.ML <- suppressMessages(try(glmmTMB::glmmTMB(dat.grp ~ -1 + X.fit + const + (1 | study) + (group - 1 | study), offset=dat.off, family=dat.fam, verbose=verbose, data=NULL, control=do.call(glmmTMB::glmmTMBControl, glmerCtrl)), silent=!verbose))
                      }
                   }
                }
@@ -1481,9 +1489,9 @@ level=95, digits, btt, nAGQ=7, verbose=FALSE, control, ...) { # tau2,
 
             if (package == "glmmTMB") {
                if (verbose) {
-                  res.ML <- try(glmmTMB::glmmTMB(dat.grp ~ -1 + X.fit + (1 | study), offset=dat.off, family=binomial, verbose=verbose, control=do.call(glmmTMB::glmmTMBControl, glmerCtrl)), silent=!verbose)
+                  res.ML <- try(glmmTMB::glmmTMB(dat.grp ~ -1 + X.fit + (1 | study), offset=dat.off, family=binomial, verbose=verbose, data=NULL, control=do.call(glmmTMB::glmmTMBControl, glmerCtrl)), silent=!verbose)
                } else {
-                  res.ML <- suppressMessages(try(glmmTMB::glmmTMB(dat.grp ~ -1 + X.fit + (1 | study), offset=dat.off, family=binomial, verbose=verbose, control=do.call(glmmTMB::glmmTMBControl, glmerCtrl)), silent=!verbose))
+                  res.ML <- suppressMessages(try(glmmTMB::glmmTMB(dat.grp ~ -1 + X.fit + (1 | study), offset=dat.off, family=binomial, verbose=verbose, data=NULL, control=do.call(glmmTMB::glmmTMBControl, glmerCtrl)), silent=!verbose))
                }
             }
 
@@ -2111,7 +2119,9 @@ level=95, digits, btt, nAGQ=7, verbose=FALSE, control, ...) { # tau2,
             } else {
                vb.f <- chol2inv(chol.h)
             }
-            vb     <- vb.f[seq_len(p),seq_len(p),drop=FALSE]
+            vb <- vb.f[seq_len(p),seq_len(p),drop=FALSE]
+            if (any(diag(vb) <= 0))
+               stop(mstyle$stop("Cannot compute var-cov matrix of the fixed effects."))
             tau2   <- exp(res.ML$par[p+1])
             sigma2 <- NA
             parms  <- p + 1
@@ -2129,9 +2139,9 @@ level=95, digits, btt, nAGQ=7, verbose=FALSE, control, ...) { # tau2,
                gvar1 <- det(vcov(tmp))
                gvar2 <- det(vb)
                ratio <- (gvar1 / gvar2)^(1/(2*m))
-               if (ratio >= 100)
+               if (!is.na(ratio) && ratio >= 100)
                   warning(mstyle$warning("Standard errors of fixed effects appear to be unusually small. Treat results with caution."), call.=FALSE)
-               if (ratio <= 1/100)
+               if (!is.na(ratio) && ratio <= 1/100)
                   warning(mstyle$warning("Standard errors of fixed effects appear to be unusually large. Treat results with caution."), call.=FALSE)
             }
 
@@ -2149,21 +2159,26 @@ level=95, digits, btt, nAGQ=7, verbose=FALSE, control, ...) { # tau2,
 
    ### one group outcomes (log odds and log transformed rates)
 
-   if (is.element(measure, c("PLO","IRLN"))) {
+   if (is.element(measure, c("PLO","PR","PLN","IRLN"))) {
 
       ### prepare data
 
-      if (measure == "PLO") {
+      if (is.element(measure, c("PLO","PR","PLN"))) {
          dat.grp <- cbind(xi=xi,mi=mi)
          if (is.null(ddd$family)) {
-            dat.fam <- binomial
+            if (measure == "PLO")
+               dat.fam <- binomial
+            if (measure == "PR")
+               dat.fam <- eval(parse(text="binomial(link=\"identity\")"))
+            if (measure == "PLN")
+               dat.fam <- binomial(link=log)
          } else {
             dat.fam <- ddd$family
          }
          dat.off <- NULL
       }
 
-      if (measure == "IRLN") {
+      if (is.element(measure, c("IRLN"))) {
          dat.grp <- xi
          if (is.null(ddd$family)) {
             dat.fam <- poisson
@@ -2258,7 +2273,7 @@ level=95, digits, btt, nAGQ=7, verbose=FALSE, control, ...) { # tau2,
          }
 
          if (package == "GLMMadaptive") {
-            if (measure == "PLO") {
+            if (is.element(measure, c("PLO","PR","PLN"))) {
                dat.mm <- data.frame(xi=dat.grp[,"xi"], mi=dat.grp[,"mi"], study=study)
                res.ML <- try(GLMMadaptive::mixed_model(cbind(xi,mi) ~ -1 + X.fit, random = ~ 1 | study, data=dat.mm, family=dat.fam, nAGQ=nAGQ, verbose=verbose, control=glmerCtrl), silent=!verbose)
             } else {
@@ -2269,9 +2284,9 @@ level=95, digits, btt, nAGQ=7, verbose=FALSE, control, ...) { # tau2,
 
          if (package == "glmmTMB") {
             if (verbose) {
-               res.ML <- try(glmmTMB::glmmTMB(dat.grp ~ -1 + X.fit + (1 | study), offset=dat.off, family=dat.fam, verbose=verbose, control=do.call(glmmTMB::glmmTMBControl, glmerCtrl)), silent=!verbose)
+               res.ML <- try(glmmTMB::glmmTMB(dat.grp ~ -1 + X.fit + (1 | study), offset=dat.off, family=dat.fam, verbose=verbose, data=NULL, control=do.call(glmmTMB::glmmTMBControl, glmerCtrl)), silent=!verbose)
             } else {
-               res.ML <- suppressMessages(try(glmmTMB::glmmTMB(dat.grp ~ -1 + X.fit + (1 | study), offset=dat.off, family=dat.fam, verbose=verbose, control=do.call(glmmTMB::glmmTMBControl, glmerCtrl)), silent=!verbose))
+               res.ML <- suppressMessages(try(glmmTMB::glmmTMB(dat.grp ~ -1 + X.fit + (1 | study), offset=dat.off, family=dat.fam, verbose=verbose, data=NULL, control=do.call(glmmTMB::glmmTMBControl, glmerCtrl)), silent=!verbose))
             }
          }
 
@@ -2350,9 +2365,9 @@ level=95, digits, btt, nAGQ=7, verbose=FALSE, control, ...) { # tau2,
 
    if (k > 1 && QEconv) {
 
-      ### for OR, CM.EL, & optim/nlminb/minqa, QE.Wld is already calculated, so skip this part then
+      ### for OR + CM.EL + NOT clogit/clogistic, QE.Wld is already calculated, so skip this part then
 
-      if (measure!="OR" || model!="CM.EL" || !is.element(optimizer, c("optim", "nlminb", "minqa"))) {
+      if (!(measure == "OR" && model == "CM.EL" && !is.element(optimizer, c("clogit","clogistic")))) {
 
          if (nrow(vb2.QE) > 0) {
 
@@ -2522,6 +2537,8 @@ level=95, digits, btt, nAGQ=7, verbose=FALSE, control, ...) { # tau2,
 
    if (is.null(ddd$outlist) || ddd$outlist == "nodata") {
 
+      outdat <- list(ai=ai, bi=bi, ci=ci, di=di, x1i=x1i, x2i=x2i, t1i=t1i, t2i=t2i, xi=xi, mi=mi, ti=ti)
+
       res <- list(b=beta, beta=beta, se=se, zval=zval, pval=pval, ci.lb=ci.lb, ci.ub=ci.ub, vb=vb,
                   tau2=tau2, se.tau2=se.tau2, sigma2=sigma2, rho=rho,
                   I2=I2, H2=H2, vt=vt,
@@ -2529,9 +2546,7 @@ level=95, digits, btt, nAGQ=7, verbose=FALSE, control, ...) { # tau2,
                   k=k, k.f=k.f, k.yi=k.yi, k.eff=k.eff, k.all=k.all, p=p, p.eff=p.eff, parms=parms,
                   int.only=int.only, int.incl=int.incl, intercept=intercept,
                   yi=yi, vi=vi, X=X, yi.f=yi.f, vi.f=vi.f, X.f=X.f,
-                  ai=ai, bi=bi, ci=ci, di=di, ai.f=ai.f, bi.f=bi.f, ci.f=ci.f, di.f=di.f,
-                  x1i=x1i, x2i=x2i, t1i=t1i, t2i=t2i, x1i.f=x1i.f, x2i.f=x2i.f, t1i.f=t1i.f, t2i.f=t2i.f,
-                  xi=xi, mi=mi, ti=ti, xi.f=xi.f, mi.f=mi.f, ti.f=ti.f, ni=ni, ni.f=ni.f,
+                  outdat.f=outdat.f, outdat=outdat, ni=ni, ni.f=ni.f,
                   ids=ids, not.na=not.na, subset=subset, not.na.yivi=not.na.yivi, slab=slab, slab.null=slab.null,
                   measure=measure, method=method, model=model, weighted=weighted,
                   test=test, dfs=ddf, ddf=ddf, btt=btt, m=m,
@@ -2543,9 +2558,7 @@ level=95, digits, btt, nAGQ=7, verbose=FALSE, control, ...) { # tau2,
       if (is.null(ddd$outlist))
          res <- append(res, list(data=data), which(names(res) == "fit.stats"))
 
-   }
-
-   if (!is.null(ddd$outlist)) {
+   } else {
 
       if (ddd$outlist == "minimal") {
          res <- list(b=beta, beta=beta, se=se, zval=zval, pval=pval, ci.lb=ci.lb, ci.ub=ci.ub, vb=vb,

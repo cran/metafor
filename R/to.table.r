@@ -11,20 +11,20 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, rows, cols) {
    if (!is.character(measure))
       stop(mstyle$stop("The 'measure' argument must be a character string."))
 
-   if (!is.element(measure, c("RR","OR","PETO","RD","AS","PHI","YUQ","YUY","RTET", ### 2x2 table measures
-                              "PBIT","OR2D","OR2DN","OR2DL",                       ### - transformations to SMD
-                              "MPRD","MPRR","MPOR","MPORC","MPPETO","MPORM",       ### - measures for matched pairs data
-                              "IRR","IRD","IRSD",                                  ### two-group person-time data measures
-                              "MD","SMD","SMDH","ROM",                             ### two-group mean/SD measures
-                              "CVR","VR",                                          ### coefficient of variation ratio, variability ratio
-                              "RPB","RBIS","D2OR","D2ORN","D2ORL",                 ### - transformations to r_PB, r_BIS, and log(OR)
-                              "COR","UCOR","ZCOR",                                 ### correlations (raw and r-to-z transformed)
-                              "PCOR","ZPCOR","SPCOR",                              ### partial and semi-partial correlations
-                              "PR","PLN","PLO","PAS","PFT",                        ### single proportions (and transformations thereof)
-                              "IR","IRLN","IRS","IRFT",                            ### single-group person-time data (and transformations thereof)
-                              "MN","MNLN","CVLN","SDLN","SMN",                     ### mean, log(mean), log(CV), log(SD), standardized mean
-                              "MC","SMCC","SMCR","SMCRH","ROMC","CVRC","VRC",      ### raw/standardized mean change, log(ROM), CVR, and VR for dependent samples
-                              "ARAW","AHW","ABT")))                                ### alpha (and transformations thereof)
+   if (!is.element(measure, c("RR","OR","PETO","RD","AS","PHI","YUQ","YUY","RTET", # 2x2 table measures
+                              "PBIT","OR2D","OR2DN","OR2DL",                       # - transformations to SMD
+                              "MPRD","MPRR","MPOR","MPORC","MPPETO","MPORM",       # - measures for matched pairs data
+                              "IRR","IRD","IRSD",                                  # two-group person-time data measures
+                              "MD","SMD","SMDH","ROM",                             # two-group mean/SD measures
+                              "CVR","VR",                                          # coefficient of variation ratio, variability ratio
+                              "RPB","RBIS","D2OR","D2ORN","D2ORL",                 # - transformations to r_PB, r_BIS, and log(OR)
+                              "COR","UCOR","ZCOR",                                 # correlations (raw and r-to-z transformed)
+                              "PCOR","ZPCOR","SPCOR",                              # partial and semi-partial correlations
+                              "PR","PLN","PLO","PAS","PFT",                        # single proportions (and transformations thereof)
+                              "IR","IRLN","IRS","IRFT",                            # single-group person-time data (and transformations thereof)
+                              "MN","MNLN","CVLN","SDLN","SMN",                     # mean, log(mean), log(CV), log(SD), standardized mean
+                              "MC","SMCC","SMCR","SMCRH","ROMC","CVRC","VRC",      # raw/standardized mean change, log(ROM), CVR, and VR for dependent samples
+                              "ARAW","AHW","ABT")))                                # alpha (and transformations thereof)
       stop(mstyle$stop("Unknown 'measure' specified."))
 
    if (is.element(measure, c("CVR","VR","PCOR","ZPCOR","SPCOR","CVLN","SDLN","VRC")))
@@ -63,12 +63,12 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, rows, cols) {
 
    if (is.element(measure, c("RR","OR","RD","AS","PETO","PHI","YUQ","YUY","RTET","PBIT","OR2D","OR2DN","OR2DL","MPRD","MPRR","MPOR","MPORC","MPPETO","MPORM"))) {
 
-      ai  <- .getx("ai",  mf=mf, data=data)
-      bi  <- .getx("bi",  mf=mf, data=data)
-      ci  <- .getx("ci",  mf=mf, data=data)
-      di  <- .getx("di",  mf=mf, data=data)
-      n1i <- .getx("n1i", mf=mf, data=data)
-      n2i <- .getx("n2i", mf=mf, data=data)
+      ai  <- .getx("ai",  mf=mf, data=data, checknumeric=TRUE)
+      bi  <- .getx("bi",  mf=mf, data=data, checknumeric=TRUE)
+      ci  <- .getx("ci",  mf=mf, data=data, checknumeric=TRUE)
+      di  <- .getx("di",  mf=mf, data=data, checknumeric=TRUE)
+      n1i <- .getx("n1i", mf=mf, data=data, checknumeric=TRUE)
+      n2i <- .getx("n2i", mf=mf, data=data, checknumeric=TRUE)
 
       if (!.equal.length(ai, bi, ci, di, n1i, n2i))
          stop(mstyle$stop("Supplied data vectors are not all of the same length."))
@@ -90,11 +90,11 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, rows, cols) {
       k <- length(ai) ### number of outcomes before subsetting
 
       if (!is.null(subset)) {
-         subset <- .setnafalse(subset, k=k)
-         ai <- ai[subset]
-         bi <- bi[subset]
-         ci <- ci[subset]
-         di <- di[subset]
+         subset <- .chksubset(subset, k)
+         ai <- .getsubset(ai, subset)
+         bi <- .getsubset(bi, subset)
+         ci <- .getsubset(ci, subset)
+         di <- .getsubset(di, subset)
       }
 
       n1i <- ai + bi
@@ -171,10 +171,10 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, rows, cols) {
 
    if (is.element(measure, c("IRR","IRD","IRSD"))) {
 
-      x1i <- .getx("x1i", mf=mf, data=data)
-      x2i <- .getx("x2i", mf=mf, data=data)
-      t1i <- .getx("t1i", mf=mf, data=data)
-      t2i <- .getx("t2i", mf=mf, data=data)
+      x1i <- .getx("x1i", mf=mf, data=data, checknumeric=TRUE)
+      x2i <- .getx("x2i", mf=mf, data=data, checknumeric=TRUE)
+      t1i <- .getx("t1i", mf=mf, data=data, checknumeric=TRUE)
+      t2i <- .getx("t2i", mf=mf, data=data, checknumeric=TRUE)
 
       if (!.all.specified(x1i, x2i, t1i, t2i))
          stop(mstyle$stop("Cannot compute outcomes. Check that all of the required\n  information is specified via the appropriate arguments."))
@@ -185,11 +185,11 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, rows, cols) {
       k <- length(x1i) ### number of outcomes before subsetting
 
       if (!is.null(subset)) {
-         subset <- .setnafalse(subset, k=k)
-         x1i <- x1i[subset]
-         x2i <- x2i[subset]
-         t1i <- t1i[subset]
-         t2i <- t2i[subset]
+         subset <- .chksubset(subset, k)
+         x1i <- .getsubset(x1i, subset)
+         x2i <- .getsubset(x2i, subset)
+         t1i <- .getsubset(t1i, subset)
+         t2i <- .getsubset(t2i, subset)
       }
 
       if (any(c(x1i, x2i) < 0, na.rm=TRUE))
@@ -252,12 +252,12 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, rows, cols) {
 
    if (is.element(measure, c("MD","SMD","SMDH","ROM","RPB","RBIS","D2OR","D2ORN","D2ORL"))) {
 
-      m1i  <- .getx("m1i",  mf=mf, data=data)
-      m2i  <- .getx("m2i",  mf=mf, data=data)
-      sd1i <- .getx("sd1i", mf=mf, data=data)
-      sd2i <- .getx("sd2i", mf=mf, data=data)
-      n1i  <- .getx("n1i",  mf=mf, data=data)
-      n2i  <- .getx("n2i",  mf=mf, data=data)
+      m1i  <- .getx("m1i",  mf=mf, data=data, checknumeric=TRUE)
+      m2i  <- .getx("m2i",  mf=mf, data=data, checknumeric=TRUE)
+      sd1i <- .getx("sd1i", mf=mf, data=data, checknumeric=TRUE)
+      sd2i <- .getx("sd2i", mf=mf, data=data, checknumeric=TRUE)
+      n1i  <- .getx("n1i",  mf=mf, data=data, checknumeric=TRUE)
+      n2i  <- .getx("n2i",  mf=mf, data=data, checknumeric=TRUE)
 
       if (!.all.specified(m1i, m2i, sd1i, sd2i, n1i, n2i))
          stop(mstyle$stop("Cannot compute outcomes. Check that all of the required\n  information is specified via the appropriate arguments."))
@@ -268,13 +268,13 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, rows, cols) {
       k <- length(n1i) ### number of outcomes before subsetting
 
       if (!is.null(subset)) {
-         subset <- .setnafalse(subset, k=k)
-         m1i  <- m1i[subset]
-         m2i  <- m2i[subset]
-         sd1i <- sd1i[subset]
-         sd2i <- sd2i[subset]
-         n1i  <- n1i[subset]
-         n2i  <- n2i[subset]
+         subset <- .chksubset(subset, k)
+         m1i  <- .getsubset(m1i,  subset)
+         m2i  <- .getsubset(m2i,  subset)
+         sd1i <- .getsubset(sd1i, subset)
+         sd2i <- .getsubset(sd2i, subset)
+         n1i  <- .getsubset(n1i,  subset)
+         n2i  <- .getsubset(n2i,  subset)
       }
 
       if (any(c(sd1i, sd2i) < 0, na.rm=TRUE))
@@ -291,8 +291,8 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, rows, cols) {
 
    if (is.element(measure, c("COR","UCOR","ZCOR"))) {
 
-      ri <- .getx("ri", mf=mf, data=data)
-      ni <- .getx("ni", mf=mf, data=data)
+      ri <- .getx("ri", mf=mf, data=data, checknumeric=TRUE)
+      ni <- .getx("ni", mf=mf, data=data, checknumeric=TRUE)
 
       if (!.all.specified(ri, ni))
          stop(mstyle$stop("Cannot compute outcomes. Check that all of the required\n  information is specified via the appropriate arguments."))
@@ -303,9 +303,9 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, rows, cols) {
       k <- length(ri) ### number of outcomes before subsetting
 
       if (!is.null(subset)) {
-         subset <- .setnafalse(subset, k=k)
-         ri <- ri[subset]
-         ni <- ni[subset]
+         subset <- .chksubset(subset, k)
+         ri <- .getsubset(ri, subset)
+         ni <- .getsubset(ni, subset)
       }
 
       if (any(abs(ri) > 1, na.rm=TRUE))
@@ -322,9 +322,9 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, rows, cols) {
 
    if (is.element(measure, c("PR","PLN","PLO","PAS","PFT"))) {
 
-      xi <- .getx("xi", mf=mf, data=data)
-      mi <- .getx("mi", mf=mf, data=data)
-      ni <- .getx("ni", mf=mf, data=data)
+      xi <- .getx("xi", mf=mf, data=data, checknumeric=TRUE)
+      mi <- .getx("mi", mf=mf, data=data, checknumeric=TRUE)
+      ni <- .getx("ni", mf=mf, data=data, checknumeric=TRUE)
 
       if (!.equal.length(xi, mi, ni))
          stop(mstyle$stop("Supplied data vectors are not all of the same length."))
@@ -342,9 +342,9 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, rows, cols) {
       k <- length(xi) ### number of outcomes before subsetting
 
       if (!is.null(subset)) {
-         subset <- .setnafalse(subset, k=k)
-         xi <- xi[subset]
-         mi <- mi[subset]
+         subset <- .chksubset(subset, k)
+         xi <- .getsubset(xi, subset)
+         mi <- .getsubset(mi, subset)
       }
 
       ni <- xi + mi
@@ -403,8 +403,8 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, rows, cols) {
 
    if (is.element(measure, c("IR","IRLN","IRS","IRFT"))) {
 
-      xi <- .getx("xi", mf=mf, data=data)
-      ti <- .getx("ti", mf=mf, data=data)
+      xi <- .getx("xi", mf=mf, data=data, checknumeric=TRUE)
+      ti <- .getx("ti", mf=mf, data=data, checknumeric=TRUE)
 
       if (!.all.specified(xi, ti))
          stop(mstyle$stop("Cannot compute outcomes. Check that all of the required\n  information is specified via the appropriate arguments."))
@@ -415,9 +415,9 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, rows, cols) {
       k <- length(xi) ### number of outcomes before subsetting
 
       if (!is.null(subset)) {
-         subset <- .setnafalse(subset, k=k)
-         xi <- xi[subset]
-         ti <- ti[subset]
+         subset <- .chksubset(subset, k)
+         xi <- .getsubset(xi, subset)
+         ti <- .getsubset(ti, subset)
       }
 
       if (any(xi < 0, na.rm=TRUE))
@@ -468,9 +468,9 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, rows, cols) {
 
    if (is.element(measure, c("MN","MNLN","SMN"))) {
 
-      mi  <- .getx("mi",  mf=mf, data=data)
-      sdi <- .getx("sdi", mf=mf, data=data)
-      ni  <- .getx("ni",  mf=mf, data=data)
+      mi  <- .getx("mi",  mf=mf, data=data, checknumeric=TRUE)
+      sdi <- .getx("sdi", mf=mf, data=data, checknumeric=TRUE)
+      ni  <- .getx("ni",  mf=mf, data=data, checknumeric=TRUE)
 
       if (!.all.specified(mi, sdi, ni))
          stop(mstyle$stop("Cannot compute outcomes. Check that all of the required\n  information is specified via the appropriate arguments."))
@@ -481,10 +481,10 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, rows, cols) {
       k <- length(ni) ### number of outcomes before subsetting
 
       if (!is.null(subset)) {
-         subset <- .setnafalse(subset, k=k)
-         mi  <- mi[subset]
-         sdi <- sdi[subset]
-         ni  <- ni[subset]
+         subset <- .chksubset(subset, k)
+         mi  <- .getsubset(mi,  subset)
+         sdi <- .getsubset(sdi, subset)
+         ni  <- .getsubset(ni,  subset)
       }
 
       if (any(sdi < 0, na.rm=TRUE))
@@ -504,12 +504,12 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, rows, cols) {
 
    if (is.element(measure, c("MC","SMCC","SMCR","SMCRH","ROMC","CVRC"))) {
 
-      m1i  <- .getx("m1i",  mf=mf, data=data)
-      m2i  <- .getx("m2i",  mf=mf, data=data)
-      sd1i <- .getx("sd1i", mf=mf, data=data)
-      sd2i <- .getx("sd2i", mf=mf, data=data)
-      ri   <- .getx("ri",   mf=mf, data=data) ### for SMCR, do not need to supply this
-      ni   <- .getx("ni",   mf=mf, data=data)
+      m1i  <- .getx("m1i",  mf=mf, data=data, checknumeric=TRUE)
+      m2i  <- .getx("m2i",  mf=mf, data=data, checknumeric=TRUE)
+      sd1i <- .getx("sd1i", mf=mf, data=data, checknumeric=TRUE)
+      sd2i <- .getx("sd2i", mf=mf, data=data, checknumeric=TRUE)
+      ri   <- .getx("ri",   mf=mf, data=data, checknumeric=TRUE) ### for SMCR, do not need to supply this
+      ni   <- .getx("ni",   mf=mf, data=data, checknumeric=TRUE)
 
       k <- length(m1i) ### number of outcomes before subsetting
 
@@ -532,13 +532,13 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, rows, cols) {
       }
 
       if (!is.null(subset)) {
-         subset <- .setnafalse(subset, k=k)
-         m1i  <- m1i[subset]
-         m2i  <- m2i[subset]
-         sd1i <- sd1i[subset]
-         sd2i <- sd2i[subset]
-         ni   <- ni[subset]
-         ri   <- ri[subset]
+         subset <- .chksubset(subset, k)
+         m1i  <- .getsubset(m1i,  subset)
+         m2i  <- .getsubset(m2i,  subset)
+         sd1i <- .getsubset(sd1i, subset)
+         sd2i <- .getsubset(sd2i, subset)
+         ni   <- .getsubset(ni,   subset)
+         ri   <- .getsubset(ri,   subset)
       }
 
       if (is.element(measure, c("MC","SMCC","SMCRH","ROMC","CVRC"))) {
@@ -563,9 +563,9 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, rows, cols) {
 
    if (is.element(measure, c("ARAW","AHW","ABT"))) {
 
-      ai <- .getx("ai", mf=mf, data=data)
-      mi <- .getx("mi", mf=mf, data=data)
-      ni <- .getx("ni", mf=mf, data=data)
+      ai <- .getx("ai", mf=mf, data=data, checknumeric=TRUE)
+      mi <- .getx("mi", mf=mf, data=data, checknumeric=TRUE)
+      ni <- .getx("ni", mf=mf, data=data, checknumeric=TRUE)
 
       if (!.all.specified(ai, mi, ni))
          stop(mstyle$stop("Cannot compute outcomes. Check that all of the required\n  information is specified via the appropriate arguments."))
@@ -576,10 +576,10 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, rows, cols) {
       k <- length(ai) ### number of outcomes before subsetting
 
       if (!is.null(subset)) {
-         subset <- .setnafalse(subset, k=k)
-         ai <- ai[subset]
-         mi <- mi[subset]
-         ni <- ni[subset]
+         subset <- .chksubset(subset, k)
+         ai <- .getsubset(ai, subset)
+         mi <- .getsubset(mi, subset)
+         ni <- .getsubset(ni, subset)
       }
 
       if (any(ai > 1, na.rm=TRUE))
@@ -621,7 +621,7 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, rows, cols) {
    ### if a subset of studies is specified
 
    if (!is.null(subset))
-      slab <- slab[subset]
+      slab <- .getsubset(slab, subset)
 
    ### check if study labels are unique; if not, make them unique
 

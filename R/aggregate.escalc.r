@@ -1,4 +1,6 @@
-aggregate.escalc <- function(x, cluster, time, obs, V, struct="CS", rho, phi, weighted=TRUE, checkpd=TRUE, fun, na.rm=TRUE, subset, select, digits, ...) {
+aggregate.escalc <- function(x, cluster, time, obs, V, struct="CS", rho, phi,
+                             weighted=TRUE, checkpd=TRUE, fun, na.rm=TRUE,
+                             addk=FALSE, subset, select, digits, ...) {
 
    mstyle <- .get.mstyle("crayon" %in% .packages())
 
@@ -53,7 +55,7 @@ aggregate.escalc <- function(x, cluster, time, obs, V, struct="CS", rho, phi, we
    }
 
    if (is.null(x[[vi.name]]))
-      stop(mstyle$stop("Cannot find 'vi' variable in data frame."))
+      stop(mstyle$stop(paste0("Cannot find variable '", vi.name, "' in the data frame.")))
 
    #########################################################################
 
@@ -210,7 +212,7 @@ aggregate.escalc <- function(x, cluster, time, obs, V, struct="CS", rho, phi, we
    }
 
    if (is.null(x[[yi.name]]))
-      stop(mstyle$stop("Cannot find 'yi' variable in data frame."))
+      stop(mstyle$stop(paste0("Cannot find variable '", yi.name, "' in the data frame.")))
 
    ### note: there may be multiple yi/vi pairs; only first will be used
 
@@ -220,12 +222,12 @@ aggregate.escalc <- function(x, cluster, time, obs, V, struct="CS", rho, phi, we
 
    if (!is.null(subset)) {
 
-      subset <- .setnafalse(subset, k=k)
+      subset <- .chksubset(subset, k)
 
-      x  <- x[subset,,drop=FALSE]
-      yi <- yi[subset]
-      V  <- V[subset,subset,drop=FALSE]
-      cluster <- cluster[subset]
+      x  <- .getsubset(x,  subset)
+      yi <- .getsubset(yi, subset)
+      V  <- .getsubset(V,  subset, col=TRUE)
+      cluster <- .getsubset(cluster, subset)
 
       k <- nrow(x)
       ucluster <- unique(cluster)
@@ -377,6 +379,13 @@ aggregate.escalc <- function(x, cluster, time, obs, V, struct="CS", rho, phi, we
 
    xagg[which(names(xagg) == yi.name)] <- yi.agg
    xagg[which(names(xagg) == vi.name)] <- vi.agg
+
+   ### add k per cluster as variable to dataset
+
+   if (addk) {
+      ki <- sapply(xsplit, nrow)
+      xagg <- cbind(xagg, ki) # this way, an existing 'ki' variable will not be overwritten
+   }
 
    ### add back some attributes
 

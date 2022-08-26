@@ -22,9 +22,9 @@ print.permutest.rma.uni <- function(x, digits=x$digits, signif.stars=getOption("
 
    if (!x$int.only) {
       if (inherits(x, "permutest.rma.ls")) {
-         cat(mstyle$section(paste0("Test of Location Coefficients (coefficient", ifelse(x$m == 1, " ", "s "), .format.btt(x$btt),"):", footsym[1])))
+         cat(mstyle$section(paste0("Test of Location Coefficients (coefficient", ifelse(x$m == 1, " ", "s "), .format.btt(x$btt),"):", ifelse(x$skip.beta, "", footsym[1]))))
       } else {
-         cat(mstyle$section(paste0("Test of Moderators (coefficient", ifelse(x$m == 1, " ", "s "), .format.btt(x$btt),"):", footsym[1])))
+         cat(mstyle$section(paste0("Test of Moderators (coefficient", ifelse(x$m == 1, " ", "s "), .format.btt(x$btt),"):", ifelse(x$skip.beta, "", footsym[1]))))
       }
       cat("\n")
       if (is.element(x$test, c("knha","adhoc","t"))) {
@@ -37,14 +37,16 @@ print.permutest.rma.uni <- function(x, digits=x$digits, signif.stars=getOption("
 
    if (is.element(x$test, c("knha","adhoc","t"))) {
       res.table <- data.frame(estimate=.fcf(c(x$beta), digits[["est"]]), se=.fcf(x$se, digits[["se"]]), tval=.fcf(x$zval, digits[["test"]]), df=round(x$ddf,2), "pval"=.pval(x$pval, digits[["pval"]]), ci.lb=.fcf(x$ci.lb, digits[["ci"]]), ci.ub=.fcf(x$ci.ub, digits[["ci"]]), stringsAsFactors=FALSE)
-      colnames(res.table)[5] <- paste0("pval", footsym[1])
+      if (!x$skip.beta)
+         res.table <- .addfootsym(res.table, 5, footsym[1])
       if (x$permci)
-         colnames(res.table)[6:7] <- paste0(c("ci.lb", "ci.ub"), footsym[1])
+         res.table <- .addfootsym(res.table, 6:7, footsym[1])
    } else {
       res.table <- data.frame(estimate=.fcf(c(x$beta), digits[["est"]]), se=.fcf(x$se, digits[["se"]]), zval=.fcf(x$zval, digits[["test"]]), "pval"=.pval(x$pval, digits[["pval"]]), ci.lb=.fcf(x$ci.lb, digits[["ci"]]), ci.ub=.fcf(x$ci.ub, digits[["ci"]]), stringsAsFactors=FALSE)
-      colnames(res.table)[4] <- paste0("pval", footsym[1])
+      if (!x$skip.beta)
+         res.table <- .addfootsym(res.table, 4, footsym[1])
       if (x$permci)
-         colnames(res.table)[5:6] <- paste0(c("ci.lb", "ci.ub"), footsym[1])
+         res.table <- .addfootsym(res.table, 5:6, footsym[1])
    }
    rownames(res.table) <- rownames(x$beta)
    signif <- symnum(x$pval, corr=FALSE, na=FALSE, cutpoints=c(0, 0.001, 0.01, 0.05, 0.1, 1), symbols = c("***", "**", "*", ".", " "))
@@ -70,7 +72,7 @@ print.permutest.rma.uni <- function(x, digits=x$digits, signif.stars=getOption("
    } else {
       tmp <- capture.output(print(res.table, quote=FALSE, right=TRUE, print.gap=2))
    }
-   tmp[1] <- paste0(tmp[1], "\u200b")
+   #tmp[1] <- paste0(tmp[1], "\u200b")
    .print.table(tmp, mstyle)
 
    if (inherits(x, "permutest.rma.ls")) {
@@ -78,7 +80,7 @@ print.permutest.rma.uni <- function(x, digits=x$digits, signif.stars=getOption("
       cat("\n")
 
       if (!x$Z.int.only) {
-         cat(mstyle$section(paste0("Test of Scale Coefficients (coefficient", ifelse(x$m.alpha == 1, " ", "s "), .format.btt(x$att),"):", footsym[1])))
+         cat(mstyle$section(paste0("Test of Scale Coefficients (coefficient", ifelse(x$m.alpha == 1, " ", "s "), .format.btt(x$att),"):", ifelse(x$skip.alpha, "", footsym[1]))))
          cat("\n")
          if (is.element(x$test, c("knha","adhoc","t"))) {
             cat(mstyle$result(paste0("F(df1 = ", x$QSdf[1], ", df2 = ", round(x$QSdf[2], 2), ") = ", .fcf(x$QS, digits[["test"]]), ", p-val ", .pval(x$QSp, digits=digits[["pval"]], showeq=TRUE, sep=" "))))
@@ -90,12 +92,12 @@ print.permutest.rma.uni <- function(x, digits=x$digits, signif.stars=getOption("
 
       if (is.element(x$test, c("knha","adhoc","t"))) {
          res.table <- data.frame(estimate=.fcf(c(x$alpha), digits[["est"]]), se=.fcf(x$se.alpha, digits[["se"]]), tval=.fcf(x$zval.alpha, digits[["test"]]), df=round(x$ddf.alpha,2), "pval"=.pval(x$pval.alpha, digits[["pval"]]), ci.lb=.fcf(x$ci.lb.alpha, digits[["ci"]]), ci.ub=.fcf(x$ci.ub.alpha, digits[["ci"]]), stringsAsFactors=FALSE)
-         if (!x$Z.int.only)
-            colnames(res.table)[5] <- paste0("pval", footsym[1])
+         if (!x$skip.alpha)
+            res.table <- .addfootsym(res.table, 5, footsym[1])
       } else {
          res.table <- data.frame(estimate=.fcf(c(x$alpha), digits[["est"]]), se=.fcf(x$se.alpha, digits[["se"]]), zval=.fcf(x$zval.alpha, digits[["test"]]), "pval"=.pval(x$pval.alpha, digits[["pval"]]), ci.lb=.fcf(x$ci.lb.alpha, digits[["ci"]]), ci.ub=.fcf(x$ci.ub.alpha, digits[["ci"]]), stringsAsFactors=FALSE)
-         if (!x$Z.int.only)
-            colnames(res.table)[4] <- paste0("pval", footsym[1])
+         if (!x$skip.alpha)
+            res.table <- .addfootsym(res.table, 4, footsym[1])
       }
       rownames(res.table) <- rownames(x$alpha)
       signif <- symnum(x$pval.alpha, corr=FALSE, na=FALSE, cutpoints=c(0, 0.001, 0.01, 0.05, 0.1, 1), symbols = c("***", "**", "*", ".", " "))
@@ -117,7 +119,7 @@ print.permutest.rma.uni <- function(x, digits=x$digits, signif.stars=getOption("
       } else {
          tmp <- capture.output(print(res.table, quote=FALSE, right=TRUE, print.gap=2))
       }
-      tmp[1] <- paste0(tmp[1], "\u200b")
+      #tmp[1] <- paste0(tmp[1], "\u200b")
       .print.table(tmp, mstyle)
 
    }

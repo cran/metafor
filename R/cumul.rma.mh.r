@@ -54,24 +54,28 @@ cumul.rma.mh <- function(x, order, digits, transf, targs, progbar=FALSE, ...) {
    ###       original dataset passed to the model fitting function and so we apply
    ###       the same subsetting (if necessary) as was done during model fitting
 
-   if (!is.null(x$subset))
-      order <- order[x$subset]
+   order <- .getsubset(order, x$subset)
 
    order <- order(order, decreasing=decreasing)
 
-   ai.f   <- x$ai.f[order]
-   bi.f   <- x$bi.f[order]
-   ci.f   <- x$ci.f[order]
-   di.f   <- x$di.f[order]
-   x1i.f  <- x$x1i.f[order]
-   x2i.f  <- x$x2i.f[order]
-   t1i.f  <- x$t1i.f[order]
-   t2i.f  <- x$t2i.f[order]
+   ai.f   <- x$outdat.f$ai[order]
+   bi.f   <- x$outdat.f$bi[order]
+   ci.f   <- x$outdat.f$ci[order]
+   di.f   <- x$outdat.f$di[order]
+   x1i.f  <- x$outdat.f$x1i[order]
+   x2i.f  <- x$outdat.f$x2i[order]
+   t1i.f  <- x$outdat.f$t1i[order]
+   t2i.f  <- x$outdat.f$t2i[order]
    yi.f   <- x$yi.f[order]
    vi.f   <- x$vi.f[order]
    not.na <- x$not.na[order]
    slab   <- x$slab[order]
    ids    <- x$ids[order]
+   if (inherits(x$data, "environment")) {
+      data <- NULL
+   } else {
+      data <- x$data[order,]
+   }
 
    beta  <- rep(NA_real_, x$k.f)
    se    <- rep(NA_real_, x$k.f)
@@ -161,12 +165,14 @@ cumul.rma.mh <- function(x, order, digits, transf, targs, progbar=FALSE, ...) {
       out <- list(estimate=beta[not.na], se=se[not.na], zval=zval[not.na], pval=pval[not.na], ci.lb=ci.lb[not.na], ci.ub=ci.ub[not.na], Q=QE[not.na], Qp=QEp[not.na], I2=I2[not.na], H2=H2[not.na])
       out$slab <- slab[not.na]
       out$ids  <- ids[not.na]
+      out$data <- data[not.na,]
    }
 
    if (na.act == "na.exclude" || na.act == "na.pass") {
       out <- list(estimate=beta, se=se, zval=zval, pval=pval, ci.lb=ci.lb, ci.ub=ci.ub, Q=QE, Qp=QEp, I2=I2, H2=H2)
       out$slab <- slab
       out$ids  <- ids
+      out$data <- data
    }
 
    if (na.act == "na.fail" && any(!x$not.na))

@@ -104,6 +104,12 @@ test_that("results are correct for the three-level random-effects model fitted w
    ### log likelihood
    expect_equivalent(c(logLik(res.ml)), -7.9587, tolerance=.tol[["fit"]])
 
+   ### CIs for variance components
+   sav <- confint(res.ml)
+   sav <- round(as.data.frame(sav), 4)
+   expected <- structure(c(0.0651, 0.2551, 0.0327, 0.1809, 0.0222, 0.1491, 0.0163, 0.1276, 0.2072, 0.4552, 0.0628, 0.2507), .Dim = 4:3, .Dimnames = list(c("sigma^2.1", "sigma.1", "sigma^2.2", "sigma.2"), c("estimate", "ci.lb", "ci.ub")))
+   expect_equivalent(sav, expected, tolerance=.tol[["var"]])
+
 })
 
 test_that("profiling works for the three-level random-effects model (multilevel parameterization).", {
@@ -174,6 +180,20 @@ test_that("BLUPs are calculated correctly for the three-level random-effects mod
 
 })
 
+test_that("restarting with 'restart=TRUE' works.", {
+
+   skip_on_cran()
+
+   expect_error(res <- rma.mv(yi, vi, random = ~ 1 | district/study, data=dat, control=list(maxiter=4)))
+   expect_error(res <- rma.mv(yi, vi, random = ~ 1 | district/study, data=dat, control=list(maxiter=4), restart=TRUE))
+   res <- rma.mv(yi, vi, random = ~ 1 | district/study, data=dat, control=list(maxiter=4), restart=TRUE)
+
+   expect_equivalent(coef(res), 0.1845, tolerance=.tol[["coef"]])
+   expect_equivalent(res$se, 0.0805, tolerance=.tol[["se"]])
+   expect_equivalent(res$sigma2, c(0.0577, 0.0329), tolerance=.tol[["var"]])
+
+})
+
 test_that("results are correct when allowing for different tau^2 per district.", {
 
    skip_on_cran()
@@ -201,3 +221,4 @@ test_that("results are correct when allowing for different tau^2 per district.",
 })
 
 rm(list=ls())
+
