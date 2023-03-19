@@ -256,11 +256,11 @@ profile.rma.mv <- function(fitted, sigma2, tau2, rho, gamma2, phi,
 
    ### if everything is good so far, get value of the variance component and set 'comp'
 
-   sigma2.pos <- NA
-   tau2.pos   <- NA
-   rho.pos    <- NA
-   gamma2.pos <- NA
-   phi.pos    <- NA
+   sigma2.pos <- NA_integer_
+   tau2.pos   <- NA_integer_
+   rho.pos    <- NA_integer_
+   gamma2.pos <- NA_integer_
+   phi.pos    <- NA_integer_
 
    if (!missing(sigma2)) {
       vc <- x$sigma2[sigma2]
@@ -437,17 +437,16 @@ profile.rma.mv <- function(fitted, sigma2, tau2, rho, gamma2, phi,
 
    if (missing(ylim)) {
 
-      if (any(!is.na(lls))) {
+      if (any(is.finite(lls))) {
          if (xlim[1] <= vc && xlim[2] >= vc) {
-            ylim <- range(c(logLik(x),lls), na.rm=TRUE)
+            ylim <- range(c(logLik(x),lls[is.finite(lls)]), na.rm=TRUE)
          } else {
-            ylim <- range(lls, na.rm=TRUE)
+            ylim <- range(lls[is.finite(lls)])
          }
       } else {
          ylim <- rep(logLik(x), 2L)
       }
-      ylim[1] <- ylim[1] - .1
-      ylim[2] <- ylim[2] + .1
+      ylim <- ylim + c(-0.1, 0.1)
 
    } else {
 

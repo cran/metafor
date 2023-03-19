@@ -18,7 +18,7 @@ rcalc <- function(x, ni, data, rtoz=FALSE, nfun="min", sparse=FALSE, ...) {
    .chkdots(ddd, c("upper", "simplify", "rowid", "vnames", "noid"))
 
    if (is.null(ddd$upper)) {
-      upper <- TRUE
+      upper <- FALSE
    } else {
       upper <- ddd$upper
    }
@@ -39,7 +39,7 @@ rcalc <- function(x, ni, data, rtoz=FALSE, nfun="min", sparse=FALSE, ...) {
    if (inherits(x, "formula")) {
 
       if (missing(data))
-         stop(mstyle$stop("Must specify 'data' argument."))
+         stop(mstyle$stop("Must specify 'data' argument when 'x' is a formula."))
 
       if (!is.data.frame(data))
          data <- data.frame(data)
@@ -77,7 +77,7 @@ rcalc <- function(x, ni, data, rtoz=FALSE, nfun="min", sparse=FALSE, ...) {
       if (length(ni) != nrow(data))
          stop(mstyle$stop("Argument 'ni' must be of the same length as the data frame specified via 'data'."))
 
-      ### check that there are ni missings in the study identifier
+      ### check that there are no missings in the study identifier
       if (anyNA(id))
          stop(mstyle$stop("No missing values allowed in study identifier."))
 
@@ -94,7 +94,7 @@ rcalc <- function(x, ni, data, rtoz=FALSE, nfun="min", sparse=FALSE, ...) {
       ni  <- split(ni, id)
 
       Rlist <- list()
-      nmi <- rep(NA, length(ni))
+      nmi <- rep(NA_real_, length(ni))
 
       for (i in seq_along(dat)) {
 
@@ -135,7 +135,7 @@ rcalc <- function(x, ni, data, rtoz=FALSE, nfun="min", sparse=FALSE, ...) {
 
          vars <- sort(unique(c(var1, var2)))
 
-         Ri <- matrix(NA, nrow=length(vars), ncol=length(vars))
+         Ri <- matrix(NA_real_, nrow=length(vars), ncol=length(vars))
          diag(Ri) <- 1
          rownames(Ri) <- colnames(Ri) <- vars
 
@@ -249,7 +249,7 @@ rcalc <- function(x, ni, data, rtoz=FALSE, nfun="min", sparse=FALSE, ...) {
    ### check if x is symmetric (can be skipped since x must now be symmetric)
 
    #if (!isSymmetric(x))
-   #   stop(mstyle$stop("x must be a symmetric matrix."))
+   #   stop(mstyle$stop("Argument 'x' must be a symmetric matrix."))
 
    ### stack upper/lower triangular part of x into a column vector (this is always done column-wise!)
 
@@ -295,7 +295,7 @@ rcalc <- function(x, ni, data, rtoz=FALSE, nfun="min", sparse=FALSE, ...) {
 
    ### set up V matrix
 
-   V <- matrix(NA, nrow=dimsV, ncol=dimsV)
+   V <- matrix(NA_real_, nrow=dimsV, ncol=dimsV)
 
    for (ro in seq_len(dimsV)) {
       for (co in seq_len(dimsV)) {
@@ -335,7 +335,7 @@ rcalc <- function(x, ni, data, rtoz=FALSE, nfun="min", sparse=FALSE, ...) {
          V <- V/(ni-1)
       }
    } else {
-      V <- NA*V
+      V <- NA_real_*V
    }
 
    ### create matrix with var1 and var2 names and sort rowwise

@@ -15,7 +15,7 @@ print.gosh.rma <- function(x, digits=x$digits, ...) {
    cat(mstyle$result(sum(x$fit)))
    cat("\n\n")
 
-   res.table <- matrix(NA, nrow=ncol(x$res), ncol=6)
+   res.table <- matrix(NA_real_, nrow=ncol(x$res), ncol=6)
 
    res.table[,1] <- apply(x$res, 2, mean, na.rm=TRUE)
    res.table[,2] <- apply(x$res, 2, min, na.rm=TRUE)
@@ -24,7 +24,7 @@ print.gosh.rma <- function(x, digits=x$digits, ...) {
    res.table[,5] <- apply(x$res, 2, quantile, .75, na.rm=TRUE)
    res.table[,6] <- apply(x$res, 2, max, na.rm=TRUE)
 
-   res.table <- .fcf(res.table, digits[["est"]])
+   res.table <- fmtx(res.table, digits[["est"]])
 
    colnames(res.table) <- c("mean", "min", "q1", "median", "q3", "max")
    rownames(res.table) <- colnames(x$res)

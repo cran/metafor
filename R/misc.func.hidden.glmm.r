@@ -4,7 +4,7 @@
 ### Liao, J. G. & Rosen, O. (2001). Fast and stable algorithms for computing and sampling from the
 ### noncentral hypergeometric distribution. The American Statistician, 55, 366-369.
 
-.dnoncenhypergeom <- function (x=NA, n1, n2, m1, psi) { ### x=ai, n1=ai+bi, n2=ci+di, m1=ai+ci, psi=ORi
+.dnoncenhypergeom <- function (x=NA_real_, n1, n2, m1, psi) { ### x=ai, n1=ai+bi, n2=ci+di, m1=ai+ci, psi=ORi
 
    mstyle <- .get.mstyle("crayon" %in% .packages())
 
@@ -127,7 +127,7 @@
       }
 
       if (verbose)
-         cat(mstyle$verbose(paste("ll =", .fcf(sum(lli), digits[["fit"]]), " ", .fcf(beta, digits[["est"]]), "\n")))
+         cat(mstyle$verbose(paste("ll =", fmtx(sum(lli), digits[["fit"]]), " ", fmtx(beta, digits[["est"]]), "\n")))
 
    }
 
@@ -150,7 +150,7 @@
       }
 
       if (verbose)
-         cat(mstyle$verbose(paste("ll = ", .fcf(sum(lli), digits[["fit"]]), " ", .fcf(tau2, digits[["var"]]), " ", .fcf(beta, digits[["est"]]), "\n")))
+         cat(mstyle$verbose(paste("ll = ", fmtx(sum(lli), digits[["fit"]]), " ", fmtx(tau2, digits[["var"]]), " ", fmtx(beta, digits[["est"]]), "\n")))
 
    }
 

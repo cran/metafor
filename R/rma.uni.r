@@ -1,4 +1,4 @@
-rma <- rma.uni <- function(yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, m1i, m2i, sd1i, sd2i, xi, mi, ri, ti, sdi, r2i, ni, mods, scale,
+rma <- rma.uni <- function(yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, m1i, m2i, sd1i, sd2i, xi, mi, ri, ti, pi, sdi, r2i, ni, mods, scale,
 measure="GEN", intercept=TRUE,
 data, slab, subset,
 add=1/2, to="only0", drop00=FALSE, vtype="LS",
@@ -14,15 +14,15 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
    ### check argument specifications
    ### (arguments "to" and "vtype" are checked inside escalc function)
 
-   if (!is.element(measure, c("RR","OR","PETO","RD","AS","PHI","YUQ","YUY","RTET", # 2x2 table measures
+   if (!is.element(measure, c("RR","OR","PETO","RD","AS","PHI","ZPHI","YUQ","YUY","RTET","ZTET", # 2x2 table measures
                               "PBIT","OR2D","OR2DN","OR2DL",                       # - transformations to SMD
                               "MPRD","MPRR","MPOR","MPORC","MPPETO","MPORM",       # - measures for matched pairs data
                               "IRR","IRD","IRSD",                                  # two-group person-time data measures
                               "MD","SMD","SMDH","SMD1","SMD1H","ROM",              # two-group mean/SD measures
                               "CVR","VR",                                          # coefficient of variation ratio, variability ratio
-                              "RPB","RBIS","D2OR","D2ORN","D2ORL",                 # - transformations to r_PB, r_BIS, and log(OR)
+                              "RPB","ZPB","RBIS","ZBIS","D2OR","D2ORN","D2ORL",    # - transformations to r_PB, r_BIS, and log(OR)
                               "COR","UCOR","ZCOR",                                 # correlations (raw and r-to-z transformed)
-                              "PCOR","ZPCOR","SPCOR",                              # partial and semi-partial correlations
+                              "PCOR","ZPCOR","SPCOR","ZSPCOR",                     # partial and semi-partial correlations
                               "PR","PLN","PLO","PAS","PFT",                        # single proportions (and transformations thereof)
                               "IR","IRLN","IRS","IRFT",                            # single-group person-time data (and transformations thereof)
                               "MN","MNLN","CVLN","SDLN","SMN",                     # mean, log(mean), log(CV), log(SD), standardized mean
@@ -110,13 +110,13 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
    if (!is.null(ddd$alpha)) {
       alpha <- ddd$alpha
    } else {
-      alpha <- NA
+      alpha <- NA_real_
    }
 
    if (!is.null(ddd$beta)) {
       beta <- ddd$beta
    } else {
-      beta <- NA
+      beta <- NA_real_
    }
 
    if (model == "rma.uni" && !missing(att))
@@ -168,7 +168,7 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
 
    addval <- mf[[match("add", names(mf))]]
 
-   if (is.element(measure, c("AS","PHI","RTET","IRSD","PAS","PFT","IRS","IRFT")) && is.null(addval))
+   if (is.element(measure, c("AS","PHI","ZPHI","RTET","ZTET","IRSD","PAS","PFT","IRS","IRFT")) && is.null(addval))
       add <- 0
 
    ### extract yi (either NULL if not specified, a vector, a formula, or an escalc object)
@@ -188,7 +188,7 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
    mods    <- .getx("mods",    mf=mf, data=data)
    scale   <- .getx("scale",   mf=mf, data=data)
 
-   ai <- bi <- ci <- di <- x1i <- x2i <- t1i <- t2i <- NA
+   ai <- bi <- ci <- di <- x1i <- x2i <- t1i <- t2i <- NA_real_
 
    if (!is.null(weights) && optbeta)
       stop(mstyle$stop("Cannot use custom weights when 'optbeta=TRUE'."))
@@ -404,7 +404,7 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
 
       ### if yi is NULL, try to compute yi/vi based on specified measure and supplied data
 
-      if (is.element(measure, c("RR","OR","PETO","RD","AS","PHI","YUQ","YUY","RTET","PBIT","OR2D","OR2DN","OR2DL","MPRD","MPRR","MPOR","MPORC","MPPETO","MPORM"))) {
+      if (is.element(measure, c("RR","OR","PETO","RD","AS","PHI","ZPHI","YUQ","YUY","RTET","ZTET","PBIT","OR2D","OR2DN","OR2DL","MPRD","MPRR","MPOR","MPORC","MPPETO","MPORM"))) {
 
          ai  <- .getx("ai",  mf=mf, data=data, checknumeric=TRUE)
          bi  <- .getx("bi",  mf=mf, data=data, checknumeric=TRUE)
@@ -413,6 +413,7 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
          n1i <- .getx("n1i", mf=mf, data=data, checknumeric=TRUE)
          n2i <- .getx("n2i", mf=mf, data=data, checknumeric=TRUE)
          ri  <- .getx("ri",  mf=mf, data=data, checknumeric=TRUE)
+         pi  <- .getx("pi",  mf=mf, data=data, checknumeric=TRUE)
 
          if (is.null(bi)) bi <- n1i - ai
          if (is.null(di)) di <- n2i - ci
@@ -426,9 +427,11 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
             bi <- .getsubset(bi, subset)
             ci <- .getsubset(ci, subset)
             di <- .getsubset(di, subset)
+            ri <- .getsubset(ri, subset)
+            pi <- .getsubset(pi, subset)
          }
 
-         args <- list(measure=measure, ai=ai, bi=bi, ci=ci, di=di, ri=ri, add=add, to=to, drop00=drop00, vtype=vtype, onlyo1=onlyo1, addyi=addyi, addvi=addvi)
+         args <- list(measure=measure, ai=ai, bi=bi, ci=ci, di=di, ri=ri, pi=pi, add=add, to=to, drop00=drop00, vtype=vtype, onlyo1=onlyo1, addyi=addyi, addvi=addvi)
 
       }
 
@@ -454,7 +457,7 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
 
       }
 
-      if (is.element(measure, c("MD","SMD","SMDH","SMD1","SMD1H","ROM","RPB","RBIS","D2OR","D2ORN","D2ORL","CVR","VR"))) {
+      if (is.element(measure, c("MD","SMD","SMDH","SMD1","SMD1H","ROM","RPB","ZPB","RBIS","ZBIS","D2OR","D2ORN","D2ORL","CVR","VR"))) {
 
          m1i  <- .getx("m1i",  mf=mf, data=data, checknumeric=TRUE)
          m2i  <- .getx("m2i",  mf=mf, data=data, checknumeric=TRUE)
@@ -464,12 +467,14 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
          n2i  <- .getx("n2i",  mf=mf, data=data, checknumeric=TRUE)
          di   <- .getx("di",   mf=mf, data=data, checknumeric=TRUE)
          ti   <- .getx("ti",   mf=mf, data=data, checknumeric=TRUE)
+         pi   <- .getx("pi",   mf=mf, data=data, checknumeric=TRUE)
 
-         if (measure == "SMD") {
+         if (is.element(measure, c("SMD","RPB","ZPB","RBIS","ZBIS","D2OR","D2ORN","D2ORL"))) {
 
-            if (!.equal.length(m1i, m2i, sd1i, sd2i, n1i, n2i, di, ti))
+            if (!.equal.length(m1i, m2i, sd1i, sd2i, n1i, n2i, di, ti, pi))
                stop(mstyle$stop("Supplied data vectors are not all of the same length."))
 
+            ti <- replmiss(ti, .convp2t(pi, df=n1i+n2i-2))
             di <- replmiss(di, ti * sqrt(1/n1i + 1/n2i))
 
             m1i[!is.na(di)]  <- di[!is.na(di)]
@@ -500,6 +505,14 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
 
          ri <- .getx("ri", mf=mf, data=data, checknumeric=TRUE)
          ni <- .getx("ni", mf=mf, data=data, checknumeric=TRUE)
+         ti <- .getx("ti", mf=mf, data=data, checknumeric=TRUE)
+         pi <- .getx("pi", mf=mf, data=data, checknumeric=TRUE)
+
+         if (!.equal.length(ri, ni, ti, pi))
+            stop(mstyle$stop("Supplied data vectors are not all of the same length."))
+
+         ti <- replmiss(ti, .convp2t(pi, df=ni-2))
+         ri <- replmiss(ri, ti / sqrt(ni - 2 + ti^2))
 
          k <- length(ri) ### number of outcomes before subsetting
          k.all <- k
@@ -514,25 +527,38 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
 
       }
 
-      if (is.element(measure, c("PCOR","ZPCOR","SPCOR"))) {
+      if (is.element(measure, c("PCOR","ZPCOR","SPCOR","ZSPCOR"))) {
 
+         ri  <- .getx("ri",  mf=mf, data=data, checknumeric=TRUE)
          ti  <- .getx("ti",  mf=mf, data=data, checknumeric=TRUE)
-         r2i <- .getx("r2i", mf=mf, data=data, checknumeric=TRUE)
          mi  <- .getx("mi",  mf=mf, data=data, checknumeric=TRUE)
          ni  <- .getx("ni",  mf=mf, data=data, checknumeric=TRUE)
+         pi  <- .getx("pi",  mf=mf, data=data, checknumeric=TRUE)
+         r2i <- .getx("r2i", mf=mf, data=data, checknumeric=TRUE)
 
-         k <- length(ti) ### number of outcomes before subsetting
+         if (!.equal.length(ri, ti, mi, ni, pi, r2i))
+            stop(mstyle$stop("Supplied data vectors are not all of the same length."))
+
+         ti <- replmiss(ti, .convp2t(pi, df=ni-mi-1))
+
+         if (is.element(measure, c("PCOR","ZPCOR")))
+            ri <- replmiss(ri, ti / sqrt(ti^2 + (ni - mi - 1)))
+
+         if (is.element(measure, c("SPCOR","ZSPCOR")))
+            ri <- replmiss(ri, ti * sqrt(1 - r2i) / sqrt(ni - mi - 1))
+
+         k <- length(ri) ### number of outcomes before subsetting
          k.all <- k
 
          if (!is.null(subset)) {
             subset <- .chksubset(subset, k)
-            ti  <- .getsubset(ti,  subset)
-            r2i <- .getsubset(r2i, subset)
+            ri  <- .getsubset(ri,  subset)
             mi  <- .getsubset(mi,  subset)
             ni  <- .getsubset(ni,  subset)
+            r2i <- .getsubset(r2i, subset)
          }
 
-         args <- list(measure=measure, ti=ti, r2i=r2i, mi=mi, ni=ni, vtype=vtype)
+         args <- list(measure=measure, ri=ri, mi=mi, ni=ni, r2i=r2i, vtype=vtype)
 
       }
 
@@ -910,6 +936,11 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
       intercept <- TRUE
    }
 
+   if (!is.null(mods) && ncol(mods) == 0L) {
+      warning(mstyle$warning("Cannot fit model with an empty model matrix. Coerced intercept into the model."), call.=FALSE)
+      intercept <- TRUE
+   }
+
    ### add vector of 1s to the X matrix for the intercept (if intercept=TRUE)
 
    if (intercept) {
@@ -971,7 +1002,7 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
          if (p > k)
             stop(mstyle$stop("Number of parameters to be estimated is larger than the number of observations."))
       } else {
-         if (is.numeric(tau2)) {                      ### have to estimate p parms (tau2 is fixed at value specified)
+         if (!is.null(tau2) && !is.na(tau2)) {        ### have to estimate p parms (tau2 is fixed at value specified)
             if (p > k)
                stop(mstyle$stop("Number of parameters to be estimated is larger than the number of observations."))
          } else {
@@ -1064,7 +1095,7 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
 
       if (con$tau2.min < 0 && (-con$tau2.min > min(vi))) {
          con$tau2.min <- -min(vi)
-         warning(mstyle$warning(paste0("Value of 'tau2.min' constrained to -min(vi) = ", .fcf(-min(vi), digits[["est"]]), ".")), call.=FALSE)
+         warning(mstyle$warning(paste0("Value of 'tau2.min' constrained to -min(vi) = ", fmtx(-min(vi), digits[["est"]]), ".")), call.=FALSE)
       }
 
    } else {
@@ -1087,12 +1118,12 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
 
    vimaxmin <- max(vi) / min(vi)
 
-   if (!is.nan(vimaxmin) && !is.infinite(vimaxmin) && vimaxmin >= 1/con$evtol)
+   if (is.finite(vimaxmin) && vimaxmin >= 1/con$evtol)
       warning(mstyle$warning("Ratio of largest to smallest sampling variance extremely large. May not be able to obtain stable results."), call.=FALSE)
 
    ### set some defaults
 
-   se.tau2 <- I2 <- H2 <- QE <- QEp <- NA
+   se.tau2 <- I2 <- H2 <- QE <- QEp <- NA_real_
    s2w <- 1
    level <- .level(level)
 
@@ -1109,12 +1140,12 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
 
    if (model == "rma.uni") {
 
-      if (is.numeric(tau2) && !is.element(method[1], c("FE","EE","CE"))) { # if user has fixed the tau2 value
+      if (!is.null(tau2) && !is.na(tau2) && !is.element(method[1], c("FE","EE","CE"))) { # if user has fixed the tau2 value
          tau2.fix <- TRUE
          tau2.val <- tau2
       } else {
          tau2.fix <- FALSE
-         tau2.val <- NA
+         tau2.val <- NA_real_
       }
 
       if (verbose > 1 && !tau2.fix && !is.element(method[1], c("FE","EE","CE")))
@@ -1205,7 +1236,7 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
             while (change > con$threshold) {
 
                if (verbose)
-                  cat(mstyle$verbose(paste("Iteration", iter, "\ttau^2 =", .fcf(tau2, digits[["var"]]), "\n")))
+                  cat(mstyle$verbose(paste("Iteration", formatC(iter, width=5, flag="-", format="f", digits=0), "tau^2 =", fmtx(tau2, digits[["var"]]), "\n")))
 
                iter <- iter + 1
                old2 <- tau2
@@ -1364,7 +1395,7 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
             while (change > con$threshold) {
 
                if (verbose)
-                  cat(mstyle$verbose(paste("Iteration", iter, "\ttau^2 =", .fcf(tau2, digits[["var"]]), "\n")))
+                  cat(mstyle$verbose(paste("Iteration", formatC(iter, width=5, flag="-", format="f", digits=0), "tau^2 =", fmtx(tau2, digits[["var"]]), "\n")))
 
                iter <- iter + 1
                old2 <- tau2
@@ -1472,7 +1503,7 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
             while (change > con$threshold) {
 
                if (verbose)
-                  cat(mstyle$verbose(paste(mstyle$verbose(paste("Iteration", iter, "\ttau^2 =", .fcf(tau2, digits[["var"]]), "\n")))))
+                  cat(mstyle$verbose(paste(mstyle$verbose(paste("Iteration", formatC(iter, width=5, flag="-", format="f", digits=0), "tau^2 =", fmtx(tau2, digits[["var"]]), "\n")))))
 
                iter <- iter + 1
                old2 <- tau2
@@ -1589,7 +1620,7 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
             ### verbose output upon convergence for ML/REML/EB estimators
 
             if (verbose && is.element(method[1], c("ML","REML","EB"))) {
-               cat(mstyle$verbose(paste("Iteration", iter, "\ttau^2 =", .fcf(tau2, digits[["var"]]), "\n")))
+               cat(mstyle$verbose(paste("Iteration", formatC(iter, width=5, flag="-", format="f", digits=0), "tau^2 =", fmtx(tau2, digits[["var"]]), "\n")))
                cat(mstyle$verbose(paste("Fisher scoring algorithm converged after", iter, "iterations.\n")))
             }
 
@@ -1611,7 +1642,8 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
             if (method[1] == "ML")
                se.tau2 <- sqrt(2/sum(wi^2)) # note: wi = 1/(vi + tau2) for ML, REML, EB, PM, PMM, and SJIT
             if (method[1] == "REML")
-               se.tau2 <- sqrt(2/sum(P*P))
+               se.tau2 <- sqrt(2/sum(P*P)) # based on Fisher information matrix
+               #se.tau2 <- sqrt(1 / (t(Ymc) %*% P %*% P %*% P %*% Ymc - 1/2 * sum(P*P))) # based on Hessian
             if (is.element(method[1], c("EB","PM","MP","PMM","SJIT"))) {
                wi  <- 1/(vi + tau2)
                #V  <- diag(vi, nrow=k, ncol=k)
@@ -1644,12 +1676,12 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
 
       tau2.fix <- FALSE
 
-      if (is.numeric(tau2))
+      if (!is.null(tau2) && !is.na(tau2))
          warning(mstyle$warning("Argument 'tau2' ignored for location-scale models."), call.=FALSE)
 
       ### get optimizer arguments from control argument
 
-      optimizer <- match.arg(con$optimizer, c("optim","nlminb","uobyqa","newuoa","bobyqa","nloptr","nlm","hjk","nmk","mads","ucminf","lbfgsb3c","subplex","BBoptim","optimParallel","constrOptim","solnp","constrOptim.nl","Nelder-Mead","BFGS","CG","L-BFGS-B","SANN","Brent"))
+      optimizer <- match.arg(con$optimizer, c("optim","nlminb","uobyqa","newuoa","bobyqa","nloptr","nlm","hjk","nmk","mads","ucminf","lbfgsb3c","subplex","BBoptim","optimParallel","constrOptim","solnp","constrOptim.nl","Nelder-Mead","BFGS","CG","L-BFGS-B","SANN","Brent","Rcgmin","Rvmmin"))
       optmethod <- match.arg(con$optmethod, c("Nelder-Mead","BFGS","CG","L-BFGS-B","SANN","Brent"))
       if (optimizer %in% c("Nelder-Mead","BFGS","CG","L-BFGS-B","SANN","Brent")) {
          optmethod <- optimizer
@@ -1731,7 +1763,7 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
       ### checks on alpha argument
 
       if (missing(alpha) || is.null(alpha) || all(is.na(alpha))) {
-         alpha <- rep(NA, q)
+         alpha <- rep(NA_real_, q)
       } else {
          if (length(alpha) == 1L)
             alpha <- rep(alpha, q)
@@ -1744,7 +1776,7 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
       if (optbeta) {
 
          if (missing(beta) || is.null(beta) || all(is.na(beta))) {
-            beta <- rep(NA, p)
+            beta <- rep(NA_real_, p)
          } else {
             if (length(beta) == 1L)
                beta <- rep(beta, p)
@@ -2014,7 +2046,7 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
 
       ### try to compute vcov matrix for scale parameter estimates
 
-      H <- NA
+      H <- NA_real_
 
       if (optbeta) {
          va <- matrix(NA_real_, nrow=p+q, ncol=p+q)
@@ -2091,8 +2123,8 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
          va[!hest,] <- 0
          va[,!hest] <- 0
          va <- mZ %*% va %*% t(mZ)
-         va[!hest,] <- NA
-         va[,!hest] <- NA
+         va[!hest,] <- NA_real_
+         va[,!hest] <- NA_real_
          Z <- Zsave
       }
 
@@ -2106,7 +2138,7 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
       if (is.element(test, c("knha","adhoc","t"))) {
          ddf.alpha <- k-q
       } else {
-         ddf.alpha <- NA
+         ddf.alpha <- NA_integer_
       }
 
       ### QS calculation
@@ -2114,7 +2146,7 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
       QS <- try(as.vector(t(alpha)[att] %*% chol2inv(chol(va[att,att])) %*% alpha[att]), silent=TRUE)
 
       if (inherits(QS, "try-error"))
-         QS <- NA
+         QS <- NA_real_
 
       se.alpha <- sqrt(diag(va))
 
@@ -2126,11 +2158,11 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
       if (is.element(test, c("knha","adhoc","t"))) {
          QS         <- QS / m.alpha
          QSdf       <- c(m.alpha, k-q)
-         QSp        <- if (QSdf[2] > 0) pf(QS, df1=QSdf[1], df2=QSdf[2], lower.tail=FALSE) else NA
-         pval.alpha <- if (ddf.alpha > 0) 2*pt(abs(zval.alpha), df=ddf.alpha, lower.tail=FALSE) else rep(NA,q)
-         crit.alpha <- if (ddf.alpha > 0) qt(level/2, df=ddf.alpha, lower.tail=FALSE) else NA
+         QSp        <- if (QSdf[2] > 0) pf(QS, df1=QSdf[1], df2=QSdf[2], lower.tail=FALSE) else NA_real_
+         pval.alpha <- if (ddf.alpha > 0) 2*pt(abs(zval.alpha), df=ddf.alpha, lower.tail=FALSE) else rep(NA_real_,q)
+         crit.alpha <- if (ddf.alpha > 0) qt(level/2, df=ddf.alpha, lower.tail=FALSE) else NA_real_
       } else {
-         QSdf       <- c(m.alpha, NA)
+         QSdf       <- c(m.alpha, NA_integer_)
          QSp        <- pchisq(QS, df=QSdf[1], lower.tail=FALSE)
          pval.alpha <- 2*pnorm(abs(zval.alpha), lower.tail=FALSE)
          crit.alpha <- qnorm(level/2, lower.tail=FALSE)
@@ -2270,7 +2302,7 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
    ### the Knapp & Hartung method as described in the literature is for random/mixed-effects models
 
    if (is.element(method[1], c("FE","EE","CE")) && is.element(test, c("knha","adhoc")))
-      warning(mstyle$warning(paste0("Knapp & Hartung method is not meant to be used in the context of ", method[1], " models.")), call.=FALSE)
+      warning(mstyle$warning(paste0("Knapp and Hartung method is not meant to be used in the context of ", method[1], " models.")), call.=FALSE)
 
    ### Knapp & Hartung method with ad-hoc correction so that the scale factor is always >= 1
 
@@ -2287,10 +2319,10 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
       if (is.null(ddd$dfs)) {
          ddf <- k-p
       } else {
-         ddf <- ddd$dfs[1] # would be nice to allow multiple dfs values, but tricky
-      }                    # since some methods are set up for a single df value
+         ddf <- ddd$dfs[[1]] # would be nice to allow multiple dfs values, but tricky
+      }                      # since some methods are set up for a single df value
    } else {
-      ddf <- NA
+      ddf <- NA_integer_
    }
 
    ### QM calculation
@@ -2298,7 +2330,7 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
    QM <- try(as.vector(t(beta)[btt] %*% chol2inv(chol(vb[btt,btt])) %*% beta[btt]), silent=TRUE)
 
    if (inherits(QM, "try-error"))
-      QM <- NA
+      QM <- NA_real_
 
    ### abbreviate some types of coefficient names
 
@@ -2326,11 +2358,11 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
    if (is.element(test, c("knha","adhoc","t"))) {
       QM   <- QM / m
       QMdf <- c(m, k-p)
-      QMp  <- if (QMdf[2] > 0) pf(QM, df1=QMdf[1], df2=QMdf[2], lower.tail=FALSE) else NA
-      pval <- if (ddf > 0) 2*pt(abs(zval), df=ddf, lower.tail=FALSE) else rep(NA,p)
-      crit <- if (ddf > 0) qt(level/2, df=ddf, lower.tail=FALSE) else NA
+      QMp  <- if (QMdf[2] > 0) pf(QM, df1=QMdf[1], df2=QMdf[2], lower.tail=FALSE) else NA_real_
+      pval <- if (ddf > 0) 2*pt(abs(zval), df=ddf, lower.tail=FALSE) else rep(NA_real_,p)
+      crit <- if (ddf > 0) qt(level/2, df=ddf, lower.tail=FALSE) else NA_real_
    } else {
-      QMdf <- c(m, NA)
+      QMdf <- c(m, NA_integer_)
       QMp  <- pchisq(QM, df=QMdf[1], lower.tail=FALSE)
       pval <- 2*pnorm(abs(zval), lower.tail=FALSE)
       crit <- qnorm(level/2, lower.tail=FALSE)
@@ -2401,7 +2433,7 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
       if (!vi0)
          warning(mstyle$warning(paste0("Cannot compute ", ifelse(int.only, "Q", "QE"), "-test, I^2, or H^2 when there are non-positive sampling variances in the data.")), call.=FALSE)
 
-      vt <- NA
+      vt <- NA_real_
 
    }
 
@@ -2529,7 +2561,7 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
 
             } else {
 
-               R2 <- NA
+               R2 <- NA_real_
 
             }
 
@@ -2551,9 +2583,9 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
             if (r2def == "4w") {
                if (is.null(weights)) {
                   # identical to eta^2 = F * df1 / (F * df1 + df2) when test="knha"
-                  R2 <- cov.wt(cbind(dat$yi, c(X%*%beta)), cor=TRUE, wt=1/(vi+tau2))$cor[1,2]^2
+                  R2 <- cov.wt(cbind(yi, c(X%*%beta)), cor=TRUE, wt=1/(vi+tau2))$cor[1,2]^2
                } else {
-                  R2 <- cov.wt(cbind(dat$yi, c(X%*%beta)), cor=TRUE, wt=weights)$cor[1,2]^2
+                  R2 <- cov.wt(cbind(yi, c(X%*%beta)), cor=TRUE, wt=weights)$cor[1,2]^2
                }
             }
 
@@ -2640,7 +2672,7 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
       res$link           <- link
       res$Z              <- Z
       res$Z.f            <- Z.f
-      res$tau2.f         <- rep(NA, k.f)
+      res$tau2.f         <- rep(NA_real_, k.f)
       res$tau2.f[not.na] <- tau2
       res$att            <- att
       res$m.alpha        <- m.alpha

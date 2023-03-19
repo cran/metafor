@@ -132,6 +132,11 @@
 
 ############################################################################
 
+### function to take the square root of a vector of numbers, giving NA for negative numbers (without a warning)
+
+.sqrt <- function(x)
+   sapply(x, function(x) if (is.na(x) || x < 0) NA_real_ else sqrt(x))
+
 ### function to obtain the trace of a matrix
 
 .tr <- function(X)
@@ -179,9 +184,17 @@
 .is.matrix <- function(x)
    is.matrix(x) || inherits(x, "Matrix")
 
+### function to test if x is numeric but also allow a (vector of) NA
+
+.is.numeric <- function(x) {
+   if (all(is.na(x)))
+      return(TRUE)
+   is.numeric(x)
+}
+
 ############################################################################
 
-### function to format p-values
+### function to format p-values (no longer used; use fmtp() instead)
 ### if showeq=FALSE, c(.001, .00001) becomes c("0.0010", "<.0001")
 ### if showeq=TRUE,  c(.001, .00001) becomes c("=0.0010", "<.0001")
 ### if add0=FALSE, "<.0001"; if add0=TRUE, "<0.0001"
@@ -192,18 +205,17 @@
    cutoff  <- paste(c(".", rep(0,digits-1),1), collapse="")
    ncutoff <- as.numeric(cutoff)
 
-   ifelse(is.na(p), paste0(ifelse(showeq, "=", ""), sep, NA),
+   ifelse(is.na(p), paste0(ifelse(showeq, "=", ""), sep, "NA"),
                     ifelse(p >= ncutoff, paste0(ifelse(showeq, "=", ""), sep, formatC(p, digits=digits, format="f")),
                                          paste0("<", sep, ifelse(add0, "0", ""), cutoff)))
 
 }
 
-### function to format/round values in general
+### function to format/round values in general (no longer used; use fmtx() instead)
 
 .fcf <- function(x, digits) {
 
    if (all(is.na(x))) { # since formatC(NA, format="f", digits=2) fails
-      #x
       rep("NA", length(x))
    } else {
       trimws(formatC(x, format="f", digits=digits))
@@ -374,21 +386,30 @@
 
 ############################################################################
 
-.getx <- function(x, mf, data, enclos=sys.frame(sys.parent(n=2)), checknull=TRUE, checknumeric=FALSE) {
+.getx <- function(x, mf, data, enclos=sys.frame(sys.parent(n=2)), checknull=TRUE, checknumeric=FALSE, default) {
 
    mstyle <- .get.mstyle("crayon" %in% .packages())
 
    mf.x <- mf[[match(x, names(mf))]]
-   out <- try(eval(mf.x, data, enclos), silent=TRUE) # NULL if x was not specifified
+   out <- try(eval(mf.x, data, enclos), silent=TRUE) # NULL if x was not specified
 
    if (inherits(out, "try-error") || is.function(out))
       stop(mstyle$stop(paste0("Cannot find the object/variable ('", deparse(mf.x), "') specified for the '", x, "' argument.")), call.=FALSE)
 
    # note: is.function() check catches case where 'vi' is the utils::vi() function and other shenanigans
 
+   # check if x is actually one of the elements in the call
+
+   spec <- x %in% names(mf)
+
+   # out could be NULL if it is not a specified argument; if so, apply default if there is one
+
+   if (is.null(out) && !spec && !missing(default))
+      out <- default
+
    if (checknull) {
 
-      spec <- x %in% names(mf)
+      # when using something like fun(dat$blah) and blah doesn't exist in dat, then get NULL
 
       if (spec && is.null(out)) {
          mf.txt <- deparse(mf.x)
@@ -402,7 +423,7 @@
 
    }
 
-   if (checknumeric && !is.null(out) && !is.list(out) && !is.numeric(out[1])) # using [1] so is.numeric(Matrix(1:3)[1]) works
+   if (checknumeric && !is.null(out) && !is.list(out) && !.is.numeric(out[1])) # using [1] so is.numeric(Matrix(1:3)[1]) works
       stop(mstyle$stop(paste0("The object/variable specified for the '", x, "' argument is not numeric.")), call.=FALSE)
 
    return(out)
@@ -481,6 +502,11 @@
          ok <- FALSE
       if (any(grepl("^std", xl)))
          ok <- FALSE
+      # ends with 'se' or 'std'
+      if (any(grepl("se$", xl)))
+         ok <- FALSE
+      if (any(grepl("std$", xl)))
+         ok <- FALSE
       # catch cases where vi=<data frame>$se and vi=<data frame>$std
       if (any(grepl("^[[:alpha:]][[:alnum:]_.]*\\$se", xl)))
          ok <- FALSE
@@ -512,7 +538,7 @@
 .equal.length <- function(...) {
 
    ddd <- list(...)
-   ks <- lengths(ddd)    # get the length of each element in ddd
+   ks <- lengths(ddd)   # get the length of each element in ddd
    if (all(ks == 0L)) { # if all elements have length 0 (are NULL), return TRUE
       return(TRUE)
    } else {
@@ -596,6 +622,18 @@
             lab <- ifelse(short, lab, "Transformed Phi Coefficient")
          }
       }
+      if (measure == "ZPHI") {
+         if (identical(transf.char, "FALSE") && identical(atransf.char, "FALSE")) {
+            lab <- ifelse(short, expression('Fisher\'s ' * z[phi]), "Fisher's z Transformed Phi Coefficient")
+         } else {
+            lab <- ifelse(short, lab, "Transformed Fisher's z Transformed Phi Coefficient")
+            funlist <- lapply(list(transf.ztor, transf.ztor.int, tanh), deparse)
+            if (any(sapply(funlist, identical, atransf.char)))
+               lab <- ifelse(short, "Phi", "Phi Coefficient")
+            if (any(sapply(funlist, identical, transf.char)))
+               lab <- ifelse(short, "Phi", "Phi Coefficient")
+         }
+      }
       if (measure == "YUQ") {
          if (identical(transf.char, "FALSE") && identical(atransf.char, "FALSE")) {
             lab <- ifelse(short, "Yule's Q", "Yule's Q")
@@ -666,9 +704,21 @@
       }
       if (measure == "RPB") {
          if (identical(transf.char, "FALSE") && identical(atransf.char, "FALSE")) {
-            lab <- ifelse(short, "Correlation", "Point-Biserial Correlation")
+            lab <- ifelse(short, "Correlation", "Point-Biserial Correlation Coefficient")
          } else {
-            lab <- ifelse(short, lab, "Transformed Point-Biserial Correlation")
+            lab <- ifelse(short, lab, "Transformed Point-Biserial Correlation Coefficient")
+         }
+      }
+      if (measure == "ZPB") {
+         if (identical(transf.char, "FALSE") && identical(atransf.char, "FALSE")) {
+            lab <- ifelse(short, expression('Fisher\'s ' * z[phi]), "Fisher's z Transformed Point-Biserial Correlation Coefficient")
+         } else {
+            lab <- ifelse(short, lab, "Transformed Fisher's z Transformed Point-Biserial Correlation Coefficient")
+            funlist <- lapply(list(transf.ztor, transf.ztor.int, tanh), deparse)
+            if (any(sapply(funlist, identical, atransf.char)))
+               lab <- ifelse(short, "Correlation", "Point-Biserial Correlation Coefficient")
+            if (any(sapply(funlist, identical, transf.char)))
+               lab <- ifelse(short, "Correlation", "Point-Biserial Correlation Coefficient")
          }
       }
       if (measure == "CVR") {
@@ -703,7 +753,7 @@
             lab <- ifelse(short, lab, "Transformed Correlation Coefficient")
          }
       }
-      if (measure == "ZCOR") {
+      if (is.element(measure, c("ZCOR","ZTET","ZBIS"))) {
          if (identical(transf.char, "FALSE") && identical(atransf.char, "FALSE")) {
             lab <- ifelse(short, expression('Fisher\'s ' * z[r]), "Fisher's z Transformed Correlation Coefficient")
          } else {
@@ -740,6 +790,18 @@
             lab <- ifelse(short, "Correlation", "Semi-Partial Correlation Coefficient")
          } else {
             lab <- ifelse(short, lab, "Transformed Semi-Partial Correlation Coefficient")
+         }
+      }
+      if (measure == "ZSPCOR") {
+         if (identical(transf.char, "FALSE") && identical(atransf.char, "FALSE")) {
+            lab <- ifelse(short, expression('Fisher\'s ' * z[r]), "Fisher's z Transformed Semi-Partial Correlation Coefficient")
+         } else {
+            lab <- ifelse(short, lab, "Transformed Fisher's z Transformed Semi-Partial Correlation Coefficient")
+            funlist <- lapply(list(transf.ztor, transf.ztor.int, tanh), deparse)
+            if (any(sapply(funlist, identical, atransf.char)))
+               lab <- ifelse(short, "Correlation", "Semi-Partial Correlation Coefficient")
+            if (any(sapply(funlist, identical, transf.char)))
+               lab <- ifelse(short, "Correlation", "Semi-Partial Correlation Coefficient")
          }
       }
       ######################################################################
@@ -1115,8 +1177,8 @@
 
 .print.table <- function(x, mstyle) {
 
-   #is.header <- !grepl(" [-0-9]", x)
-   is.header <- !grepl("^\\s*[0-9]", x)
+   is.header <- !grepl(" [-0-9]", x)
+   #is.header <- !grepl("^\\s*[0-9]", x)
    has.header <- any(is.header)
 
    for (i in seq_along(x)) {
@@ -1222,81 +1284,7 @@
 
 ############################################################################
 
-### to register getfit method for 'rma.uni' and 'rma.mv' objects: eval(metafor:::.glmulti)
-
-.glmulti <- str2expression("
-
-if (!(\"glmulti\" %in% .packages()))
-   stop(\"Must load the 'glmulti' package first to use this code.\")
-
-setOldClass(\"rma.uni\")
-
-setMethod(\"getfit\", \"rma.uni\", function(object, ...) {
-   if (object$test==\"z\") {
-      cbind(estimate=coef(object), se=sqrt(diag(vcov(object))), df=Inf)
-   } else {
-      cbind(estimate=coef(object), se=sqrt(diag(vcov(object))), df=object$k-object$p)
-   }
-})
-
-setOldClass(\"rma.mv\")
-
-setMethod(\"getfit\", \"rma.mv\", function(object, ...) {
-   if (object$test==\"z\") {
-      cbind(estimate=coef(object), se=sqrt(diag(vcov(object))), df=Inf)
-   } else {
-      cbind(estimate=coef(object), se=sqrt(diag(vcov(object))), df=object$k-object$p)
-   }
-})
-
-setOldClass(\"rma.glmm\")
-
-setMethod(\"getfit\", \"rma.glmm\", function(object, ...) {
-   if (object$test==\"z\") {
-      cbind(estimate=coef(object), se=sqrt(diag(vcov(object))), df=Inf)
-   } else {
-      cbind(estimate=coef(object), se=sqrt(diag(vcov(object))), df=object$k-object$p)
-   }
-})
-
-")
-
-### helper functions to make MuMIn work together with metafor
-
-.MuMIn <- str2expression("
-
-makeArgs.rma <- function (obj, termNames, comb, opt, ...) {
-   ret <- MuMIn:::makeArgs.default(obj, termNames, comb, opt)
-   names(ret)[1L] <- \"mods\"
-   ret
-}
-
-coefTable.rma <- function (model, ...) {
-  MuMIn:::.makeCoefTable(model$b, model$se, coefNames = rownames(model$b))
-}
-
-")
-
-### helper functions to make mice work together with metafor (note: no longer
-### needed, as there are glance and tidy methods for rma objects in broom now)
-
-.mice <- str2expression("
-
-glance.rma <- function (x, ...)
-   data.frame(df.residual=df.residual(x))
-
-tidy.rma <- function (x, ...) {
-   ret <- coef(summary(x))
-   colnames(ret)[2] <- \"std.error\"
-   ret$term <- rownames(ret)
-   return(ret)
-}
-
-")
-
-############################################################################
-
-### shorten a string vector so that elements remain distinguishable
+### shorten a character vector so that elements remain distinguishable
 
 .shorten <- function(x, minlen) {
 
@@ -1354,9 +1342,14 @@ tidy.rma <- function (x, ...) {
 
    mstyle <- .get.mstyle("crayon" %in% .packages())
 
+   argname <- deparse(substitute(x))
+
+   if (length(x) == 0L)
+      stop(mstyle$stop(paste0("Specified '", argname, "' argument is of length 0.")), call.=FALSE)
+
    if (is.logical(x)) {
       if (length(x) != k)
-         stop(mstyle$stop(paste0("Length of the specified 'subset' (", length(x), ") is not of length k = ", k, ".")), call.=FALSE)
+         stop(mstyle$stop(paste0("Length of the specified '", argname, "' argument (", length(x), ") is not of length k = ", k, ".")), call.=FALSE)
       #x <- x[seq_len(k)]     # keep only elements 1:k from x
       if (anyNA(x))           # if x includes any NA elements
          x[is.na(x)] <- FALSE # set NA elements to FALSE
@@ -1368,14 +1361,14 @@ tidy.rma <- function (x, ...) {
       x <- as.integer(round(x))
       x <- x[x != 0L]           # also remove any 0's
       if (any(x > 0L) && any(x < 0L))
-         stop(mstyle$stop("Cannot mix positive and negative values in 'subset'."), call.=FALSE)
+         stop(mstyle$stop(paste0("Cannot mix positive and negative values in '", argname, "' argument.")), call.=FALSE)
       if (all(x > 0L)) {
          if (any(x > k))
-            stop(mstyle$stop(paste0("Specified 'subset' includes values larger than k = ", k, ".")), call.=FALSE)
+            stop(mstyle$stop(paste0("Specified '", argname, "' argument includes values larger than k = ", k, ".")), call.=FALSE)
          x <- is.element(seq_len(k), x)
       } else {
          if (any(x < -k))
-            stop(mstyle$stop(paste0("Specified 'subset' includes values larger than k = ", k, ".")), call.=FALSE)
+            stop(mstyle$stop(paste0("Specified '", argname, "' argument includes values larger than k = ", k, ".")), call.=FALSE)
          x <- !is.element(seq_len(k), abs(x))
       }
    }
@@ -1392,7 +1385,7 @@ tidy.rma <- function (x, ...) {
 
 .getsubset <- function(x, subset, col=FALSE, drop=FALSE) {
 
-   if (is.null(x) || is.null(subset)) # if x or subset is NULL, return x (i.e., NULL)
+   if (is.null(x) || is.null(subset)) # if x or subset is NULL, return x
       return(x)
 
    mstyle <- .get.mstyle("crayon" %in% .packages())
@@ -1506,7 +1499,7 @@ tidy.rma <- function (x, ...) {
    est <- tmp$mean
    diff <- est - target
    if (verbose)
-      cat("fsnum =", formatC(fsnum, width=4, format="d"), "  est =", .fcf(est, 4), "  target =", .fcf(target, 4),  "  diff =", formatC(diff, format="f", digits=4, flag=" "), "\n")
+      cat("fsnum =", formatC(fsnum, width=4, format="d"), "  est =", fmtx(est), "  target =", fmtx(target), "  diff =", fmtx(diff, flag=" "), "\n")
    return(diff)
 
 }
@@ -1581,6 +1574,16 @@ tidy.rma <- function (x, ...) {
          stop(mstyle$stop("Please install the 'alabama' package to use this optimizer."), call.=FALSE)
    }
 
+   if (optimizer == "Rcgmin") {
+      if (!requireNamespace("Rcgmin", quietly=TRUE))
+         stop(mstyle$stop("Please install the 'Rcgmin' package to use this optimizer."), call.=FALSE)
+   }
+
+   if (optimizer == "Rvmmin") {
+      if (!requireNamespace("Rvmmin", quietly=TRUE))
+         stop(mstyle$stop("Please install the 'Rvmmin' package to use this optimizer."), call.=FALSE)
+   }
+
    #########################################################################
 
    if (is.element(optimizer, c("optim","constrOptim"))) {
@@ -1651,6 +1654,20 @@ tidy.rma <- function (x, ...) {
       }
    }
 
+   if (optimizer == "Rcgmin") {
+      par.arg <- "par"
+      optimizer <- "Rcgmin::Rcgmin"
+      #ctrl.arg <- ", gr='grnd', control=optcontrol"
+      ctrl.arg <- ", control=optcontrol"
+   }
+
+   if (optimizer == "Rvmmin") {
+      par.arg <- "par"
+      optimizer <- "Rvmmin::Rvmmin"
+      #ctrl.arg <- ", gr='grnd', control=optcontrol"
+      ctrl.arg <- ", control=optcontrol"
+   }
+
    if (optimizer == "optimParallel") {
       par.arg <- "par"
       optimizer <- "optimParallel::optimParallel"
@@ -1675,7 +1692,10 @@ tidy.rma <- function (x, ...) {
    if (inherits(opt.res, "try-error"))
       stop(mstyle$stop(paste0("Error during the optimization. Use verbose=TRUE and see help(", fun, ") for more details on the optimization routines.")), call.=FALSE)
 
-   if (is.element(optimizer, c("optim","constrOptim","nlminb","dfoptim::hjk","dfoptim::nmk","lbfgsb3c::lbfgsb3c","subplex::subplex","BB::BBoptim","Rsolnp::solnp","alabama::constrOptim.nl","optimParallel::optimParallel")) && opt.res$convergence != 0)
+   if (optimizer == "lbfgsb3c::lbfgsb3c" && is.null(opt.res$convergence)) # special provision for lbfgsb3c in case 'convergence' is missing
+      opt.res$convergence <- -99
+
+   if (is.element(optimizer, c("optim","constrOptim","nlminb","dfoptim::hjk","dfoptim::nmk","lbfgsb3c::lbfgsb3c","subplex::subplex","BB::BBoptim","Rsolnp::solnp","alabama::constrOptim.nl","Rcgmin::Rcgmin","Rvmmin:Rvmmin","optimParallel::optimParallel")) && opt.res$convergence != 0)
       stop(mstyle$stop(paste0("Optimizer (", optimizer, ") did not achieve convergence (convergence = ", opt.res$convergence, ").")), call.=FALSE)
 
    if (is.element(optimizer, c("dfoptim::mads")) && opt.res$convergence > optcontrol$tol)

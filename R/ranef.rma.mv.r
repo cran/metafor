@@ -36,7 +36,11 @@ ranef.rma.mv <- function(object, level, digits, transf, targs, verbose=FALSE, ..
    if (!is.null(x$W))
       stop(mstyle$stop("Extraction of random effects not available for models with non-standard weights."))
 
-   expand <- FALSE # TODO: make this an option?
+   ddd <- list(...)
+
+   .chkdots(ddd, c("expand"))
+
+   expand <- ifelse(is.null(expand), FALSE, isTRUE(ddd$expand)) # TODO: make this an option?
 
    #########################################################################
 
@@ -126,7 +130,7 @@ ranef.rma.mv <- function(object, level, digits, transf, targs, verbose=FALSE, ..
 
             s.levels.r <- !is.element(x$s.levels.f[[j]], x$s.levels[[j]])
 
-            NAs <- rep(NA, x$s.nlevels.f[j])
+            NAs <- rep(NA_real_, x$s.nlevels.f[j])
             tmp <- data.frame(intrcpt=NAs, se=NAs, pi.lb=NAs, pi.ub=NAs)
             tmp[!s.levels.r,] <- pred
             pred <- tmp
@@ -139,7 +143,7 @@ ranef.rma.mv <- function(object, level, digits, transf, targs, verbose=FALSE, ..
 
          if (expand) {
 
-            rows <- c(x$Z.S[[j]] %*% seq_along(x$s.levels[[j]]))
+            rows <- as.vector(x$Z.S[[j]] %*% seq_along(x$s.levels[[j]]))
             pred <- pred[rows,]
             rnames <- x$s.levels[[j]][rows]
 

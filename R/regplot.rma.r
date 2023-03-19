@@ -117,7 +117,7 @@ lcol, lwd, lty, legend=FALSE, xvals, ...) {
    ### set refline to NA if it is not specified
 
    if (missing(refline))
-      refline <- NA
+      refline <- NA_real_
 
    ### set lcol, lty, and lwd (1 = reg line, 2 = ci bounds, 3 = pi bounds, 4 = refline)
 
@@ -618,12 +618,12 @@ lcol, lwd, lty, legend=FALSE, xvals, ...) {
 
    if (is.function(atransf)) {
       if (is.null(targs)) {
-         at.lab <- formatC(sapply(at.lab, atransf), digits=digits[[1]], format="f", drop0trailing=is.integer(digits[[1]]))
+         at.lab <- fmtx(sapply(at.lab, atransf), digits[[1]], drop0ifint=TRUE)
       } else {
-         at.lab <- formatC(sapply(at.lab, atransf, targs), digits=digits[[1]], format="f", drop0trailing=is.integer(digits[[1]]))
+         at.lab <- fmtx(sapply(at.lab, atransf, targs), digits[[1]], drop0ifint=TRUE)
       }
    } else {
-      at.lab <- formatC(at.lab, digits=digits[[1]], format="f", drop0trailing=is.integer(digits[[1]]))
+      at.lab <- fmtx(at.lab, digits[[1]], drop0ifint=TRUE)
    }
 
    ### add y-axis

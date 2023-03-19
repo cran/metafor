@@ -52,7 +52,7 @@ robust.rma.mv <- function(x, cluster, adjust=TRUE, clubSandwich=FALSE, digits, .
 
    ### check if dfs are positive (note: this also handles the case where there is a single cluster)
 
-   if (dfs <= 0)
+   if (!clubSandwich && dfs <= 0)
       stop(mstyle$stop(paste0("Number of clusters (", n, ") must be larger than the number of fixed effects (", x$p, ").")))
 
    ### use clubSandwich if requested to do so
@@ -97,7 +97,7 @@ robust.rma.mv <- function(x, cluster, adjust=TRUE, clubSandwich=FALSE, digits, .
          stop(mstyle$stop("Could not obtain the cluster-robust variance-covariance matrix (use verbose=TRUE for more details)."))
 
       #meat <- try(clubSandwich::vcovCR(x, cluster=cluster, type=ddd$vcov, form="meat"), silent=!isTRUE(ddd$verbose))
-      meat <- NA
+      meat <- NA_real_
 
       ### obtain cluster-robust inferences
 
@@ -113,14 +113,16 @@ robust.rma.mv <- function(x, cluster, adjust=TRUE, clubSandwich=FALSE, digits, .
 
       if (x$int.only) {
 
-         cs.wald <- NA
+         cs.wald <- NA_real_
 
       } else {
 
          cs.wald <- try(clubSandwich::Wald_test(x, cluster=cluster, vcov=vb, test=ddd$wald_test, constraints=clubSandwich::constrain_zero(x$btt)), silent=!isTRUE(ddd$verbose))
 
-         if (inherits(cs.wald, "try-error"))
-            stop(mstyle$stop("Could not obtain the cluster-robust Wald test (use verbose=TRUE for more details)."))
+         if (inherits(cs.wald, "try-error")) {
+            warning(mstyle$warning("Could not obtain the cluster-robust omnibus Wald test (use verbose=TRUE for more details)."))
+            cs.wald <- list(Fstat=NA_real_, df_num=NA_integer_, df_denom=NA_real_)
+         }
 
       }
 
@@ -130,11 +132,12 @@ robust.rma.mv <- function(x, cluster, adjust=TRUE, clubSandwich=FALSE, digits, .
 
       beta  <- x$beta
       se    <- cs.coef$SE
-      zval  <- cs.coef$tstat
+      zval  <- ifelse(is.infinite(cs.coef$tstat), NA_real_, cs.coef$tstat)
       pval  <- switch(ddd$coef_test, "z" = cs.coef$p_z,  "naive-t" = cs.coef$p_t,  "naive-tp" = cs.coef$p_tp,  "Satterthwaite" = cs.coef$p_Satt, "saddlepoint" = cs.coef$p_saddle)
-      dfs   <- switch(ddd$coef_test, "z" = cs.coef$df_z, "naive-t" = cs.coef$df_t, "naive-tp" = cs.coef$df_tp, "Satterthwaite" = cs.coef$df,     "saddlepoint" = NA)
-      ci.lb <- cs.conf$CI_L # note: if ddd$coef_test != ddd$conf_test, dfs for CI may be different
-      ci.ub <- cs.conf$CI_U
+      dfs   <- switch(ddd$coef_test, "z" = cs.coef$df_z, "naive-t" = cs.coef$df_t, "naive-tp" = cs.coef$df_tp, "Satterthwaite" = cs.coef$df,     "saddlepoint" = NA_real_)
+      dfs   <- ifelse(is.na(dfs), NA_real_, dfs) # ifelse() part to change NaN into just NA
+      ci.lb <- ifelse(is.na(cs.conf$CI_L), NA_real_, cs.conf$CI_L) # note: if ddd$coef_test != ddd$conf_test, dfs for CI may be different
+      ci.ub <- ifelse(is.na(cs.conf$CI_U), NA_real_, cs.conf$CI_U)
 
       if (x$int.only) {
          QM   <- max(0, zval^2)
@@ -142,7 +145,7 @@ robust.rma.mv <- function(x, cluster, adjust=TRUE, clubSandwich=FALSE, digits, .
          QMp  <- pval
       } else {
          QM   <- max(0, cs.wald$Fstat)
-         QMdf <- c(cs.wald$df_num, cs.wald$df_denom)
+         QMdf <- c(cs.wald$df_num, max(0, cs.wald$df_denom))
          QMp  <- cs.wald$p_val
       }
 
@@ -232,6 +235,12 @@ robust.rma.mv <- function(x, cluster, adjust=TRUE, clubSandwich=FALSE, digits, .
       if (x$sparse)
          vb <- as.matrix(vb)
 
+      ### check for elements in vb that are essentially 0
+
+      is0 <- diag(vb) < 100 * .Machine$double.eps
+      vb[is0,] <- NA_real_
+      vb[,is0] <- NA_real_
+
       ### prepare results
 
       beta <- x$beta
@@ -245,8 +254,10 @@ robust.rma.mv <- function(x, cluster, adjust=TRUE, clubSandwich=FALSE, digits, .
 
       QM <- try(as.vector(t(beta)[x$btt] %*% chol2inv(chol(vb[x$btt,x$btt])) %*% beta[x$btt]), silent=TRUE)
 
-      if (inherits(QM, "try-error"))
-         QM <- NA
+      if (inherits(QM, "try-error") || is.na(QM)) {
+         warning(mstyle$warning("Could not obtain the cluster-robust omnibus Wald test."))
+         QM <- NA_real_
+      }
 
       QM   <- QM / x$m # note: m is the number of coefficients in btt, not the number of clusters
       QMdf <- c(x$m, dfs)
@@ -283,6 +294,7 @@ robust.rma.mv <- function(x, cluster, adjust=TRUE, clubSandwich=FALSE, digits, .
    x$tcl   <- tcl
    x$test  <- "t"
    x$vbest <- vbest
+   x$s2w   <- 1
    x$robumethod <- ifelse(clubSandwich, "clubSandwich", "default")
    x$cluster <- cluster
    x$meat <- meat

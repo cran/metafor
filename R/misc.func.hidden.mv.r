@@ -631,7 +631,7 @@
    G <- matrix(0, nrow=dims, ncol=dims)
    G[lower.tri(G)] <- covs
    diag(G) <- vars
-   return(crossprod(G))
+   return(tcrossprod(G))
 }
 
 ### function to construct var-cov matrix for "UNR" structure given the variance and correlations
@@ -651,7 +651,7 @@
    G <- matrix(0, nrow=dims, ncol=dims)
    G[lower.tri(G)] <- cors
    diag(G) <- 1
-   return(var * crossprod(G))
+   return(var * tcrossprod(G))
 }
 
 ############################################################################
@@ -827,7 +827,7 @@
 
 .ll.rma.mv <- function(par, reml, Y, M, A, X, k, pX, # note: pX due to nlm(); M=V to begin with
                        D.S, Z.G1, Z.G2, Z.H1, Z.H2, g.Dmat, h.Dmat,
-                       sigma2.val, tau2.val, rho.val, gamma2.val, phi.val,
+                       sigma2.val, tau2.val, rho.val, gamma2.val, phi.val, beta.val,
                        sigma2s, tau2s, rhos, gamma2s, phis,
                        withS, withG, withH,
                        struct, g.levels.r, h.levels.r, g.values, h.values,
@@ -953,6 +953,7 @@
             sX   <- U %*% X
             sY   <- U %*% Y
             beta <- solve(crossprod(sX), crossprod(sX, sY))
+            beta <- ifelse(is.na(beta.val), beta, beta.val)
             RSS  <- sum(as.vector(sY - sX %*% beta)^2)
             if (dofit)
                vb <- matrix(solve(crossprod(sX)), nrow=pX, ncol=pX)
@@ -962,6 +963,7 @@
             stXAX <- chol2inv(chol(as.matrix(t(X) %*% A %*% X)))
             #stXAX <- tcrossprod(qr.solve(sX, diag(k)))
             beta  <- matrix(stXAX %*% crossprod(X,A) %*% Y, ncol=1)
+            beta  <- ifelse(is.na(beta.val), beta, beta.val)
             RSS   <- as.vector(t(Y - X %*% beta) %*% W %*% (Y - X %*% beta))
             vb    <- matrix(stXAX %*% t(X) %*% A %*% M %*% A %*% X %*% stXAX, nrow=pX, ncol=pX)
 
@@ -1014,22 +1016,23 @@
          iteration <- .getfromenv("iteration", default=NULL)
 
          if (!is.null(iteration)) {
-            cat(mstyle$verbose(paste0("Iteration ", iteration, "\t")))
+            #cat(mstyle$verbose(paste0("Iteration ", iteration, "\t")))
+            cat(mstyle$verbose(paste0("Iteration ", formatC(iteration, width=5, flag="-", format="f", digits=0), " ")))
             try(assign("iteration", iteration+1, envir=.metafor), silent=TRUE)
          }
 
       }
 
-      cat(mstyle$verbose(paste0("ll = ", ifelse(is.na(llval), NA, formatC(llval, digits=digits[["fit"]], format="f", flag=" ")))), "  ")
+      cat(mstyle$verbose(paste0("ll = ",             fmtx(llval,  digits[["fit"]], flag=" "))), "  ")
       if (withS)
-         cat(mstyle$verbose(paste0("sigma2 =", paste(ifelse(is.na(sigma2), NA, formatC(sigma2, digits=digits[["var"]], format="f", flag=" ")), collapse=" "), "  ")))
+         cat(mstyle$verbose(paste0("sigma2 =", paste(fmtx(sigma2, digits[["var"]], flag=" "), collapse=" "), "  ")))
       if (withG) {
-         cat(mstyle$verbose(paste0("tau2 =",   paste(ifelse(is.na(tau2),   NA, formatC(tau2,   digits=digits[["var"]], format="f", flag=" ")), collapse=" "), "  ")))
-         cat(mstyle$verbose(paste0("rho =",    paste(ifelse(is.na(rho),    NA, formatC(rho,    digits=digits[["var"]], format="f", flag=" ")), collapse=" "), "  ")))
+         cat(mstyle$verbose(paste0("tau2 =",   paste(fmtx(tau2,   digits[["var"]], flag=" "), collapse=" "), "  ")))
+         cat(mstyle$verbose(paste0("rho =",    paste(fmtx(rho,    digits[["var"]], flag=" "), collapse=" "), "  ")))
       }
       if (withH) {
-         cat(mstyle$verbose(paste0("gamma2 =", paste(ifelse(is.na(gamma2), NA, formatC(gamma2, digits=digits[["var"]], format="f", flag=" ")), collapse=" "), "  ")))
-         cat(mstyle$verbose(paste0("phi =",    paste(ifelse(is.na(phi),    NA, formatC(phi,    digits=digits[["var"]], format="f", flag=" ")), collapse=" "), "  ")))
+         cat(mstyle$verbose(paste0("gamma2 =", paste(fmtx(gamma2, digits[["var"]], flag=" "), collapse=" "), "  ")))
+         cat(mstyle$verbose(paste0("phi =",    paste(fmtx(phi,    digits[["var"]], flag=" "), collapse=" "), "  ")))
       }
       cat("\n")
 
@@ -1080,12 +1083,12 @@
    }
 
    if (inherits(res, "try-error"))
-      return(list(cook.d = NA))
+      return(list(cook.d = NA_real_))
 
    ### removing a cluster could lead to a model coefficient becoming inestimable
 
    if (any(res$coef.na))
-      return(list(cook.d = NA))
+      return(list(cook.d = NA_real_))
 
    ### compute dfbeta value(s) (including coefficients as specified via btt)
 
@@ -1136,12 +1139,12 @@
    }
 
    if (inherits(res, "try-error"))
-      return(list(delresid = rep(NA, k.id), sedelresid = rep(NA, k.id), X2 = NA, k.id = NA, pos = which(incl)))
+      return(list(delresid = rep(NA_real_, k.id), sedelresid = rep(NA_real_, k.id), X2 = NA_real_, k.id = NA_integer_, pos = which(incl)))
 
    ### removing a cluster could lead to a model coefficient becoming inestimable
 
    if (any(res$coef.na))
-      return(list(delresid = rep(NA, k.id), sedelresid = rep(NA, k.id), X2 = NA, k.id = NA, pos = which(incl)))
+      return(list(delresid = rep(NA_real_, k.id), sedelresid = rep(NA_real_, k.id), X2 = NA_real_, k.id = NA_integer_, pos = which(incl)))
 
    ### elements that need to be returned
 
@@ -1162,7 +1165,7 @@
    #sve <- try(solve(tmp$M[incl,incl,drop=FALSE] + vdelpred), silent=TRUE)
 
    if (inherits(sve, "try-error"))
-      return(list(delresid = delresid, sedelresid = sedelresid, X2 = NA, k.id = k.id, pos = which(incl)))
+      return(list(delresid = delresid, sedelresid = sedelresid, X2 = NA_real_, k.id = k.id, pos = which(incl)))
 
    X2 <- c(rbind(delresid) %*% sve %*% cbind(delresid))
 
@@ -1210,12 +1213,12 @@
    }
 
    if (inherits(res, "try-error"))
-      return(list(dfbs = NA))
+      return(list(dfbs = NA_real_))
 
    ### removing a cluster could lead to a model coefficient becoming inestimable
 
    if (any(res$coef.na))
-      return(list(dfbs = NA))
+      return(list(dfbs = NA_real_))
 
    ### elements that need to be returned
 

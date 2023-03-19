@@ -144,7 +144,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
    subset <- .getx("subset", mf=mf, data=data)
    mods   <- .getx("mods",   mf=mf, data=data)
 
-   ai <- bi <- ci <- di <- x1i <- x2i <- t1i <- t2i <- xi <- mi <- ti <- NA
+   ai <- bi <- ci <- di <- x1i <- x2i <- t1i <- t2i <- xi <- mi <- ti <- NA_real_
 
    ### calculate yi and vi values
 
@@ -342,10 +342,10 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
       if (drop00) {
          id00 <- c(ai == 0L & ci == 0L) | c(bi == 0L & di == 0L)
          id00[is.na(id00)] <- FALSE
-         ai[id00] <- NA
-         bi[id00] <- NA
-         ci[id00] <- NA
-         di[id00] <- NA
+         ai[id00] <- NA_real_
+         bi[id00] <- NA_real_
+         ci[id00] <- NA_real_
+         di[id00] <- NA_real_
       }
    }
 
@@ -353,8 +353,8 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
       if (drop00) {
          id00 <- c(x1i == 0L & x2i == 0L)
          id00[is.na(id00)] <- FALSE
-         x1i[id00] <- NA
-         x2i[id00] <- NA
+         x1i[id00] <- NA_real_
+         x2i[id00] <- NA_real_
       }
    }
 
@@ -524,6 +524,11 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
       intercept <- TRUE
    }
 
+   if (!is.null(mods) && ncol(mods) == 0L) {
+      warning(mstyle$warning("Cannot fit model with an empty model matrix. Coerced intercept into the model."), call.=FALSE)
+      intercept <- TRUE
+   }
+
    ### add vector of 1s to the X matrix for the intercept (if intercept=TRUE)
 
    if (intercept) {
@@ -630,7 +635,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
 
    verbose <- con$verbose
 
-   optimizer <- match.arg(con$optimizer, c("optim","nlminb","uobyqa","newuoa","bobyqa","nloptr","nlm","hjk","nmk","mads","ucminf","lbfgsb3c","subplex","BBoptim","optimParallel","clogit","clogistic","Nelder-Mead","BFGS","CG","L-BFGS-B","SANN","Brent"))
+   optimizer <- match.arg(con$optimizer, c("optim","nlminb","uobyqa","newuoa","bobyqa","nloptr","nlm","hjk","nmk","mads","ucminf","lbfgsb3c","subplex","BBoptim","optimParallel","clogit","clogistic","Nelder-Mead","BFGS","CG","L-BFGS-B","SANN","Brent","Rcgmin","Rvmmin"))
    optmethod <- match.arg(con$optmethod, c("Nelder-Mead","BFGS","CG","L-BFGS-B","SANN","Brent"))
    if (optimizer %in% c("Nelder-Mead","BFGS","CG","L-BFGS-B","SANN","Brent")) {
       optmethod <- optimizer
@@ -814,7 +819,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
             stop(mstyle$stop("Please install the 'BB' package to use this optimizer."))
       }
 
-      if (is.element(optimizer, c("optim","nlminb","uobyqa","newuoa","bobyqa","nloptr","nlm","hjk","nmk","mads","ucminf","lbfgsb3c","subplex","BBoptim","optimParallel"))) {
+      if (is.element(optimizer, c("optim","nlminb","uobyqa","newuoa","bobyqa","nloptr","nlm","hjk","nmk","mads","ucminf","lbfgsb3c","subplex","BBoptim","optimParallel","Rcgmin","Rvmmin"))) {
          con$hesspack <- match.arg(con$hesspack, c("numDeriv","pracma"))
          if (!requireNamespace(con$hesspack, quietly=TRUE))
          stop(mstyle$stop(paste0("Please install the '", con$hesspack, "' package to fit this model.")))
@@ -849,9 +854,9 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
    #########################################################################
    #########################################################################
 
-   se.tau2 <- I2 <- H2 <- QE <- QEp <- NA
+   se.tau2 <- I2 <- H2 <- QE <- QEp <- NA_real_
 
-   rho <- NA
+   rho <- NA_real_
 
    level <- .level(level)
 
@@ -965,7 +970,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
             ### fit saturated FE model (= QE model)
 
             QEconv <- FALSE
-            ll.QE <- NA
+            ll.QE <- NA_real_
 
             if (!isTRUE(ddd$skiphet)) {
 
@@ -1062,7 +1067,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
                beta   <- cbind(coef(res.FE)[seq_len(p)])
                vb     <- vcov(res.FE)[seq_len(p),seq_len(p),drop=FALSE]
                tau2   <- 0
-               sigma2 <- NA
+               sigma2 <- NA_real_
                parms  <- p + k
                p.eff  <- p + k
                k.eff  <- 2*k
@@ -1088,7 +1093,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
                   tau2   <- glmmTMB::VarCorr(res.ML)[[1]][[1]][[1]]
                }
 
-               sigma2 <- NA
+               sigma2 <- NA_real_
                parms  <- p + k + 1
                p.eff  <- p + k
                k.eff  <- 2*k
@@ -1150,7 +1155,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
             ###        2) use the sigma^2 value from the FE model as the starting value for the study-level random effect
 
             QEconv <- FALSE
-            ll.QE <- NA
+            ll.QE <- NA_real_
 
             if (!isTRUE(ddd$skiphet)) {
 
@@ -1425,7 +1430,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
          ### fit saturated FE model (= QE model)
 
          QEconv <- FALSE
-         ll.QE <- NA
+         ll.QE <- NA_real_
 
          if (!isTRUE(ddd$skiphet)) {
 
@@ -1519,7 +1524,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
             beta   <- cbind(coef(res.FE)[seq_len(p)])
             vb     <- vcov(res.FE)[seq_len(p),seq_len(p),drop=FALSE]
             tau2   <- 0
-            sigma2 <- NA
+            sigma2 <- NA_real_
             parms  <- p
             p.eff  <- p
             k.eff  <- k
@@ -1545,7 +1550,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
                tau2   <- glmmTMB::VarCorr(res.ML)[[1]][[1]][[1]]
             }
 
-            sigma2 <- NA
+            sigma2 <- NA_real_
             parms  <- p + 1
             p.eff  <- p
             k.eff  <- k
@@ -1567,7 +1572,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
          if (verbose)
             message(mstyle$message("Fitting FE model ..."))
 
-         if (is.element(optimizer, c("optim","nlminb","uobyqa","newuoa","bobyqa","nloptr","nlm","hjk","nmk","mads","ucminf","lbfgsb3c","subplex","BBoptim","optimParallel"))) {
+         if (is.element(optimizer, c("optim","nlminb","uobyqa","newuoa","bobyqa","nloptr","nlm","hjk","nmk","mads","ucminf","lbfgsb3c","subplex","BBoptim","optimParallel","Rcgmin","Rvmmin"))) {
 
             if (optimizer == "optim") {
                par.arg <- "par"
@@ -1614,6 +1619,20 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
                par.arg <- "par"
                optimizer <- "BB::BBoptim"
                ctrl.arg <- ", quiet=TRUE, control=optCtrl"
+            }
+
+            if (optimizer == "Rcgmin") {
+               par.arg <- "par"
+               optimizer <- "Rcgmin::Rcgmin"
+               #ctrl.arg <- ", gr='grnd', control=optCtrl"
+               ctrl.arg <- ", control=optCtrl"
+            }
+
+            if (optimizer == "Rvmmin") {
+               par.arg <- "par"
+               optimizer <- "Rvmmin::Rvmmin"
+               #ctrl.arg <- ", gr='grnd', control=optCtrl"
+               ctrl.arg <- ", control=optCtrl"
             }
 
             if (optimizer == "optimParallel") {
@@ -1688,7 +1707,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
 
             ### convergence checks
 
-            if (is.element(optimizer, c("optim","nlminb","dfoptim::hjk","dfoptim::nmk","lbfgsb3c::lbfgsb3c","subplex::subplex","BB::BBoptim","optimParallel::optimParallel")) && res.FE$convergence != 0)
+            if (is.element(optimizer, c("optim","nlminb","dfoptim::hjk","dfoptim::nmk","lbfgsb3c::lbfgsb3c","subplex::subplex","BB::BBoptim","Rcgmin::Rcgmin","Rvmmin:Rvmmin","optimParallel::optimParallel")) && res.FE$convergence != 0)
                stop(mstyle$stop(paste0("Cannot fit FE model. Optimizer (", optimizer, ") did not achieve convergence (convergence = ", res.FE$convergence, ").")))
 
             if (is.element(optimizer, c("dfoptim::mads")) && res.FE$convergence > optCtrl$tol)
@@ -1727,7 +1746,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
 
             ### log-likelihood
 
-            if (is.element(optimizer, c("optim","dfoptim::hjk","dfoptim::nmk","dfoptim::mads","ucminf::ucminf","lbfgsb3c::lbfgsb3c","subplex::subplex","BB::BBoptim","optimParallel::optimParallel")))
+            if (is.element(optimizer, c("optim","dfoptim::hjk","dfoptim::nmk","dfoptim::mads","ucminf::ucminf","lbfgsb3c::lbfgsb3c","subplex::subplex","BB::BBoptim","Rcgmin::Rcgmin","Rvmmin:Rvmmin","optimParallel::optimParallel")))
                ll.FE <- -1 * res.FE$value
             if (is.element(optimizer, c("nlminb","nloptr::nloptr")))
                ll.FE <- -1 * res.FE$objective
@@ -1778,39 +1797,39 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
                   if (inherits(res.QE, "try-error")) {
                      warning(mstyle$warning(paste0("Cannot fit saturated model", ifelse(verbose, ".", " (set 'verbose=TRUE' to obtain further details)."))), call.=FALSE)
                      QEconv <- FALSE
-                     ll.QE <- NA
+                     ll.QE <- NA_real_
                   }
 
                   ### convergence checks
 
-                  if (QEconv && is.element(optimizer, c("optim","nlminb","dfoptim::hjk","dfoptim::nmk","lbfgsb3c::lbfgsb3c","subplex::subplex","BB::BBoptim","optimParallel::optimParallel")) && res.QE$convergence != 0) {
+                  if (QEconv && is.element(optimizer, c("optim","nlminb","dfoptim::hjk","dfoptim::nmk","lbfgsb3c::lbfgsb3c","subplex::subplex","BB::BBoptim","Rcgmin::Rcgmin","Rvmmin:Rvmmin","optimParallel::optimParallel")) && res.QE$convergence != 0) {
                      warning(mstyle$warning(paste0("Cannot fit saturated model. Optimizer (", optimizer, ") did not achieve convergence (convergence = ", res.QE$convergence, ").")), call.=FALSE)
                      QEconv <- FALSE
-                     ll.QE <- NA
+                     ll.QE <- NA_real_
                   }
 
                   if (QEconv && is.element(optimizer, c("dfoptim::mads")) && res.QE$convergence > optCtrl$tol) {
                      warning(mstyle$warning(paste0("Cannot fit saturated model. Optimizer (", optimizer, ") did not achieve convergence (convergence = ", res.QE$convergence, ").")), call.=FALSE)
                      QEconv <- FALSE
-                     ll.QE <- NA
+                     ll.QE <- NA_real_
                   }
 
                   if (QEconv && is.element(optimizer, c("minqa::uobyqa","minqa::newuoa","minqa::bobyqa")) && res.QE$ierr != 0) {
                      warning(mstyle$warning(paste0("Cannot fit saturated model. Optimizer (", optimizer, ") did not achieve convergence (ierr = ", res.QE$ierr, ").")), call.=FALSE)
                      QEconv <- FALSE
-                     ll.QE <- NA
+                     ll.QE <- NA_real_
                   }
 
                   if (QEconv && optimizer=="nloptr::nloptr" && !(res.QE$status >= 1 && res.QE$status <= 4)) {
                      warning(mstyle$warning(paste0("Cannot fit saturated model. Optimizer (", optimizer, ") did not achieve convergence (status = ", res.QE$status, ").")), call.=FALSE)
                      QEconv <- FALSE
-                     ll.QE <- NA
+                     ll.QE <- NA_real_
                   }
 
                   if (QEconv && optimizer=="ucminf::ucminf" && !(res.QE$convergence == 1 || res.QE$convergence == 2)) {
                      warning(mstyle$warning(paste0("Cannot fit saturated model. Optimizer (", optimizer, ") did not achieve convergence (convergence = ", res.QE$convergence, ").")), call.=FALSE)
                      QEconv <- FALSE
-                     ll.QE <- NA
+                     ll.QE <- NA_real_
                   }
 
                   if (verbose > 2) {
@@ -1848,7 +1867,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
 
                ### log-likelihood
 
-               if (is.element(optimizer, c("optim","dfoptim::hjk","dfoptim::nmk","dfoptim::mads","ucminf::ucminf","lbfgsb3c::lbfgsb3c","subplex::subplex","BB::BBoptim","optimParallel::optimParallel")))
+               if (is.element(optimizer, c("optim","dfoptim::hjk","dfoptim::nmk","dfoptim::mads","ucminf::ucminf","lbfgsb3c::lbfgsb3c","subplex::subplex","BB::BBoptim","Rcgmin::Rcgmin","Rvmmin:Rvmmin","optimParallel::optimParallel")))
                   ll.QE <- -1 * res.QE$value
                if (is.element(optimizer, c("nlminb","nloptr::nloptr")))
                   ll.QE <- -1 * res.QE$objective
@@ -1878,7 +1897,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
                chol.h.A <- try(chol(h.A), silent=!verbose)             # see if h.A can be inverted with chol()
                if (inherits(chol.h.A, "try-error")) {
                   warning(mstyle$warning("Cannot invert Hessian for saturated model."), call.=FALSE)
-                  QE.Wld <- NA
+                  QE.Wld <- NA_real_
                } else {
                   Ivb2.QE  <- h.D-h.C%*%chol2inv(chol.h.A)%*%h.B       # inverse of the inverse of the lower right part
                   QE.Wld   <- c(t(b2.QE) %*% Ivb2.QE %*% b2.QE)        # Wald statistic (note: this approach only requires taking the inverse of h.A)
@@ -2028,7 +2047,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
 
             ### convergence checks
 
-            if (is.element(optimizer, c("optim","nlminb","dfoptim::hjk","dfoptim::nmk","lbfgsb3c::lbfgsb3c","subplex::subplex","BB::BBoptim","optimParallel::optimParallel")) && res.ML$convergence != 0)
+            if (is.element(optimizer, c("optim","nlminb","dfoptim::hjk","dfoptim::nmk","lbfgsb3c::lbfgsb3c","subplex::subplex","BB::BBoptim","Rcgmin::Rcgmin","Rvmmin:Rvmmin","optimParallel::optimParallel")) && res.ML$convergence != 0)
                stop(mstyle$stop(paste0("Cannot fit ML model. Optimizer (", optimizer, ") did not achieve convergence (convergence = ", res.ML$convergence, ").")))
 
             if (is.element(optimizer, c("dfoptim::mads")) && res.ML$convergence > optCtrl$tol)
@@ -2067,7 +2086,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
 
             ### log-likelihood
 
-            if (is.element(optimizer, c("optim","dfoptim::hjk","dfoptim::nmk","dfoptim::mads","ucminf::ucminf","lbfgsb3c::lbfgsb3c","subplex::subplex","BB::BBoptim","optimParallel::optimParallel")))
+            if (is.element(optimizer, c("optim","dfoptim::hjk","dfoptim::nmk","dfoptim::mads","ucminf::ucminf","lbfgsb3c::lbfgsb3c","subplex::subplex","BB::BBoptim","Rcgmin::Rcgmin","Rvmmin:Rvmmin","optimParallel::optimParallel")))
                ll.ML <- -1 * res.ML$value
             if (is.element(optimizer, c("nlminb","nloptr::nloptr")))
                ll.ML <- -1 * res.ML$objective
@@ -2100,7 +2119,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
                vb <- vcov(res.FE)[seq_len(p),seq_len(p),drop=FALSE]
             }
             tau2   <- 0
-            sigma2 <- NA
+            sigma2 <- NA_real_
             parms  <- p
             p.eff  <- p
             k.eff  <- k
@@ -2123,14 +2142,14 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
             if (any(diag(vb) <= 0))
                stop(mstyle$stop("Cannot compute var-cov matrix of the fixed effects."))
             tau2   <- exp(res.ML$par[p+1])
-            sigma2 <- NA
+            sigma2 <- NA_real_
             parms  <- p + 1
             p.eff  <- p
             k.eff  <- k
             if (vb.f[p+1,p+1] >= 0) {
                se.tau2 <- sqrt(vb.f[p+1,p+1]) * tau2 # delta rule: vb[p+1,p+1] is the variance of log(tau2), so vb[p+1,p+1] * tau2^2 is the variance of exp(log(tau2))
             } else {
-               se.tau2 <- NA
+               se.tau2 <- NA_real_
             }
 
             tmp <- try(rma.uni(measure="PETO", ai=ai, bi=bi, ci=ci, di=di, add=0, mods=X.fit, intercept=FALSE, skipr2=TRUE), silent=TRUE)
@@ -2214,7 +2233,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
       ### notes: 1) suppressWarnings() to suppress warning "glm.fit: fitted probabilities numerically 0 or 1 occurred"
 
       QEconv <- FALSE
-      ll.QE <- NA
+      ll.QE <- NA_real_
 
       if (!isTRUE(ddd$skiphet)) {
 
@@ -2317,7 +2336,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
          beta   <- cbind(coef(res.FE)[seq_len(p)])
          vb     <- vcov(res.FE)[seq_len(p),seq_len(p),drop=FALSE]
          tau2   <- 0
-         sigma2 <- NA
+         sigma2 <- NA_real_
          parms  <- p
          p.eff  <- p
          k.eff  <- k
@@ -2343,7 +2362,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
             tau2   <- glmmTMB::VarCorr(res.ML)[[1]][[1]][[1]]
          }
 
-         sigma2 <- NA
+         sigma2 <- NA_real_
          parms  <- p + 1
          p.eff  <- p
          k.eff  <- k
@@ -2375,12 +2394,12 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
 
             if (inherits(chol.h, "try-error")) {
                warning(mstyle$warning("Cannot invert Hessian for saturated model."), call.=FALSE)
-               QE.Wld <- NA
+               QE.Wld <- NA_real_
             } else {
                QE.Wld <- try(c(t(b2.QE) %*% chol2inv(chol.h) %*% b2.QE), silent=!verbose)
                if (inherits(QE.Wld, "try-error")) {
                   warning(mstyle$warning("Cannot invert Hessian for saturated model."), call.=FALSE)
-                  QE.Wld <- NA
+                  QE.Wld <- NA_real_
                }
             }
 
@@ -2409,11 +2428,11 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
 
    } else {
 
-      QE.Wld  <- NA
-      QE.LRT  <- NA
-      QEp.Wld <- NA
-      QEp.LRT <- NA
-      QE.df   <- NA
+      QE.Wld  <- NA_real_
+      QE.LRT  <- NA_real_
+      QEp.Wld <- NA_real_
+      QEp.LRT <- NA_real_
+      QE.df   <- NA_integer_
 
    }
 
@@ -2440,7 +2459,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
 
    if (inherits(chol.h, "try-error")) {
       warning(mstyle$warning("Cannot invert Hessian for QM test."), call.=FALSE)
-      QM <- NA
+      QM <- NA_real_
    } else {
       QM <- as.vector(t(beta)[btt] %*% chol2inv(chol.h) %*% beta[btt])
    }
@@ -2459,7 +2478,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
    if (test == "t") {
       ddf <- k-p
    } else {
-      ddf <- NA
+      ddf <- NA_integer_
    }
 
    ### abbreviate some types of coefficient names
@@ -2489,11 +2508,11 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
    if (test == "t") {
       QM   <- QM / m
       QMdf <- c(m, k-p)
-      QMp  <- if (QMdf[2] > 0) pf(QM, df1=QMdf[1], df2=QMdf[2], lower.tail=FALSE) else NA
-      pval <- if (ddf > 0) 2*pt(abs(zval), df=ddf, lower.tail=FALSE) else rep(NA,p)
-      crit <- if (ddf > 0) qt(level/2, df=ddf, lower.tail=FALSE) else rep(NA,p)
+      QMp  <- if (QMdf[2] > 0) pf(QM, df1=QMdf[1], df2=QMdf[2], lower.tail=FALSE) else NA_real_
+      pval <- if (ddf > 0) 2*pt(abs(zval), df=ddf, lower.tail=FALSE) else rep(NA_real_, p)
+      crit <- if (ddf > 0) qt(level/2, df=ddf, lower.tail=FALSE) else rep(NA_real_, p)
    } else {
-      QMdf <- c(m, NA)
+      QMdf <- c(m, NA_integer_)
       QMp  <- pchisq(QM, df=QMdf[1], lower.tail=FALSE)
       pval <- 2*pnorm(abs(zval), lower.tail=FALSE)
       crit <- qnorm(level/2, lower.tail=FALSE)
@@ -2512,15 +2531,15 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
       message(mstyle$message("Computing fit statistics and log likelihood ..."))
 
    ll.ML     <- ifelse(is.element(method, c("FE","EE","CE")), ll.FE, ll.ML)
-   ll.REML   <- NA
+   ll.REML   <- NA_real_
    dev.ML    <- -2 * (ll.ML - ll.QE)
    AIC.ML    <- -2 * ll.ML + 2*parms
    BIC.ML    <- -2 * ll.ML +   parms * log(k.eff)
    AICc.ML   <- -2 * ll.ML + 2*parms * max(k.eff, parms+2) / (max(k.eff, parms+2) - parms - 1)
-   dev.REML  <- NA
-   AIC.REML  <- NA
-   BIC.REML  <- NA
-   AICc.REML <- NA
+   dev.REML  <- NA_real_
+   AIC.REML  <- NA_real_
+   BIC.REML  <- NA_real_
+   AICc.REML <- NA_real_
 
    fit.stats <- matrix(c(ll.ML, dev.ML, AIC.ML, BIC.ML, AICc.ML, ll.REML, dev.REML, AIC.REML, BIC.REML, AICc.REML), ncol=2, byrow=FALSE)
    dimnames(fit.stats) <- list(c("ll","dev","AIC","BIC","AICc"), c("ML","REML"))

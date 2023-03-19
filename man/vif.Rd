@@ -91,7 +91,11 @@ vif(x, \dots)
    The results are formatted and printed with the \code{print} function. To format the results as a data frame, one can use the \code{\link[=as.data.frame.vif.rma]{as.data.frame}} function. When \code{sim=TRUE}, the distribution of each (G)VIF can be plotted with the \code{\link[=plot.vif.rma]{plot}} function.
 }
 \note{
+   If the original model fitted involved redundant predictors that were dropped from the model, then \code{sim=TRUE} cannot be used. In this case, one should remove any redundancies in the original model fitted before using this method.
+
    When using \code{sim=TRUE}, the model needs to be refitted (by default) 1000 times. When \code{sim=TRUE} is combined with \code{reestimate=TRUE}, then this value needs to be multiplied by the total number of (G)VIF values that are computed by the function. Hence, the combination of \code{sim=TRUE} with \code{reestimate=TRUE} is computationally expensive, especially for more complex models where model fitting can be slow.
+
+   When refitting the model fails, the simulated (G)VIF value(s) will be missing. It can also happen that one or multiple model coefficients become inestimable due to redundancies in the model matrix after the reshuffling. In this case, the corresponding simulated (G)VIF value(s) will be set to \code{Inf} (as that is the value of (G)VIFs in the limit as we approach perfect multicollinearity).
 
    On machines with multiple cores, one can try to speed things up by delegating the model fitting to separate worker processes, that is, by setting \code{parallel="snow"} or \code{parallel="multicore"} and \code{ncpus} to some value larger than 1. Parallel processing makes use of the \code{\link[parallel]{parallel}} package, using the \code{\link[parallel]{makePSOCKcluster}} and \code{\link[parallel]{parLapply}} functions when \code{parallel="snow"} or using \code{\link[parallel]{mclapply}} when \code{parallel="multicore"} (the latter only works on Unix/Linux-alikes). With \code{parallel::detectCores()}, one can check on the number of available cores on the local machine.
 }
@@ -110,6 +114,8 @@ vif(x, \dots)
    Wax, Y. (1992). Collinearity diagnosis for a relative risk regression-analysis: An application to assessment of diet cancer relationship in epidemiologic studies. \emph{Statistics in Medicine}, \bold{11}(10), 1273--1287. \verb{https://doi.org/10.1002/sim.4780111003}
 
    Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \verb{https://doi.org/10.18637/jss.v036.i03}
+
+   Viechtbauer, W., & \enc{López-López}{Lopez-Lopez}, J. A. (2022). Location-scale models for meta-analysis. \emph{Research Synthesis Methods}. \bold{13}(6), 697--715. \verb{https://doi.org/10.1002/jrsm.1562}
 }
 \seealso{
    \code{\link{rma.uni}}, \code{\link{rma.glmm}}, and \code{\link{rma.mv}} for functions to fit models for which variance inflation factors can be computed.

@@ -1,3 +1,49 @@
+# metafor 4.0-0 (2023-03-19)
+
+- added `conv.2x2()` function for reconstructing the cell frequencies in 2x2 tables based on other summary statistics
+
+- added `conv.wald()` function for converting Wald-type confidence intervals and test statistics to sampling variances
+
+- added `conv.fivenum()` function for estimating means and standard deviations from five-number summary values
+
+- added `conv.delta()` function for transforming observed effect sizes or outcomes and their sampling variances using the delta method
+
+- added `emmprep()` function to create a reference grid for use with the `emmeans()` function from the package of the same name
+
+- exposed formatter functions `fmtp()`, `fmtx()`, and `fmtt()`
+
+- package `numDeriv` moved from `Suggests` to `Depends`
+
+- `model.matrix.rma()` gains `asdf` argument
+
+- corrected bug in `vcalc()` (values for `obs` and `type` were taken directly as indices instead of using them as identifiers)
+
+- improved efficiency of `vif()` when `sim=TRUE` by reshuffling only the data needed in the model matrix; due to some edge cases, the simulation approach cannot be used when some redundant predictors were dropped from the original model; and when redundancies occur after reshuffling the data, the simulated (G)VIF value(s) are now set to `Inf` instead of `NA`
+
+- `selmodel()` gains `type='trunc'` and `type='truncest'` models (the latter should be considered experimental)
+
+- added `exact="i"` option in `permutest()` (to just return the number of iterations required for an exact permutation test)
+
+- `escalc()` now provides more informative error messages when not specifying all required arguments to compute a particular measure
+
+- added measures `"ZPHI"`, `"ZTET"`, `"ZPB"`, `"ZBIS"`, and `"ZSPCOR"` to `escalc()` (but note that Fisher's r-to-z transformation is not a variance-stabilizing transformation for these measures)
+
+- the variance of measure `ZPCOR` is now calculated with `1/(ni-mi-3)` (instead of `1/(ni-mi-1)`), which provides a better approximation in small samples (and analogous to how the variance of `ZCOR` is calculated with `1/(ni-3)`)
+
+- as with `measure="SMD"`, one can now also use arguments `di` and `ti` to specify d-values and t-test statistics for measures `RPB`, `RBIS`, `D2ORN`, and `D2ORL` in `escalc()`
+
+- for measures `COR`, `UCOR`, and `ZCOR`, can now use argument `ti` to specify t-test statistics in `escalc()`
+
+- can also specify (two-sided) p-values (of the respective t-tests) for these measures (and for measures `PCOR`, `ZPCOR`, `SPCOR`, and `ZSPCOR`) via argument `pi` (the sign of the p-value is taken to be the sign of the measure)
+
+- can also specify (semi-)partial correlations directly via argument `ri` for measures `PCOR`, `ZPCOR`, `SPCOR`, and `ZSPCOR`
+
+- when passing a correlation marix to `rcalc()`, it now orders the elements (columnwise) based on the lower triangular part of the matrix, not the upper one (which is more consistent with what `matreg()` expects as input when using the `V` argument)
+
+- optimizers `Rcgmin` and `Rvmmin` are now available in `rma.uni()`, `rma.mv()`, `rma.glmm()`, and `selmodel()`
+
+- improved the documentation a bit
+
 # metafor 3.8-1 (2022-08-26)
 
 - `funnel.default()`, `funnel.rma()`, and `regplot.rma()` gain `slab` argument

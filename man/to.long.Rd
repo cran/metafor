@@ -11,26 +11,26 @@ to.long(measure, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
 }
 \arguments{
    \item{measure}{a character string to specify the effect size or outcome measure corresponding to the summary data supplied. See \sQuote{Details} and the documentation of the \code{\link{escalc}} function for possible options.}
-   \item{ai}{vector to specify the \mjeqn{2 \times 2}{2x2} table frequencies (upper left cell).}
-   \item{bi}{vector to specify the \mjeqn{2 \times 2}{2x2} table frequencies (upper right cell).}
-   \item{ci}{vector to specify the \mjeqn{2 \times 2}{2x2} table frequencies (lower left cell).}
-   \item{di}{vector to specify the \mjeqn{2 \times 2}{2x2} table frequencies (lower right cell).}
-   \item{n1i}{vector to specify the group sizes or row totals (first group/row).}
-   \item{n2i}{vector to specify the group sizes or row totals (second group/row).}
-   \item{x1i}{vector to specify the number of events (first group).}
-   \item{x2i}{vector to specify the number of events (second group).}
-   \item{t1i}{vector to specify the total person-times (first group).}
-   \item{t2i}{vector to specify the total person-times (second group).}
-   \item{m1i}{vector to specify the means (first group or time point).}
-   \item{m2i}{vector to specify the means (second group or time point).}
-   \item{sd1i}{vector to specify the standard deviations (first group or time point).}
-   \item{sd2i}{vector to specify the standard deviations (second group or time point).}
-   \item{xi}{vector to specify the frequencies of the event of interest.}
-   \item{mi}{vector to specify the frequencies of the complement of the event of interest or the group means.}
-   \item{ri}{vector to specify the raw correlation coefficients.}
-   \item{ti}{vector to specify the total person-times.}
-   \item{sdi}{vector to specify the standard deviations.}
-   \item{ni}{vector to specify the sample/group sizes.}
+   \item{ai}{vector with the \mjeqn{2 \times 2}{2x2} table frequencies (upper left cell).}
+   \item{bi}{vector with the \mjeqn{2 \times 2}{2x2} table frequencies (upper right cell).}
+   \item{ci}{vector with the \mjeqn{2 \times 2}{2x2} table frequencies (lower left cell).}
+   \item{di}{vector with the \mjeqn{2 \times 2}{2x2} table frequencies (lower right cell).}
+   \item{n1i}{vector with the group sizes or row totals (first group/row).}
+   \item{n2i}{vector with the group sizes or row totals (second group/row).}
+   \item{x1i}{vector with the number of events (first group).}
+   \item{x2i}{vector with the number of events (second group).}
+   \item{t1i}{vector with the total person-times (first group).}
+   \item{t2i}{vector with the total person-times (second group).}
+   \item{m1i}{vector with the means (first group or time point).}
+   \item{m2i}{vector with the means (second group or time point).}
+   \item{sd1i}{vector with the standard deviations (first group or time point).}
+   \item{sd2i}{vector with the standard deviations (second group or time point).}
+   \item{xi}{vector with the frequencies of the event of interest.}
+   \item{mi}{vector with the frequencies of the complement of the event of interest or the group means.}
+   \item{ri}{vector with the raw correlation coefficients.}
+   \item{ti}{vector with the total person-times.}
+   \item{sdi}{vector with the standard deviations.}
+   \item{ni}{vector with the sample/group sizes.}
    \item{data}{optional data frame containing the variables given to the arguments above.}
    \item{slab}{optional vector with labels for the studies.}
    \item{subset}{optional (logical or numeric) vector to specify the subset of studies that should included in the data frame returned by the function.}
@@ -39,7 +39,7 @@ to.long(measure, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
    \item{drop00}{see the documentation of the \code{\link{escalc}} function.}
    \item{vlong}{optional logical whether a very long format should be used (only relevant for \mjeqn{2 \times 2}{2x2} or \mjeqn{1 \times 2}{1x2} table data).}
    \item{append}{logical to specify whether the data frame specified via the \code{data} argument (if one has been specified) should be returned together with the long format data (the default is \code{TRUE}).}
-   \item{var.names}{optional vector with variable names (length depends on the data type). If unspecified, the function sets appropriate variable names by default.}
+   \item{var.names}{optional character vector with variable names (the length depends on the data type). If unspecified, the function sets appropriate variable names by default.}
 }
 \details{
    The \code{\link{escalc}} function describes a wide variety of effect sizes or outcome measures that can be computed for a meta-analysis. The summary data used to compute those measures are typically contained in vectors, each element corresponding to a study. The \code{to.long} function takes this information and constructs a long format dataset from these data.
@@ -49,7 +49,7 @@ to.long(measure, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
            \tab \ics \tab outcome 1 \tab \ics \tab outcome 2 \tab \ics \tab total      \cr
    group 1 \tab \ics \tab \code{ai} \tab \ics \tab \code{bi} \tab \ics \tab \code{n1i} \cr
    group 2 \tab \ics \tab \code{ci} \tab \ics \tab \code{di} \tab \ics \tab \code{n2i}}
-   where \code{ai}, \code{bi}, \code{ci}, and \code{di} denote the cell frequencies (i.e., the number of people falling into a particular category) and \code{n1i} and \code{n2i} the row totals (i.e., the group sizes).
+   where \code{ai}, \code{bi}, \code{ci}, and \code{di} denote the cell frequencies (i.e., the number of individuals falling into a particular category) and \code{n1i} and \code{n2i} the row totals (i.e., the group sizes).
 
    The cell frequencies in \mjseqn{k} such \mjeqn{2 \times 2}{2x2} tables can be specified via the \code{ai}, \code{bi}, \code{ci}, and \code{di} arguments (or alternatively, via the \code{ai}, \code{ci}, \code{n1i}, and \code{n2i} arguments). The function then creates the corresponding long format dataset. The \code{measure} argument should then be set equal to one of the outcome measures that can be computed based on this type of data, such as \code{"RR"}, \code{"OR"}, \code{"RD"} (it is not relevant which specific measure is chosen, as long as it corresponds to the specified summary data). See the documentation of the \code{\link{escalc}} function for more details on the types of data formats available.
 

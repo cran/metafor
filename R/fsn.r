@@ -9,7 +9,7 @@ fsn <- function(yi, vi, sei, data, type="Rosenthal", alpha=.05, target, weighted
    if (!is.element(na.act, c("na.omit", "na.exclude", "na.fail", "na.pass")))
       stop(mstyle$stop("Unknown 'na.action' specified under options()."))
 
-   type <- match.arg(type, c("Rosenthal", "Orwin", "Rosenberg", "REM"))
+   type <- match.arg(type, c("Rosenthal", "Orwin", "Rosenberg", "Binomial", "REM"))
 
    if (missing(target))
       target <- NULL
@@ -50,9 +50,9 @@ fsn <- function(yi, vi, sei, data, type="Rosenthal", alpha=.05, target, weighted
       iters <- ddd$iters
    }
 
-   meanes  <- NA
-   pval    <- NA
-   rejrate <- NA
+   meanes  <- NA_real_
+   pval    <- NA_real_
+   rejrate <- NA_real_
 
    #########################################################################
 
@@ -134,7 +134,7 @@ fsn <- function(yi, vi, sei, data, type="Rosenthal", alpha=.05, target, weighted
       z.avg  <- abs(sum(zi) / sqrt(k))
       pval   <- pnorm(z.avg, lower.tail=FALSE)
       fsnum  <- max(0, k * (z.avg / qnorm(alpha, lower.tail=FALSE))^2 - k)
-      target <- NA
+      target <- NA_real_
 
    }
 
@@ -151,7 +151,7 @@ fsn <- function(yi, vi, sei, data, type="Rosenthal", alpha=.05, target, weighted
          if (inherits(fsnum, "try-error"))
             stop(mstyle$stop("Could not find fail-safe N using Fisher's method."))
       }
-      target <- NA
+      target <- NA_real_
 
    }
 
@@ -188,7 +188,26 @@ fsn <- function(yi, vi, sei, data, type="Rosenthal", alpha=.05, target, weighted
       w.p    <- (sum(wi*yi) / qnorm(alpha/2, lower.tail=FALSE))^2 - sum(wi)
       pval   <- 2*pnorm(abs(zval), lower.tail=FALSE)
       fsnum  <- max(0, k*w.p/sum(wi))
-      target <- NA
+      target <- NA_real_
+
+   }
+
+   if (type == "Binomial") {
+
+      k    <- length(yi)
+      kpos <- sum(yi > 0)
+      pval <- binom.test(kpos, k)$p.value
+      if (pval >= alpha) {
+         fsnum <- 0
+      } else {
+         pvalnew <- pval
+         fsnum <- 0
+         while (pvalnew < alpha) {
+            fsnum <- fsnum + 2
+            pvalnew <- binom.test(kpos + fsnum/2, k + fsnum)$p.value
+         }
+      }
+      target <- NA_real_
 
    }
 
@@ -229,7 +248,7 @@ fsn <- function(yi, vi, sei, data, type="Rosenthal", alpha=.05, target, weighted
 
    }
 
-   if (!is.infinite(fsnum) && abs(fsnum - round(fsnum)) >= .Machine$double.eps^0.5) {
+   if (is.finite(fsnum) && abs(fsnum - round(fsnum)) >= .Machine$double.eps^0.5) {
       fsnum <- ceiling(fsnum)
    } else {
       fsnum <- round(fsnum)

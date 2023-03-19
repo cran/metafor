@@ -67,7 +67,7 @@
 \note{
    Confidence and prediction intervals are constructed based on the critical values from a standard normal distribution (i.e., \mjeqn{\pm 1.96}{±1.96} for \code{level=95}). When the model was fitted with \code{test="t"} or \code{test="knha"}, then a t-distribution with \mjseqn{k-p} degrees of freedom is used.
 
-   For a random-effects model (where \mjseqn{p=1}) fitted with the \code{\link{rma.uni}} function, note that this differs slightly from Riley et al. (2001), who suggest to use a t-distribution with \mjseqn{k-2} degrees of freedom for constructing the prediction interval. Neither a normal, nor a t-distribution with \mjseqn{k-1} or \mjseqn{k-2} degrees of freedom is correct; all of these are approximations. The computations are done in the way described above, so that the prediction interval is identical to the confidence interval when \mjeqn{\hat{\tau}^2 = 0}{hat(\tau)^2 = 0}, which could be argued is the logical thing that should happen. If the prediction interval should be computed exactly as described by Riley et al. (2001), then one can use argument \code{pi.type="riley"}.
+   For a random-effects model (where \mjseqn{p=1}) fitted with the \code{\link{rma.uni}} function, note that this differs slightly from Riley et al. (2011), who suggest to use a t-distribution with \mjseqn{k-2} degrees of freedom for constructing the prediction interval. Neither a normal, nor a t-distribution with \mjseqn{k-1} or \mjseqn{k-2} degrees of freedom is correct; all of these are approximations. The computations are done in the way described above, so that the prediction interval is identical to the confidence interval when \mjeqn{\hat{\tau}^2 = 0}{hat(\tau)^2 = 0}, which could be argued is the logical thing that should happen. If the prediction interval should be computed exactly as described by Riley et al. (2011), then one can use argument \code{pi.type="riley"}.
 
    The predicted values are based only on the fixed effects of the model. Best linear unbiased predictions (BLUPs) that combine the fitted values based on the fixed effects and the estimated contributions of the random effects can be obtained with \code{\link[=blup.rma.uni]{blup}} (currently only for objects of class \code{"rma.uni"}).
 
@@ -82,6 +82,8 @@
    Riley, R. D., Higgins, J. P. T., & Deeks, J. J. (2011). Interpretation of random effects meta-analyses. \emph{British Medical Journal}, \bold{342}, d549. \verb{https://doi.org/10.1136/bmj.d549}
 
    Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \verb{https://doi.org/10.18637/jss.v036.i03}
+
+   Viechtbauer, W., & \enc{López-López}{Lopez-Lopez}, J. A. (2022). Location-scale models for meta-analysis. \emph{Research Synthesis Methods}. \bold{13}(6), 697--715. \verb{https://doi.org/10.1002/jrsm.1562}
 }
 \seealso{
    \code{\link{fitted.rma}} for a function to extract the fitted values, \code{\link{blup.rma.uni}} for a function to compute BLUPs that combine the fitted values and predicted random effects, and \code{\link{addpoly.predict.rma}} to add polygons based on predicted values to a forest plot.

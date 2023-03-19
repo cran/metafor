@@ -93,7 +93,7 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
 
    ddd <- list(...)
 
-   .chkdots(ddd, c("tdist", "outlist", "time", "dist", "abbrev", "restart"))
+   .chkdots(ddd, c("tdist", "outlist", "time", "dist", "abbrev", "restart", "beta"))
 
    ### handle 'tdist' argument from ... (note: overrides test argument)
 
@@ -102,13 +102,13 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
    if (.isTRUE(ddd$tdist))
       test <- "t"
 
-   if (!is.element(test, c("z", "t")))
+   if (!is.element(test, c("z", "t", "knha", "adhoc")))
       stop(mstyle$stop("Invalid option selected for 'test' argument."))
 
    if (is.character(dfs))
       dfs <- match.arg(dfs, c("residual", "contain"))
 
-   if (dfs == "contain")
+   if (dfs == "contain" && test == "z")
       test <- "t"
 
    ### handle Rscale argument (either character, logical, or integer)
@@ -1233,13 +1233,18 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
 
    vimaxmin <- max(vi) / min(vi)
 
-   if (!is.nan(vimaxmin) && !is.infinite(vimaxmin) && vimaxmin >= 1e7)
+   if (is.finite(vimaxmin) && vimaxmin >= 1e7)
       warning(mstyle$warning("Ratio of largest to smallest sampling variance extremely large. May not be able to obtain stable results."), call.=FALSE)
 
    ### make sure that there is at least one column in X ([b])
 
    if (is.null(mods) && !intercept) {
       warning(mstyle$warning("Must either include an intercept and/or moderators in model.\nCoerced intercept into the model."), call.=FALSE)
+      intercept <- TRUE
+   }
+
+   if (!is.null(mods) && ncol(mods) == 0L) {
+      warning(mstyle$warning("Cannot fit model with an empty model matrix. Coerced intercept into the model."), call.=FALSE)
       intercept <- TRUE
    }
 
@@ -1258,11 +1263,15 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
    ### various function that leave out an observation); so we can check if there are redundant/dropped predictors then
 
    tmp <- try(lm(yi ~ X - 1), silent=TRUE)
-   coef.na <- is.na(coef(tmp))
-   if (any(coef.na)) {
-      warning(mstyle$warning("Redundant predictors dropped from the model."), call.=FALSE)
-      X   <- X[,!coef.na,drop=FALSE]
-      X.f <- X.f[,!coef.na,drop=FALSE]
+   if (inherits(tmp, "try-error")) {
+      stop(mstyle$stop("Error in check for redundant predictors."))
+   } else {
+      coef.na <- is.na(coef(tmp))
+      if (any(coef.na)) {
+         warning(mstyle$warning("Redundant predictors dropped from the model."), call.=FALSE)
+         X   <- X[,!coef.na,drop=FALSE]
+         X.f <- X.f[,!coef.na,drop=FALSE]
+      }
    }
 
    ### check whether intercept is included and if yes, move it to the first column (NAs already removed, so na.rm=TRUE for any() not necessary)
@@ -1278,7 +1287,9 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
       int.incl <- FALSE
    }
 
-   p <- NCOL(X) ### number of columns in X (including the intercept if it is included)
+   ### number of columns in X (including the intercept if it is included)
+
+   p <- NCOL(X)
 
    ### make sure variable names in X are unique
 
@@ -1298,6 +1309,18 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
 
    btt <- .set.btt(btt, p, int.incl, colnames(X))
    m <- length(btt) ### number of betas to test (m = p if all betas are tested)
+
+   ### check which beta elements are estimated versus fixed
+
+   if (is.null(ddd$beta)) {
+      beta.val <- rep(NA_real_, p)
+      beta.est <- rep(TRUE, p)
+   } else {
+      beta.val <- ddd$beta
+      if (length(beta.val) != p)
+         stop(mstyle$stop(paste0("Length of 'beta' argument (", length(beta.val), ") does not match actual number of fixed effects (", p, ").")))
+      beta.est <- is.na(beta.val)
+   }
 
    #########################################################################
    #########################################################################
@@ -1514,6 +1537,8 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
    if (verbose > 1)
       message(mstyle$message("Extracting/computing initial values ..."))
 
+   QE <- NA_real_
+
    if (!V0) { # for V0 case, this always fails, so can skip it
 
       if (verbose > 1) {
@@ -1532,10 +1557,7 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
       total <- sigma(lm(Y ~ X - 1))^2
 
       if (is.na(total)) # if X is a saturated model, then sigma() yields NaN
-         stop(mstyle$stop("Cannot compute initial values."))
-
-      QE  <- NA
-      QEp <- NA
+         total <- var(as.vector(Y)) / 100
 
    } else {
 
@@ -1543,17 +1565,23 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
       sY <- U %*% Y
       beta.FE <- try(solve(crossprod(sX), crossprod(sX, sY)), silent=TRUE)
 
-      if (inherits(beta.FE, "try-error"))
-         stop(mstyle$stop("Cannot compute initial values."))
+      if (inherits(beta.FE, "try-error")) {
 
-      ### TODO: consider a better way to set initial values
-      #total <- max(.001*(sigma2s + tau2s + gamma2s), var(c(Y - X %*% res.FE$beta)) - 1/mean(1/diag(V)))
-      #total <- max(.001*(sigma2s + tau2s + gamma2s), var(as.vector(sY - sX %*% beta)) - 1/mean(1/diag(V)))
-      total  <- max(.001*(sigma2s + tau2s + gamma2s), var(as.vector(Y) - as.vector(X %*% beta.FE)) - 1/mean(1/diag(V)))
+         total <- var(as.vector(Y))
 
-      QE <- sum(as.vector(sY - sX %*% beta.FE)^2)
+      } else {
 
-      ### QEp calculated further below
+         ### TODO: consider a better way to set initial values
+         #total <- max(.001*(sigma2s + tau2s + gamma2s), var(c(Y - X %*% res.FE$beta)) - 1/mean(1/diag(V)))
+         #total <- max(.001*(sigma2s + tau2s + gamma2s), var(as.vector(sY - sX %*% beta)) - 1/mean(1/diag(V)))
+         total  <- max(.001*(sigma2s + tau2s + gamma2s), var(as.vector(Y) - as.vector(X %*% beta.FE)) - 1/mean(1/diag(V)))
+
+         #beta.FE <- ifelse(beta.est, beta.FE, beta.val)
+         QE <- sum(as.vector(sY - sX %*% beta.FE)^2)
+
+         ### QEp calculated further below
+
+      }
 
    }
 
@@ -1609,11 +1637,31 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
    ### when restart=TRUE, restart at current estimates
 
    if (isTRUE(ddd$restart)) {
+
+      ### check that the restart is done for a model that has the same type/number of var-cor components as the initial one
+
+      okrestart <- TRUE
+
+      if (withS && (is.null(.getfromenv("rma.mv", "sigma2")) || length(.getfromenv("rma.mv", "sigma2")) != sigma2s))
+         okrestart <- FALSE
+      if (withG && (is.null(.getfromenv("rma.mv", "tau2")) || length(.getfromenv("rma.mv", "tau2")) != tau2s))
+         okrestart <- FALSE
+      if (withG && (is.null(.getfromenv("rma.mv", "rho")) || length(.getfromenv("rma.mv", "rho")) != rhos))
+         okrestart <- FALSE
+      if (withH && (is.null(.getfromenv("rma.mv", "gamma2")) || length(.getfromenv("rma.mv", "gamma2")) != gamma2s))
+         okrestart <- FALSE
+      if (withH && (is.null(.getfromenv("rma.mv", "phi")) || length(.getfromenv("rma.mv", "phi")) != phis))
+         okrestart <- FALSE
+
+      if (!okrestart)
+         stop(mstyle$stop(paste0("Restarting for a different model than the initial one.")))
+
       con$sigma2.init <- .getfromenv("rma.mv", "sigma2", default=con$sigma2.init)
       con$tau2.init   <- .getfromenv("rma.mv", "tau2",   default=con$tau2.init)
       con$rho.init    <- .getfromenv("rma.mv", "rho",    default=con$rho.init)
       con$gamma2.init <- .getfromenv("rma.mv", "gamma2", default=con$gamma2.init)
       con$phi.init    <- .getfromenv("rma.mv", "phi",    default=con$phi.init)
+
    }
 
    ### check for missings in initial values
@@ -1752,7 +1800,7 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
          con$phi.init  <- atanh(phi.init)
    }
 
-   optimizer <- match.arg(con$optimizer, c("optim","nlminb","uobyqa","newuoa","bobyqa","nloptr","nlm","hjk","nmk","mads","ucminf","lbfgsb3c","subplex","BBoptim","optimParallel","Nelder-Mead","BFGS","CG","L-BFGS-B","SANN","Brent"))
+   optimizer <- match.arg(con$optimizer, c("optim","nlminb","uobyqa","newuoa","bobyqa","nloptr","nlm","hjk","nmk","mads","ucminf","lbfgsb3c","subplex","BBoptim","optimParallel","Nelder-Mead","BFGS","CG","L-BFGS-B","SANN","Brent","Rcgmin","Rvmmin"))
    optmethod <- match.arg(con$optmethod, c("Nelder-Mead","BFGS","CG","L-BFGS-B","SANN","Brent"))
    if (optimizer %in% c("Nelder-Mead","BFGS","CG","L-BFGS-B","SANN","Brent")) {
       optmethod <- optimizer
@@ -1860,16 +1908,16 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
          cat("\n\n")
       } else {
          cat("\n\n")
-         vcs <- rbind(c("sigma2" = if (withS) round(sigma2.init, digits[["var"]]) else NA,
-                        "tau2"   = if (withG) round(tau2.init, digits[["var"]]) else NA,
-                        "rho"    = if (withG) round(rho.init, digits[["var"]]) else NA,
-                        "gamma2" = if (withH) round(gamma2.init, digits[["var"]]) else NA,
-                        "phi"    = if (withH) round(phi.init, digits[["var"]]) else NA),
-                        round(c(   if (withS) sigma2 else NA,
-                                   if (withG) tau2 else NA,
-                                   if (withG) rho else NA,
-                                   if (withH) gamma2 else NA,
-                                   if (withH) phi else NA), digits[["var"]]))
+         vcs <- rbind(c("sigma2" = if (withS) round(sigma2.init, digits[["var"]]) else NA_real_,
+                        "tau2"   = if (withG) round(tau2.init, digits[["var"]]) else NA_real_,
+                        "rho"    = if (withG) round(rho.init, digits[["var"]]) else NA_real_,
+                        "gamma2" = if (withH) round(gamma2.init, digits[["var"]]) else NA_real_,
+                        "phi"    = if (withH) round(phi.init, digits[["var"]]) else NA_real_),
+                        round(c(   if (withS) sigma2 else NA_real_,
+                                   if (withG) tau2 else NA_real_,
+                                   if (withG) rho else NA_real_,
+                                   if (withH) gamma2 else NA_real_,
+                                   if (withH) phi else NA_real_), digits[["var"]]))
          vcs <- data.frame(vcs, stringsAsFactors=FALSE)
          rownames(vcs) <- c("initial", "specified")
          vcs <- rbind(included=ifelse(c(rep(withS, sigma2s), rep(withG, tau2s), rep(withG, rhos), rep(withH, gamma2s), rep(withH, phis)), "Yes", "No"), fixed=unlist(vc.fix), vcs)
@@ -1945,7 +1993,7 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
          optcall <- paste(optimizer, "(", par.arg, "=c(con$sigma2.init, con$tau2.init, con$rho.init, con$gamma2.init, con$phi.init),
             .ll.rma.mv, reml=reml, ", ifelse(optimizer=="optim", "method=optmethod, ", ""), "Y=Y, M=V, A=NULL, X=X, k=k, pX=p,
             D.S=D.S, Z.G1=Z.G1, Z.G2=Z.G2, Z.H1=Z.H1, Z.H2=Z.H2, g.Dmat=g.Dmat, h.Dmat=h.Dmat,
-            sigma2.val=sigma2, tau2.val=tau2, rho.val=rho, gamma2.val=gamma2, phi.val=phi,
+            sigma2.val=sigma2, tau2.val=tau2, rho.val=rho, gamma2.val=gamma2, phi.val=phi, beta.val=beta.val,
             sigma2s=sigma2s, tau2s=tau2s, rhos=rhos, gamma2s=gamma2s, phis=phis,
             withS=withS, withG=withG, withH=withH, struct=struct,
             g.levels.r=g.levels.r, h.levels.r=h.levels.r, g.values=g.values, h.values=h.values,
@@ -2010,7 +2058,7 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
 
    fitcall <- .ll.rma.mv(opt.res$par, reml=reml, Y=Y, M=V, A=A, X=X, k=k, pX=p,
       D.S=D.S, Z.G1=Z.G1, Z.G2=Z.G2, Z.H1=Z.H1, Z.H2=Z.H2, g.Dmat=g.Dmat, h.Dmat=h.Dmat,
-      sigma2.val=sigma2, tau2.val=tau2, rho.val=rho, gamma2.val=gamma2, phi.val=phi,
+      sigma2.val=sigma2, tau2.val=tau2, rho.val=rho, gamma2.val=gamma2, phi.val=phi, beta.val=beta.val,
       sigma2s=sigma2s, tau2s=tau2s, rhos=rhos, gamma2s=gamma2s, phis=phis,
       withS=withS, withG=withG, withH=withH, struct=struct,
       g.levels.r=g.levels.r, h.levels.r=h.levels.r, g.values=g.values, h.values=h.values,
@@ -2021,6 +2069,9 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
 
    beta <- as.matrix(fitcall$beta)
    vb   <- as.matrix(fitcall$vb)
+
+   vb[!beta.est,] <- NA_real_
+   vb[,!beta.est] <- NA_real_
 
    if (withS)
       sigma2 <- fitcall$sigma2
@@ -2073,15 +2124,40 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
    if (is.element(test, c("knha","adhoc","t"))) {
       ddf <- .ddf.calc(dfs, X=X, k=k, p=p, mf.s=mf.s, mf.g=mf.g, mf.h=mf.h)
    } else {
-      ddf <- rep(NA, p)
+      ddf <- rep(NA_integer_, p)
    }
+
+   ### the Knapp & Hartung method (this is experimental)
+
+   s2w <- 1
+
+   if (is.element(test, c("knha","adhoc"))) {
+      knha.rma.mv.warn <- .getfromenv("knha.rma.mv.warn", default=TRUE)
+      if (knha.rma.mv.warn) {
+         warning(mstyle$warning("Use of Knapp and Hartung method for 'rma.mv()' models is experimental.\nNote: This warning is only issued once per session (ignore at your peril)."), call.=FALSE)
+         try(assign("knha.rma.mv.warn", FALSE, envir=.metafor), silent=TRUE)
+      }
+      RSS <- try(as.vector(t(Y - X %*% beta) %*% chol2inv(chol(M)) %*% (Y - X %*% beta)), silent=TRUE)
+      if (inherits(RSS, "try-error"))
+         stop(mstyle$stop(paste0("Failure when trying to compute adjustment factor for Knapp and Hartung method.")))
+      if (RSS <= .Machine$double.eps) {
+         s2w <- 0
+      } else {
+         s2w <- as.vector(RSS / (k - p))
+      }
+   }
+
+   if (test == "adhoc")
+      s2w[s2w < 1] <- 1
+
+   vb <- s2w * vb
 
    ### QM calculation
 
    QM <- try(as.vector(t(beta)[btt] %*% chol2inv(chol(vb[btt,btt])) %*% beta[btt]), silent=TRUE)
 
    if (inherits(QM, "try-error"))
-      QM <- NA
+      QM <- NA_real_
 
    ### abbreviate some types of coefficient names
 
@@ -2109,11 +2185,11 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
    if (is.element(test, c("knha","adhoc","t"))) {
       QM   <- QM / m
       QMdf <- c(m, min(ddf[btt]))
-      QMp  <- if (QMdf[2] > 0) pf(QM, df1=QMdf[1], df2=QMdf[2], lower.tail=FALSE) else NA
-      pval <- sapply(seq_along(ddf), function(j) if (ddf[j] > 0) 2*pt(abs(zval[j]), df=ddf[j], lower.tail=FALSE) else NA)
-      crit <- sapply(seq_along(ddf), function(j) if (ddf[j] > 0) qt(level/2, df=ddf[j], lower.tail=FALSE) else NA)
+      QMp  <- if (QMdf[2] > 0) pf(QM, df1=QMdf[1], df2=QMdf[2], lower.tail=FALSE) else NA_real_
+      pval <- sapply(seq_along(ddf), function(j) if (ddf[j] > 0) 2*pt(abs(zval[j]), df=ddf[j], lower.tail=FALSE) else NA_real_)
+      crit <- sapply(seq_along(ddf), function(j) if (ddf[j] > 0) qt(level/2, df=ddf[j], lower.tail=FALSE) else NA_real_)
    } else {
-      QMdf <- c(m, NA)
+      QMdf <- c(m, NA_integer_)
       QMp  <- pchisq(QM, df=QMdf[1], lower.tail=FALSE)
       pval <- 2*pnorm(abs(zval), lower.tail=FALSE)
       crit <- qnorm(level/2, lower.tail=FALSE)
@@ -2129,18 +2205,14 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
    if (verbose > 1)
       message(mstyle$message("Conducting heterogeneity test ..."))
 
-   QE.df <- k-p
+   QEdf <- k-p
 
-   if (QE.df > 0L) {
+   if (QEdf > 0L) {
 
-      if (!is.na(QE)) {
+      ### if V is not positive definite, FE model fit will fail; then QE is NA
+      ### otherwise compute the RSS (which is equal to the Q/QE-test statistic)
 
-         ### if V is not positive definite, FE model fit will fail; then QE is NA
-         ### otherwise compute the RSS (which is equal to the Q/QE-test statistic)
-
-         QEp <- pchisq(QE, df=QE.df, lower.tail=FALSE)
-
-      }
+      QEp <- pchisq(QE, df=QEdf, lower.tail=FALSE)
 
    } else {
 
@@ -2159,8 +2231,8 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
 
    ###### compute Hessian
 
-   hessian <- NA
-   vvc <- NA
+   hessian <- NA_real_
+   vvc <- NA_real_
 
    if (.isTRUE(cvvc) || cvvc %in% c("varcor","varcov","transf")) {
 
@@ -2183,7 +2255,7 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
             hessian <- try(numDeriv::hessian(func=.ll.rma.mv, x = c(sigma2, tau2, cov1, gamma2, cov2),
                method.args=con$hessianCtrl, reml=reml, Y=Y, M=V, A=NULL, X=X, k=k, pX=p,
                D.S=D.S, Z.G1=Z.G1, Z.G2=Z.G2, Z.H1=Z.H1, Z.H2=Z.H2, g.Dmat=g.Dmat, h.Dmat=h.Dmat,
-               sigma2.val=sigma2.val, tau2.val=tau2.val, rho.val=rho.val, gamma2.val=gamma2.val, phi.val=phi.val,
+               sigma2.val=sigma2.val, tau2.val=tau2.val, rho.val=rho.val, gamma2.val=gamma2.val, phi.val=phi.val, beta.val=beta.val,
                sigma2s=sigma2s, tau2s=tau2s, rhos=rhos, gamma2s=gamma2s, phis=phis,
                withS=withS, withG=withG, withH=withH, struct=struct,
                g.levels.r=g.levels.r, h.levels.r=h.levels.r, g.values=g.values, h.values=h.values,
@@ -2193,7 +2265,7 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
             hessian <- try(pracma::hessian(f=.ll.rma.mv, x0 = c(sigma2, tau2, cov1, gamma2, cov2),
                reml=reml, Y=Y, M=V, A=NULL, X=X, k=k, pX=p,
                D.S=D.S, Z.G1=Z.G1, Z.G2=Z.G2, Z.H1=Z.H1, Z.H2=Z.H2, g.Dmat=g.Dmat, h.Dmat=h.Dmat,
-               sigma2.val=sigma2.val, tau2.val=tau2.val, rho.val=rho.val, gamma2.val=gamma2.val, phi.val=phi.val,
+               sigma2.val=sigma2.val, tau2.val=tau2.val, rho.val=rho.val, gamma2.val=gamma2.val, phi.val=phi.val, beta.val=beta.val,
                sigma2s=sigma2s, tau2s=tau2s, rhos=rhos, gamma2s=gamma2s, phis=phis,
                withS=withS, withG=withG, withH=withH, struct=struct,
                g.levels.r=g.levels.r, h.levels.r=h.levels.r, g.values=g.values, h.values=h.values,
@@ -2208,7 +2280,7 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
             hessian <- try(numDeriv::hessian(func=.ll.rma.mv, x = if (cvvc=="transf") opt.res$par else c(sigma2, tau2, rho, gamma2, phi),
                method.args=con$hessianCtrl, reml=reml, Y=Y, M=V, A=NULL, X=X, k=k, pX=p,
                D.S=D.S, Z.G1=Z.G1, Z.G2=Z.G2, Z.H1=Z.H1, Z.H2=Z.H2, g.Dmat=g.Dmat, h.Dmat=h.Dmat,
-               sigma2.val=sigma2.val, tau2.val=tau2.val, rho.val=rho.val, gamma2.val=gamma2.val, phi.val=phi.val,
+               sigma2.val=sigma2.val, tau2.val=tau2.val, rho.val=rho.val, gamma2.val=gamma2.val, phi.val=phi.val, beta.val=beta.val,
                sigma2s=sigma2s, tau2s=tau2s, rhos=rhos, gamma2s=gamma2s, phis=phis,
                withS=withS, withG=withG, withH=withH, struct=struct,
                g.levels.r=g.levels.r, h.levels.r=h.levels.r, g.values=g.values, h.values=h.values,
@@ -2219,7 +2291,7 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
             hessian <- try(pracma::hessian(f=.ll.rma.mv, x0 = if (cvvc=="transf") opt.res$par else c(sigma2, tau2, rho, gamma2, phi),
                reml=reml, Y=Y, M=V, A=NULL, X=X, k=k, pX=p,
                D.S=D.S, Z.G1=Z.G1, Z.G2=Z.G2, Z.H1=Z.H1, Z.H2=Z.H2, g.Dmat=g.Dmat, h.Dmat=h.Dmat,
-               sigma2.val=sigma2.val, tau2.val=tau2.val, rho.val=rho.val, gamma2.val=gamma2.val, phi.val=phi.val,
+               sigma2.val=sigma2.val, tau2.val=tau2.val, rho.val=rho.val, gamma2.val=gamma2.val, phi.val=phi.val, beta.val=beta.val,
                sigma2s=sigma2s, tau2s=tau2s, rhos=rhos, gamma2s=gamma2s, phis=phis,
                withS=withS, withG=withG, withH=withH, struct=struct,
                g.levels.r=g.levels.r, h.levels.r=h.levels.r, g.values=g.values, h.values=h.values,
@@ -2235,7 +2307,7 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
       if (inherits(hessian, "try-error")) {
 
          warning(mstyle$warning("Error when trying to compute the Hessian."), call.=FALSE)
-         hessian <- NA
+         hessian <- NA_real_
 
       } else {
 
@@ -2290,12 +2362,12 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
          if (!withS && withG && !withH)
             hessian <- hessian[2:(nrow(hessian)-2),2:(ncol(hessian)-2), drop=FALSE]
          if (!withS && !withG && !withH)
-            hessian <- NA
+            hessian <- NA_real_
 
          ### reorder hessian when vccov into the order of the lower triangular elements of G/H
 
          if (cvvc == "varcov" && withG) {
-            posG <- matrix(NA, nrow=tau2s, ncol=tau2s)
+            posG <- matrix(NA_real_, nrow=tau2s, ncol=tau2s)
             diag(posG) <- 1:tau2s
             posG[lower.tri(posG)] <- (tau2s+1):(tau2s*(tau2s+1)/2)
             posG <- posG[lower.tri(posG, diag=TRUE)]
@@ -2305,7 +2377,7 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
                pos <- posG
             }
             if (withH) {
-               posH <- matrix(NA, nrow=gamma2s, ncol=gamma2s)
+               posH <- matrix(NA_real_, nrow=gamma2s, ncol=gamma2s)
                diag(posH) <- 1:gamma2s
                posH[lower.tri(posH)] <- (gamma2s+1):(gamma2s*(gamma2s+1)/2)
                posH <- posH[lower.tri(posH, diag=TRUE)]
@@ -2325,7 +2397,7 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
 
          if (inherits(vvc, "try-error") || anyNA(vvc) || any(is.infinite(vvc))) {
             warning(mstyle$warning("Error when trying to invert Hessian."), call.=FALSE)
-            vvc <- NA
+            vvc <- NA_real_
          } else {
             dimnames(vvc) <- dimnames(hessian)
          }
@@ -2345,6 +2417,8 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
       message(mstyle$message("Computing fit statistics and log likelihood ..."))
 
    ### note: this only counts *estimated* variance components and correlations for the total number of parameters
+
+   p <- sum(beta.est)
 
    parms <- p + ifelse(withS, sum(ifelse(sigma2.fix,0,1)), 0) +
                 ifelse(withG, sum(ifelse(tau2.fix,0,1)), 0) +
@@ -2377,19 +2451,23 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
 
    #########################################################################
 
-   ### replace interaction() notation with : notation in s.names and g.names for nicer output
+   ### replace interaction() notation with : notation for nicer output
 
    replfun <- function(x) {
       if (grepl("interaction(", x, fixed=TRUE)) {
-         x <- gsub("^interaction\\(", "", x)
-         x <- gsub(", ", ":", x, fixed=TRUE)
-         x <- gsub("\\)$", "", x, fixed=FALSE)
+         #x <- gsub("^interaction\\(", "", x)
+         #x <- gsub(", ", ":", x, fixed=TRUE)
+         #x <- gsub("\\)$", "", x, fixed=FALSE)
+         #x <- gsub("(.*)interaction\\(\\s*(.*)\\s*,\\s*(.*)\\s*\\)(.*)", "\\1(\\2:\\3)\\4", x)
+         x <- gsub("interaction\\((.*),\\s*(.*)\\)", "(\\1:\\2)", x)
+         x <- gsub("^\\((.*)\\)$", "\\1", x) # if a name is "(...)", then can remove the ()
       }
       return(x)
    }
 
    s.names <- sapply(s.names, replfun)
    g.names <- sapply(g.names, replfun)
+   h.names <- sapply(h.names, replfun)
 
    ############################################################################
 
@@ -2407,13 +2485,13 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
 
       res <- list(b=beta, beta=beta, se=se, zval=zval, pval=pval, ci.lb=ci.lb, ci.ub=ci.ub, vb=vb,
                   sigma2=sigma2, tau2=tau2, rho=rho, gamma2=gamma2, phi=phi,
-                  QE=QE, QEp=QEp, QM=QM, QMdf=QMdf, QMp=QMp,
+                  QE=QE, QEdf=QEdf, QEp=QEp, QM=QM, QMdf=QMdf, QMp=QMp,
                   k=k, k.f=k.f, k.eff=k.eff, k.all=k.all, p=p, p.eff=p.eff, parms=parms,
                   int.only=int.only, int.incl=int.incl, intercept=intercept, allvipos=allvipos, coef.na=coef.na,
                   yi=yi, vi=vi, V=V, W=A, X=X, yi.f=yi.f, vi.f=vi.f, V.f=V.f, X.f=X.f, W.f=W.f, ni=ni, ni.f=ni.f, M=M, G=G, H=H, hessian=hessian, vvc=vvc,
                   ids=ids, not.na=not.na, subset=subset, slab=slab, slab.null=slab.null,
                   measure=measure, method=method, weighted=weighted,
-                  test=test, dfs=dfs, ddf=ddf, btt=btt, m=m,
+                  test=test, dfs=dfs, ddf=ddf, s2w=s2w, btt=btt, m=m,
                   digits=digits, level=level, sparse=sparse, dist=ddd$dist, control=control, verbose=verbose,
                   fit.stats=fit.stats,
                   vc.fix=vc.fix,
@@ -2439,7 +2517,7 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
       if (ddd$outlist == "minimal") {
          res <- list(b=beta, beta=beta, se=se, zval=zval, pval=pval, ci.lb=ci.lb, ci.ub=ci.ub, vb=vb,
                      sigma2=sigma2, tau2=tau2, rho=rho, gamma2=gamma2, phi=phi,
-                     QE=QE, QEp=QEp, QM=QM, QMdf=QMdf, QMp=QMp,
+                     QE=QE, QEdf=QEdf, QEp=QEp, QM=QM, QMdf=QMdf, QMp=QMp,
                      k=k, k.eff=k.eff, k.all=k.all, p=p, p.eff=p.eff, parms=parms,
                      int.only=int.only,
                      measure=measure, method=method,

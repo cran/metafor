@@ -32,22 +32,22 @@ print.regtest <- function(x, digits=x$digits, ret.fit=x$ret.fit, ...) {
    cat("\n")
 
    if (ret.fit) {
-      .space(FALSE)
       if (x$model == "lm") {
          print(summary(x$fit))
       } else {
+         .space(FALSE)
          print(x$fit)
+         .space(FALSE)
       }
-      .space(FALSE)
    } else {
       cat("\n")
    }
 
    cat(mstyle$text("Test for Funnel Plot Asymmetry: "))
    if (is.na(x$ddf)) {
-      cat(mstyle$result(paste0("z = ", .fcf(x$zval, digits[["test"]]), ", p ", .pval(x$pval, digits[["pval"]], showeq=TRUE, sep=" "))))
+      cat(mstyle$result(fmtt(x$zval, "z", pval=x$pval, pname="p", format=2, digits=digits, flag=ifelse(!is.null(x$est) && sign(x$zval)!=sign(x$est), " ", ""))))
    } else {
-      cat(mstyle$result(paste0("t = ", .fcf(x$zval, digits[["test"]]), ", df = ", round(x$ddf, 2), ", p ", .pval(x$pval, digits[["pval"]], showeq=TRUE, sep=" "))))
+      cat(mstyle$result(fmtt(x$zval, "t", df=x$ddf, pval=x$pval, pname="p", format=2, digits=digits, flag=ifelse(!is.null(x$est) && sign(x$zval)!=sign(x$est), " ", ""))))
    }
    cat("\n")
 
@@ -58,7 +58,7 @@ print.regtest <- function(x, digits=x$digits, ret.fit=x$ret.fit, ...) {
          cat(mstyle$text("Limit Estimate (as vi -> 0):    "))
       if (x$predictor %in% c("ninv", "sqrtninv"))
          cat(mstyle$text("Limit Estimate (as ni -> inf):  "))
-      cat(mstyle$result(paste0("b = ", .fcf(x$est, digits[["est"]]), " (CI: ", .fcf(x$ci.lb, digits[["est"]]), ", ", .fcf(x$ci.ub, digits[["est"]]), ")")))
+      cat(mstyle$result(paste0("b = ", fmtx(x$est, digits[["est"]], flag=ifelse(sign(x$zval)!=sign(x$est), " ", "")), " (CI: ", fmtx(x$ci.lb, digits[["est"]]), ", ", fmtx(x$ci.ub, digits[["est"]]), ")")))
       cat("\n")
    }
 

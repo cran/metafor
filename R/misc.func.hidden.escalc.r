@@ -2,7 +2,7 @@
 
 ### c(m) calculation function for bias correction of SMDs (mi = n1i + n2i - 2) or SMCC/SMCRs (mi = ni - 1)
 
-.cmicalc <- function(mi) {
+.cmicalc <- function(mi, correct=TRUE) {
 
    ### this can overflow if mi is 'large' (on my machine, if mi >= 344)
    #cmi <- gamma(mi/2)/(sqrt(mi/2)*gamma((mi-1)/2))
@@ -10,8 +10,12 @@
    #is.na <- is.na(cmi)
    #cmi[is.na] <- 1 - 3/(4*mi[is.na] - 1)
 
-   ### this avoids the problem with overflow altogether
-   cmi <- ifelse(mi <= 1, NA_real_, exp(lgamma(mi/2) - log(sqrt(mi/2)) - lgamma((mi-1)/2)))
+   if (correct) {
+      ### this avoids the problem with overflow altogether
+      cmi <- ifelse(mi <= 1, NA_real_, exp(lgamma(mi/2) - log(sqrt(mi/2)) - lgamma((mi-1)/2)))
+   } else {
+      cmi <- rep(1, length(mi))
+   }
    return(cmi)
 
 }
@@ -101,7 +105,7 @@
 
    ### cases where only one cell is equal to zero are handled further below
 
-   ### in all other cases, first optimize over rho with cut values set to sample values
+   ### in all other cases, first optimize over rho with cut values set to the sample values
    ### use suppressWarnings() to suppress "NA/Inf replaced by maximum positive value" warnings
    res <- try(suppressWarnings(optimize(fn, interval=c(-1,1), ai=ai, bi=bi, ci=ci, di=di, maxcor=maxcor, fixcut=TRUE)), silent=TRUE)
 
@@ -112,7 +116,7 @@
    }
 
    ### then use the value as the starting point and maximize over rho and the cut values
-   ### (Nelder-Mead seems to do fine here; using L-BFGS-B doesn't seems to improve on this)
+   ### (Nelder-Mead seems to do fine here; using L-BFGS-B doesn't seem to improve on this)
    res <- try(optim(par=c(res$minimum,qnorm((ai+bi)/ni),qnorm((ai+ci)/ni)), fn, ai=ai, bi=bi, ci=ci, di=di, maxcor=maxcor, fixcut=FALSE, hessian=TRUE), silent=TRUE)
    #res <- try(optim(par=c(res$minimum,qnorm((ai+bi)/ni),qnorm((ai+ci)/ni)), fn, method="L-BFGS-B", lower=c(-1,-Inf,-Inf), upper=c(1,Inf,Inf), ai=ai, bi=bi, ci=ci, di=di, maxcor=maxcor, fixcut=FALSE, hessian=TRUE), silent=TRUE)
 
@@ -296,5 +300,22 @@
 
 #integrate(function(x) .daraw(x, n=10, m=2, alpha=.8), lower=-Inf, upper=Inf)
 #integrate(function(x) x*.daraw(x, n=10, m=2, alpha=.8), lower=-Inf, upper=Inf)
+
+############################################################################
+
+### function to convert p-value to t-statistic (need this to catch NULL since
+### sign(NULL) and qt(NULL) throw errors)
+
+.convp2t <- function(pval, df) {
+
+   if (is.null(pval))
+      return(NULL)
+
+   df <- ifelse(df < 1, NA, df)
+   pval <- ifelse(abs(pval) > 1, NA, pval)
+
+   sign(pval) * qt(abs(pval)/2, df=df, lower.tail=FALSE)
+
+}
 
 ############################################################################

@@ -195,8 +195,8 @@ transf, atransf, targs, efac, col, border, lty, fonts, cex, ...) {
 
    } else {
 
-      pi.lb <- rep(NA, k)
-      pi.ub <- rep(NA, k)
+      pi.lb <- rep(NA_real_, k)
+      pi.ub <- rep(NA_real_, k)
 
    }
 
@@ -233,7 +233,7 @@ transf, atransf, targs, efac, col, border, lty, fonts, cex, ...) {
 
          rows.new <- rows
          rows.na  <- rows[!not.na]
-         for (j in seq_len(length(rows.na))) {
+         for (j in seq_along(rows.na)) {
             rows.new[rows <= rows.na[j]] <- rows.new[rows <= rows.na[j]] + 1
          }
          rows <- rows.new[not.na]
@@ -326,7 +326,7 @@ transf, atransf, targs, efac, col, border, lty, fonts, cex, ...) {
 
       }
 
-      annotext <- .fcf(annotext, digits)
+      annotext <- fmtx(annotext, digits[[1]])
       annotext <- sub("-", annosym[4], annotext, fixed=TRUE)
 
       if (is.null(width)) {

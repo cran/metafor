@@ -26,12 +26,15 @@ selmodel.rma.uni <- function(x, type, alternative="greater", prec, delta, steps,
    if (missing(type))
       stop(mstyle$stop("Must choose a specific selection model via the 'type' argument."))
 
-   type.options <- c("beta", "halfnorm", "negexp", "logistic", "power", "negexppow", "halfnorm2", "negexp2", "logistic2", "power2", "stepfun")
+   type.options <- c("beta", "halfnorm", "negexp", "logistic", "power", "negexppow", "halfnorm2", "negexp2", "logistic2", "power2", "stepfun", "trunc", "truncest")
 
    #type <- match.arg(type, type.options)
    type <- type.options[grep(type, type.options)[1]]
    if (is.na(type))
       stop(mstyle$stop("Unknown 'type' specified."))
+
+   if (is.element(type, c("trunc","truncest")) && alternative == "two.sided")
+      stop(mstyle$stop("Cannot use alternative='two-sided' with this type of selection model."))
 
    if (missing(control))
       control <- list()
@@ -65,13 +68,14 @@ selmodel.rma.uni <- function(x, type, alternative="greater", prec, delta, steps,
          if (x$tau2.fix) {
             tau2 <- x$tau2
          } else {
-            tau2 <- NA
+            tau2 <- NA_real_
          }
       }
 
    } else {
 
       tau2 <- ddd$tau2
+
       if (!is.na(tau2))
          x$tau2.fix <- TRUE
 
@@ -80,14 +84,14 @@ selmodel.rma.uni <- function(x, type, alternative="greater", prec, delta, steps,
    ### handle 'beta' argument from ...
 
    if (is.null(ddd$beta)) {
-      beta <- rep(NA, x$p)
+      beta <- rep(NA_real_, x$p)
       betaspec <- FALSE
    } else {
       beta <- ddd$beta
       betaspec <- TRUE
    }
 
-   yi <- x$yi
+   yi <- c(x$yi)
    vi <- x$vi
    X  <- x$X
    p  <- x$p
@@ -95,7 +99,7 @@ selmodel.rma.uni <- function(x, type, alternative="greater", prec, delta, steps,
 
    ### set precision measure
 
-   if (!missing(prec) && !is.null(prec)) {
+    if (!missing(prec) && !is.null(prec)) {
 
       precspec <- TRUE
 
@@ -122,8 +126,8 @@ selmodel.rma.uni <- function(x, type, alternative="greater", prec, delta, steps,
 
    } else {
 
-      prec <- NULL
       precspec <- FALSE
+      prec <- NULL
       preci <- rep(1, k)
 
    }
@@ -132,14 +136,14 @@ selmodel.rma.uni <- function(x, type, alternative="greater", prec, delta, steps,
 
    ### compute p-values
 
-   pvals <- .selmodel.pval(yi=c(yi), vi=vi, alternative=alternative)
+   pvals <- .selmodel.pval(yi=yi, vi=vi, alternative=alternative)
 
    ### checks on steps argument
 
    if (missing(steps) || (length(steps) == 1L && is.na(steps))) {
 
       stepsspec <- FALSE
-      steps <- NA
+      steps <- NA_real_
 
    } else {
 
@@ -148,14 +152,28 @@ selmodel.rma.uni <- function(x, type, alternative="greater", prec, delta, steps,
       if (anyNA(steps))
          stop(mstyle$stop("No missing values allowed in 'steps' argument."))
 
-      if (any(steps < 0 | steps > 1))
+      if (type != "trunc" && any(steps < 0 | steps > 1))
          stop(mstyle$stop("Value(s) specified for 'steps' argument must be between 0 and 1."))
 
       steps <- unique(sort(steps))
 
-      if (steps[length(steps)] != 1)
+      if (type != "trunc" && steps[length(steps)] != 1)
          steps <- c(steps, 1)
 
+   }
+
+   if (type == "trunc" && !stepsspec) {
+      stepsspec <- TRUE
+      #if (alternative == "greater")
+      #   steps <- min(yi)
+      #if (alternative == "less")
+      #   steps <- max(yi)
+      steps <- 0
+   }
+
+   if (is.element(type, c("trunc","truncest")) && verbose > 2) {
+      warning(mstyle$warning("Cannot use 'verbose > 2' for this type of selection model (setting verbose=2)."), call.=FALSE)
+      verbose <- 2
    }
 
    ############################################################################
@@ -193,7 +211,7 @@ selmodel.rma.uni <- function(x, type, alternative="greater", prec, delta, steps,
 
    verbose <- con$verbose
 
-   optimizer <- match.arg(con$optimizer, c("optim","nlminb","uobyqa","newuoa","bobyqa","nloptr","nlm","hjk","nmk","mads","ucminf","lbfgsb3c","subplex","BBoptim","optimParallel","Nelder-Mead","BFGS","CG","L-BFGS-B","SANN","Brent"))
+   optimizer <- match.arg(con$optimizer, c("optim","nlminb","uobyqa","newuoa","bobyqa","nloptr","nlm","hjk","nmk","mads","ucminf","lbfgsb3c","subplex","BBoptim","optimParallel","Nelder-Mead","BFGS","CG","L-BFGS-B","SANN","Brent","Rcgmin","Rvmmin"))
    optmethod <- match.arg(con$optmethod, c("Nelder-Mead","BFGS","CG","L-BFGS-B","SANN","Brent"))
    if (optimizer %in% c("Nelder-Mead","BFGS","CG","L-BFGS-B","SANN","Brent")) {
       optmethod <- optimizer
@@ -268,7 +286,7 @@ selmodel.rma.uni <- function(x, type, alternative="greater", prec, delta, steps,
    if (!x$int.only && x$int.incl && con$scaleX) {
       imX <- try(suppressWarnings(solve(mX)), silent=TRUE)
       if (inherits(imX, "try-error"))
-         stop(mstyle$stop("Unable to rescale starting values for fixed effects."))
+         stop(mstyle$stop("Unable to rescale starting values for the fixed effects."))
       beta.init <- c(imX %*% cbind(beta.init))
    }
 
@@ -304,6 +322,9 @@ selmodel.rma.uni <- function(x, type, alternative="greater", prec, delta, steps,
 
       if (stepsspec)
          warning(mstyle$warning("Argument 'steps' ignored (not applicable to this type of selection model)."), call.=FALSE)
+
+      stepsspec <- FALSE
+      steps <- NA_real_
 
       if (precspec)
          warning(mstyle$warning("Argument 'prec' ignored (not applicable to this type of selection model)."), call.=FALSE)
@@ -462,7 +483,7 @@ selmodel.rma.uni <- function(x, type, alternative="greater", prec, delta, steps,
       delta.min <- rep(0, deltas)
       delta.max <- rep(100, deltas)
       H0.delta <- rep(1, deltas)
-      delta.LRT <- rep(TRUE, deltas) # note: delta[1] should actually not be included, but this gets constrained to 1 below anyway
+      delta.LRT <- rep(TRUE, deltas) # note: delta[1] should actually not be included in the LRT, but gets constrained to 1 below anyway
       pval.min <- 0
       if (type == "stepfun") {
          wi.fun <- function(x, delta, yi, vi, preci, alternative, steps)
@@ -472,12 +493,85 @@ selmodel.rma.uni <- function(x, type, alternative="greater", prec, delta, steps,
 
    }
 
+   if (type == "trunc") {
+
+      if (length(steps) != 1L) # steps should be a single value
+         stop(mstyle$stop("Can only specify a single value for the 'steps' argument for this type of selection model."))
+
+      if (precspec)
+         warning(mstyle$warning("Argument 'prec' ignored (not applicable to this type of selection model)."), call.=FALSE)
+
+      deltas <- 1L
+      delta.transf.fun <- "exp"
+      delta.transf.fun.inv <- "log"
+      delta.lb <- 0
+      delta.ub <- Inf
+      delta.lb.excl <- FALSE
+      delta.ub.excl <- FALSE
+      delta.init <- 1
+      delta.min <- 0
+      delta.max <- 100
+      H0.delta <- 1
+      delta.LRT <- TRUE
+      pval.min <- 0
+      wi.fun <- function(x, delta, yi, vi, preci, alternative, steps) {
+         if (alternative == "less") {
+            yival <- qnorm(x, sd=sqrt(vi), lower.tail=TRUE)
+            ifelse(yival < steps[1], 1, delta)
+         } else {
+            yival <- qnorm(x, sd=sqrt(vi), lower.tail=FALSE)
+            ifelse(yival > steps[1], 1, delta)
+         }
+      }
+      #.selmodel.ll <- ".selmodel.ll.cont"
+      .selmodel.ll <- ".selmodel.ll.trunc"
+
+   }
+
+   if (type == "truncest") {
+
+      if (stepsspec)
+         warning(mstyle$warning("Argument 'steps' ignored (not applicable to this type of selection model)."), call.=FALSE)
+
+      stepsspec <- FALSE
+      steps <- NA_real_
+
+      if (precspec)
+         warning(mstyle$warning("Argument 'prec' ignored (not applicable to this type of selection model)."), call.=FALSE)
+
+      deltas <- 2L
+      delta.transf.fun <- c("exp", "I")
+      delta.transf.fun.inv <- c("log", "I")
+      delta.lb <- c(0, -Inf)
+      delta.ub <- c(Inf, Inf)
+      delta.lb.excl <- c(FALSE, FALSE)
+      delta.ub.excl <- c(FALSE, FALSE)
+      delta.init <- c(1, mean(yi))
+      delta.min <- c(0,   ifelse(alternative=="greater", min(yi)-sd(yi), min(yi)))
+      delta.max <- c(100, ifelse(alternative=="greater", max(yi), max(yi)+sd(yi)))
+      H0.delta <- c(1, 0)
+      delta.LRT <- c(TRUE, FALSE)
+      pval.min <- 0
+      wi.fun <- function(x, delta, yi, vi, preci, alternative, steps) {
+         if (alternative == "less") {
+            yival <- qnorm(x, sd=sqrt(vi), lower.tail=TRUE)
+            ifelse(yival < delta[2], 1, delta[1])
+         } else {
+            yival <- qnorm(x, sd=sqrt(vi), lower.tail=FALSE)
+            ifelse(yival > delta[2], 1, delta[1])
+         }
+      }
+      #.selmodel.ll <- ".selmodel.ll.cont"
+      .selmodel.ll <- ".selmodel.ll.trunc"
+
+   }
+
    ############################################################################
 
    ### checks on delta, delta.init, delta.min, delta.max
 
    if (missing(delta)) {
-      delta <- rep(NA, deltas)
+      delta <- rep(NA_real_, deltas)
    } else {
       if (length(delta) == 1L)
          delta <- rep(delta, deltas)
@@ -589,6 +683,7 @@ selmodel.rma.uni <- function(x, type, alternative="greater", prec, delta, steps,
          mapfun <- ddd$mapfun
       }
    }
+
    if (is.null(ddd$mapinvfun)) {
       mapinvfun <- rep(NA, deltas)
    } else {
@@ -597,6 +692,11 @@ selmodel.rma.uni <- function(x, type, alternative="greater", prec, delta, steps,
       } else {
          mapinvfun <- ddd$mapinvfun
       }
+   }
+
+   if (type == "truncest") {
+      mapfun[2] <- "I"
+      mapinvfun[2] <- "I"
    }
 
    delta.init <- mapply(.mapinvfun, delta.init, delta.min, delta.max, mapinvfun)
@@ -612,7 +712,7 @@ selmodel.rma.uni <- function(x, type, alternative="greater", prec, delta, steps,
    pvals[pvals < pval.min]     <- pval.min
    pvals[pvals > (1-pval.min)] <- 1-pval.min
 
-   if (stepsspec) {
+   if (type != "trunc" && stepsspec) {
 
       pgrp     <- sapply(pvals, function(p) which(p <= steps)[1])
       psteps.l <- as.character(c(0,steps[-length(steps)]))
@@ -695,7 +795,7 @@ selmodel.rma.uni <- function(x, type, alternative="greater", prec, delta, steps,
       deltas=deltas, delta.val=delta, delta.transf=TRUE, mapfun=mapfun, delta.min=delta.min, delta.max=delta.max,
       tau2.val=tau2, tau2.transf=TRUE, tau2.max=tau2.max, beta.val=beta,
       wi.fun=wi.fun, steps=steps, pgrp=pgrp,
-      alternative=alternative, pval.min=pval.min, intCtrl=intCtrl, verbose=verbose, digits=digits", ctrl.arg, ")\n", sep="")
+      alternative=alternative, pval.min=pval.min, intCtrl=intCtrl, verbose=verbose, digits=digits, dofit=FALSE", ctrl.arg, ")\n", sep="")
 
    #return(optcall)
 
@@ -750,9 +850,9 @@ selmodel.rma.uni <- function(x, type, alternative="greater", prec, delta, steps,
 
    ### computing (inverse) Hessian
 
-   H        <- NA
+   H        <- NA_real_
    vb       <- matrix(NA_real_, nrow=p, ncol=p)
-   se.tau2  <- NA
+   se.tau2  <- NA_real_
    vd       <- matrix(NA_real_, nrow=deltas, ncol=deltas)
 
    if (con$beta.fix) {
@@ -880,7 +980,7 @@ selmodel.rma.uni <- function(x, type, alternative="greater", prec, delta, steps,
    QM <- try(as.vector(t(beta)[x$btt] %*% chol2inv(chol(vb[x$btt,x$btt])) %*% beta[x$btt]), silent=TRUE)
 
    if (inherits(QM, "try-error"))
-      QM <- NA
+      QM <- NA_real_
 
    QMp <- pchisq(QM, df=x$m, lower.tail=FALSE)
 
@@ -929,7 +1029,7 @@ selmodel.rma.uni <- function(x, type, alternative="greater", prec, delta, steps,
    if (con$htransf) {
       ci.lb.tau2 <- exp(tau2.transf - crit * se.tau2)
       ci.ub.tau2 <- exp(tau2.transf + crit * se.tau2)
-      se.tau2 <- NA
+      se.tau2 <- NA_real_
    } else {
       ci.lb.tau2 <- tau2 - crit * se.tau2
       ci.ub.tau2 <- tau2 + crit * se.tau2
@@ -941,8 +1041,8 @@ selmodel.rma.uni <- function(x, type, alternative="greater", prec, delta, steps,
 
    ### LRT for H0: tau^2 = 0 (only when NOT fitting a FE model)
 
-   LRT.tau2  <- NA
-   LRTp.tau2 <- NA
+   LRT.tau2  <- NA_real_
+   LRTp.tau2 <- NA_real_
 
    if (!x$tau2.fix && !is.element(x$method, c("FE","EE","CE")) && !isTRUE(ddd$skiphet)) {
 
@@ -1014,7 +1114,7 @@ selmodel.rma.uni <- function(x, type, alternative="greater", prec, delta, steps,
    BIC.ML  <- -2 * ll.ML +   parms * log(k)
    AICc.ML <- -2 * ll.ML + 2*parms * max(k, parms+2) / (max(k, parms+2) - parms - 1)
 
-   fit.stats <- matrix(c(ll.ML, dev.ML, AIC.ML, BIC.ML, AICc.ML, ll.REML=NA, dev.REML=NA, AIC.REML=NA, BIC.REML=NA, AICc.REML=NA), ncol=2, byrow=FALSE)
+   fit.stats <- matrix(c(ll.ML, dev.ML, AIC.ML, BIC.ML, AICc.ML, ll.REML=NA_real_, dev.REML=NA_real_, AIC.REML=NA_real_, BIC.REML=NA_real_, AICc.REML=NA_real_), ncol=2, byrow=FALSE)
    dimnames(fit.stats) <- list(c("ll","dev","AIC","BIC","AICc"), c("ML","REML"))
    fit.stats <- data.frame(fit.stats)
 
@@ -1042,12 +1142,12 @@ selmodel.rma.uni <- function(x, type, alternative="greater", prec, delta, steps,
    res$ci.lb.tau2 <- ci.lb.tau2
    res$ci.ub.tau2 <- ci.ub.tau2
 
-   res$dfs <- res$ddf <- NA
+   res$dfs <- res$ddf <- NA_integer_
    res$test <- "z"
    res$s2w  <- 1
 
-   res$QE <- res$QEp <- NA
-   res$I2 <- res$H2 <- res$vt <- NA
+   res$QE <- res$QEp <- NA_real_
+   res$I2 <- res$H2 <- res$vt <- NA_real_
    res$R2 <- NULL
 
    res$QM  <- QM

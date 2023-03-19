@@ -4,16 +4,19 @@
 \alias{permutest.rma.ls}
 \title{Permutation Tests for 'rma.uni' Objects}
 \description{
-   The function carries out permutation tests for objects of class \code{"rma.uni"}. \loadmathjax
+   The function carries out permutation tests for objects of class \code{"rma.uni"} and \code{"rma.ls"}. \loadmathjax
 }
 \usage{
 permutest(x, \dots)
 
 \method{permutest}{rma.uni}(x, exact=FALSE, iter=1000, permci=FALSE,
           progbar=TRUE, digits, control, \dots)
+
+\method{permutest}{rma.ls}(x, exact=FALSE, iter=1000,
+          progbar=TRUE, digits, control, \dots)
 }
 \arguments{
-   \item{x}{an object of class \code{"rma.uni"}.}
+   \item{x}{an object of class \code{"rma.uni"} or \code{"rma.ls"}.}
    \item{exact}{logical to specify whether an exact permutation test should be carried out (the default is \code{FALSE}). See \sQuote{Details}.}
    \item{iter}{integer to specify the number of iterations for the permutation test when not doing an exact test (the default is \code{1000}).}
    \item{permci}{logical to specify whether permutation-based confidence intervals (CIs) should also be constructed (the default is \code{FALSE}). Can also be a vector of indices to specify for which coefficients a permutation-based CI should be obtained.}
@@ -36,6 +39,8 @@ permutest(x, \dots)
       Therefore, going through all possible permutations may become infeasible. Instead of using an exact permutation test, one can set \code{exact=FALSE} (which is also the default). In that case, the function approximates the exact permutation-based p-value(s) by going through a smaller number (as specified by the \code{iter} argument) of \emph{random} permutations. Therefore, running the function twice on the same data can yield (slightly) different p-values. Setting \code{iter} sufficiently large ensures that the results become stable. For full reproducibility, one can also set the seed of the random number generator before running the function (see \sQuote{Examples}). Note that if \code{exact=FALSE} and \code{iter} is actually larger than the number of iterations required for an exact permutation test, then an exact test will automatically be carried out.
 
       For models with moderators, the exact permutation test actually only requires fitting the model to each \emph{unique} permutation of the model matrix. The number of unique permutations will be smaller than \mjseqn{k!} when the model matrix contains recurring rows. This may be the case when only including categorical moderators (i.e., factors) in the model or when any quantitative moderators included in the model can only take on a small number of unique values. When \code{exact=TRUE}, the function therefore uses an algorithm to restrict the test to only the unique permutations of the model matrix, which may make the use of the exact test feasible even when \mjseqn{k} is large.
+
+      One can also set \code{exact="i"} in which case the function just returns the number of iterations required for an exact permutation test.
 
       When using random permutations, the function ensures that the very first permutation will always correspond to the original data. This avoids p-values equal to 0.
 
@@ -74,7 +79,7 @@ permutest(x, \dots)
 
    Determining whether a test statistic under the permuted data is as extreme or more extreme than under the actually observed data requires making \code{>=} or \code{<=} comparisons. To avoid problems due to the finite precision with which computers generally represent numbers (see \href{https://cran.r-project.org/doc/FAQ/R-FAQ.html#Why-doesn_0027t-R-think-these-numbers-are-equal_003f}{this} FAQ for details), the function uses a numerical tolerance (\code{control} argument \code{comptol}, which is set equal to \code{.Machine$double.eps^0.5} by default) when making such comparisons (e.g., instead of \code{sqrt(3)^2 >= 3}, which may evaluate to \code{FALSE}, we use \code{sqrt(3)^2 >= 3 - .Machine$double.eps^0.5}, which should evaluate to \code{TRUE}).
 
-   When obtaining permutation-based CIs, the function makes use of \code{\link{uniroot}}. By default, the desired accuracy is set equal to \code{.Machine$double.eps^0.25} and the maximum number of iterations to \code{100}. The desired accuracy and the maximum number of iterations can be adjusted with the \code{control} argument (i.e., \code{control=list(tol=value, maxiter=value)}). Also, the interval searched for the CI bounds may be too narrow, leading to \code{NA} for a bound. In this case, one can try setting \code{control=list(distfac=value)} with a value larger than 1 to extend the interval (the value indicating a multiplicative factor by which to extend the width of the interval searched) or \code{control=list(extendInt="yes")} to allow \code{\link{uniroot}} to extend the interval dynamically.
+   When obtaining permutation-based CIs, the function makes use of \code{\link{uniroot}}. By default, the desired accuracy is set equal to \code{.Machine$double.eps^0.25} and the maximum number of iterations to \code{100}. The desired accuracy and the maximum number of iterations can be adjusted with the \code{control} argument (i.e., \code{control=list(tol=value, maxiter=value)}). Also, the interval searched for the CI bounds may be too narrow, leading to \code{NA} for a bound. In this case, one can try setting \code{control=list(distfac=value)} with a value larger than 1 to extend the interval (the value indicating a multiplicative factor by which to extend the width of the interval searched) or \code{control=list(extendInt="yes")} to allow \code{\link{uniroot}} to extend the interval dynamically (in which case it can happen that a bound may try to drift towards \mjeqn{\pm \infty}{+-infinity}).
 }
 \author{
    Wolfgang Viechtbauer \email{wvb@metafor-project.org} \url{https://www.metafor-project.org}
@@ -89,6 +94,8 @@ permutest(x, \dots)
    Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \verb{https://doi.org/10.18637/jss.v036.i03}
 
    Viechtbauer, W., \enc{López-López}{Lopez-Lopez}, J. A., \enc{Sánchez-Meca}{Sanchez-Meca}, J., & \enc{Marín-Martínez}{Marin-Martinez}, F. (2015). A comparison of procedures to test for moderators in mixed-effects meta-regression models. \emph{Psychological Methods}, \bold{20}(3), 360--374. \verb{https://doi.org/10.1037/met0000023}
+
+   Viechtbauer, W., & \enc{López-López}{Lopez-Lopez}, J. A. (2022). Location-scale models for meta-analysis. \emph{Research Synthesis Methods}. \bold{13}(6), 697--715. \verb{https://doi.org/10.1002/jrsm.1562}
 }
 \seealso{
    \code{\link{rma.uni}} for the function to fit models for which permutation tests can be conducted.
@@ -114,6 +121,9 @@ permutest(res, exact=TRUE)
 res <- rma(yi, vi, mods = ~ ablat + year, data=dat)
 res
 
+# number of iterations required for an exact permutation test
+permutest(res, exact="i")
+
 ### permutation test (approximate only; exact not feasible)
 \dontrun{
 
@@ -128,7 +138,7 @@ permres
 ### blue curve: kernel density estimate of the permutation distribution
 ### note: the tail area under the permutation distribution is larger
 ### than under a standard normal density (hence, the larger p-value)
-plot(permres, beta=2, lwd=c(2,3,3,4), xlim=c(-5,5), ylim=c(0,.4))
+plot(permres, beta=2, lwd=c(2,3,3,4), xlim=c(-5,5))
 }
 }
 \keyword{models}
