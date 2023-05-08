@@ -12,7 +12,7 @@
        xlab, slab, ilab, ilab.xpos, ilab.pos,
        order, subset, transf, atransf, targs, rows,
        efac=1, pch, psize, plim=c(0.5,1.5), col,
-       lty, fonts, cex, cex.lab, cex.axis, \dots)
+       shade, colshade, lty, fonts, cex, cex.lab, cex.axis, \dots)
 }
 \arguments{
    \item{x}{vector of length \mjseqn{k} with the observed effect sizes or outcomes.}
@@ -26,17 +26,17 @@
    \item{xlim}{horizontal limits of the plot region. If unspecified, the function tries to set the horizontal plot limits to some sensible values.}
    \item{alim}{the x-axis limits. If unspecified, the function tries to set the x-axis limits to some sensible values.}
    \item{olim}{optional argument to specify observation/outcome limits. If unspecified, no limits are used.}
-   \item{ylim}{the y-axis limits of the plot. If unspecified, the function tries to set the y-axis limits to some sensible values.}
+   \item{ylim}{the y-axis limits of the plot. If unspecified, the function sets the y-axis limits to some sensible values.}
    \item{at}{position of the x-axis tick marks and corresponding labels. If unspecified, the function tries to set the tick mark positions/labels to some sensible values.}
    \item{steps}{the number of tick marks for the x-axis (the default is 5). Ignored when the positions are specified via the \code{at} argument.}
-   \item{level}{numeric value between 0 and 100 to specify the confidence interval level (the default is 95).}
+   \item{level}{numeric value between 0 and 100 to specify the confidence interval level (the default is 95; see \link[=misc-options]{here} for details).}
    \item{refline}{numeric value to specify the location of the vertical \sQuote{reference} line (the default is 0). The line can be suppressed by setting this argument to \code{NA}.}
    \item{digits}{integer to specify the number of decimal places to which the tick mark labels of the x-axis and the annotations should be rounded (the default is \code{2L}). Can also be a vector of two integers, the first to specify the number of decimal places for the annotations, the second for the x-axis labels (when \code{showweights=TRUE}, can also specify a third value for the weights). When specifying an integer (e.g., \code{2L}), trailing zeros after the decimal mark are dropped for the x-axis labels. When specifying a numeric value (e.g., \code{2}), trailing zeros are retained.}
    \item{width}{optional integer to manually adjust the width of the columns for the annotations (either a single integer or a vector of the same length as the number of annotation columns).}
-   \item{xlab}{title for the x-axis. If unspecified, the function tries to set an appropriate axis title.}
+   \item{xlab}{title for the x-axis. If unspecified, the function sets an appropriate axis title. Can also be a vector of three/two values (to also/only add labels at the end points of the x-axis limits).}
    \item{slab}{optional vector with labels for the \mjseqn{k} studies. If unspecified, the function tries to extract study labels from \code{x} and otherwise simple labels are created within the function. To suppress labels, set this argument to \code{NA}.}
    \item{ilab}{optional vector, matrix, or data frame providing additional information about the studies that should be added to the plot.}
-   \item{ilab.xpos}{numeric vector to specify the horizontal position(s) of the variable(s) given via \code{ilab} (must be specified if \code{ilab} is specified).}
+   \item{ilab.xpos}{numeric vector to specify the horizontal position(s) of the variable(s) given via \code{ilab}.}
    \item{ilab.pos}{integer(s) (either 1, 2, 3, or 4) to specify the alignment of the vector(s) given via \code{ilab} (2 means right, 4 mean left aligned). If unspecified, the default is to center the labels.}
    \item{order}{optional character string to specify how the studies should be ordered. Can also be a variable based on which the studies will be ordered. See \sQuote{Details}.}
    \item{subset}{optional (logical or numeric) vector to specify the subset of studies that should be included in the plot.}
@@ -48,9 +48,11 @@
    \item{pch}{plotting symbol to use for the observed outcomes. By default, a filled square is used. See \code{\link{points}} for other options. Can also be a vector of values.}
    \item{psize}{optional numeric value to specify the point sizes for the observed outcomes. If unspecified, the point sizes are a function of the precision of the estimates. Can also be a vector of values.}
    \item{plim}{numeric vector of length 2 to scale the point sizes (ignored when \code{psize} is specified). See \sQuote{Details}.}
-   \item{col}{optional character string to specify the color to use for plotting the observed outcomes (\code{"black"} is used by default if not specified). Can also be a vector.}
+   \item{col}{optional character string to specify the color of the observed outcomes. If unspecified, black is used by default. Can also be a vector.}
+   \item{shade}{optional character string or a (logical or numeric) vector for shading rows of the plot. See \sQuote{Details}.}
+   \item{colshade}{optional argument to specify the color for the shading. If unspecified, a light shade of gray is used.}
    \item{lty}{optional character string to specify the line type for the confidence intervals. If unspecified, the function sets this to \code{"solid"} by default.}
-   \item{fonts}{optional character string to specify the font to use for the study labels, annotations, and the extra information (if specified via \code{ilab}). If unspecified, the default font is used.}
+   \item{fonts}{optional character string to specify the font for the study labels, annotations, and the extra information (if specified via \code{ilab}). If unspecified, the default font is used.}
    \item{cex}{optional character and symbol expansion factor. If unspecified, the function tries to set this to a sensible value.}
    \item{cex.lab}{optional expansion factor for the x-axis title. If unspecified, the function tries to set this to a sensible value.}
    \item{cex.axis}{optional expansion factor for the x-axis labels. If unspecified, the function tries to set this to a sensible value.}
@@ -67,11 +69,13 @@
    \item \code{order="prec"}: the studies are ordered by their sampling variances.
    } Alternatively, it is also possible to set \code{order} equal to a variable based on which the studies will be ordered (see \sQuote{Examples}).
 
-   Additional columns with information about the studies can be added to the plot via the \code{ilab} argument. This can either be a single variable or an entire matrix / data frame (with as many rows as there are studies in the forest plot). The \code{ilab.xpos} argument must then also be specified to indicate the horizontal position of the variables specified via \code{ilab}.
+   Additional columns with information about the studies can be added to the plot via the \code{ilab} argument. This can either be a single variable or an entire matrix / data frame (with as many rows as there are studies in the forest plot). The \code{ilab.xpos} argument can then also be specified to indicate the horizontal position of the variables specified via \code{ilab}.
 
    Summary estimates can be added to the plot with the \code{\link{addpoly}} function. See the documentation for that function for examples.
 
    By default (i.e., when \code{psize} is not specified), the point sizes are a function of the precision (i.e., inverse standard errors) of the outcomes. This way, more precise estimates are visually more prominent in the plot. By making the point sizes a function of the inverse standard errors of the estimates, their areas are proportional to the inverse sampling variances, which corresponds to the weights they would receive in an equal-effects model. However, the point sizes are rescaled so that the smallest point size is \code{plim[1]} and the largest point size is \code{plim[2]}. As a result, their relative sizes (i.e., areas) no longer exactly correspond to their relative weights in such a model. If exactly relative point sizes are desired, one can set \code{plim[2]} to \code{NA}, in which case the points are rescaled so that the smallest point size corresponds to \code{plim[1]} and all other points are scaled accordingly. As a result, the largest point may be very large. Alternatively, one can set \code{plim[1]} to \code{NA}, in which case the points are rescaled so that the largest point size corresponds to \code{plim[2]} and all other points are scaled accordingly. As a result, the smallest point may be very small and essentially indistinguishable from the confidence interval line. To avoid the latter, one can also set \code{plim[3]}, which enforces a minimal point size.
+
+   With the \code{shade} argument, one can shade rows of the plot. The argument can be set to one of the following character strings: \code{"zebra"} (same as \code{shade=TRUE}) or \code{"zebra2"} to use zebra-style shading (starting either at the first or second study) or to \code{"all"} in which case all rows are shaded. Alternatively, the argument can be set to a logical vector to indicates for which studies the rows should be shaded. Finally, the argument can also be a numeric vector to indicate which rows to shade. The \code{colshade} argument can be used to set the color of shaded rows.
 }
 \section{Note}{
    The function tries to set some sensible values for the optional arguments, but it may be necessary to adjust these in certain circumstances.
@@ -79,8 +83,6 @@
    The function actually returns some information about the chosen values invisibly. Printing this information is useful as a starting point to make adjustments to the plot.
 
    If the number of studies is quite large, the labels, annotations, and symbols may become quite small and impossible to read. Stretching the plot window vertically may then provide a more readable figure (one should call the function again after adjusting the window size, so that the label/symbol sizes can be properly adjusted). Also, the \code{cex}, \code{cex.lab}, and \code{cex.axis} arguments are then useful to adjust the symbol and text sizes.
-
-   If the horizontal plot and/or x-axis limits are set manually, then the horizontal plot limits (\code{xlim}) must be at least as wide as the x-axis limits (\code{alim}). This restriction is enforced inside the function.
 
    If the outcome measure used for creating the plot is bounded (e.g., correlations are bounded between -1 and +1, proportions are bounded between 0 and 1), one can use the \code{olim} argument to enforce those limits (the observed outcomes and confidence intervals cannot exceed those bounds then).
 
@@ -110,29 +112,30 @@
 }
 \examples{
 ### calculate log risk ratios and corresponding sampling variances
-dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
+dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg,
+              data=dat.bcg, slab=paste(author, year, sep=", "))
 
 ### default forest plot of the observed log risk ratios
-forest(dat$yi, dat$vi)
+forest(dat$yi, dat$vi, header=TRUE)
 
 ### the with() function can be used to avoid having to retype dat$... over and over
-with(dat, forest(yi, vi))
+with(dat, forest(yi, vi, header=TRUE))
 
 ### forest plot of the observed risk ratios (transform outcomes)
-with(dat, forest(yi, vi, slab=paste(author, year, sep=", "), transf=exp,
-                 alim=c(0,2), steps=5, xlim=c(-2.5,4), refline=1, cex=.9, header=TRUE))
+with(dat, forest(yi, vi, transf=exp, alim=c(0,2), steps=5,
+                 xlim=c(-2.5,4), refline=1, cex=0.9, header=TRUE, top=2))
 
 ### forest plot of the observed risk ratios (transformed x-axis)
-with(dat, forest(yi, vi, slab=paste(author, year, sep=", "), atransf=exp,
-                 at=log(c(.05,.25,1,4,20)), xlim=c(-10,8), cex=.9, header=TRUE))
+with(dat, forest(yi, vi, atransf=exp, at=log(c(0.05,0.25,1,4,20)),
+                 xlim=c(-10,8), cex=0.9, header=TRUE, top=2))
 
 ### forest plot of the observed risk ratios with studies ordered by the RRs
-with(dat, forest(yi, vi, slab=paste(author, year, sep=", "), atransf=exp,
-                 at=log(c(.05,.25,1,4,20)), xlim=c(-10,8), cex=.9, header=TRUE, order="obs"))
+with(dat, forest(yi, vi, atransf=exp, at=log(c(0.05,0.25,1,4,20)),
+                 xlim=c(-10,8), cex=0.9, header=TRUE, top=2, order="obs"))
 
 ### forest plot of the observed risk ratios with studies ordered by absolute latitude
-with(dat, forest(yi, vi, slab=paste(author, year, sep=", "), atransf=exp,
-                 at=log(c(.05,.25,1,4,20)), xlim=c(-10,8), cex=.9, header=TRUE, order=ablat))
+with(dat, forest(yi, vi, atransf=exp, at=log(c(0.05,0.25,1,4,20)),
+                 xlim=c(-10,8), cex=0.9, header=TRUE, top=2, order=ablat))
 
 ### see also examples for the forest.rma function
 }

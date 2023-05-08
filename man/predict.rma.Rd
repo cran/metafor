@@ -22,7 +22,7 @@
    \item{addx}{logical to specify whether the values of the moderator variables should be added to the returned object. See \sQuote{Examples}.}
    \item{newscale}{optional vector or matrix to specify the values of the scale variables for which the predicted values should be calculated. Only relevant for location-scale models (see \code{\link{rma.uni}}). See \sQuote{Details}.}
    \item{addz}{logical to specify whether the values of the scale variables should be added to the returned object.}
-   \item{level}{numeric value between 0 and 100 to specify the confidence and prediction interval level. If unspecified, the default is to take the value from the object.}
+   \item{level}{numeric value between 0 and 100 to specify the confidence and prediction interval level (see \link[=misc-options]{here} for details). If unspecified, the default is to take the value from the object.}
    \item{digits}{optional integer to specify the number of decimal places to which the printed results should be rounded. If unspecified, the default is to take the value from the object.}
    \item{transf}{optional argument to specify a function to transform the predicted values and interval bounds (e.g., \code{transf=exp}; see also \link{transf}). If unspecified, no transformation is used.}
    \item{targs}{optional arguments needed by the function specified under \code{transf}.}
@@ -38,7 +38,7 @@
 
    For models including \mjseqn{p'} moderator variables, new moderator values (for \mjeqn{k_{new}}{k_new} hypothetical new studies) can be specified by setting \code{newmods} equal to a \mjeqn{k_{new} \times p'}{k_new x p'} matrix with the corresponding new moderator values. If the model object included an intercept, then it should not be explicitly specified under \code{newmods}, as it will be added by default (unless one sets \code{intercept=FALSE}). Also, any factors in the original model get turned into the appropriate contrast variables within the \code{rma} function, so that \code{newmods} should actually include the values for the contrast variables. Examples are shown below.
 
-   For random/mixed-effects models, an approximate prediction interval is also constructed (Riley et al., 2011). The interval estimates where \code{level} \% of the true effect sizes or outcomes fall in the hypothetical population of studies (and hence where the true effect or outcome of a new study from the population of studies should fall in \code{level} \% of the cases).
+   For random/mixed-effects models, a prediction interval is also computed (Riley et al., 2011). The interval estimates where \code{level} \% of the true effect sizes or outcomes fall in the hypothetical population of studies (and hence where the true effect or outcome of a new study from the population of studies should fall in \code{level} \% of the cases).
 
    For random-effects models that were fitted with the \code{\link{rma.mv}} function, the model may actually include multiple \mjseqn{\tau^2} values (i.e., when the \code{random} argument includes an \sQuote{\code{~ inner | outer}} term and \code{struct="HCS"}, \code{struct="DIAG"}, \code{struct="HAR"}, or \code{struct="UN"}). In that case, the function will provide prediction intervals for each level of the inner factor (since the prediction intervals differ depending on the \mjseqn{\tau^2} value). Alternatively, one can use the \code{tau2.levels} argument to specify for which level(s) the prediction interval should be provided. If the model includes a second \sQuote{\code{~ inner | outer}} term with multiple \mjseqn{\gamma^2} values, prediction intervals for each combination of levels of the inner factors will be provided. Alternatively, one can use the \code{tau2.levels} and \code{gamma2.levels} arguments to specify for which level combination(s) the prediction interval should be provided.
 
@@ -86,7 +86,7 @@
    Viechtbauer, W., & \enc{López-López}{Lopez-Lopez}, J. A. (2022). Location-scale models for meta-analysis. \emph{Research Synthesis Methods}. \bold{13}(6), 697--715. \verb{https://doi.org/10.1002/jrsm.1562}
 }
 \seealso{
-   \code{\link{fitted.rma}} for a function to extract the fitted values, \code{\link{blup.rma.uni}} for a function to compute BLUPs that combine the fitted values and predicted random effects, and \code{\link{addpoly.predict.rma}} to add polygons based on predicted values to a forest plot.
+   \code{\link[=fitted.rma]{fitted}} for a function to extract the fitted values, \code{\link[=blup.rma.uni]{blup}} for a function to compute BLUPs that combine the fitted values and predicted random effects, and \code{\link[=addpoly.predict.rma]{addpoly}} to add polygons based on predicted values to a forest plot.
 }
 \examples{
 ### calculate log risk ratios and corresponding sampling variances

@@ -17,7 +17,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
    if (missing(measure))
       stop(mstyle$stop("Must specify 'measure' argument."))
 
-   if (!is.element(measure, c("OR","RR","RD","IRR","PLO","PR","PLN","IRLN")))
+   if (!is.element(measure, c("OR","IRR","PLO","IRLN", "PR","RR","RD","PLN")))
       stop(mstyle$stop("Unknown 'measure' specified."))
 
    if (!is.element(method, c("FE","EE","CE","ML")))
@@ -50,7 +50,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
 
    ### check if user changed model for measures where this is not relevant; if so, issue a warning
 
-   if (is.element(measure, c("PLO","PR","PLN","IRLN")) && model != "UM.FS")
+   if (is.element(measure, c("PLO","PR","PLN","IRLN")) && !is.null(match.call()$model))
       warning(mstyle$warning("Argument 'model' not relevant for this outcome measure."), call.=FALSE)
 
    ### warning about experimental measures
@@ -76,7 +76,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
 
    ddd <- list(...)
 
-   .chkdots(ddd, c("tdist", "outlist", "onlyo1", "addyi", "addvi", "time", "retdat", "family", "retfit", "skiphet", "i2def"))
+   .chkdots(ddd, c("tdist", "outlist", "onlyo1", "addyi", "addvi", "time", "retdat", "family", "retfit", "skiphet", "i2def", "link"))
 
    ### handle 'tdist' argument from ... (note: overrides test argument)
 
@@ -115,6 +115,19 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
    if (verbose > 2) {
       opwarn <- options(warn=1)
       on.exit(options(warn=opwarn$warn), add=TRUE)
+   }
+
+   if (is.null(ddd$link)) {
+      if (measure=="OR" || measure=="PLO")
+         link <- "logit"
+      if (measure=="RR" || measure=="PLN")
+         link <- "log"
+      if (measure=="RD" || measure=="PR")
+         link <- "identity"
+      if (measure=="IRR" || measure=="IRLN")
+         link <- "log"
+   } else {
+      link <- ddd$link
    }
 
    #########################################################################
@@ -319,7 +332,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
       if (verbose > 1)
          message(mstyle$message("Subsetting ..."))
 
-      mods <- .getsubset(mods, subset, col=TRUE)
+      mods <- .getsubset(mods, subset)
       slab <- .getsubset(slab, subset)
       ids  <- .getsubset(ids,  subset)
 
@@ -388,7 +401,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
             di   <- di[not.na]
             mods <- mods[not.na,,drop=FALSE]
             k    <- length(ai)
-            warning(mstyle$warning("Studies with NAs omitted from model fitting."), call.=FALSE)
+            warning(mstyle$warning(paste(sum(has.na), ifelse(sum(has.na) > 1, "studies", "study"), "with NAs omitted from model fitting.")), call.=FALSE)
          }
 
          if (na.act == "na.fail")
@@ -415,7 +428,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
             t2i  <- t2i[not.na]
             mods <- mods[not.na,,drop=FALSE]
             k    <- length(x1i)
-            warning(mstyle$warning("Studies with NAs omitted from model fitting."), call.=FALSE)
+            warning(mstyle$warning(paste(sum(has.na), ifelse(sum(has.na) > 1, "studies", "study"), "with NAs omitted from model fitting.")), call.=FALSE)
          }
 
          if (na.act == "na.fail")
@@ -440,7 +453,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
             mi   <- mi[not.na]
             mods <- mods[not.na,,drop=FALSE]
             k    <- length(xi)
-            warning(mstyle$warning("Studies with NAs omitted from model fitting."), call.=FALSE)
+            warning(mstyle$warning(paste(sum(has.na), ifelse(sum(has.na) > 1, "studies", "study"), "with NAs omitted from model fitting.")), call.=FALSE)
          }
 
          if (na.act == "na.fail")
@@ -465,7 +478,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
             ti   <- ti[not.na]
             mods <- mods[not.na,,drop=FALSE]
             k    <- length(xi)
-            warning(mstyle$warning("Studies with NAs omitted from model fitting."), call.=FALSE)
+            warning(mstyle$warning(paste(sum(has.na), ifelse(sum(has.na) > 1, "studies", "study"), "with NAs omitted from model fitting.")), call.=FALSE)
          }
 
          if (na.act == "na.fail")
@@ -614,7 +627,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
 
    con <- list(verbose = FALSE,            # also passed on to glm/glmer/optim/nlminb/minqa (uobyqa/newuoa/bobyqa)
                package="lme4",             # package for fitting logistic mixed-effects models ("lme4", "GLMMadaptive", "glmmTMB")
-               optimizer = "nlminb",       # optimizer to use for CM.EL+OR ("optim","nlminb","uobyqa","newuoa","bobyqa","nloptr","nlm","hjk","nmk","mads","ucminf","lbfgsb3c","subplex","BBoptim","optimParallel","clogit","clogistic")
+               optimizer = "nlminb",       # optimizer to use for CM.EL+OR ("optim","nlminb","uobyqa","newuoa","bobyqa","nloptr","nlm","hjk","nmk","mads","ucminf","lbfgsb3c","subplex","BBoptim","optimParallel","clogit","clogistic","Rcgmin","Rvmmin")
                optmethod = "BFGS",         # argument 'method' for optim() ("Nelder-Mead" and "BFGS" are sensible options)
                parallel = list(),          # parallel argument for optimParallel() (note: 'cl' argument in parallel is not passed; this is directly specified via 'cl')
                cl = NULL,                  # arguments for optimParallel()
@@ -623,7 +636,8 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
                evtol = 1e-07,              # lower bound for eigenvalues to determine if model matrix is positive definite
                dnchgcalc = "dFNCHypergeo", # method for calculating dnchg ("dFNCHypergeo" from BiasedUrn package or "dnoncenhypergeom")
                dnchgprec = 1e-10,          # precision for dFNCHypergeo()
-               hesspack = "numDeriv")      # package for computing the Hessian (numDeriv or pracma)
+               hesspack = "numDeriv",      # package for computing the Hessian (numDeriv or pracma)
+               tau2tol = 1e-04)            # for "CM.EL" + "ML", threshold for treating tau^2 values as effectively equal to 0
 
    ### replace defaults with any user-defined values
 
@@ -854,7 +868,8 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
    #########################################################################
    #########################################################################
 
-   se.tau2 <- I2 <- H2 <- QE <- QEp <- NA_real_
+   se.tau2 <- ci.lb.tau2 <- ci.ub.tau2 <- I2 <- H2 <- QE <- QEp <- NA_real_
+   se.warn <- FALSE
 
    rho <- NA_real_
 
@@ -896,11 +911,12 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
                                                                      #                           ci   di   i       0       1       -1/2     NULL    0        0
             if (is.null(ddd$family)) {
                if (measure == "OR")
-                  dat.fam <- binomial
+                  dat.fam <- binomial(link=link)
                if (measure == "RR")
-                  dat.fam <- binomial(link=log)
+                  dat.fam <- binomial(link=link)
                if (measure == "RD")
-                  dat.fam <- eval(parse(text="binomial(link=\"identity\")"))
+                  #dat.fam <- eval(parse(text="binomial(link=\"identity\")"))
+                  dat.fam <- binomial(link=link)
             } else {
                dat.fam <- ddd$family
             }
@@ -911,7 +927,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
             dat.grp <- c(rbind(x1i,x2i))                             # grp-level outcome data    x1i  t1i  i       1       0       +1/2     t1i     1        x1i
                                                                      # log(ti) for offset        x2i  t2i  i       0       1       -1/2     t2i     0        0
             if (is.null(ddd$family)) {
-               dat.fam <- poisson
+               dat.fam <- poisson(link=link)
             } else {
                dat.fam <- ddd$family
             }
@@ -1509,7 +1525,11 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
                if (is.na(ll.QE)) {
                   ll.ML <- c(logLik(res.ML))
                } else {
-                  ll.ML <- ll.QE - 1/2 * deviance(res.ML) # this makes ll.ML comparable to ll.FE (same as ll.FE when tau^2=0)
+                  if (verbose) {
+                     ll.ML <- ll.QE - 1/2 * deviance(res.ML) # this makes ll.ML comparable to ll.FE (same as ll.FE when tau^2=0)
+                  } else {
+                     ll.ML <- ll.QE - 1/2 * suppressWarnings(deviance(res.ML)) # suppressWarnings() to suppress 'Warning in sqrt(object$devResid()) : NaNs produced'
+                  }
                }
             } else {
                ll.ML <- c(logLik(res.ML)) # not 100% sure how comparable this is to ll.FE when tau^2 = 0 (seems correct for glmmTMB)
@@ -1895,7 +1915,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
                h.C      <- hessian[-seq_len(p),seq_len(p),drop=FALSE]  # lower left part of hessian
                h.D      <- hessian[-seq_len(p),-seq_len(p),drop=FALSE] # lower right part of hessian (of which we need the inverse)
                chol.h.A <- try(chol(h.A), silent=!verbose)             # see if h.A can be inverted with chol()
-               if (inherits(chol.h.A, "try-error")) {
+               if (inherits(chol.h.A, "try-error") || anyNA(chol.h.A)) {
                   warning(mstyle$warning("Cannot invert Hessian for saturated model."), call.=FALSE)
                   QE.Wld <- NA_real_
                } else {
@@ -2078,10 +2098,15 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
             if (verbose > 1)
                message(mstyle$message("Computing Hessian ..."))
 
+            tau2eff0 <- exp(res.ML$par[p+1]) < con$tau2tol
+
+            if (tau2eff0)
+               method <- "T0"
+
             if (con$hesspack == "numDeriv")
-               h.ML <- numDeriv::hessian(.dnchg, x=res.ML$par, method.args=hessianCtrl, ai=ai, bi=bi, ci=ci, di=di, X.fit=X.fit, random=TRUE, verbose=verbose, digits=digits, dnchgcalc=con$dnchgcalc, dnchgprec=con$dnchgprec, intCtrl=intCtrl)
+               h.ML <- numDeriv::hessian(.dnchg, x=res.ML$par, method.args=hessianCtrl, ai=ai, bi=bi, ci=ci, di=di, X.fit=X.fit, random=!tau2eff0, verbose=verbose, digits=digits, dnchgcalc=con$dnchgcalc, dnchgprec=con$dnchgprec, intCtrl=intCtrl)
             if (con$hesspack == "pracma")
-               h.ML <- pracma::hessian(.dnchg, x0=res.ML$par, ai=ai, bi=bi, ci=ci, di=di, X.fit=X.fit, random=TRUE, verbose=verbose, digits=digits, dnchgcalc=con$dnchgcalc, dnchgprec=con$dnchgprec, intCtrl=intCtrl)
+               h.ML <- pracma::hessian(.dnchg, x0=res.ML$par, ai=ai, bi=bi, ci=ci, di=di, X.fit=X.fit, random=!tau2eff0, verbose=verbose, digits=digits, dnchgcalc=con$dnchgcalc, dnchgprec=con$dnchgprec, intCtrl=intCtrl)
             #return(list(res.ML, h.ML))
 
             ### log-likelihood
@@ -2100,16 +2125,18 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
          #return(list(res.FE, res.QE, res.ML, ll.FE=ll.FE, ll.QE=ll.QE, ll.ML=ll.ML))
          #res.FE <- res[[1]]; res.QE <- res[[2]]; res.ML <- res[[3]]
 
-         if (is.element(method, c("FE","EE","CE"))) {
+         if (is.element(method, c("FE","EE","CE","T0"))) {
 
             if (!is.element(optimizer, c("clogit","clogistic"))) {
                beta <- cbind(res.FE$par[seq_len(p)])
                chol.h <- try(chol(h.FE[seq_len(p),seq_len(p)]), silent=!verbose)    # see if Hessian can be inverted with chol()
-               if (inherits(chol.h, "try-error")) {
+               if (inherits(chol.h, "try-error") || anyNA(chol.h)) {
+                  if (anyNA(chol.h))
+                     stop(mstyle$stop(paste0("Cannot invert Hessian for the ", ifelse(method == "T0", "ML", method), " model.")))
                   warning(mstyle$warning("Choleski factorization of Hessian failed. Trying inversion via QR decomposition."), call.=FALSE)
                   vb <- try(qr.solve(h.FE[seq_len(p),seq_len(p)]), silent=!verbose) # see if Hessian can be inverted with qr.solve()
                   if (inherits(vb, "try-error"))
-                     stop(mstyle$stop(paste0("Cannot invert Hessian for the ", method, " model.")))
+                     stop(mstyle$stop(paste0("Cannot invert Hessian for the ", ifelse(method == "T0", "ML", method), " model.")))
                } else {
                   vb <- chol2inv(chol.h)
                }
@@ -2130,7 +2157,9 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
 
             beta <- cbind(res.ML$par[seq_len(p)])
             chol.h <- try(chol(h.ML), silent=!verbose)      # see if Hessian can be inverted with chol()
-            if (inherits(chol.h, "try-error")) {
+            if (inherits(chol.h, "try-error") || anyNA(chol.h)) {
+               if (anyNA(chol.h))
+                  stop(mstyle$stop("Cannot invert Hessian for the ML model."))
                warning(mstyle$warning("Choleski factorization of Hessian failed. Trying inversion via QR decomposition."), call.=FALSE)
                vb.f <- try(qr.solve(h.ML), silent=!verbose) # see if Hessian can be inverted with qr.solve()
                if (inherits(vb.f, "try-error"))
@@ -2148,9 +2177,14 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
             k.eff  <- k
             if (vb.f[p+1,p+1] >= 0) {
                se.tau2 <- sqrt(vb.f[p+1,p+1]) * tau2 # delta rule: vb[p+1,p+1] is the variance of log(tau2), so vb[p+1,p+1] * tau2^2 is the variance of exp(log(tau2))
-            } else {
-               se.tau2 <- NA_real_
+               crit <- qnorm(level/2, lower.tail=FALSE)
+               ci.lb.tau2 <- exp(res.ML$par[p+1] - crit * sqrt(vb.f[p+1,p+1]))
+               ci.ub.tau2 <- exp(res.ML$par[p+1] + crit * sqrt(vb.f[p+1,p+1]))
             }
+
+         }
+
+         if (is.element(method, c("ML","T0"))) {
 
             tmp <- try(rma.uni(measure="PETO", ai=ai, bi=bi, ci=ci, di=di, add=0, mods=X.fit, intercept=FALSE, skipr2=TRUE), silent=TRUE)
 
@@ -2158,11 +2192,24 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
                gvar1 <- det(vcov(tmp))
                gvar2 <- det(vb)
                ratio <- (gvar1 / gvar2)^(1/(2*m))
-               if (!is.na(ratio) && ratio >= 100)
+               if (!is.na(ratio) && ratio >= 100) {
                   warning(mstyle$warning("Standard errors of fixed effects appear to be unusually small. Treat results with caution."), call.=FALSE)
-               if (!is.na(ratio) && ratio <= 1/100)
+                  se.warn <- TRUE
+               }
+               if (!is.na(ratio) && ratio <= 1/100) {
                   warning(mstyle$warning("Standard errors of fixed effects appear to be unusually large. Treat results with caution."), call.=FALSE)
+                  se.warn <- TRUE
+               }
             }
+
+         }
+
+         if (method == "T0") {
+
+            tau2    <- exp(res.ML$par[p+1])
+            parms   <- p + 1
+            se.tau2 <- 0
+            method  <- "ML"
 
          }
 
@@ -2186,11 +2233,13 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
          dat.grp <- cbind(xi=xi,mi=mi)
          if (is.null(ddd$family)) {
             if (measure == "PLO")
-               dat.fam <- binomial
+               dat.fam <- binomial(link=link)
+               #dat.fam <- binomial(link="probit")
             if (measure == "PR")
-               dat.fam <- eval(parse(text="binomial(link=\"identity\")"))
+               #dat.fam <- eval(parse(text="binomial(link=\"identity\")"))
+               dat.fam <- binomial(link=link)
             if (measure == "PLN")
-               dat.fam <- binomial(link=log)
+               dat.fam <- binomial(link=link)
          } else {
             dat.fam <- ddd$family
          }
@@ -2200,7 +2249,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
       if (is.element(measure, c("IRLN"))) {
          dat.grp <- xi
          if (is.null(ddd$family)) {
-            dat.fam <- poisson
+            dat.fam <- poisson(link=link)
          } else {
             dat.fam <- ddd$family
          }
@@ -2392,7 +2441,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
 
             chol.h <- try(chol(vb2.QE), silent=!verbose) # see if Hessian can be inverted with chol()
 
-            if (inherits(chol.h, "try-error")) {
+            if (inherits(chol.h, "try-error") || anyNA(chol.h)) {
                warning(mstyle$warning("Cannot invert Hessian for saturated model."), call.=FALSE)
                QE.Wld <- NA_real_
             } else {
@@ -2457,7 +2506,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
 
    chol.h <- try(chol(vb[btt,btt]), silent=!verbose) # see if Hessian can be inverted with chol()
 
-   if (inherits(chol.h, "try-error")) {
+   if (inherits(chol.h, "try-error") || anyNA(chol.h)) {
       warning(mstyle$warning("Cannot invert Hessian for QM test."), call.=FALSE)
       QM <- NA_real_
    } else {
@@ -2559,7 +2608,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
       outdat <- list(ai=ai, bi=bi, ci=ci, di=di, x1i=x1i, x2i=x2i, t1i=t1i, t2i=t2i, xi=xi, mi=mi, ti=ti)
 
       res <- list(b=beta, beta=beta, se=se, zval=zval, pval=pval, ci.lb=ci.lb, ci.ub=ci.ub, vb=vb,
-                  tau2=tau2, se.tau2=se.tau2, sigma2=sigma2, rho=rho,
+                  tau2=tau2, se.tau2=se.tau2, sigma2=sigma2, rho=rho, ci.lb.tau2=ci.lb.tau2, ci.ub.tau2=ci.ub.tau2,
                   I2=I2, H2=H2, vt=vt,
                   QE.Wld=QE.Wld, QEp.Wld=QEp.Wld, QE.LRT=QE.LRT, QEp.LRT=QEp.LRT, QE.df=QE.df, QM=QM, QMdf=QMdf, QMp=QMp,
                   k=k, k.f=k.f, k.yi=k.yi, k.eff=k.eff, k.all=k.all, p=p, p.eff=p.eff, parms=parms,
@@ -2571,7 +2620,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
                   test=test, dfs=ddf, ddf=ddf, btt=btt, m=m,
                   digits=digits, level=level, control=control, verbose=verbose,
                   add=add, to=to, drop00=drop00,
-                  fit.stats=fit.stats,
+                  fit.stats=fit.stats, se.warn=se.warn,
                   formula.yi=NULL, formula.mods=formula.mods, version=packageVersion("metafor"), call=mf)
 
       if (is.null(ddd$outlist))

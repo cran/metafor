@@ -36,12 +36,12 @@ rma.glmm(ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi, ti, ni,
    \item{to}{character string to specify when the values under \code{add} should be added (either \code{"only0"}, \code{"all"}, \code{"if0all"}, or \code{"none"}). See below and the documentation of the \code{\link{escalc}} function for more details.}
    \item{drop00}{logical to specify whether studies with no cases/events (or only cases) in both groups should be dropped. See the documentation of the \code{\link{escalc}} function for more details.}
    \item{vtype}{character string to specify the type of sampling variances to calculate when calculating the observed effect sizes or outcomes. See the documentation of the \code{\link{escalc}} function for more details.}
-   \item{model}{character string to specify the general model type to use for the analysis. Either \code{"UM.FS"} (the default), \code{"UM.RS"}, \code{"CM.EL"}, or \code{"CM.AL"}. See \sQuote{Details}.}
+   \item{model}{character string to specify the general model type for the analysis. Either \code{"UM.FS"} (the default), \code{"UM.RS"}, \code{"CM.EL"}, or \code{"CM.AL"}. See \sQuote{Details}.}
    \item{method}{character string to specify whether an equal- or a random-effects model should be fitted. An equal-effects model is fitted when using \code{method="EE"}. A random-effects model is fitted by setting \code{method="ML"} (the default). See \sQuote{Details}.}
    \item{coding}{numeric scalar to indicate how the group variable should be coded in the random effects structure for random/mixed-effects models (the default is \code{1/2}). See \sQuote{Note}.}
    \item{cor}{logical to indicate whether the random study effects should be allowed to be correlated with the random group effects for random/mixed-effects models when \code{model="UM.RS"} (the default is \code{FALSE}). See \sQuote{Note}.}
    \item{test}{character string to specify how test statistics and confidence intervals for the fixed effects should be computed. By default (\code{test="z"}), Wald-type tests and CIs are obtained, which are based on a standard normal distribution. When \code{test="t"}, a t-distribution is used instead. See \sQuote{Details} and also \link[=misc-recs]{here} for some recommended practices.}
-   \item{level}{numeric value between 0 and 100 to specify the confidence interval level (the default is 95).}
+   \item{level}{numeric value between 0 and 100 to specify the confidence interval level (the default is 95; see \link[=misc-options]{here} for details).}
    \item{btt}{optional vector of indices to specify which coefficients to include in the omnibus test of moderators. Can also be a string to \code{\link{grep}} for. See \sQuote{Details}.}
    \item{nAGQ}{positive integer to specify the number of points per axis for evaluating the adaptive Gauss-Hermite approximation to the log-likelihood. The default is 7. Setting this to 1 corresponds to the Laplacian approximation. See \sQuote{Note}.}
    \item{verbose}{logical to specify whether output should be generated on the progress of the model fitting (the default is \code{FALSE}). Can also be an integer. Values > 1 generate more verbose output. See \sQuote{Note}.}
@@ -162,17 +162,17 @@ rma.glmm(ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi, ti, ni,
    The results of the fitted model are formatted and printed with the \code{\link[=print.rma.glmm]{print}} function. If fit statistics should also be given, use \code{\link[=summary.rma]{summary}} (or use the \code{\link[=fitstats.rma]{fitstats}} function to extract them).
 }
 \note{
-   When \code{measure="OR"} or \code{measure="IRR"}, \code{model="UM.FS"} or \code{model="UM.RS"}, and \code{method="ML"}, one has to choose a coding scheme for the group variable in the random effects structure. When \code{code=1/2} (the default), the two groups are coded with \code{+1/2} and \code{-1/2} (i.e., contrast coding), which is invariant under group label switching.
+   When \code{measure="OR"} or \code{measure="IRR"}, \code{model="UM.FS"} or \code{model="UM.RS"}, and \code{method="ML"}, one has to choose a coding scheme for the group variable in the random effects structure. When \code{coding=1/2} (the default), the two groups are coded with \code{+1/2} and \code{-1/2} (i.e., contrast coding), which is invariant under group label switching.
 
-   When \code{code=1}, the first group is coded with \code{1} and the second group with \code{0}. Finally, when \code{code=0}, the first group is coded with \code{0} and the second group with \code{1}. Note that these coding schemes are not invariant under group label switching.
+   When \code{coding=1}, the first group is coded with \code{1} and the second group with \code{0}. Finally, when \code{coding=0}, the first group is coded with \code{0} and the second group with \code{1}. Note that these coding schemes are not invariant under group label switching.
 
-   When \code{model="UM.RS"} and \code{method="ML"}, one has to decide whether the random study effects are allowed to be correlated with the random group effects. By default (i.e., when \code{cor=FALSE}), no such correlation is allowed (which is typically an appropriate assumption when \code{code=1/2}). When using a different coding scheme for the group variable (i.e., \code{code=1} or \code{code=0}), allowing the random study and group effects to be correlated (i.e., using \code{cor=TRUE}) is usually recommended.
+   When \code{model="UM.RS"} and \code{method="ML"}, one has to decide whether the random study effects are allowed to be correlated with the random group effects. By default (i.e., when \code{cor=FALSE}), no such correlation is allowed (which is typically an appropriate assumption when \code{coding=1/2}). When using a different coding scheme for the group variable (i.e., \code{coding=1} or \code{coding=0}), allowing the random study and group effects to be correlated (i.e., using \code{cor=TRUE}) is usually recommended.
 
    Fitting the various types of models requires several different iterative algorithms:
    \itemize{
    \item For \code{model="UM.FS"} and \code{model="CM.AL"}, iteratively reweighted least squares (IWLS) as implemented in the \code{\link{glm}} function is used for fitting the equal-effects and the saturated models. For \code{method="ML"}, adaptive Gauss-Hermite quadrature as implemented in the \code{\link[lme4]{glmer}} function is used. The same applies when \code{model="CM.EL"} is used in combination with \code{measure="IRR"} or when \code{measure="PLO"} or \code{measure="IRLN"} (regardless of the model type).
    \item For \code{model="UM.RS"}, adaptive Gauss-Hermite quadrature as implemented in the \code{\link[lme4]{glmer}} function is used to fit all of the models.
-   \item For \code{model="CM.EL"} and \code{measure="OR"}, the quasi-Newton method optimizer as implemented in the \code{\link{nlminb}} function is used by default for fitting the equal-effects and the saturated models. For \code{method="ML"}, the same algorithm is used, together with adaptive quadrature as implemented in the \code{\link{integrate}} function (for the integration over the density of the non-central hypergeometric distribution). Standard errors of the parameter estimates are obtained by inverting the Hessian, which is numerically approximated using the \code{\link[numDeriv]{hessian}} function from the \code{numDeriv} package.
+   \item For \code{model="CM.EL"} and \code{measure="OR"}, the quasi-Newton method optimizer as implemented in the \code{\link{nlminb}} function is used by default for fitting the equal-effects and the saturated models. For \code{method="ML"}, the same algorithm is used, together with adaptive quadrature as implemented in the \code{\link{integrate}} function (for the integration over the density of the non-central hypergeometric distribution). Standard errors of the parameter estimates are obtained by inverting the Hessian, which is numerically approximated using the \code{\link[numDeriv]{hessian}} function from the \code{numDeriv} package. One can also set \code{control=list(hesspack="pracma")} in which case the \code{\link[pracma]{hessian}} function from the \code{pracma} package is used instead for approximating the Hessian. When \mjseqn{\tau^2} is estimated to be smaller than \mjeqn{10^{-4}}{10^(-4)}, then \mjseqn{\tau^2} is effectively treated as zero for computing the standard errors (which helps to avoid numerical problems in approximating the Hessian). This cutoff can be adjusted via the \code{tau2tol} control argument (e.g., \code{control=list(tau2tol=0)} to switch off this behavior).
 
    One can also chose a different optimizer from \code{\link{optim}} via the \code{control} argument (e.g., \code{control=list(optimizer="BFGS")} or \code{control=list(optimizer="Nelder-Mead")}). Besides \code{\link{nlminb}} and one of the methods from \code{\link{optim}}, one can also choose one of the optimizers from the \code{minqa} package (i.e., \code{\link[minqa]{uobyqa}}, \code{\link[minqa]{newuoa}}, or \code{\link[minqa]{bobyqa}}), one of the (derivative-free) algorithms from the \code{\link[nloptr]{nloptr}} package, the Newton-type algorithm implemented in \code{\link{nlm}}, the various algorithms implemented in the \code{dfoptim} package (\code{\link[dfoptim]{hjk}} for the Hooke-Jeeves, \code{\link[dfoptim]{nmk}} for the Nelder-Mead, and \code{\link[dfoptim]{mads}} for the Mesh Adaptive Direct Searches algorithm), the quasi-Newton type optimizers \code{\link[ucminf]{ucminf}} and \code{\link[lbfgsb3c]{lbfgsb3c}} and the subspace-searching simplex algorithm \code{\link[subplex]{subplex}} from the packages of the same name, the Barzilai-Borwein gradient decent method implemented in \code{\link[BB]{BBoptim}}, the \code{\link[Rcgmin]{Rcgmin}} and \code{\link[Rvmmin]{Rvmmin}} optimizers, or the parallelized version of the L-BFGS-B algorithm implemented in \code{\link[optimParallel]{optimParallel}} from the package of the same name.
 
@@ -190,15 +190,17 @@ rma.glmm(ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi, ti, ni,
 
    Information on the progress of the various algorithms can be obtained by setting \code{verbose=TRUE}. Since fitting the various models can be computationally expensive, this option is useful to determine how the model fitting is progressing. One can also set \code{verbose} to an integer (\code{verbose=2} yields even more information and \code{verbose=3} also sets \code{option(warn=1)} temporarily).
 
-   For \code{model="CM.EL"} and \code{measure="OR"}, optimization involves repeated calculation of the density of the non-central hypergeometric distribution. When \code{method="ML"}, this also requires integration over the same density. This is currently implemented in a rather brute-force manner and may not be numerically stable, especially when models with moderators are fitted. Stability can be improved by scaling the moderators in a similar manner (i.e., don't use a moderator that is coded 0 and 1, while another uses values in the 1000s). For models with an intercept and moderators, the function actually rescales (non-dummy) variables to z-scores during the model fitting (results are given after back-scaling, so this should be transparent to the user). For models without an intercept, this is not done, so sensitivity analyses are highly recommended here (to ensure that the results do not depend on the scaling of the moderators).
+   For \code{model="CM.EL"} and \code{measure="OR"}, optimization involves repeated calculation of the density of the non-central hypergeometric distribution. When \code{method="ML"}, this also requires integration over the same density. This is currently implemented in a rather brute-force manner and may not be numerically stable, especially when models with moderators are fitted. Stability can be improved by scaling the moderators in a similar manner (i.e., don't use a moderator that is coded 0 and 1, while another uses values in the 1000s). For models with an intercept and moderators, the function actually rescales (non-dummy) variables to z-scores during the model fitting (results are given after back-scaling, so this should be transparent to the user). For models without an intercept, this is not done, so sensitivity analyses are highly recommended here (to ensure that the results do not depend on the scaling of the moderators). Also, if a warning is issued that the standard errors of the fixed effects are unusually small, one should try sensitivity analyses with different optimizers and/or adjusted settings for the \code{hessianCtrl} and \code{tau2tol} control arguments.
 
-   Finally, there is also (highly experimental!) support for the following measures:
+   Finally, there is also (experimental!) support for the following measures:
    \itemize{
    \item \code{measure="RR"} for log transformed risk ratios,
    \item \code{measure="RD"} for raw risk differences,
    \item \code{measure="PLN"} for log transformed proportions,
    \item \code{measure="PR"} for raw proportions,
-   } (the first two only for models \code{"UM.FS"} and \code{"UM.RS"}) by using log and identity links for the binomial models. However, model fitting with these measures is often going to lead to numerical problems.
+   } (the first two only for models \code{"UM.FS"} and \code{"UM.RS"}) by using log and identity links for the binomial models. However, model fitting with these measures will often lead to numerical problems.
+
+   Via the (undocumented) \code{link} argument, one can also directly adjust the link function that is used (by default, measures \code{"OR"} and \code{"PLO"} use a \code{"logit"} link, measures \code{"RR"} and \code{"PLN"} use a \code{"log"} link, measures \code{"RD"} and \code{"PR"} use an \code{"identity"} link, and measures \code{"IRR"} and \code{"IRLN"} use a \code{"log"} link). See \code{\link{family}} for alternative options. Changing these defaults is only recommended for users familiar with the consequences and the interpretation of the resulting estimates (when misused, the results could be meaningless).
 }
 \author{
    Wolfgang Viechtbauer \email{wvb@metafor-project.org} \url{https://www.metafor-project.org}
@@ -230,30 +232,67 @@ rma.glmm(ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi, ti, ni,
    \code{\link[metadat]{dat.nielweise2007}}, \code{\link[metadat]{dat.nielweise2008}}, \code{\link[metadat]{dat.collins1985a}}, and \code{\link[metadat]{dat.pritz1997}} for further examples of the use of the \code{rma.glmm} function.
 }
 \examples{
+############################################################################
+
 ### random-effects model using rma.uni() (standard RE model analysis)
 rma(measure="OR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg, method="ML")
 
-### random-effects models using rma.glmm() (require 'lme4' package)
+### random-effects models using rma.glmm() (requires 'lme4' package)
 
-### unconditional model with fixed study effects
 \dontrun{
+### unconditional model with fixed study effects (the default)
 rma.glmm(measure="OR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg, model="UM.FS")
-}
 
 ### unconditional model with random study effects
-\dontrun{
 rma.glmm(measure="OR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg, model="UM.RS")
-}
 
 ### conditional model with approximate likelihood
-\dontrun{
 rma.glmm(measure="OR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg, model="CM.AL")
-}
 
 ### conditional model with exact likelihood
 ### note: fitting this model may take a bit of time, so be patient
-\dontrun{
 rma.glmm(measure="OR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg, model="CM.EL")
 }
+
+############################################################################
+
+### try some alternative measures
+
+\dontrun{
+rma.glmm(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
+rma.glmm(measure="RD", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
+}
+
+############################################################################
+
+### meta-analysis of proportions
+
+\dontrun{
+dat <- dat.debruin2009
+
+### binomial-normal model (with logit link) = mixed-effects logistic model
+res <- rma.glmm(measure="PLO", xi=xi, ni=ni, data=dat)
+predict(res, transf=transf.ilogit)
+
+### binomial-normal model with measure="PLN" (uses a log link)
+res <- rma.glmm(measure="PLN", xi=xi, ni=ni, data=dat)
+predict(res, transf=exp)
+
+### binomial-normal model with measure="PR" (uses an identity link)
+res <- rma.glmm(measure="PR", xi=xi, ni=ni, data=dat)
+predict(res)
+
+### binomial-normal model (with probit link) = mixed-effects probit model
+res <- rma.glmm(measure="PLO", xi=xi, ni=ni, data=dat, link="probit")
+predict(res, transf=pnorm)
+
+### further link functions that one could consider here
+res <- rma.glmm(measure="PLO", xi=xi, ni=ni, data=dat, link="cauchit")
+predict(res, transf=pcauchy)
+res <- rma.glmm(measure="PLO", xi=xi, ni=ni, data=dat, link="cloglog")
+predict(res, transf=\(x) 1-exp(-exp(x)))
+}
+
+############################################################################
 }
 \keyword{models}

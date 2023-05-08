@@ -1,6 +1,6 @@
 .onAttach <- function(libname, pkgname) {
 
-   ver <- "4.0-0"
+   ver <- "4.2-0"
 
    loadmsg <- paste0("\nLoading the 'metafor' package (version ", ver, "). For an\nintroduction to the package please type: help(metafor)\n")
 
@@ -12,16 +12,16 @@
 
    if (interactive() && verchk != "false") {
 
-      if (verchk  == "devel") {
+      if (isTRUE(verchk  == "devel")) {
 
          # pull version number from GitHub
 
          tmp <- suppressWarnings(try(readLines("https://raw.githubusercontent.com/wviechtb/metafor/master/DESCRIPTION", n=2), silent=TRUE))
 
-         if (!inherits(tmp, "try-error")) {
+         if (!inherits(tmp, "try-error") && length(tmp) == 2L) {
             available.ver <- tmp[2]
             if (!is.na(available.ver) && length(available.ver) != 0L)
-               available.ver <- substr(available.ver, 10, nchar(available.ver))
+               available.ver <- substr(available.ver, 10, nchar(available.ver)) # strip 'Version: ' part
          }
 
       } else {
@@ -44,11 +44,11 @@
          installed.ver <- 100000 * installed.ver[1] + 1000 * installed.ver[2] + installed.ver[3]
          available.ver <- 100000 * available.ver[1] + 1000 * available.ver[2] + available.ver[3]
          if (isTRUE(installed.ver < available.ver)) {
-            paste0(loadmsg, "\nAn updated version of the package (version ", save.ver, ") is available!\nTo update to this version type: ")
-            if (verchk  == "devel") {
-               loadmsg <- paste0(loadmsg, "install.packages(\"metafor\")\n")
-            } else {
+            loadmsg <- paste0(loadmsg, "\nAn updated version of the package (version ", save.ver, ") is available!\nTo update to this version type: ")
+            if (isTRUE(verchk == "devel")) {
                loadmsg <- paste0(loadmsg, "remotes::install_github(\"wviechtb/metafor\")\n")
+            } else {
+               loadmsg <- paste0(loadmsg, "install.packages(\"metafor\")\n")
             }
          }
       }

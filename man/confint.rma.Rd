@@ -1,5 +1,6 @@
 \name{confint.rma}
 \alias{confint}
+\alias{confint.rma}
 \alias{confint.rma.uni}
 \alias{confint.rma.mh}
 \alias{confint.rma.peto}
@@ -35,7 +36,7 @@
    \item{parm}{this argument is here for compatibility with the generic function \code{\link{confint}}, but is (currently) ignored.}
    \item{fixed}{logical to specify whether confidence intervals for the model coefficients should be returned.}
    \item{random}{logical to specify whether a confidence interval for the amount of (residual) heterogeneity should be returned.}
-   \item{type}{optional character string to specify the method to use for computing the confidence interval for the amount of (residual) heterogeneity (either \code{"QP"}, \code{"GENQ"}, or \code{"PL"}).}
+   \item{type}{optional character string to specify the method for computing the confidence interval for the amount of (residual) heterogeneity (either \code{"QP"}, \code{"GENQ"}, or \code{"PL"}).}
    \item{sigma2}{integer to specify for which \mjseqn{\sigma^2} parameter a confidence interval should be obtained.}
    \item{tau2}{integer to specify for which \mjseqn{\tau^2} parameter a confidence interval should be obtained.}
    \item{rho}{integer to specify for which \mjseqn{\rho} parameter the confidence interval should be obtained.}
@@ -43,7 +44,7 @@
    \item{phi}{integer to specify for which \mjseqn{\phi} parameter a confidence interval should be obtained.}
    \item{delta}{integer to specify for which \mjseqn{\delta} parameter a confidence interval should be obtained.}
    \item{alpha}{integer to specify for which \mjseqn{\alpha} parameter a confidence interval should be obtained.}
-   \item{level}{numeric value between 0 and 100 to specify the confidence interval level. If unspecified, the default is to take the value from the object.}
+   \item{level}{numeric value between 0 and 100 to specify the confidence interval level (see \link[=misc-options]{here} for details). If unspecified, the default is to take the value from the object.}
    \item{digits}{optional integer to specify the number of decimal places to which the results should be rounded. If unspecified, the default is to take the value from the object.}
    \item{transf}{optional argument to specify a function to transform the model coefficients and interval bounds (e.g., \code{transf=exp}; see also \link{transf}). If unspecified, no transformation is used.}
    \item{targs}{optional arguments needed by the function specified under \code{transf}.}
@@ -111,9 +112,9 @@
    Viechtbauer, W., & \enc{López-López}{Lopez-Lopez}, J. A. (2022). Location-scale models for meta-analysis. \emph{Research Synthesis Methods}. \bold{13}(6), 697--715. \verb{https://doi.org/10.1002/jrsm.1562}
 }
 \seealso{
-   \code{\link{rma.uni}}, \code{\link{rma.mh}}, \code{\link{rma.peto}}, \code{\link{rma.glmm}}, \code{\link{rma.mv}}, and \code{\link{selmodel.rma.uni}} for functions to fit models for which confidence intervals can be computed.
+   \code{\link{rma.uni}}, \code{\link{rma.mh}}, \code{\link{rma.peto}}, \code{\link{rma.glmm}}, \code{\link{rma.mv}}, and \code{\link[=selmodel.rma.uni]{selmodel}} for functions to fit models for which confidence intervals can be computed.
 
-   \code{\link{profile.rma.uni}}, \code{\link{profile.rma.mv}}, and \code{\link{profile.rma.uni.selmodel}} for functions to create profile likelihood plots corresponding to profile likelihood confidence intervals.
+   \code{\link[=profile.rma]{profile}} for functions to create profile likelihood plots corresponding to profile likelihood confidence intervals.
 }
 \examples{
 ### calculate log risk ratios and corresponding sampling variances

@@ -20,7 +20,7 @@ selmodel(x, \dots)
    \item{steps}{numeric vector of one or more values that can or must be specified for certain selection functions. See \sQuote{Details}.}
    \item{verbose}{logical to specify whether output should be generated on the progress of the model fitting (the default is \code{FALSE}). Can also be an integer. Values > 1 generate more verbose output. See \sQuote{Note}.}
    \item{digits}{optional integer to specify the number of decimal places to which the printed results should be rounded. If unspecified, the default is to take the value from the object.}
-   \item{control}{optional list of control values for the estimation algorithm. If unspecified, default values are defined inside the function. See \sQuote{Note}.}
+   \item{control}{optional list of control values for the estimation algorithm. See \sQuote{Note}.}
    \item{\dots}{other arguments.}
 }
 \details{
@@ -181,15 +181,15 @@ selmodel(x, \dots)
 
    All selection models (except for \code{type="stepfun"}, \code{type="trunc"}, and \code{type="truncest"}) require repeated evaluations of an integral, which is done via adaptive quadrature as implemented in the \code{\link{integrate}} function. One can adjust the arguments of the \code{integrate} function via control element \code{intCtrl}, which is a list of named arguments (e.g., \code{control = list(intCtrl = list(rel.tol=1e-4, subdivisions=100))}).
 
-   The starting values for the fixed effects, the \mjseqn{\tau^2} value (only relevant in random/mixed-effects models), and the \mjseqn{\delta} parameter(s) are chosen automatically by the function, but one can also set the starting values manually via the \code{control} argument by specifying a vector of the appropriate length for \code{beta.init}, a single value for \code{tau2.init}, and a vector of the appropriate length for \code{delta.init}.
+   The starting values for the fixed effects, the \mjseqn{\tau^2} value (only relevant in random/mixed-effects selection models), and the \mjseqn{\delta} parameter(s) are chosen automatically by the function, but one can also set the starting values manually via the \code{control} argument by specifying a vector of the appropriate length for \code{beta.init}, a single value for \code{tau2.init}, and a vector of the appropriate length for \code{delta.init}.
 
    By default, the \mjseqn{\delta} parameter(s) are constrained to a certain range, which improves the stability of the optimization algorithm. For all models, the maximum is set to \code{100} and the minimum to \code{0} (except for \code{type="beta"}, where the minimum for both parameters is \code{1e-5}). These defaults can be changed via the \code{control} argument by specifying a vector of the appropriate length for \code{delta.min} and/or \code{delta.max}.
 
-   A difficulty with fitting the beta selection model (i.e., \code{type="beta"}) is the behavior of \mjseqn{w(p_i)} when \mjseqn{p_i = 0} or \mjseqn{p_i = 1}. When \mjseqn{\delta_1 < 1} or \mjseqn{\delta_2 < 1}, then this leads to selection weights equal to infinity, which causes problems when computing the likelihood function. Following Citkowicz and Vevea (2017), this problem can be avoided by censoring p-values too close to 0 or 1. The specific censoring point can be set via the \code{pval.min} element of the \code{control} argument. The default for this selection model is \code{control=list(pval.min=1e-5)}. A similar issues arises for the power selection model (i.e., \code{type="power"}) when \mjseqn{p_i = 1}. Again, \code{pval.min=1e-5} is used to circumvent this issue. For all other selection models, the default is \code{pval.min=0}.
+   A difficulty with fitting the beta selection model (i.e., \code{type="beta"}) is the behavior of \mjseqn{w(p_i)} when \mjseqn{p_i = 0} or \mjseqn{p_i = 1}. When \mjseqn{\delta_1 < 1} or \mjseqn{\delta_2 < 1}, then this leads to selection weights equal to infinity, which causes problems when computing the likelihood function. Following Citkowicz and Vevea (2017), this problem can be avoided by censoring p-values too close to 0 or 1. The specific censoring point can be set via the \code{pval.min} element of the \code{control} argument. The default for this selection model is \code{control=list(pval.min=1e-5)}. A similar issue arises for the power selection model (i.e., \code{type="power"}) when \mjseqn{p_i = 1}. Again, \code{pval.min=1e-5} is used to circumvent this issue. For all other selection models, the default is \code{pval.min=0}.
 
-   The variance-covariance matrix corresponding to the estimates of the fixed effects, the \mjseqn{\tau^2} value (only relevant in random/mixed-effects models), and the \mjseqn{\delta} parameter(s) is obtained by inverting the Hessian, which is numerically approximated using the \code{\link[numDeriv]{hessian}} function from the \code{numDeriv} package. This may fail, leading to \code{NA} values for the standard errors and hence test statistics, p-values, and confidence interval bounds. One can set control argument \code{hessianCtrl} to a list of named arguments to be passed on to the \code{method.args} argument of the \code{\link[numDeriv]{hessian}} function (the default is \code{control=list(hessianCtrl=list(r=6))}). One can also set \code{control=list(hesspack="pracma")} in which case the \code{\link[pracma]{hessian}} function from the \code{pracma} package is used instead for approximating the Hessian.
+   The variance-covariance matrix corresponding to the estimates of the fixed effects, the \mjseqn{\tau^2} value (only relevant in random/mixed-effects selection models), and the \mjseqn{\delta} parameter(s) is obtained by inverting the Hessian, which is numerically approximated using the \code{\link[numDeriv]{hessian}} function from the \code{numDeriv} package. This may fail, leading to \code{NA} values for the standard errors and hence test statistics, p-values, and confidence interval bounds. One can set control argument \code{hessianCtrl} to a list of named arguments to be passed on to the \code{method.args} argument of the \code{\link[numDeriv]{hessian}} function (the default is \code{control=list(hessianCtrl=list(r=6))}). One can also set \code{control=list(hesspack="pracma")} in which case the \code{\link[pracma]{hessian}} function from the \code{pracma} package is used instead for approximating the Hessian. When \mjseqn{\tau^2} is estimated to be smaller than either \mjeqn{10^{-4}}{10^(-4)} or \mjseqn{\min(v_1, \ldots, v_k)/10} (where \mjseqn{v_i} denotes the sampling variances of the \mjeqn{i\textrm{th}}{ith} study), then \mjseqn{\tau^2} is effectively treated as zero for computing the standard errors (which helps to avoid numerical problems in approximating the Hessian). This cutoff can be adjusted via the \code{tau2tol} control argument (e.g., \code{control=list(tau2tol=0)} to switch off this behavior).
 
-   Information on the progress of the optimization algorithm can be obtained by setting \code{verbose=TRUE} (this won't work when using parallelization). This option is useful to determine how the model fitting is progressing. One can also set \code{verbose} to an integer (\code{verbose=2} yields even more information and \code{verbose=3} also show the progress visually by drawing the selection function as the optimization proceeds).
+   Information on the progress of the optimization algorithm can be obtained by setting \code{verbose=TRUE} (this won't work when using parallelization). One can also set \code{verbose} to an integer (\code{verbose=2} yields even more information and \code{verbose=3} also show the progress visually by drawing the selection function as the optimization proceeds).
 
    For selection functions where the \code{prec} argument is relevant, using a function of the sample sizes as the measure of precision (i.e., \code{prec="ninv"} or \code{prec="sqrtninv"}) is only possible when information about the sample sizes is actually stored within the object passed to the \code{selmodel} function. That should automatically be the case when the observed effect sizes or outcomes were computed with the \code{\link{escalc}} function or when the observed effect sizes or outcomes were computed within the model fitting function. On the other hand, this will not be the case when \code{\link{rma.uni}} was used together with the \code{yi} and \code{vi} arguments and the \code{yi} and \code{vi} values were \emph{not} computed with \code{\link{escalc}}. In that case, it is still possible to pass information about the sample sizes to the \code{\link{rma.uni}} function (e.g., use \code{rma.uni(yi, vi, ni=ni, data=dat)}, where data frame \code{dat} includes a variable called \code{ni} with the sample sizes).
 
@@ -247,7 +247,7 @@ funnel(res, ylim=c(0,0.6), xlab="Standardized Mean Difference")
 sel <- selmodel(res, type="beta")
 sel
 
-# plot selection function
+# plot the selection function
 plot(sel, ylim=c(0,40))
 }
 
@@ -297,14 +297,14 @@ sel2 <- selmodel(res, type="negexp",   alternative="less")
 sel3 <- selmodel(res, type="logistic", alternative="less")
 sel4 <- selmodel(res, type="power",    alternative="less")
 
-# plot selection functions
+# plot the selection functions
 plot(sel1)
 plot(sel2, add=TRUE, col="blue")
 plot(sel3, add=TRUE, col="red")
 plot(sel4, add=TRUE, col="green")
 
 # add legend
-legend("topright", inset=.02, lty="solid", lwd=2, col=c("black","blue","red","green"),
+legend("topright", inset=0.02, lty="solid", lwd=2, col=c("black","blue","red","green"),
        legend=c("Half-normal", "Negative-exponential", "Logistic", "Power"))
 
 # show estimates of delta (and corresponding SEs)
@@ -363,7 +363,7 @@ funnel(res, atransf=exp, at=log(c(0.25,0.5,1,2,4,8)), ylim=c(0,0.8))
 sel <- selmodel(res, type="stepfun", alternative="greater", steps=c(.025,.10,.50,1))
 sel
 
-# plot selection function
+# plot the selection function
 plot(sel)
 
 # truncated distribution selection model (with steps=0 by default)

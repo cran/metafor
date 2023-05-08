@@ -26,7 +26,7 @@ fitstats(object, \dots)
    \item{object}{an object of class \code{"rma"}.}
    \item{\dots}{optionally more fitted model objects (only for \code{fitstats()}, \code{AIC()}, and \code{BIC()}).}
    \item{REML}{logical to specify whether the regular or restricted likelihood function should be used to obtain the fit statistics and information criteria. Defaults to the method of estimation used (i.e., \code{TRUE} if \code{object} was fitted with \code{method="REML"} and \code{FALSE} otherwise).}
-   \item{k}{numeric value to specify the penalty per parameter to use. The default (\code{k=2}) is the classical AIC. See \code{\link{AIC}} for more details.}
+   \item{k}{numeric value to specify the penalty per parameter. The default (\code{k=2}) is the classical AIC. See \code{\link{AIC}} for more details.}
    \item{correct}{logical to specify whether the regular (default) or corrected (i.e., AICc) should be extracted.}
 }
 \value{
@@ -50,7 +50,7 @@ fitstats(object, \dots)
 \seealso{
    \code{\link{rma.uni}}, \code{\link{rma.mh}}, \code{\link{rma.peto}}, \code{\link{rma.glmm}}, and \code{\link{rma.mv}} for functions to fit models for which fit statistics and information criteria can be extracted.
 
-   \code{\link{anova.rma}} for a function to conduct likelihood ratio tests.
+   \code{\link[=anova.rma]{anova}} for a function to conduct likelihood ratio tests.
 }
 \examples{
 ### calculate log risk ratios and corresponding sampling variances

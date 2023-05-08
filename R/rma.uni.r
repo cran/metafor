@@ -629,6 +629,25 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
          sd2i <- .getx("sd2i", mf=mf, data=data, checknumeric=TRUE)
          ri   <- .getx("ri",   mf=mf, data=data, checknumeric=TRUE)
          ni   <- .getx("ni",   mf=mf, data=data, checknumeric=TRUE)
+         di   <- .getx("di",   mf=mf, data=data, checknumeric=TRUE)
+         ti   <- .getx("ti",   mf=mf, data=data, checknumeric=TRUE)
+         pi   <- .getx("pi",   mf=mf, data=data, checknumeric=TRUE)
+
+         if (measure == "SMCC") {
+
+            if (!.equal.length(m1i, m2i, sd1i, sd2i, ri, ni, di, ti, pi))
+               stop(mstyle$stop("Supplied data vectors are not all of the same length."))
+
+            ti <- replmiss(ti, .convp2t(pi, df=ni-1))
+            di <- replmiss(di, ti * sqrt(1/ni))
+
+            m1i[!is.na(di)]  <- di[!is.na(di)]
+            m2i[!is.na(di)]  <- 0
+            sd1i[!is.na(di)] <- 1
+            sd2i[!is.na(di)] <- 1
+            ri[!is.na(di)]   <- 0.5
+
+         }
 
          k <- length(m1i) ### number of outcomes before subsetting
          k.all <- k
@@ -884,7 +903,7 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
          mods    <- mods[not.na,,drop=FALSE]
          Z       <- Z[not.na,,drop=FALSE]
          k       <- length(yi)
-         warning(mstyle$warning("Studies with NAs omitted from model fitting."), call.=FALSE)
+         warning(mstyle$warning(paste(sum(has.na), ifelse(sum(has.na) > 1, "studies", "study"), "with NAs omitted from model fitting.")), call.=FALSE)
 
          attr(yi, "measure") <- measure ### add measure attribute back
          attr(yi, "ni")      <- ni      ### add ni attribute back
@@ -1048,8 +1067,7 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
       con <- c(con,
           list(beta.init = NULL,               # initial values for location parameters (only relevant when optbeta=TRUE)
                hesspack = "numDeriv",          # package for computing the Hessian (numDeriv or pracma)
-               htransf = FALSE,                # FALSE/TRUE: Hessian is computed for the untransformed/transformed parameter estimates
-               optimizer = "nlminb",           # optimizer to use ("optim","nlminb","uobyqa","newuoa","bobyqa","nloptr","nlm","hjk","nmk","mads","ucminf","lbfgsb3c","subplex","BBoptim","optimParallel","constrOptim","solnp","constrOptim.nl")
+               optimizer = "nlminb",           # optimizer to use ("optim","nlminb","uobyqa","newuoa","bobyqa","nloptr","nlm","hjk","nmk","mads","ucminf","lbfgsb3c","subplex","BBoptim","optimParallel","constrOptim","solnp","constrOptim.nl","Rcgmin","Rvmmin")
                optmethod = "BFGS",             # argument 'method' for optim() ("Nelder-Mead" and "BFGS" are sensible options)
                parallel = list(),              # parallel argument for optimParallel() (note: 'cl' argument in parallel is not passed; this is directly specified via 'cl')
                cl = NULL,                      # arguments for optimParallel()
@@ -1093,8 +1111,8 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
 
       ### constrain a negative tau2.min value to -min(vi) (to ensure that the marginal variance is always >= 0)
 
-      if (con$tau2.min < 0 && (-con$tau2.min > min(vi))) {
-         con$tau2.min <- -min(vi)
+      if (con$tau2.min < 0 && (con$tau2.min < -min(vi))) {
+         con$tau2.min <- -min(vi) # + .Machine$double.eps^0.25 # to force tau2.min just above -min(vi)
          warning(mstyle$warning(paste0("Value of 'tau2.min' constrained to -min(vi) = ", fmtx(-min(vi), digits[["est"]]), ".")), call.=FALSE)
       }
 
@@ -2157,12 +2175,12 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
 
       if (is.element(test, c("knha","adhoc","t"))) {
          QS         <- QS / m.alpha
-         QSdf       <- c(m.alpha, k-q)
+         QSdf       <- c(m.alpha, ddf.alpha)
          QSp        <- if (QSdf[2] > 0) pf(QS, df1=QSdf[1], df2=QSdf[2], lower.tail=FALSE) else NA_real_
          pval.alpha <- if (ddf.alpha > 0) 2*pt(abs(zval.alpha), df=ddf.alpha, lower.tail=FALSE) else rep(NA_real_,q)
          crit.alpha <- if (ddf.alpha > 0) qt(level/2, df=ddf.alpha, lower.tail=FALSE) else NA_real_
       } else {
-         QSdf       <- c(m.alpha, NA_integer_)
+         QSdf       <- c(m.alpha, ddf.alpha)
          QSp        <- pchisq(QS, df=QSdf[1], lower.tail=FALSE)
          pval.alpha <- 2*pnorm(abs(zval.alpha), lower.tail=FALSE)
          crit.alpha <- qnorm(level/2, lower.tail=FALSE)
@@ -2357,12 +2375,12 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
 
    if (is.element(test, c("knha","adhoc","t"))) {
       QM   <- QM / m
-      QMdf <- c(m, k-p)
+      QMdf <- c(m, ddf)
       QMp  <- if (QMdf[2] > 0) pf(QM, df1=QMdf[1], df2=QMdf[2], lower.tail=FALSE) else NA_real_
       pval <- if (ddf > 0) 2*pt(abs(zval), df=ddf, lower.tail=FALSE) else rep(NA_real_,p)
       crit <- if (ddf > 0) qt(level/2, df=ddf, lower.tail=FALSE) else NA_real_
    } else {
-      QMdf <- c(m, NA_integer_)
+      QMdf <- c(m, ddf)
       QMp  <- pchisq(QM, df=QMdf[1], lower.tail=FALSE)
       pval <- 2*pnorm(abs(zval), lower.tail=FALSE)
       crit <- qnorm(level/2, lower.tail=FALSE)

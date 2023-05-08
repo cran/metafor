@@ -3,7 +3,7 @@ annotate=TRUE,                                                header=FALSE,
 xlim, alim, olim, ylim, at, steps=5, level=x$level, refline=0, digits=2L, width,
 xlab,             ilab, ilab.xpos, ilab.pos,
 transf, atransf, targs, rows,
-efac=1, pch, psize,                           col,
+efac=1, pch, psize,                           col,         shade, colshade,
 lty, fonts, cex, cex.lab, cex.axis, ...) {
 
    #########################################################################
@@ -52,7 +52,7 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
       ilab.pos <- NULL
 
    if (missing(col)) {
-      col <- "black"
+      col <- par("fg")
    } else {
       col <- .getx("col", mf=mf, data=x$data)
    }
@@ -67,6 +67,20 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
       psize <- 1
    } else {
       psize <- .getx("psize", mf=mf, data=x$data)
+   }
+
+   if (missing(shade)) {
+      shade <- NULL
+   } else {
+      shade <- .getx("shade", mf=mf, data=x$data)
+   }
+
+   if (missing(colshade)) {
+      if (is.element(par("bg"), c("black", "gray10"))) {
+         colshade <- "gray20"
+      } else {
+         colshade <- "gray90"
+      }
    }
 
    if (missing(cex))
@@ -172,14 +186,28 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
       top <- ddd$top
    }
 
-   lplot     <- function(..., textpos, clim, rowadj, annosym, top) plot(...)
-   labline   <- function(..., textpos, clim, rowadj, annosym, top) abline(...)
-   lsegments <- function(..., textpos, clim, rowadj, annosym, top) segments(...)
-   laxis     <- function(..., textpos, clim, rowadj, annosym, top) axis(...)
-   lmtext    <- function(..., textpos, clim, rowadj, annosym, top) mtext(...)
-   lpolygon  <- function(..., textpos, clim, rowadj, annosym, top) polygon(...)
-   ltext     <- function(..., textpos, clim, rowadj, annosym, top) text(...)
-   lpoints   <- function(..., textpos, clim, rowadj, annosym, top) points(...)
+   if (is.null(ddd$xlabadj)) {
+      xlabadj <- c(NA,NA)
+   } else {
+      xlabadj <- ddd$xlabadj
+      if (length(xlabadj) == 1L)
+         xlabadj <- c(xlabadj, 1-xlabadj)
+   }
+
+   if (is.null(ddd$xlabfont)) {
+      xlabfont <- 1
+   } else {
+      xlabfont <- ddd$xlabfont
+   }
+
+   lplot     <- function(..., textpos, clim, rowadj, annosym, top, xlabadj, xlabfont) plot(...)
+   labline   <- function(..., textpos, clim, rowadj, annosym, top, xlabadj, xlabfont) abline(...)
+   lsegments <- function(..., textpos, clim, rowadj, annosym, top, xlabadj, xlabfont) segments(...)
+   laxis     <- function(..., textpos, clim, rowadj, annosym, top, xlabadj, xlabfont) axis(...)
+   lmtext    <- function(..., textpos, clim, rowadj, annosym, top, xlabadj, xlabfont) mtext(...)
+   lpolygon  <- function(..., textpos, clim, rowadj, annosym, top, xlabadj, xlabfont) polygon(...)
+   ltext     <- function(..., textpos, clim, rowadj, annosym, top, xlabadj, xlabfont) text(...)
+   lpoints   <- function(..., textpos, clim, rowadj, annosym, top, xlabadj, xlabfont) points(...)
 
    #########################################################################
 
@@ -203,9 +231,11 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
    if (x$slab.null) {
       slab    <- paste("+ Study", x$ids)  # cumul() removes the studies with NAs when na.action="na.omit"
       slab[1] <- paste("Study", x$ids[1])
+      slab.null <- TRUE
    } else {
       slab    <- paste("+", x$slab)       # cumul() removes the studies with NAs when na.action="na.omit"
       slab[1] <- paste(x$slab[1])
+      slab.null <- FALSE
    }
 
    if (!is.null(ilab)) {
@@ -236,6 +266,33 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
    if (length(col) != k)
       stop(mstyle$stop(paste0("Length of the 'col' argument (", length(col), ") does not correspond to the number of outcomes (", k, ").")))
 
+   shade.type <- "none"
+
+   if (is.character(shade)) {
+
+      shade.type <- "character"
+      shade <- shade[1]
+
+      if (!is.element(shade, c("zebra", "zebra1", "zebra2", "all")))
+         stop(mstyle$stop("Unknown option specified for 'shade' argument."))
+
+   }
+
+   if (is.logical(shade)) {
+
+      if (length(shade) == 1L) {
+         shade <- "zebra"
+         shade.type <- "character"
+      } else {
+         shade.type <- "logical"
+         shade <- .chksubset(shade, k, stoponk0=FALSE)
+      }
+
+   }
+
+   if (is.numeric(shade))
+      shade.type <- "numeric"
+
    ### set rows value
 
    if (missing(rows)) {
@@ -260,6 +317,8 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
    psize   <- psize[k:1]                          # if NULL, remains NULL
    col     <- col[k:1]
    rows    <- rows[k:1]
+   if (shade.type == "logical")
+      shade <- shade[k:1]
 
    ### check for NAs in yi/vi and act accordingly
 
@@ -279,6 +338,8 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
          pch     <- pch[not.na]
          psize   <- psize[not.na]               # if NULL, remains NULL
          col     <- col[not.na]
+         if (shade.type == "logical")
+            shade <- shade[not.na]
 
          rows.new <- rows                       # rearrange rows due to NAs being omitted from plot
          rows.na  <- rows[!not.na]              # shift higher rows down according to number of NAs omitted
@@ -330,25 +391,11 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
 
    #########################################################################
 
-   ### total range of CI bounds
-
-   rng <- max(ci.ub, na.rm=TRUE) - min(ci.lb, na.rm=TRUE)
-
-   if (annotate) {
-      plot.multp.l <- 1.20
-      plot.multp.r <- 1.20
-   } else {
-      plot.multp.l <- 1.20
-      plot.multp.r <- 0.40
-   }
-
-   ### set plot limits
-
-   if (missing(xlim)) {
-      xlim <- c(min(ci.lb, na.rm=TRUE) - rng * plot.multp.l, max(ci.ub, na.rm=TRUE) + rng * plot.multp.r)
-      xlim <- round(xlim, digits[[2]])
-      #xlim[1] <- xlim[1]*max(1, digits[[2]]/2)
-      #xlim[2] <- xlim[2]*max(1, digits[[2]]/2)
+   if (!is.null(at)) {
+      if (anyNA(at))
+         stop(mstyle$stop("Argument 'at' cannot contain NAs."))
+      if (any(is.infinite(at)))
+         stop(mstyle$stop("Argument 'at' cannot contain +-Inf values."))
    }
 
    ### set x-axis limits (at argument overrides alim argument)
@@ -364,50 +411,10 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
       }
    }
 
-   ### make sure the plot and x-axis limits are sorted
+   alim <- sort(alim)[1:2]
 
-   alim <- sort(alim)
-   xlim <- sort(xlim)
-
-   ### plot limits must always encompass the yi values
-
-   if (xlim[1] > min(yi, na.rm=TRUE)) { xlim[1] <- min(yi, na.rm=TRUE) }
-   if (xlim[2] < max(yi, na.rm=TRUE)) { xlim[2] <- max(yi, na.rm=TRUE) }
-
-   ### x-axis limits must always encompass the yi values (no longer required)
-
-   #if (alim[1] > min(yi, na.rm=TRUE)) { alim[1] <- min(yi, na.rm=TRUE) }
-   #if (alim[2] < max(yi, na.rm=TRUE)) { alim[2] <- max(yi, na.rm=TRUE) }
-
-   ### plot limits must always encompass the x-axis limits
-
-   if (alim[1] < xlim[1]) { xlim[1] <- alim[1] }
-   if (alim[2] > xlim[2]) { xlim[2] <- alim[2] }
-
-   ### allow adjustment of position of study labels and annotations via textpos argument
-
-   if (is.null(ddd$textpos)) {
-      textpos <- xlim
-   } else {
-      textpos <- ddd$textpos
-   }
-
-   if (length(textpos) != 2L)
-      stop(mstyle$stop("Argument 'textpos' must be of length 2."))
-
-   if (is.na(textpos[1]))
-      textpos[1] <- xlim[1]
-
-   if (is.na(textpos[2]))
-      textpos[2] <- xlim[2]
-
-   ### set y-axis limits
-
-   if (missing(ylim)) {
-      ylim <- c(0.5, max(rows, na.rm=TRUE)+top)
-   } else {
-      ylim <- sort(ylim)
-   }
+   if (anyNA(alim))
+      stop(mstyle$stop("Argument 'alim' cannot contain NAs."))
 
    ### generate x-axis positions if none are specified
 
@@ -435,6 +442,95 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
       }
    } else {
       at.lab <- fmtx(at.lab, digits[[2]], drop0ifint=TRUE)
+   }
+
+   ### set plot limits (xlim)
+
+   ncol.ilab <- ifelse(is.null(ilab), 0, ncol(ilab))
+
+   if (slab.null) {
+      area.slab <- 25
+   } else {
+      area.slab <- 40
+   }
+
+   if (annotate) {
+      area.anno <- 25
+   } else {
+      area.anno <- 10
+   }
+
+   iadd <- 5
+
+   area.slab   <- area.slab + iadd*ncol.ilab
+   #area.anno  <- area.anno
+   area.forest <- 100 + iadd*ncol.ilab - area.slab - area.anno
+
+   area.slab   <- area.slab   / (100 + iadd*ncol.ilab)
+   area.anno   <- area.anno   / (100 + iadd*ncol.ilab)
+   area.forest <- area.forest / (100 + iadd*ncol.ilab)
+
+   plot.multp.l <- area.slab / area.forest
+   plot.multp.r <- area.anno / area.forest
+
+   if (missing(xlim)) {
+      if (min(ci.ub, na.rm=TRUE) < alim[1]) {
+         f.1 <- alim[1]
+      } else {
+         f.1 <- min(ci.lb, na.rm=TRUE)
+      }
+      if (max(ci.ub, na.rm=TRUE) > alim[2]) {
+         f.2 <- alim[2]
+      } else {
+         f.2 <- max(ci.ub, na.rm=TRUE)
+      }
+      rng <- f.2 - f.1
+      xlim <- c(f.1 - rng * plot.multp.l, f.2 + rng * plot.multp.r)
+      xlim <- round(xlim, digits[[2]])
+      #xlim[1] <- xlim[1]*max(1, digits[[2]]/2)
+      #xlim[2] <- xlim[2]*max(1, digits[[2]]/2)
+   }
+
+   xlim <- sort(xlim)
+
+   ### plot limits must always encompass the yi values (no longer done)
+
+   #if (xlim[1] > min(yi, na.rm=TRUE)) { xlim[1] <- min(yi, na.rm=TRUE) }
+   #if (xlim[2] < max(yi, na.rm=TRUE)) { xlim[2] <- max(yi, na.rm=TRUE) }
+
+   ### x-axis limits must always encompass the yi values (no longer done)
+
+   #if (alim[1] > min(yi, na.rm=TRUE)) { alim[1] <- min(yi, na.rm=TRUE) }
+   #if (alim[2] < max(yi, na.rm=TRUE)) { alim[2] <- max(yi, na.rm=TRUE) }
+
+   ### plot limits must always encompass the x-axis limits (no longer done)
+
+   #if (alim[1] < xlim[1]) { xlim[1] <- alim[1] }
+   #if (alim[2] > xlim[2]) { xlim[2] <- alim[2] }
+
+   ### allow adjustment of position of study labels and annotations via textpos argument
+
+   if (is.null(ddd$textpos)) {
+      textpos <- xlim
+   } else {
+      textpos <- ddd$textpos
+   }
+
+   if (length(textpos) != 2L)
+      stop(mstyle$stop("Argument 'textpos' must be of length 2."))
+
+   if (is.na(textpos[1]))
+      textpos[1] <- xlim[1]
+
+   if (is.na(textpos[2]))
+      textpos[2] <- xlim[2]
+
+   ### set y-axis limits
+
+   if (missing(ylim)) {
+      ylim <- c(0.5, max(rows, na.rm=TRUE)+top)
+   } else {
+      ylim <- sort(ylim)
    }
 
    #########################################################################
@@ -468,6 +564,29 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
 
    lplot(NA, NA, xlim=xlim, ylim=ylim, xlab="", ylab="", yaxt="n", xaxt="n", xaxs="i", bty="n", ...)
 
+   if (shade.type == "character") {
+      if (shade == "zebra" || shade == "zebra1")
+         tmp <- rep_len(c(TRUE,FALSE), k)
+      if (shade == "zebra2")
+         tmp <- rep_len(c(FALSE,TRUE), k)
+      if (shade == "all")
+         tmp <- rep_len(TRUE, k)
+      shade <- tmp
+   }
+
+   if (shade.type %in% c("character","logical")) {
+      for (i in seq_len(k)) {
+         if (shade[i])
+            rect(xlim[1], rows[i]-0.5, xlim[2], rows[i]+0.5, border=colshade, col=colshade)
+      }
+   }
+
+   if (shade.type == "numeric") {
+      for (i in seq_along(shade)) {
+         rect(xlim[1], shade[i]-0.5, xlim[2], shade[i]+0.5, border=colshade, col=colshade)
+      }
+   }
+
    ### horizontal title line
 
    labline(h=ylim[2]-(top-1), lty=lty[2], ...)
@@ -483,7 +602,7 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
 
    ### set cex, cex.lab, and cex.axis sizes as a function of the height of the figure
 
-   height  <- par.usr[4] - par.usr[3]
+   height <- par.usr[4] - par.usr[3]
 
    if (is.null(cex)) {
       lheight <- strheight("O")
@@ -512,7 +631,20 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
    if (missing(xlab))
       xlab <- .setlab(measure, transf.char, atransf.char, gentype=2)
 
-   lmtext(xlab, side=1, at=min(at) + (max(at)-min(at))/2, line=par("mgp")[1]-0.5, cex=cex.lab, ...)
+   if (!is.element(length(xlab), 1:3))
+      stop(mstyle$stop("Argument 'xlab' argument must be of length 1, 2, or 3."))
+
+   if (length(xlab) == 1L)
+      lmtext(xlab, side=1, at=min(at) + (max(at)-min(at))/2, line=par("mgp")[1]-0.5, cex=cex.lab, font=xlabfont[1], ...)
+   if (length(xlab) == 2L) {
+      lmtext(xlab[1], side=1, at=min(at), line=par("mgp")[1]-0.5, cex=cex.lab, adj=xlabadj[1], font=xlabfont[1], ...)
+      lmtext(xlab[2], side=1, at=max(at), line=par("mgp")[1]-0.5, cex=cex.lab, adj=xlabadj[2], font=xlabfont[1], ...)
+   }
+   if (length(xlab) == 3L) {
+      lmtext(xlab[1], side=1, at=min(at), line=par("mgp")[1]-0.5, cex=cex.lab, adj=xlabadj[1], font=xlabfont[1], ...)
+      lmtext(xlab[2], side=1, at=min(at) + (max(at)-min(at))/2, line=par("mgp")[1]-0.5, cex=cex.lab, font=xlabfont[2], ...)
+      lmtext(xlab[3], side=1, at=max(at), line=par("mgp")[1]-0.5, cex=cex.lab, adj=xlabadj[2], font=xlabfont[1], ...)
+   }
 
    ### add CI ends (either | or <> if outside of axis limits)
 
@@ -557,8 +689,18 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
    ### add info labels
 
    if (!is.null(ilab)) {
-      if (is.null(ilab.xpos))
-         stop(mstyle$stop("Must specify 'ilab.xpos' argument when adding information with 'ilab'."))
+      if (is.null(ilab.xpos)) {
+         #stop(mstyle$stop("Must specify 'ilab.xpos' argument when adding information with 'ilab'."))
+         dist <- min(ci.lb, na.rm=TRUE) - xlim[1]
+         if (ncol.ilab == 1L)
+            ilab.xpos <- xlim[1] + dist*0.75
+         if (ncol.ilab == 2L)
+            ilab.xpos <- xlim[1] + dist*c(0.65, 0.85)
+         if (ncol.ilab == 3L)
+            ilab.xpos <- xlim[1] + dist*c(0.60, 0.75, 0.90)
+         if (ncol.ilab >= 4L)
+            ilab.xpos <- seq(xlim[1] + dist*0.5, xlim[1] + dist*0.9, length.out=ncol.ilab)
+      }
       if (length(ilab.xpos) != ncol(ilab))
          stop(mstyle$stop(paste0("Number of 'ilab' columns (", ncol(ilab), ") does not match length of 'ilab.xpos' argument (", length(ilab.xpos), ").")))
       if (!is.null(ilab.pos) && length(ilab.pos) == 1L)

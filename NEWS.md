@@ -1,3 +1,31 @@
+# metafor 4.2-0 (2023-05-08)
+
+- improved the various plotting functions so they respect `par("fg")`; as a result, one can now create plots with a dark background and light plotting colors
+
+- also allow two or three values for `xlab` in the various `forest()` functions (for adding labels at the ends of the x-axis limits)
+
+- better default choices for `xlim` in the various `forest()` functions; also, argument `ilab.xpos` is now optional when using the `ilab` argument
+
+- added `shade` and `colshade` arguments to the various `forest()` functions
+
+- the various `forest()` functions no longer enforce that `xlim` must be at least as wide as `alim`
+
+- added `link` argument to `rma.glmm()`
+
+- `rma.glmm()` with `measure="OR", model="CM.EL", method="ML"` now treats tau^2 values below 1e-04 effectively as zero before computing the standard errors of the fixed effects; this helps to avoid numerical problems in approximating the Hessian; similarly, `selmodel()` now treats tau^2 values below 1e-04 or min(vi/10) effectively as zero before computing the standard errors
+
+- for measure `SMCC`, can now specify d-values, t-test statistics, and p-values via arguments `di`, `ti`, and `pi`
+
+- functions that issue a warning when omitting studies due to NAs now indicate how many were omitted
+
+- properly documented the `level` argument
+
+- added a few more transformation functions
+
+- small bug fixes
+
+- improved the documentation a bit
+
 # metafor 4.0-0 (2023-03-19)
 
 - added `conv.2x2()` function for reconstructing the cell frequencies in 2x2 tables based on other summary statistics
@@ -1021,7 +1049,7 @@
 
 # metafor 1.5-0 (2010-12-16)
 
-- the `metafor` package now has its own project website at: https://www.metafor-project.org/
+- the `metafor` package now has its own project website at: https://www.metafor-project.org
 
 - added `labbe()` function to create L'Abbe plots
 

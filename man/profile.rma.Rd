@@ -45,7 +45,7 @@
    \item{delta}{optional integer to specify for which \mjseqn{\delta} value the likelihood should be profiled.}
    \item{alpha}{optional integer to specify for which \mjseqn{\alpha} value the likelihood should be profiled.}
    \item{xlim}{optional vector to specify the lower and upper limit of the parameter over which the profiling should be done. If unspecified, the function tries to set these limits automatically.}
-   \item{ylim}{optional vector to specify the y-axis limits when plotting the profiled likelihood. If unspecified, the function tries to set these limits automatically.}
+   \item{ylim}{optional vector to specify the y-axis limits when plotting the profiled likelihood. If unspecified, the function sets these limits automatically.}
    \item{steps}{number of points between \code{xlim[1]} and \code{xlim[2]} (inclusive) for which the likelihood should be evaluated (the default is 20).}
    \item{lltol}{numerical tolerance used when comparing values of the profiled log-likelihood with the log-likelihood of the fitted model (the default is 1e-03).}
    \item{progbar}{logical to specify whether a progress bar should be shown (the default is \code{TRUE}).}
@@ -56,9 +56,9 @@
    \item{pch}{plotting symbol to use. By default, a filled circle is used. See \code{\link{points}} for other options.}
    \item{refline}{logical to specify whether the value of the parameter estimate should be indicated by a dotted vertical line and its log-likelihood value by a dotted horizontal line (the default is \code{TRUE}).}
    \item{cline}{logical to specify whether a horizontal reference line should be added to the plot that indicates the log-likelihood value corresponding to the 95\% profile confidence interval (the default is \code{FALSE}).}
-   \item{xlab}{title for the x-axis. If unspecified, the function tries to set an appropriate axis title.}
-   \item{ylab}{title for the y-axis. If unspecified, the function tries to set an appropriate axis title.}
-   \item{main}{title for the plot. If unspecified, the function tries to set an appropriate title.}
+   \item{xlab}{title for the x-axis. If unspecified, the function sets an appropriate axis title.}
+   \item{ylab}{title for the y-axis. If unspecified, the function sets an appropriate axis title.}
+   \item{main}{title for the plot. If unspecified, the function sets an appropriate title.}
    \item{\dots}{other arguments.}
 }
 \details{
@@ -128,9 +128,9 @@
    Viechtbauer, W., & \enc{López-López}{Lopez-Lopez}, J. A. (2022). Location-scale models for meta-analysis. \emph{Research Synthesis Methods}. \bold{13}(6), 697--715. \verb{https://doi.org/10.1002/jrsm.1562}
 }
 \seealso{
-   \code{\link{rma.uni}}, \code{\link{rma.mv}}, and \code{\link{selmodel.rma.uni}} for functions to fit models for which profile likelihood plots can be drawn.
+   \code{\link{rma.uni}}, \code{\link{rma.mv}}, and \code{\link[=selmodel.rma.uni]{selmodel}} for functions to fit models for which profile likelihood plots can be drawn.
 
-   \code{\link{confint.rma.uni}}, \code{\link{confint.rma.mv}}, and \code{\link{confint.rma.uni.selmodel}} for functions to compute corresponding profile likelihood confidence intervals.
+   \code{\link[=confint.rma]{confint}} for functions to compute corresponding profile likelihood confidence intervals.
 }
 \examples{
 ### calculate log odds ratios and corresponding sampling variances
@@ -164,7 +164,7 @@ res
 par(mfrow=c(2,2))
 profile(res, tau2=1)
 profile(res, tau2=2)
-profile(res, rho=1, xlim=c(.90, .98))
+profile(res, rho=1, xlim=c(0.90, 0.98))
 }
 
 ### an example where the peak is at 0

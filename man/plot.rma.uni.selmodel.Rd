@@ -29,7 +29,7 @@
 
    When the selection function incorporates a measure of precision (which, strictly speaking, is really a measure of imprecision), one can specify for which level of precision the selection function should be drawn. When \code{prec="max"}, then the function is drawn for the \emph{least} precise study (maximum imprecision), when \code{prec="min"}, then the function is drawn for the \emph{most} precise study (minimum imprecision), while \code{prec="mean"} and \code{prec="median"} will show the function for the mean and median level of imprecision, respectively. Alternatively, one can specify a numeric value for argument \code{prec} to specify the precision value (where \code{prec="max"} corresponds to \code{prec=1} and higher levels of precision to \code{prec} values below 1).
 
-   When \code{ci=TRUE} (or equivalently, \code{ci="boot"}), a confidence interval is drawn around the selection function. The bounds of this interval are generated using parametric bootstrapping, with argument \code{reps} controlling the number of bootstrap samples to draw for generating the confidence interval bounds. When both \code{n} and \code{reps} are large, constructing the confidence interval can take a few moments to complete.
+   When \code{ci=TRUE} (or equivalently, \code{ci="boot"}), a confidence interval is drawn around the selection function. The bounds of this interval are generated using parametric bootstrapping, with argument \code{reps} controlling the number of bootstrap samples to draw for generating the confidence interval bounds. When both \code{n} and \code{reps} are large, constructing the confidence interval can take some time.
 
    For models where the selection function involves a single \mjseqn{\delta} parameter, one can also set \code{ci="wald"}, in which case the confidence interval will be constructed based on the Wald-type CI of the \mjseqn{\delta} parameter (doing so is much quicker than using parametric bootstrapping). This option is also available for step function models (even if they involve multiple \mjseqn{\delta} parameters).
 }
@@ -40,7 +40,7 @@
    Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \verb{https://doi.org/10.18637/jss.v036.i03}
 }
 \seealso{
-   \code{\link{selmodel.rma.uni}} for the function to fit models for which the estimated selection function can be drawn.
+   \code{\link{selmodel}} for the function to fit models for which the estimated selection function can be drawn.
 }
 \examples{
 ### copy data into 'dat' and examine data

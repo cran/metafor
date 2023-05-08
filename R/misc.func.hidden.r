@@ -390,7 +390,15 @@
 
    mstyle <- .get.mstyle("crayon" %in% .packages())
 
+   mf.getx <- match.call()
+   dname <- deparse1(mf.getx[[match("data", names(mf.getx))]])
+   dname <- deparse1(mf[[match(dname, names(mf))]])
+
    mf.x <- mf[[match(x, names(mf))]]
+
+   if (!is.null(dname) && dname %in% names(data) && grepl("$", deparse1(mf.x), fixed=TRUE) || grepl("[[", deparse1(mf.x), fixed=TRUE))
+      data <- NULL
+
    out <- try(eval(mf.x, data, enclos), silent=TRUE) # NULL if x was not specified
 
    if (inherits(out, "try-error") || is.function(out))
@@ -1046,9 +1054,9 @@
             lab <- ifelse(short, lab, "Transformed Log Relative Excess Heterozygosity")
             funlist <- lapply(list(exp, transf.exp.int), deparse)
             if (any(sapply(funlist, identical, atransf.char)))
-               lab <- ifelse(short, "Relative Excess Heterozygosity", "Relative Excess Heterozygosity (log scale)")
+               lab <- ifelse(short, "REH", "Relative Excess Heterozygosity (log scale)")
             if (any(sapply(funlist, identical, transf.char)))
-               lab <- ifelse(short, "Relative Excess Heterozygosity", "Relative Excess Heterozygosity")
+               lab <- ifelse(short, "REH", "Relative Excess Heterozygosity")
          }
       }
       ######################################################################
@@ -1282,6 +1290,8 @@
 .isFALSE <- function(x)
    !is.null(x) && is.logical(x) && !is.na(x) && !x
 
+# not sure anymore why I implemented these; c(isTRUE(NULL), isTRUE(NA), isFALSE(NULL), isFALSE(NA)) are all FALSE
+
 ############################################################################
 
 ### shorten a character vector so that elements remain distinguishable
@@ -1345,11 +1355,11 @@
    argname <- deparse(substitute(x))
 
    if (length(x) == 0L)
-      stop(mstyle$stop(paste0("Specified '", argname, "' argument is of length 0.")), call.=FALSE)
+      stop(mstyle$stop(paste0("Argument '", argname, "' is of length 0.")), call.=FALSE)
 
    if (is.logical(x)) {
       if (length(x) != k)
-         stop(mstyle$stop(paste0("Length of the specified '", argname, "' argument (", length(x), ") is not of length k = ", k, ".")), call.=FALSE)
+         stop(mstyle$stop(paste0("Length of the '", argname, "' argument (", length(x), ") is not of length k = ", k, ".")), call.=FALSE)
       #x <- x[seq_len(k)]     # keep only elements 1:k from x
       if (anyNA(x))           # if x includes any NA elements
          x[is.na(x)] <- FALSE # set NA elements to FALSE
@@ -1364,11 +1374,11 @@
          stop(mstyle$stop(paste0("Cannot mix positive and negative values in '", argname, "' argument.")), call.=FALSE)
       if (all(x > 0L)) {
          if (any(x > k))
-            stop(mstyle$stop(paste0("Specified '", argname, "' argument includes values larger than k = ", k, ".")), call.=FALSE)
+            stop(mstyle$stop(paste0("Argument '", argname, "' includes values larger than k = ", k, ".")), call.=FALSE)
          x <- is.element(seq_len(k), x)
       } else {
          if (any(x < -k))
-            stop(mstyle$stop(paste0("Specified '", argname, "' argument includes values larger than k = ", k, ".")), call.=FALSE)
+            stop(mstyle$stop(paste0("Argument '", argname, "' includes values larger than k = ", k, ".")), call.=FALSE)
          x <- !is.element(seq_len(k), abs(x))
       }
    }
@@ -1419,7 +1429,7 @@
 
 .wmean <- function (x, w, na.rm=FALSE) {
    if (na.rm) {
-      i <- !(is.na(x) | is.na(w))
+      i <- !(is.na(x) | is.na(w)) # only include x if x and w are not missing
       x <- x[i]
       w <- w[i]
    }

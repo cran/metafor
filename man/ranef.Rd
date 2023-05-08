@@ -12,7 +12,7 @@
 }
 \arguments{
    \item{object}{an object of class \code{"rma.uni"} or \code{"rma.mv"}.}
-   \item{level}{numeric value between 0 and 100 to specify the prediction interval level. If unspecified, the default is to take the value from the object.}
+   \item{level}{numeric value between 0 and 100 to specify the prediction interval level (see \link[=misc-options]{here} for details). If unspecified, the default is to take the value from the object.}
    \item{digits}{optional integer to specify the number of decimal places to which the printed results should be rounded. If unspecified, the default is to take the value from the object.}
    \item{transf}{optional argument to specify a function to transform the predicted values and interval bounds (e.g., \code{transf=exp}; see also \link{transf}). If unspecified, no transformation is used.}
    \item{targs}{optional arguments needed by the function specified under \code{transf}.}
@@ -32,7 +32,7 @@
    For objects of class \code{"rma.mv"}, a list of data frames with the same components as described above.
 }
 \note{
-   For best linear unbiased predictions that combine the fitted values based on the fixed effects and the estimated contributions of the random effects, see \code{\link{blup}}.
+   For best linear unbiased predictions that combine the fitted values based on the fixed effects and the estimated contributions of the random effects, see \code{\link[=blup.rma.uni]{blup}}.
 
    For predicted/fitted values that are based only on the fixed effects of the model, see \code{\link[=fitted.rma]{fitted}} and \code{\link[=predict.rma]{predict}}.
 
@@ -61,7 +61,7 @@
 \seealso{
    \code{\link{rma.uni}} and \code{\link{rma.mv}} for functions to fit models for which BLUPs of the random effects can be computed.
 
-   \code{\link{predict.rma}} and \code{\link{fitted.rma}} for functions to compute the predicted/fitted values based only on the fixed effects and \code{\link{blup.rma.uni}} for a function to compute BLUPs that combine the fitted values and predicted random effects.
+   \code{\link[=predict.rma]{predict}} and \code{\link[=fitted.rma]{fitted}} for functions to compute the predicted/fitted values based only on the fixed effects and \code{\link[=blup.rma.uni]{blup}} for a function to compute BLUPs that combine the fitted values and predicted random effects.
 }
 \examples{
 ### calculate log risk ratios and corresponding sampling variances

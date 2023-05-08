@@ -12,7 +12,7 @@ blup(x, \dots)
 }
 \arguments{
    \item{x}{an object of class \code{"rma.uni"}.}
-   \item{level}{numeric value between 0 and 100 to specify the prediction interval level. If unspecified, the default is to take the value from the object.}
+   \item{level}{numeric value between 0 and 100 to specify the prediction interval level (see \link[=misc-options]{here} for details). If unspecified, the default is to take the value from the object.}
    \item{digits}{optional integer to specify the number of decimal places to which the printed results should be rounded. If unspecified, the default is to take the value from the object.}
    \item{transf}{optional argument to specify a function to transform the predicted values and interval bounds (e.g., \code{transf=exp}; see also \link{transf}). If unspecified, no transformation is used.}
    \item{targs}{optional arguments needed by the function specified under \code{transf}.}
@@ -58,7 +58,7 @@ blup(x, \dots)
 \seealso{
    \code{\link{rma.uni}} for the function to fit models for which BLUPs can be extracted.
 
-   \code{\link{predict.rma}} and \code{\link{fitted.rma}} for functions to compute the predicted/fitted values based only on the fixed effects and \code{\link{ranef.rma.uni}} for a function to compute the BLUPs based only on the random effects.
+   \code{\link[=predict.rma]{predict}} and \code{\link[=fitted.rma]{fitted}} for functions to compute the predicted/fitted values based only on the fixed effects and \code{\link{ranef}} for a function to compute the BLUPs based only on the random effects.
 }
 \examples{
 ### calculate log risk ratios and corresponding sampling variances

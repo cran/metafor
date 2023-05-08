@@ -1,5 +1,6 @@
 \name{qqnorm.rma}
 \alias{qqnorm}
+\alias{qqnorm.rma}
 \alias{qqnorm.rma.uni}
 \alias{qqnorm.rma.mh}
 \alias{qqnorm.rma.peto}
@@ -10,22 +11,24 @@
    Function to create normal QQ plots for objects of class \code{"rma.uni"}, \code{"rma.mh"}, and \code{"rma.peto"}. \loadmathjax
 }
 \usage{
-\method{qqnorm}{rma.uni}(y, type="rstandard", pch=19, envelope=TRUE,
-       level=y$level, bonferroni=FALSE, reps=1000, smooth=TRUE, bass=0,
+\method{qqnorm}{rma.uni}(y, type="rstandard", pch=21, col, bg,
+       envelope=TRUE, level=y$level, bonferroni=FALSE, reps=1000, smooth=TRUE, bass=0,
        label=FALSE, offset=0.3, pos=13, lty, \dots)
-\method{qqnorm}{rma.mh}(y, type="rstandard", pch=19, label=FALSE, offset=0.3, pos=13, \dots)
-\method{qqnorm}{rma.peto}(y, type="rstandard", pch=19, label=FALSE, offset=0.3, pos=13, \dots)
+\method{qqnorm}{rma.mh}(y, type="rstandard", pch=21, col, bg, label=FALSE, offset=0.3, pos=13, \dots)
+\method{qqnorm}{rma.peto}(y, type="rstandard", pch=21, col, bg, label=FALSE, offset=0.3, pos=13, \dots)
 \method{qqnorm}{rma.glmm}(y, \dots)
 \method{qqnorm}{rma.mv}(y, \dots)
 }
 \arguments{
    \item{y}{an object of class \code{"rma.uni"}, \code{"rma.mh"}, or \code{"rma.peto"}. The method is not yet implemented for objects of class \code{"rma.glmm"} or \code{"rma.mv"}.}
    \item{type}{character string (either \code{"rstandard"} (default) or \code{"rstudent"}) to specify whether standardized residuals or studentized deleted residuals should be used in creating the plot. See \sQuote{Details}.}
-   \item{pch}{plotting symbol to use for the observed outcomes. By default, a filled circle is used. See \code{\link{points}} for other options.}
+   \item{pch}{plotting symbol to use for the observed outcomes. By default, an open circle is used. See \code{\link{points}} for other options.}
+   \item{col}{optional character string to specify the (border) color of the points. If unspecified, black is used by default.}
+   \item{bg}{optional character string to specify the background color of open plot symbols. If unspecified, gray is used by default.}
    \item{envelope}{logical to specify whether a pseudo confidence envelope should be simulated and added to the plot (the default is \code{TRUE})). Only for objects of class \code{"rma.uni"}. See \sQuote{Details}.}
-   \item{level}{numeric value between 0 and 100 to specify the level of the pseudo confidence envelope (the default is to take the value from the object).}
+   \item{level}{numeric value between 0 and 100 to specify the level of the pseudo confidence envelope (see \link[=misc-options]{here} for details). The default is to take the value from the object.}
    \item{bonferroni}{logical to specify whether the bounds of the envelope should be Bonferroni corrected.}
-   \item{reps}{numeric value to specify the number of iterations to use for simulating the pseudo confidence envelope (the default is 1000).}
+   \item{reps}{numeric value to specify the number of iterations for simulating the pseudo confidence envelope (the default is 1000).}
    \item{smooth}{logical to specify whether the results from the simulation should be smoothed (the default is \code{TRUE}).}
    \item{bass}{numeric value that controls the degree of smoothing (the default is 0).}
    \item{label}{argument to control the labeling of the points (the default is \code{FALSE}). See \sQuote{Details}.}
@@ -37,7 +40,7 @@
 \details{
    The plot shows the theoretical quantiles of a normal distribution on the horizontal axis against the observed quantiles for either the standardized residuals (\code{type="rstandard"}, the default) or the externally standardized residuals (\code{type="rstudent"}) on the vertical axis (see \code{\link[=residuals.rma]{residuals}} for details on the definition of these residual types).
 
-   For reference, a line is added to the plot with slope of 1, going through the (0,0) point.
+   For reference, a line is added to the plot with a slope of 1, going through the (0,0) point.
 
    For objects of class \code{"rma.uni"}, it is also possible to add a pseudo confidence envelope to the plot. The envelope is created based on the quantiles of sets of pseudo residuals simulated from the given model (for details, see Cook & Weisberg, 1982). The number of sets simulated can be controlled with the \code{reps} argument. When \code{smooth=TRUE}, the simulated bounds are smoothed with Friedman's SuperSmoother (see \code{\link{supsmu}}). The \code{bass} argument can be set to a number between 0 and 10, with higher numbers indicating increasing smoothness. If \code{bonferroni=TRUE}, the envelope bounds are Bonferroni corrected, so that the envelope can be regarded as a confidence region for all \mjseqn{k} residuals simultaneously. The default however is \code{bonferroni=FALSE}, which makes the plot more sensitive to deviations from normality.
 

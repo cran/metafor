@@ -13,8 +13,8 @@ trimfill(x, \dots)
 \arguments{
    \item{x}{an object of class \code{"rma.uni"}.}
    \item{side}{optional character string (either \code{"left"} or \code{"right"}) to specify on which side of the funnel plot the missing studies should be imputed. If left unspecified, the side is chosen within the function depending on the results of Egger's regression test (see \code{\link{regtest}} for details on this test).}
-   \item{estimator}{character string (either \code{"L0"}, \code{"R0"}, or \code{"Q0"}) to specify the estimator to use for estimating the number of missing studies (the default is \code{"L0"}).}
-   \item{maxiter}{integer to specify the maximum number of iterations to use for the trim and fill method (the default is \code{100}).}
+   \item{estimator}{character string (either \code{"L0"}, \code{"R0"}, or \code{"Q0"}) to specify the estimator for the number of missing studies (the default is \code{"L0"}).}
+   \item{maxiter}{integer to specify the maximum number of iterations for the trim and fill method (the default is \code{100}).}
    \item{verbose}{logical to specify whether output should be generated on the progress of the iterative algorithm used as part of the trim and fill method (the default is \code{FALSE}).}
    \item{ilim}{limits for the imputed values. If unspecified, no limits are used.}
    \item{\dots}{other arguments.}
@@ -54,7 +54,7 @@ trimfill(x, \dots)
    Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \verb{https://doi.org/10.18637/jss.v036.i03}
 }
 \seealso{
-   \code{\link{funnel.rma}} for a function to create funnel plots of the observed and augmented data.
+   \code{\link[=funnel.rma]{funnel}} for a function to create funnel plots of the observed and augmented data.
 
    \code{\link{ranktest}} for the rank test, \code{\link{regtest}} for the regression test, \code{\link{tes}} for the test of excess significance, and \code{\link{selmodel}} for selection models.
 }

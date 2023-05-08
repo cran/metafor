@@ -19,7 +19,7 @@
 \arguments{
    \item{model}{an object of class \code{"rma.mv"}.}
    \item{progbar}{logical to specify whether a progress bar should be shown (the default is \code{FALSE}).}
-   \item{cluster}{optional vector to specify a clustering variable to use for computing the Cook's distances or DFBETAS values. If not specified, these measures are computed for the individual observed effect sizes or outcomes.}
+   \item{cluster}{optional vector to specify a clustering variable to use for computing the Cook's distances or DFBETAS values. If unspecified, these measures are computed for the individual observed effect sizes or outcomes.}
    \item{reestimate}{logical to specify whether variance/correlation components should be re-estimated after deletion of the \mjeqn{i\textrm{th}}{ith} case (the default is \code{TRUE}).}
    \item{parallel}{character string to specify whether parallel processing should be used (the default is \code{"no"}). For parallel processing, set to either \code{"snow"} or \code{"multicore"}. See \sQuote{Note}.}
    \item{ncpus}{integer to specify the number of processes to use in the parallel processing.}
@@ -63,7 +63,7 @@
    Viechtbauer, W., & Cheung, M. W.-L. (2010). Outlier and influence diagnostics for meta-analysis. \emph{Research Synthesis Methods}, \bold{1}(2), 112--125. \verb{https://doi.org/10.1002/jrsm.11}
 }
 \seealso{
-   \code{\link{rstudent.rma.mv}} for externally standardized residuals and \code{\link{weights.rma.mv}} for model fitting weights.
+   \code{\link[=rstudent.rma.mv]{rstudent}} for externally standardized residuals and \code{\link[=weights.rma.mv]{weights}} for model fitting weights.
 }
 \examples{
 ### copy data from Konstantopoulos (2011) into 'dat'

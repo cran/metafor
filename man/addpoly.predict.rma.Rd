@@ -21,10 +21,10 @@
    \item{atransf}{optional argument to specify a function to transform the annotations (e.g., \code{atransf=exp}; see also \link{transf}).}
    \item{targs}{optional arguments needed by the function specified via \code{transf} or \code{atransf}.}
    \item{efac}{optional vertical expansion factor for the polygons.}
-   \item{col}{optional character string to specify the color to use for the polygons. If unspecified, the function sets a default color.}
-   \item{border}{optional character string to specify color to use for the border of the polygons. If unspecified, the function sets a default color.}
-   \item{lty}{optional character string to specify the line type for the prediction interval. If unspecified, the function sets this to \code{"dotted"} by default.}
-   \item{fonts}{optional character string to specify the font to use for the labels and annotations.}
+   \item{col}{optional character string to specify the color of the polygons. If unspecified, the function sets a default color.}
+   \item{border}{optional character string to specify the border color of the polygons. If unspecified, the function sets a default color.}
+   \item{lty}{optional character string to specify the line type for the prediction interval. If unspecified, a dotted line is used by default.}
+   \item{fonts}{optional character string to specify the font for the labels and annotations.}
    \item{cex}{optional symbol expansion factor.}
    \item{\dots}{other arguments.}
 }
@@ -42,7 +42,7 @@
    Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \verb{https://doi.org/10.18637/jss.v036.i03}
 }
 \seealso{
-   \code{\link{forest.rma}} and \code{\link{forest.default}} for functions to draw forest plots to which polygons can be added.
+   \code{\link{forest}} for functions to draw forest plots to which polygons can be added.
 }
 \examples{
 ### calculate log risk ratios and corresponding sampling variances
@@ -50,9 +50,10 @@ dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg,
               data=dat.bcg, slab=paste(author, year, sep=", "))
 
 ### forest plot of the observed risk ratios
-with(dat, forest(yi, vi, atransf=exp, xlim=c(-8,4), ylim=c(-4.5,16),
-                 at=log(c(.05, .25, 1, 4)), cex=.8, order=alloc,
-                 ilab=alloc, ilab.xpos=-4, header="Author(s) and Year"))
+with(dat, forest(yi, vi, atransf=exp, xlim=c(-9,5), ylim=c(-4.5,15),
+                 at=log(c(0.05, 0.25, 1, 4)), cex=0.9, order=alloc,
+                 ilab=alloc, ilab.xpos=-4.5,
+                 header="Author(s) and Year", top=2))
 
 ### fit mixed-effects model with allocation method as a moderator
 res <- rma(yi, vi, mods = ~ 0 + alloc, data=dat)
@@ -61,10 +62,10 @@ res <- rma(yi, vi, mods = ~ 0 + alloc, data=dat)
 x <- predict(res, newmods=diag(3))
 
 ### add predicted average risk ratios to forest plot
-addpoly(x, efac=1.4, col="gray", addpred=TRUE,
+addpoly(x, efac=1.3, col="gray", addpred=TRUE,
         mlab=c("Alternate Allocation", "Random Allocation", "Systematic Allocation"))
 abline(h=0)
-text(-8, -1, "Model-Based Estimates:", pos=4, cex=.8)
-text(-4, res$k+2, "Allocation", cex=.8, font=2)
+text(-9, -1, "Model-Based Estimates:", pos=4, cex=0.9, font=2)
+text(-4.5, res$k+2, "Allocation", cex=0.9, font=2)
 }
 \keyword{aplot}

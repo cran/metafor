@@ -12,7 +12,7 @@
 \arguments{
    \item{x}{an object of class \code{"rma"}.}
    \item{row}{numeric value to specify the row (or more generally, the horizontal position) for plotting the polygon (the default is \code{-2}).}
-   \item{level}{numeric value between 0 and 100 to specify the confidence interval level (the default is to take the value from the object).}
+   \item{level}{numeric value between 0 and 100 to specify the confidence interval level (see \link[=misc-options]{here} for details). The default is to take the value from the object.}
    \item{annotate}{optional logical to specify whether annotations for the summary estimate should be added to the plot.}
    \item{addpred}{logical to specify whether the bounds of the prediction interval should be added to the plot (the default is \code{FALSE}).}
    \item{digits}{optional integer to specify the number of decimal places to which the annotations should be rounded.}
@@ -22,10 +22,10 @@
    \item{atransf}{optional argument to specify a function to transform the annotations (e.g., \code{atransf=exp}; see also \link{transf}).}
    \item{targs}{optional arguments needed by the function specified via \code{transf} or \code{atransf}.}
    \item{efac}{optional vertical expansion factor for the polygon.}
-   \item{col}{optional character string to specify color to use for the polygon. If unspecified, the function sets a default color.}
-   \item{border}{optional character string to specify the color to use for the border of the polygon. If unspecified, the function sets a default color.}
-   \item{lty}{optional character string to specify the line type for the prediction interval. If unspecified, the function sets this to \code{"dotted"} by default.}
-   \item{fonts}{optional character string to specify the font to use for the label and annotations.}
+   \item{col}{optional character string to specify the color of the polygon. If unspecified, the function sets a default color.}
+   \item{border}{optional character string to specify the border color of the polygon. If unspecified, the function sets a default color.}
+   \item{lty}{optional character string to specify the line type for the prediction interval. If unspecified, a dotted line is used by default.}
+   \item{fonts}{optional character string to specify the font for the label and annotations.}
    \item{cex}{optional symbol expansion factor.}
    \item{\dots}{other arguments.}
 }
@@ -41,7 +41,7 @@
    Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \verb{https://doi.org/10.18637/jss.v036.i03}
 }
 \seealso{
-   \code{\link{forest.rma}} and \code{\link{forest.default}} for functions to draw forest plots to which polygons can be added.
+   \code{\link{forest}} for functions to draw forest plots to which polygons can be added.
 }
 \examples{
 ### meta-analysis of the log risk ratios using the Mantel-Haenszel method
@@ -49,7 +49,7 @@ res <- rma.mh(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg,
               slab=paste(author, year, sep=", "))
 
 ### forest plot of the observed risk ratios with summary estimate
-forest(res, atransf=exp, xlim=c(-8,6), ylim=c(-2.5,16), header=TRUE)
+forest(res, atransf=exp, xlim=c(-8,6), ylim=c(-2.5,15), header=TRUE, top=2)
 
 ### meta-analysis of the log risk ratios using a random-effects model
 res <- rma(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
@@ -60,11 +60,11 @@ addpoly(res)
 ### forest plot with subgrouping of studies and summaries per subgroup
 res <- rma(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg,
            slab=paste(author, year, sep=", "))
-tmp <- forest(res, xlim=c(-16, 4.6), at=log(c(.05, .25, 1, 4)), atransf=exp,
+tmp <- forest(res, xlim=c(-16, 4.6), at=log(c(0.05, 0.25, 1, 4)), atransf=exp,
               ilab=cbind(tpos, tneg, cpos, cneg), ilab.xpos=c(-9.5,-8,-6,-4.5),
-              cex=.75, ylim=c(-1, 27), order=alloc, rows=c(3:4,9:15,20:23),
+              cex=0.75, ylim=c(-1, 27), order=alloc, rows=c(3:4,9:15,20:23),
               mlab="RE Model for All Studies", header="Author(s) and Year")
-op <- par(cex=.75, font=2)
+op <- par(cex=0.75, font=2)
 text(c(-9.5,-8,-6,-4.5), tmp$ylim[2]-1, c("TB+", "TB-", "TB+", "TB-"))
 text(c(-8.75,-5.25),     tmp$ylim[2],   c("Vaccinated", "Control"))
 par(font=4)

@@ -2,9 +2,15 @@
 \alias{misc-options}
 \title{Miscellaneous Options and Features}
 \description{
-This page documents some miscellaneous options and features that do not fit very well elsewhere.
+This page documents some miscellaneous options and features that do not fit very well elsewhere. \loadmathjax
 }
 \details{
+
+   \subsection{Specifying the Confidence Level}{
+
+   Several functions in the \pkg{metafor} package have a \code{level} argument for specifying the confidence level when calculating confidence (and prediction) intervals. The default is to use a 95\% level throughout the package by convention. Note that values \mjseqn{>=1} are treated as coverage percentages, values between 0.5 and 1 as coverage proportions, and values below 0.5 as (two-sided) alpha values, so \code{level=95} is the same as \code{level=.95} and \code{level=.05} (but \code{level=0} is always treated as a 0\% confidence level).
+
+   }
 
    \subsection{Controlling the Number of Digits in the Output}{
 
@@ -23,7 +29,7 @@ This page documents some miscellaneous options and features that do not fit very
    \item \code{het} for heterogeneity statistics.
    }
 
-   Instead of setting this argument in each function call (which would be tedious), one can also create a vector named \code{.digits} in the workspace (at the beginning of an analysis script) with:
+   Instead of setting this argument in each function call (which would be tedious), one can also create a vector named \code{.digits} in the workspace (e.g., at the beginning of an analysis script) with:
    \preformatted{.digits <- c(est=2, se=3, test=2, pval=3, ci=2, var=3, sevar=3, fit=3, het=3)}
    which then controls the displayed output. The values for the elements shown above could be a sensible choice when analyzing various types of standardized effect size measures.
 
@@ -94,10 +100,10 @@ dat
 res <- rma(yi, vi, mods = ~ ablat, data=dat, verbose=3)
 summary(res)}
 
-   \ifelse{html}{For example, using the color scheme above (for a light colored background), the output should look like this:
+   \if{html}{For example, using the color scheme above (for a light colored background), the output should look like this:
 
    \figure{crayon1.png}{options: width=800}
-   \figure{crayon2.png}{options: width=800}}{}
+   \figure{crayon2.png}{options: width=800}}
 
    Note that support for 256 different colors and text formatting (such as underlined and bold text) differs across terminals.
 
@@ -119,6 +125,28 @@ res
 res}
 
    shows the difference.
+
+   }
+
+   \subsection{Dark Mode for Plots}{
+
+   By default, plots created in R have a white background and use black (and other darker colors) as the plotting color. Figures created with the \pkg{metafor} package also adhere to this standard. However, all plotting functions in the package are designed such that switching to a dark background is easily possible. For this, one should set the canvas/figure background to either \code{"black"} or \code{"gray10"} and the foreground color to some bright color (e.g., \code{"gray90"} or \code{"gray95"}). The following code will accomplish this:
+
+\preformatted{bg <- "gray10"
+fg <- "gray95"
+dev.new(canvas=bg)
+par(fg=fg, bg=bg, col=fg, col.axis=fg, col.lab=fg, col.main=fg, col.sub=fg)
+}
+
+   Figures that make use of additional colors for various plot elements will by default then use colors that are compatible with the chosen background. For example, the following two figures illustrate the difference between the two styles:
+
+   \if{html}{
+   \figure{plots-light.png}{options: width=800}
+   \figure{plots-dark.png}{options: width=800}}
+
+   \if{latex}{
+   \figure{plots-light.pdf}{options: width=5.5in}
+   \figure{plots-dark.pdf}{options: width=5.5in}}
 
    }
 

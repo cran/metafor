@@ -120,7 +120,7 @@ vif(x, \dots)
 \seealso{
    \code{\link{rma.uni}}, \code{\link{rma.glmm}}, and \code{\link{rma.mv}} for functions to fit models for which variance inflation factors can be computed.
 
-   \code{\link{plot.vif.rma}} for the plot method and \code{\link{as.data.frame.vif.rma}} for the method to format the results as a data frame.
+   \code{\link[=plot.vif.rma]{plot}} for the plot method and \code{\link[=as.data.frame.vif.rma]{as.data.frame}} for the method to format the results as a data frame.
 }
 \examples{
 ### copy data from Bangert-Drowns et al. (2004) into 'dat'
@@ -134,7 +134,7 @@ vif(res)
 
 ### use the simulation approach to analyze the size of the VIFs
 \dontrun{
-vif(res, sim=TRUE)
+vif(res, sim=TRUE, seed=1234)
 }
 
 ### get variance inflation factors using the re-estimation approach
@@ -166,7 +166,7 @@ vif(res, btt="alloc")
 
 ### can also specify a list for the 'btt' argument (and use the simulation approach)
 \dontrun{
-vif(res, btt=list(2,3:4,5), sim=TRUE)
+vif(res, btt=list(2,3:4,5), sim=TRUE, seed=1234)
 }
 }
 \keyword{models}

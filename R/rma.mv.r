@@ -108,7 +108,7 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
    if (is.character(dfs))
       dfs <- match.arg(dfs, c("residual", "contain"))
 
-   if (dfs == "contain" && test == "z")
+   if (is.numeric(dfs) || (dfs == "contain" && test == "z"))
       test <- "t"
 
    ### handle Rscale argument (either character, logical, or integer)
@@ -523,6 +523,13 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
 
       if (any(has.colon))
          stop(mstyle$stop("Cannot use ':' notation in formulas in the 'random' argument (use 'interaction()' instead)."))
+
+      ### check if any formula have a %in%
+
+      has.in <- sapply(random, function(f) grepl("%in%", paste0(f, collapse=""), fixed=TRUE))
+
+      if (any(has.in))
+         stop(mstyle$stop("Cannot use '%in%' notation in formulas in the 'random' argument (use 'interaction()' instead)."))
 
       ### check which formulas have a ||
 
@@ -1184,7 +1191,7 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
          }
          Z.H2 <- Z.H2[not.na,,drop=FALSE]
          k    <- length(yi)
-         warning(mstyle$warning("Rows with NAs omitted from model fitting."), call.=FALSE)
+         warning(mstyle$warning(paste(sum(has.na), ifelse(sum(has.na) > 1, "rows", "row"), "with NAs omitted from model fitting.")), call.=FALSE)
 
          attr(yi, "measure") <- measure ### add measure attribute back
          attr(yi, "ni")      <- ni      ### add ni attribute back
@@ -1606,7 +1613,7 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
    ### set default control parameters
 
    con <- list(verbose = FALSE,
-               optimizer = "nlminb",      # optimizer to use ("optim","nlminb","uobyqa","newuoa","bobyqa","nloptr","nlm","hjk","nmk","mads","ucminf","lbfgsb3c","subplex","BBoptim","optimParallel")
+               optimizer = "nlminb",      # optimizer to use ("optim","nlminb","uobyqa","newuoa","bobyqa","nloptr","nlm","hjk","nmk","mads","ucminf","lbfgsb3c","subplex","BBoptim","optimParallel","Rcgmin","Rvmmin")
                optmethod = "BFGS",        # argument 'method' for optim() ("Nelder-Mead" and "BFGS" are sensible options)
                parallel = list(),         # parallel argument for optimParallel() (note: 'cl' argument in parallel is not passed; this is directly specified via 'cl')
                cl = NULL,                 # arguments for optimParallel()
@@ -1621,7 +1628,7 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
                cholesky = ifelse(is.element(struct, c("UN","UNR","GEN")), TRUE, FALSE), # by default, use Cholesky factorization for G and H matrix for "UN", "UNR", and "GEN" structures
                nearpd = FALSE,            # to force G and H matrix to become positive definite
                hessianCtrl = list(r=8),   # arguments passed on to 'method.args' of hessian()
-               hessian0 = .Machine$double.eps^0.5, # threshold for detecting fixed elements in Hessian
+               hesstol = .Machine$double.eps^0.5, # threshold for detecting fixed elements in Hessian
                hesspack = "numDeriv")     # package for computing the Hessian (numDeriv or pracma)
 
    ### replace defaults with any user-defined values
@@ -1761,7 +1768,7 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
          G <- .con.vcov.UN(tau2.init, rho.init)
       }
       G <- try(chol(G), silent=TRUE)
-      if (inherits(G, "try-error"))
+      if (inherits(G, "try-error") || anyNA(G))
          stop(mstyle$stop("Cannot take Choleski decomposition of initial 'G' matrix."))
       if (struct[1] == "UNR") {
          con$tau2.init <- log(tau2.init)
@@ -1784,7 +1791,7 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
    if (con$cholesky[2]) {
       H <- .con.vcov.UN(gamma2.init, phi.init)
       H <- try(chol(H), silent=TRUE)
-      if (inherits(H, "try-error"))
+      if (inherits(H, "try-error") || anyNA(H))
          stop(mstyle$stop("Cannot take Choleski decomposition of initial 'H' matrix."))
       con$gamma2.init <- diag(H)      ### note: con$gamma2.init and con$phi.init are the 'choled' values of the initial H matrix, so con$phi.init really
       con$phi.init <- H[lower.tri(H)] ### contains the 'choled' covariances; and these values are also passed on the .ll.rma.mv as the initial values
@@ -2388,7 +2395,7 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
 
          ### detect rows/columns that are essentially all equal to 0 (fixed elements) and filter them out
 
-         hest <- !apply(hessian, 1, function(x) all(abs(x) <= con$hessian0))
+         hest <- !apply(hessian, 1, function(x) all(abs(x) <= con$hesstol))
          hessian <- hessian[hest, hest, drop=FALSE]
 
          ### try to invert Hessian
@@ -2451,15 +2458,19 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
 
    #########################################################################
 
-   ### replace interaction() notation with : notation for nicer output
+   ### replace interaction() notation with : notation for nicer output (also for paste() and paste0())
 
    replfun <- function(x) {
-      if (grepl("interaction(", x, fixed=TRUE)) {
+      if (grepl("interaction(", x, fixed=TRUE) || grepl("paste(", x, fixed=TRUE) || grepl("paste0(", x, fixed=TRUE)) {
          #x <- gsub("^interaction\\(", "", x)
          #x <- gsub(", ", ":", x, fixed=TRUE)
          #x <- gsub("\\)$", "", x, fixed=FALSE)
          #x <- gsub("(.*)interaction\\(\\s*(.*)\\s*,\\s*(.*)\\s*\\)(.*)", "\\1(\\2:\\3)\\4", x)
-         x <- gsub("interaction\\((.*),\\s*(.*)\\)", "(\\1:\\2)", x)
+         #x <- gsub("interaction\\((.*)\\s*,\\s*(.*)\\)", "(\\1:\\2)", x)
+         x <- gsub("interaction\\((.*)\\)", "(\\1)", x)
+         x <- gsub("paste[0]?\\((.*)\\)", "(\\1)", x)
+         x <- gsub(",", ":", x, fixed=TRUE)
+         x <- gsub(" ", "", x, fixed=TRUE)
          x <- gsub("^\\((.*)\\)$", "\\1", x) # if a name is "(...)", then can remove the ()
       }
       return(x)
