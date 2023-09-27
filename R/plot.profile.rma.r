@@ -6,6 +6,8 @@ plot.profile.rma <- function(x, xlim, ylim, pch=19, xlab, ylab, main, refline=TR
 
    .chkclass(class(x), must="profile.rma")
 
+   .start.plot()
+
    if (dev.cur() == 1) {
       par(mfrow=n2mfrow(x$comps))
       #on.exit(par(mfrow=c(1,1)), add=TRUE)
@@ -20,7 +22,7 @@ plot.profile.rma <- function(x, xlim, ylim, pch=19, xlab, ylab, main, refline=TR
    ### filter out some arguments for the plot() function
 
    lplot   <- function(..., time, LB, startmethod, sub1) plot(...)
-   lpoints <- function(..., time, LB, startmethod, sub1, log) points(...)
+   lpoints <- function(..., time, LB, startmethod, sub1, log) points(...) # need 'log' here so profile(res, log="x") doesn't throw a warning
 
    #########################################################################
 

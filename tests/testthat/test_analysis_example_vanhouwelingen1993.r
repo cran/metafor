@@ -13,10 +13,13 @@ test_that("the log likelihood plot can be created.", {
 
    skip_on_cran()
 
-   opar <- par(no.readonly=TRUE)
+   png(filename="images/test_analysis_example_vanhouwelingen1993_llplot_test.png", res=200, width=1800, height=1200, type="cairo")
+   par(mar=c(5,5,1,2))
    expect_warning(llplot(measure="OR", ai=b.xci, n1i=nci, ci=b.xti, n2i=nti, data=dat,
                   xlim=c(-4,4), lwd=1, col="black", refline=NA, drop00=FALSE))
-   par(opar)
+   dev.off()
+
+   expect_true(.vistest("images/test_analysis_example_vanhouwelingen1993_llplot_test.png", "images/test_analysis_example_vanhouwelingen1993_llplot.png"))
 
 })
 
@@ -56,7 +59,7 @@ test_that("results of the random-effects conditional logistic model are correct.
    expect_equivalent(res$se, 0.1364, tolerance=.tol[["se"]])
    expect_equivalent(res$ci.lb, -0.0929, tolerance=.tol[["ci"]])
    expect_equivalent(res$ci.ub, 0.4417, tolerance=.tol[["ci"]])
-   expect_equivalent(c(logLik(res)), -52.9001, tolerance=.tol[["fit"]])
+   expect_equivalent(c(logLik(res)), -52.99009, tolerance=.tol[["fit"]])
    expect_equivalent(res$tau2, 0.1192, tolerance=.tol[["var"]])
 
    ### run with control(dnchgcalc="dnoncenhypergeom")
@@ -67,7 +70,7 @@ test_that("results of the random-effects conditional logistic model are correct.
    expect_equivalent(res$se, 0.1364, tolerance=.tol[["se"]])
    expect_equivalent(res$ci.lb, -0.0930, tolerance=.tol[["ci"]])
    expect_equivalent(res$ci.ub, 0.4418, tolerance=.tol[["ci"]])
-   expect_equivalent(c(logLik(res)), -52.9901, tolerance=.tol[["fit"]])
+   expect_equivalent(c(logLik(res)), -52.99009, tolerance=.tol[["fit"]])
    expect_equivalent(res$tau2, 0.1192, tolerance=.tol[["var"]])
 
 })

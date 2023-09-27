@@ -1,4 +1,4 @@
-summary.rma <- function(object, digits, showfit=TRUE, ...) {
+summary.rma <- function(object, digits, ...) {
 
    mstyle <- .get.mstyle("crayon" %in% .packages())
 

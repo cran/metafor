@@ -51,6 +51,8 @@ lty, lwd, col, level=99.99, refline=0, ...) {
    addyi  <- ifelse(is.null(ddd$addyi),  TRUE,  ddd$addyi)
    addvi  <- ifelse(is.null(ddd$addvi),  TRUE,  ddd$addvi)
 
+   .start.plot()
+
    #########################################################################
 
    ### check if data argument has been specified
@@ -294,14 +296,11 @@ lty, lwd, col, level=99.99, refline=0, ...) {
    if (is.null(lwd))
       lwd <- seq(from=4.0, to=0.4, length.out=k)[rank(vi)]
 
-   ### set default line color (gray0 to gray60 according to the rank of vi)
+   ### set default line color (darker to lighter according to the rank of vi)
 
    if (is.null(col)) {
-      if (is.element(par("bg"), c("black", "gray10"))) {
-         col <- paste0("gray", round(seq(from=70, to=30, length.out=k))[rank(vi)])
-      } else {
-         col <- paste0("gray", round(seq(from=0, to=70, length.out=k))[rank(vi)])
-      }
+      col <- sapply(seq(from=0.8, to=0.2, length.out=k), function(x) .coladj(par("bg","fg"), dark=x, light=-x))
+      col <- col[rank(vi)]
    }
 
    ### set x-axis limits

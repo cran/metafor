@@ -12,7 +12,7 @@ test_that("plot can be drawn for 'rma.uni' object.", {
 
    skip_on_cran()
 
-   opar <- par(no.readonly=TRUE)
+   png("images/test_plots_normal_qq_plots_1_test.png", res=200, width=1800, height=1800, type="cairo")
 
    ### set up 2x2 array for plotting
    par(mfrow=c(2,2))
@@ -29,15 +29,21 @@ test_that("plot can be drawn for 'rma.uni' object.", {
    res4 <- rma(yi, vi, mods=~ablat, data=dat)
 
    ### normal QQ plots for the various models
-   qqnorm(res1, main="Equal-Effects Model")
-   qqnorm(res2, main="Random-Effects Model")
-   qqnorm(res3, main="Fixed-Effects with Moderators Model")
-   qqnorm(res4, main="Mixed-Effects Model")
+   qqnorm(res1, seed=1234, main="Equal-Effects Model")
+   qqnorm(res2, seed=1234, main="Random-Effects Model")
+   qqnorm(res3, seed=1234, main="Fixed-Effects with Moderators Model")
+   qqnorm(res4, seed=1234, main="Mixed-Effects Model")
 
-   par(opar)
+   dev.off()
+
+   expect_true(.vistest("images/test_plots_normal_qq_plots_1_test.png", "images/test_plots_normal_qq_plots_1.png"))
 
    ### draw plot with studentized residuals and labels
-   qqnorm(res2, type="rstudent", label=TRUE)
+   png("images/test_plots_normal_qq_plots_2_test.png", res=200, width=1800, height=1800, type="cairo")
+   qqnorm(res2, type="rstudent", label=TRUE, seed=1234)
+   dev.off()
+
+   expect_true(.vistest("images/test_plots_normal_qq_plots_2_test.png", "images/test_plots_normal_qq_plots_2.png"))
 
 })
 
@@ -47,11 +53,15 @@ test_that("plot can be drawn for 'rma.mh' object.", {
 
    skip_on_cran()
 
-   opar <- par(no.readonly=TRUE)
+   png("images/test_plots_normal_qq_plots_3_test.png", res=200, width=1800, height=1800, type="cairo")
+
    res <- rma.mh(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
    qqnorm(res)
    qqnorm(res, type="rstudent", label=TRUE)
-   par(opar)
+
+   dev.off()
+
+   expect_true(.vistest("images/test_plots_normal_qq_plots_3_test.png", "images/test_plots_normal_qq_plots_3.png"))
 
 })
 
@@ -61,18 +71,22 @@ test_that("plot can be drawn for 'rma.peto' object.", {
 
    skip_on_cran()
 
-   opar <- par(no.readonly=TRUE)
+   png("images/test_plots_normal_qq_plots_4_test.png", res=200, width=1800, height=1800, type="cairo")
+
    res <- rma.peto(ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
    qqnorm(res)
    qqnorm(res, type="rstudent", label=TRUE)
-   par(opar)
+
+   dev.off()
+
+   expect_true(.vistest("images/test_plots_normal_qq_plots_4_test.png", "images/test_plots_normal_qq_plots_4.png"))
 
 })
 
 test_that("plot cannot be drawn for 'rma.mv' object.", {
 
    dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
-   res <- rma.mv(yi, vi, random = ~ 1 | trial, data=dat, sparse=sparse)
+   res <- rma.mv(yi, vi, random = ~ 1 | trial, data=dat, sparse=.sparse)
    expect_error(qqnorm(res))
 
 })

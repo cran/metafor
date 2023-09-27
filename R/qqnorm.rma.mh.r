@@ -14,16 +14,13 @@ qqnorm.rma.mh <- function(y, type="rstandard", pch=21, col, bg, label=FALSE, off
    if (length(label) != 1L)
       stop(mstyle$stop("Argument 'label' should be of length 1."))
 
+   .start.plot()
+
    if (missing(col))
       col <- par("fg")
 
-   if (missing(bg)) {
-      if (is.element(par("bg"), c("black", "gray10"))) {
-         bg <- "gray40"
-      } else {
-         bg <- "gray70"
-      }
-   }
+   if (missing(bg))
+      bg <- .coladj(par("bg","fg"), dark=0.35, light=-0.35)
 
    #########################################################################
 

@@ -22,7 +22,7 @@ rma.mv(yi, V, W, mods, random, struct="CS", intercept=TRUE,
    \item{data}{optional data frame containing the data supplied to the function.}
    \item{slab}{optional vector with labels for the \mjseqn{k} outcomes/studies.}
    \item{subset}{optional (logical or numeric) vector to specify the subset of studies (or more precisely, rows of the dataset) that should be used for the analysis.}
-   \item{method}{character string to specify whether the model should be fitted via maximum likelihood (\code{"ML"}) or via restricted maximum likelihood (\code{"REML"}) estimation. Default is \code{"REML"}.}
+   \item{method}{character string to specify whether the model should be fitted via maximum likelihood (\code{"ML"}) or via restricted maximum likelihood (\code{"REML"}) estimation (the default is \code{"REML"}).}
    \item{test}{character string to specify how test statistics and confidence intervals for the fixed effects should be computed. By default (\code{test="z"}), Wald-type tests and CIs are obtained, which are based on a standard normal distribution. When \code{test="t"}, a t-distribution is used instead. See \sQuote{Details} and also \link[=misc-recs]{here} for some recommended practices.}
    \item{dfs}{character string to specify how the (denominator) degrees of freedom should be calculated when \code{test="t"}. Either \code{dfs="residual"} or \code{dfs="contain"}. Can also be a numeric vector with the degrees of freedom for each model coefficient. See \sQuote{Details}.}
    \item{level}{numeric value between 0 and 100 to specify the confidence interval level (the default is 95; see \link[=misc-options]{here} for details).}
@@ -267,6 +267,7 @@ rma.mv(yi, V, W, mods, random, struct="CS", intercept=TRUE,
 \examples{
 ### calculate log odds ratios and corresponding sampling variances
 dat <- escalc(measure="OR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
+dat
 
 ### fit random-effects model using rma.uni()
 rma(yi, vi, data=dat)
@@ -276,7 +277,7 @@ rma(yi, vi, data=dat)
 rma.mv(yi, vi, random = ~ 1 | trial, data=dat)
 
 ### change data into long format
-dat.long <- to.long(measure="OR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
+dat.long <- to.long(measure="OR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg, append=FALSE)
 
 ### set levels of group variable ("exp" = experimental/vaccinated; "con" = control/non-vaccinated)
 levels(dat.long$group) <- c("exp", "con")
@@ -286,6 +287,7 @@ dat.long$group <- relevel(dat.long$group, ref="con")
 
 ### calculate log odds and corresponding sampling variances
 dat.long <- escalc(measure="PLO", xi=out1, mi=out2, data=dat.long)
+dat.long
 
 ### fit bivariate random-effects model using rma.mv()
 res <- rma.mv(yi, vi, mods = ~ group, random = ~ group | study, struct="UN", data=dat.long)

@@ -58,10 +58,7 @@ test_that("results are correct for the mixed-effects model.", {
    expect_equivalent(res$tau2, .0475, tolerance=.tol[["var"]])
    expect_equivalent(res$R2, 47.3778, tolerance=.tol[["r2"]]) ### 48% in article
 
-   sav <- structure(list(estimate = c(0.4763, -0.0058, -0.0672, -0.0016), se = c(0.0876, 0.01, 0.0352, 0.0034),
-                         zval = c(5.4342, -0.5846, -1.9086, -0.4555), pval = c(0, 0.5588, 0.0563, 0.6487)),
-                         .Names = c("estimate", "se", "zval", "pval"),
-                         row.names = c("Intercept", "Dosage", "Baseline", "Dosage x Baseline"), class = "data.frame")
+   sav <- structure(list(estimate = c(0.47625885, -0.0058448, -0.06722782, -0.00156996), se = c(0.08764097, 0.00999872, 0.03522283, 0.00344659), zval = c(5.43420301, -0.58455444, -1.9086436, -0.45551255), pval = c(6e-08, 0.55884735, 0.05630808, 0.64874054)), row.names = c("intrcpt", "I(dosage - 34)", "I(baseline - 20)", "I(dosage - 34):I(baseline - 20)"), class = "data.frame")
 
    ### compare with results in Table II on page 113
    expect_equivalent(coef(summary(res))[,1:4], sav, tolerance=.tol[["misc"]])
@@ -76,23 +73,23 @@ test_that("results are correct for the mixed-effects model.", {
 
    skip_on_cran()
 
-   size <- 1 / sqrt(dat$vi)
-   size <- 0.15 * size / max(size)
+   png(filename="images/test_analysis_example_viechtbauer2007b_test.png", res=200, width=1800, height=1600, type="cairo")
 
-   modvals <- cbind(0, cbind(seq(12, 24, by=.1)) - 20, 0)
-   preds   <- predict(res, modvals, transf=exp)
+   par(mar=c(4,4,1,1))
 
-   opar <- par(no.readonly=TRUE)
+   xvals   <- seq(12, 24, by=0.1) - 20
+   modvals <- cbind(0, cbind(xvals, 0))
+   preds   <- predict(res, modvals)
 
-   plot(NA, NA, xlab="Baseline HRSD Score", ylab="Relative Rate", xlim=c(12,24), ylim=c(0.5,4.0), bty="l")
-   abline(h=seq(1, 4, by=0.5), col="lightgray")
-   abline(v=seq(14, 24, by=2), col="lightgray")
-   lines(modvals[,2] + 20, preds$pred, col="darkgray", lwd=2)
-   lines(modvals[,2] + 20, preds$ci.lb, col="darkgray", lty="dashed", lwd=2)
-   lines(modvals[,2] + 20, preds$ci.ub, col="darkgray", lty="dashed", lwd=2)
-   symbols(dat$baseline, exp(dat$yi), circles=size, inches=FALSE, add=TRUE, bg="black")
+   regplot(res, mod=3, pred=preds, xvals=xvals,
+           shade=FALSE, bty="l", las=1, digits=1, transf=exp,
+           xlim=c(12,24)-20, ylim=c(0.5,4), xaxt="n",
+           xlab="Baseline HRSD Score", ylab="Relative Rate")
+   axis(side=1, at=seq(12, 24, by=2) - 20, labels=seq(12, 24, by=2))
 
-   par(opar)
+   dev.off()
+
+   expect_true(.vistest("images/test_analysis_example_viechtbauer2007b_test.png", "images/test_analysis_example_viechtbauer2007b.png"))
 
    ### check results for all tau^2 estimators
 

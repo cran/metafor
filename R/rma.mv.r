@@ -93,7 +93,7 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
 
    ddd <- list(...)
 
-   .chkdots(ddd, c("tdist", "outlist", "time", "dist", "abbrev", "restart", "beta"))
+   .chkdots(ddd, c("tdist", "outlist", "time", "dist", "abbrev", "restart", "beta", "vccon"))
 
    ### handle 'tdist' argument from ... (note: overrides test argument)
 
@@ -164,6 +164,17 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
 
    } else {
       ddd$dist <- list("euclidean", "euclidean")
+   }
+
+   if (is.null(ddd$vccon)) {
+      vccon <- NULL
+   } else {
+      vccon <- ddd$vccon
+      sigma2 <- .chkvccon(vccon$sigma2, sigma2)
+      tau2   <- .chkvccon(vccon$tau2,   tau2)
+      rho    <- .chkvccon(vccon$rho,    rho)
+      gamma2 <- .chkvccon(vccon$gamma2, gamma2)
+      phi    <- .chkvccon(vccon$phi,    phi)
    }
 
    ### set defaults for formulas
@@ -675,9 +686,9 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
 
       ### separate mf.r into mf.s (~ 1 | id), mf.g (~ inner | outer), and mf.h (~ inner | outer) parts
 
-      mf.s <- mf.r[which(mf.r.ncols == 1)]      ### if there is no '~ 1 | factor' term, this is list() ([] so that we get a list of data frames)
-      mf.g <- mf.r[[which(mf.r.ncols >= 2)[1]]] ### if there is no 1st '~ inner | outer' terms, this is NULL ([[]] so that we get a data frame, not a list)
-      mf.h <- mf.r[[which(mf.r.ncols >= 2)[2]]] ### if there is no 2nd '~ inner | outer' terms, this is NULL ([[]] so that we get a data frame, not a list)
+      mf.s <- mf.r[which(mf.r.ncols == 1)]      # if there is no '~ 1 | factor' term, this is list() ([] so that we get a list of data frames)
+      mf.g <- mf.r[[which(mf.r.ncols >= 2)[1]]] # if there is no 1st '~ inner | outer' terms, this is NULL ([[]] so that we get a data frame, not a list)
+      mf.h <- mf.r[[which(mf.r.ncols >= 2)[2]]] # if there is no 2nd '~ inner | outer' terms, this is NULL ([[]] so that we get a data frame, not a list)
 
       ### if there is no (~ 1 | factor) term, then mf.s is list(), so turn that into NULL
 
@@ -1002,7 +1013,7 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
             ### check for R being positive definite
             ### skipped: even if R is not positive definite, the marginal var-cov matrix can still be; so just check for pd during optimization
 
-            #if (any(sapply(R[Rfix], function(x) any(eigen(x, symmetric=TRUE, only.values=TRUE)$values <= .Machine$double.eps)))) ### any eigenvalue below double.eps is essentially 0
+            #if (any(sapply(R[Rfix], !.chkpd)))
             #   stop(mstyle$stop("Matrix in R is not positive definite."))
 
             for (j in seq_along(R)) {
@@ -1231,7 +1242,7 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
    ### skipped: even if V is not positive definite, the marginal var-cov matrix can still be; so just check for pd during the optimization
    ### but at least issue a warning, since a fixed-effects model can then not be fitted and there is otherwise no indication why this is the case
 
-   if (!V0 && any(eigen(V, symmetric=TRUE, only.values=TRUE)$values <= .Machine$double.eps)) ### any eigenvalue below double.eps is essentially 0
+   if (!V0 && !.chkpd(V))
       warning(mstyle$warning("'V' appears to be not positive definite."), call.=FALSE)
 
    ### check ratio of largest to smallest sampling variance
@@ -1813,7 +1824,6 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
       optmethod <- optimizer
       optimizer <- "optim"
    }
-   evtol      <- con$evtol
    nearpd     <- con$nearpd
    cholesky   <- con$cholesky
    parallel   <- con$parallel
@@ -1878,7 +1888,7 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
 
    ### check whether model matrix is of full rank
 
-   if (any(eigen(crossprod(X), symmetric=TRUE, only.values=TRUE)$values <= evtol))
+   if (!.chkpd(crossprod(X), tol=con$evtol))
       stop(mstyle$stop("Model matrix not of full rank. Cannot fit model."))
 
    ### which variance components are fixed? (TRUE/FALSE or NA if not applicable = not included)
@@ -2004,7 +2014,7 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
             sigma2s=sigma2s, tau2s=tau2s, rhos=rhos, gamma2s=gamma2s, phis=phis,
             withS=withS, withG=withG, withH=withH, struct=struct,
             g.levels.r=g.levels.r, h.levels.r=h.levels.r, g.values=g.values, h.values=h.values,
-            sparse=sparse, cholesky=cholesky, nearpd=nearpd, vctransf=TRUE, vccov=FALSE,
+            sparse=sparse, cholesky=cholesky, nearpd=nearpd, vctransf=TRUE, vccov=FALSE, vccon=vccon,
             verbose=verbose, digits=digits, REMLf=con$REMLf, dofit=FALSE, hessian=FALSE", ctrl.arg, ")\n", sep="")
 
          #return(optcall)
@@ -2069,7 +2079,7 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
       sigma2s=sigma2s, tau2s=tau2s, rhos=rhos, gamma2s=gamma2s, phis=phis,
       withS=withS, withG=withG, withH=withH, struct=struct,
       g.levels.r=g.levels.r, h.levels.r=h.levels.r, g.values=g.values, h.values=h.values,
-      sparse=sparse, cholesky=cholesky, nearpd=nearpd, vctransf=TRUE, vccov=FALSE,
+      sparse=sparse, cholesky=cholesky, nearpd=nearpd, vctransf=TRUE, vccov=FALSE, vccon=vccon,
       verbose=FALSE, digits=digits, REMLf=con$REMLf, dofit=TRUE)
 
    ### extract elements
@@ -2266,7 +2276,7 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
                sigma2s=sigma2s, tau2s=tau2s, rhos=rhos, gamma2s=gamma2s, phis=phis,
                withS=withS, withG=withG, withH=withH, struct=struct,
                g.levels.r=g.levels.r, h.levels.r=h.levels.r, g.values=g.values, h.values=h.values,
-               sparse=sparse, cholesky=c(FALSE,FALSE), nearpd=nearpd, vctransf=FALSE, vccov=TRUE,
+               sparse=sparse, cholesky=c(FALSE,FALSE), nearpd=nearpd, vctransf=FALSE, vccov=TRUE, vccon=vccon,
                verbose=verbose, digits=digits, REMLf=con$REMLf, hessian=TRUE), silent=TRUE)
          if (con$hesspack == "pracma")
             hessian <- try(pracma::hessian(f=.ll.rma.mv, x0 = c(sigma2, tau2, cov1, gamma2, cov2),
@@ -2276,7 +2286,7 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
                sigma2s=sigma2s, tau2s=tau2s, rhos=rhos, gamma2s=gamma2s, phis=phis,
                withS=withS, withG=withG, withH=withH, struct=struct,
                g.levels.r=g.levels.r, h.levels.r=h.levels.r, g.values=g.values, h.values=h.values,
-               sparse=sparse, cholesky=c(FALSE,FALSE), nearpd=nearpd, vctransf=FALSE, vccov=TRUE,
+               sparse=sparse, cholesky=c(FALSE,FALSE), nearpd=nearpd, vctransf=FALSE, vccov=TRUE, vccon=vccon,
                verbose=verbose, digits=digits, REMLf=con$REMLf, hessian=TRUE), silent=TRUE)
 
          # note: vctransf=FALSE and cholesky=c(FALSE,FALSE), so we get the Hessian for the untransfored variances and covariances
@@ -2292,7 +2302,7 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
                withS=withS, withG=withG, withH=withH, struct=struct,
                g.levels.r=g.levels.r, h.levels.r=h.levels.r, g.values=g.values, h.values=h.values,
                sparse=sparse, cholesky=ifelse(c(cvvc=="transf",cvvc=="transf") & cholesky, TRUE, FALSE),
-               nearpd=nearpd, vctransf=cvvc=="transf", vccov=FALSE,
+               nearpd=nearpd, vctransf=cvvc=="transf", vccov=FALSE, vccon=vccon,
                verbose=verbose, digits=digits, REMLf=con$REMLf, hessian=TRUE), silent=TRUE)
          if (con$hesspack == "pracma")
             hessian <- try(pracma::hessian(f=.ll.rma.mv, x0 = if (cvvc=="transf") opt.res$par else c(sigma2, tau2, rho, gamma2, phi),
@@ -2303,7 +2313,7 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
                withS=withS, withG=withG, withH=withH, struct=struct,
                g.levels.r=g.levels.r, h.levels.r=h.levels.r, g.values=g.values, h.values=h.values,
                sparse=sparse, cholesky=ifelse(c(cvvc=="transf",cvvc=="transf") & cholesky, TRUE, FALSE),
-               nearpd=nearpd, vctransf=cvvc=="transf", vccov=FALSE,
+               nearpd=nearpd, vctransf=cvvc=="transf", vccov=FALSE, vccon=vccon,
                verbose=verbose, digits=digits, REMLf=con$REMLf, hessian=TRUE), silent=TRUE)
 
          # note: when cvvc=TRUE/"covcor", get the Hessian for the (untransfored) variances and correlations
@@ -2427,14 +2437,23 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
 
    p <- sum(beta.est)
 
-   parms <- p + ifelse(withS, sum(ifelse(sigma2.fix,0,1)), 0) +
-                ifelse(withG, sum(ifelse(tau2.fix,0,1)), 0) +
-                ifelse(withG, sum(ifelse(rho.fix,0,1)), 0) +
-                ifelse(withH, sum(ifelse(gamma2.fix,0,1)), 0) +
-                ifelse(withH, sum(ifelse(phi.fix,0,1)), 0)
+   if (is.null(vccon)) {
 
-   ### note: this counts all variance components and correlations for the total number of parameters, even if they were fixed by the user or function
-   #parms <- p + ifelse(withS, sigma2s, 0) + ifelse(withG, tau2s, 0) + ifelse(withG, rhos, 0) + ifelse(withH, gamma2s, 0) + ifelse(withH, phis, 0)
+      parms <- p + ifelse(withS, sum(ifelse(sigma2.fix, 0, 1)), 0) +
+                   ifelse(withG, sum(ifelse(tau2.fix,   0, 1)), 0) +
+                   ifelse(withG, sum(ifelse(rho.fix,    0, 1)), 0) +
+                   ifelse(withH, sum(ifelse(gamma2.fix, 0, 1)), 0) +
+                   ifelse(withH, sum(ifelse(phi.fix,    0, 1)), 0)
+
+   } else {
+
+      parms <- p + ifelse(withS && !is.null(vccon$sigma2), length(unique(vccon$sigma2)) - sum(sigma2.fix), 0) +
+                   ifelse(withG && !is.null(vccon$tau2),   length(unique(vccon$tau2))   - sum(tau2.fix),   0) +
+                   ifelse(withG && !is.null(vccon$rho),    length(unique(vccon$rho))    - sum(rho.fix),    0) +
+                   ifelse(withH && !is.null(vccon$gamma2), length(unique(vccon$gamma2)) - sum(gamma2.fix), 0) +
+                   ifelse(withH && !is.null(vccon$phi),    length(unique(vccon$phi))    - sum(phi.fix),    0)
+
+   }
 
    ll.ML   <- fitcall$llvals[1]
    ll.REML <- fitcall$llvals[2]
@@ -2447,7 +2466,7 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
    AIC.ML    <- -2 * ll.ML   + 2*parms
    BIC.ML    <- -2 * ll.ML   +   parms * log(k)
    AICc.ML   <- -2 * ll.ML   + 2*parms * max(k, parms+2) / (max(k, parms+2) - parms - 1)
-   dev.REML  <- -2 * (ll.REML - 0) ### saturated model has ll = 0 when using the full REML likelihood
+   dev.REML  <- -2 * (ll.REML - 0) # saturated model has ll = 0 when using the full REML likelihood
    AIC.REML  <- -2 * ll.REML + 2*parms
    BIC.REML  <- -2 * ll.REML +   parms * log(k-p)
    AICc.REML <- -2 * ll.REML + 2*parms * max(k-p, parms+2) / (max(k-p, parms+2) - parms - 1)
@@ -2499,7 +2518,8 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
                   QE=QE, QEdf=QEdf, QEp=QEp, QM=QM, QMdf=QMdf, QMp=QMp,
                   k=k, k.f=k.f, k.eff=k.eff, k.all=k.all, p=p, p.eff=p.eff, parms=parms,
                   int.only=int.only, int.incl=int.incl, intercept=intercept, allvipos=allvipos, coef.na=coef.na,
-                  yi=yi, vi=vi, V=V, W=A, X=X, yi.f=yi.f, vi.f=vi.f, V.f=V.f, X.f=X.f, W.f=W.f, ni=ni, ni.f=ni.f, M=M, G=G, H=H, hessian=hessian, vvc=vvc,
+                  yi=yi, vi=vi, V=V, W=A, X=X, yi.f=yi.f, vi.f=vi.f, V.f=V.f, X.f=X.f, W.f=W.f, ni=ni, ni.f=ni.f,
+                  M=M, G=G, H=H, hessian=hessian, vvc=vvc, vccon=vccon,
                   ids=ids, not.na=not.na, subset=subset, slab=slab, slab.null=slab.null,
                   measure=measure, method=method, weighted=weighted,
                   test=test, dfs=dfs, ddf=ddf, s2w=s2w, btt=btt, m=m,

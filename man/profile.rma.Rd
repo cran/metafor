@@ -9,7 +9,7 @@
 \alias{plot.profile.rma}
 \title{Profile Likelihood Plots for 'rma' Objects}
 \description{
-   Function to profile the (restricted) log-likelihood for objects of class \code{"rma.uni"}, \code{"rma.mv"}, \code{"rma.uni.selmodel"}, and \code{"rma.ls"}. \loadmathjax
+   Functions to profile the (restricted) log-likelihood for objects of class \code{"rma.uni"}, \code{"rma.mv"}, \code{"rma.uni.selmodel"}, and \code{"rma.ls"}. \loadmathjax
 }
 \usage{
 \method{profile}{rma.uni}(fitted, xlim, ylim, steps=20,
@@ -44,7 +44,7 @@
    \item{phi}{optional integer to specify for which \mjseqn{\phi} value the likelihood should be profiled.}
    \item{delta}{optional integer to specify for which \mjseqn{\delta} value the likelihood should be profiled.}
    \item{alpha}{optional integer to specify for which \mjseqn{\alpha} value the likelihood should be profiled.}
-   \item{xlim}{optional vector to specify the lower and upper limit of the parameter over which the profiling should be done. If unspecified, the function tries to set these limits automatically.}
+   \item{xlim}{optional vector to specify the lower and upper limit of the parameter over which the profiling should be done. If unspecified, the function sets these limits automatically.}
    \item{ylim}{optional vector to specify the y-axis limits when plotting the profiled likelihood. If unspecified, the function sets these limits automatically.}
    \item{steps}{number of points between \code{xlim[1]} and \code{xlim[2]} (inclusive) for which the likelihood should be evaluated (the default is 20).}
    \item{lltol}{numerical tolerance used when comparing values of the profiled log-likelihood with the log-likelihood of the fitted model (the default is 1e-03).}
@@ -67,6 +67,7 @@
    \subsection{Selecting the Parameter(s) to Profile}{
 
       The parameters that can be profiled depend on the model object:
+
       \itemize{
       \item For objects of class \code{"rma.uni"} obtained with the \code{\link{rma.uni}} function, the function profiles over \mjseqn{\tau^2} (not for equal-effects models).
       \item For objects of class \code{"rma.mv"} obtained with the \code{\link{rma.mv}} function, profiling is done by default over all (non-fixed) variance and correlation components of the model. Alternatively, one can use the \code{sigma2}, \code{tau2}, \code{rho}, \code{gamma2}, or \code{phi} arguments to specify over which parameter the profiling should be done. Only one of these arguments can be used at a time. A single integer is used to specify the number of the parameter.
@@ -143,7 +144,7 @@ res <- rma(yi, vi, data=dat)
 profile(res, progbar=FALSE)
 
 ### change data into long format
-dat.long <- to.long(measure="OR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
+dat.long <- to.long(measure="OR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg, append=FALSE)
 
 ### set levels of group variable ("exp" = experimental/vaccinated; "con" = control/non-vaccinated)
 levels(dat.long$group) <- c("exp", "con")
@@ -153,6 +154,7 @@ dat.long$group <- relevel(dat.long$group, ref="con")
 
 ### calculate log odds and corresponding sampling variances
 dat.long <- escalc(measure="PLO", xi=out1, mi=out2, data=dat.long)
+dat.long
 
 ### fit bivariate random-effects model using rma.mv()
 res <- rma.mv(yi, vi, mods = ~ group, random = ~ group | study, struct="UN", data=dat.long)
@@ -167,7 +169,7 @@ profile(res, tau2=2)
 profile(res, rho=1, xlim=c(0.90, 0.98))
 }
 
-### an example where the peak is at 0
+### an example where the peak of the likelihood profile is at 0
 dat <- escalc(measure="RD", n1i=n1i, n2i=n2i, ai=ai, ci=ci, data=dat.hine1989)
 res <- rma(yi, vi, data=dat)
 par(mfrow=c(1,1))

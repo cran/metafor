@@ -12,17 +12,14 @@ plot.rma.peto <- function(x, qqplot=FALSE, ...) {
    if (!is.element(na.act, c("na.omit", "na.exclude", "na.fail", "na.pass")))
       stop(mstyle$stop("Unknown 'na.action' specified under options()."))
 
+   .start.plot()
+
    par.mfrow <- par("mfrow")
    par(mfrow=c(2,2))
    on.exit(par(mfrow = par.mfrow), add=TRUE)
 
-   if (is.element(par("bg"), c("black", "gray10"))) {
-      col.na <- "gray30"
-      bg <- "gray30"
-   } else {
-      col.na <- "gray70"
-      bg <- "gray70"
-   }
+   bg <- .coladj(par("bg","fg"), dark=0.35, light=-0.35)
+   col.na <- .coladj(par("bg","fg"), dark=0.2, light=-0.2)
 
    #########################################################################
 

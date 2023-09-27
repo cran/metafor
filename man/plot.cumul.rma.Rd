@@ -2,7 +2,7 @@
 \alias{plot.cumul.rma}
 \title{Plot Method for 'cumul.rma' Objects}
 \description{
-   Plot method for objects of class \code{"cumul.rma"}. \loadmathjax
+   Function to plot objects of class \code{"cumul.rma"}. \loadmathjax
 }
 \usage{
 \method{plot}{cumul.rma}(x, yaxis, xlim, ylim, xlab, ylab,
@@ -16,7 +16,7 @@
    \item{ylim}{y-axis limits. If unspecified, the function sets the y-axis limits to some sensible values.}
    \item{xlab}{title for the x-axis. If unspecified, the function sets an appropriate axis title.}
    \item{ylab}{title for the y-axis. If unspecified, the function sets an appropriate axis title.}
-   \item{at}{position of the x-axis tick marks and corresponding labels. If unspecified, the function tries to set the tick mark positions/labels to some sensible values.}
+   \item{at}{position of the x-axis tick marks and corresponding labels. If unspecified, the function sets the tick mark positions/labels to some sensible values.}
    \item{transf}{optional argument to specify a function to transform the summary estimates (e.g., \code{transf=exp}; see also \link{transf}). If unspecified, no transformation is used.}
    \item{atransf}{optional argument to specify a function to transform the x-axis labels (e.g., \code{atransf=exp}; see also \link{transf}). If unspecified, no transformation is used.}
    \item{targs}{optional arguments needed by the function specified via \code{transf} or \code{atransf}.}
@@ -52,13 +52,13 @@ dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
 res <- rma(yi, vi, data=dat)
 
 ### cumulative meta-analysis (in the order of publication year)
-sav <- cumul(res, transf=exp, order=year)
+sav <- cumul(res, order=year)
 
 ### plot of model estimate and tau^2 over time
 plot(sav)
 
 ### illustrate some other plot options
-plot(sav, yaxis="I2", ylim=c(0,100), atransf=exp, at=log(seq(1.3, 1.6, by=.1)),
+plot(sav, yaxis="I2", ylim=c(0,100), transf=exp, xlim=c(0.25,0.55),
      lwd=5, cex=1.5, cols=c("green","blue","red"))
 }
 \keyword{hplot}

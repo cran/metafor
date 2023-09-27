@@ -2,7 +2,7 @@
 \alias{print.hc.rma.uni}
 \title{Print Method for 'hc.rma.uni' Objects}
 \description{
-   Print method for objects of class \code{"hc.rma.uni"}. \loadmathjax
+   Function to print objects of class \code{"hc.rma.uni"}. \loadmathjax
 }
 \usage{
 \method{print}{hc.rma.uni}(x, digits=x$digits, \dots)
@@ -14,6 +14,7 @@
 }
 \details{
    The output is a data frame with two rows, the first (labeled \code{rma}) corresponding to the results based on the usual estimation method, the second (labeled \code{hc}) corresponding to the results based on the method by Henmi and Copas (2010). The data frame includes the following variables:
+
    \itemize{
    \item the method used to estimate \mjseqn{\tau^2} (always \code{DL} for \code{hc})
    \item the estimated amount of heterogeneity

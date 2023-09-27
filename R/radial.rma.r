@@ -20,24 +20,16 @@ transf, targs, pch=21, col, bg, back, arc.res=100, cex, cex.lab, cex.axis, ...) 
    if (missing(aty))
       aty <- NULL
 
-   if (missing(back)) {
-      if (is.element(par("bg"), c("black", "gray10"))) {
-         back <- "gray20"
-      } else {
-         back <- "lightgray"
-      }
-   }
+   .start.plot()
+
+   if (missing(back))
+      back <- .coladj(par("bg","fg"), dark=0.1, light=-0.1)
 
    if (missing(col))
       col <- par("fg")
 
-   if (missing(bg)) {
-      if (is.element(par("bg"), c("black", "gray10"))) {
-         bg <- "gray40"
-      } else {
-         bg <- "gray70"
-      }
-   }
+   if (missing(bg))
+      bg <- .coladj(par("bg","fg"), dark=0.35, light=-0.35)
 
    #########################################################################
 

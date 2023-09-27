@@ -10,24 +10,16 @@ layout, slab.style=1, las=0, pch=21, bg, bg.infl, col.na, ...) {
    if (!is.element(na.act, c("na.omit", "na.exclude", "na.fail", "na.pass")))
       stop(mstyle$stop("Unknown 'na.action' specified under options()."))
 
-   if (missing(bg)) {
-      if (is.element(par("bg"), c("black", "gray10"))) {
-         bg <- "gray40"
-      } else {
-         bg <- "gray70"
-      }
-   }
+   .start.plot()
+
+   if (missing(bg))
+      bg <- .coladj(par("bg","fg"), dark=0.35, light=-0.35)
 
    if (missing(bg.infl))
       bg.infl <- "red"
 
-   if (missing(col.na)) {
-      if (is.element(par("bg"), c("black", "gray10"))) {
-         col.na <- "gray30"
-      } else {
-         col.na <- "gray70"
-      }
-   }
+   if (missing(col.na))
+      col.na <- .coladj(par("bg","fg"), dark=0.2, light=-0.2)
 
    #########################################################################
 

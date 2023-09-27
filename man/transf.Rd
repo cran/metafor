@@ -16,6 +16,8 @@
 \alias{transf.iahw}
 \alias{transf.abt}
 \alias{transf.iabt}
+\alias{transf.r2toz}
+\alias{transf.ztor2}
 \alias{transf.ztor.int}
 \alias{transf.exp.int}
 \alias{transf.ilogit.int}
@@ -23,11 +25,14 @@
 \alias{transf.dtou2}
 \alias{transf.dtou3}
 \alias{transf.dtocles}
-\alias{transf.dtorpb}
 \alias{transf.dtobesd}
 \alias{transf.dtomd}
+\alias{transf.dtorpb}
+\alias{transf.dtorbis}
+\alias{transf.rpbtorbis}
 \alias{transf.rtorpb}
 \alias{transf.rtod}
+\alias{transf.rpbtod}
 \alias{transf.lnortord}
 \alias{transf.lnortorr}
 \alias{transf.lnortod.norm}
@@ -38,7 +43,7 @@
 \alias{transf.lnortortet.digby}
 \title{Transformation Functions}
 \description{
-   A set of transformation functions useful for meta-analyses. \loadmathjax
+   Functions to carry out various types of transformations that are useful for meta-analyses. \loadmathjax
 }
 \usage{
 transf.rtoz(xi)
@@ -57,17 +62,22 @@ transf.ahw(xi)
 transf.iahw(xi)
 transf.abt(xi)
 transf.iabt(xi)
+transf.r2toz(xi)
+transf.ztor2(xi)
 transf.ztor.int(xi, targs)
 transf.exp.int(xi, targs)
 transf.ilogit.int(xi, targs)
 transf.dtou1(xi)
 transf.dtou2(xi)
 transf.dtou3(xi)
-transf.dtorpb(xi, n1i, n2i)
 transf.dtobesd(xi)
 transf.dtomd(xi, targs)
+transf.dtorpb(xi, n1i, n2i)
+transf.dtorbis(xi, n1i, n2i)
+transf.rpbtorbis(xi, pi)
 transf.rtorpb(xi, pi)
 transf.rtod(xi, n1i, n2i)
+transf.rpbtod(xi, n1i, n2i)
 transf.lnortord(xi, pc)
 transf.lnortorr(xi, pc)
 transf.lnortod.norm(xi)
@@ -89,6 +99,7 @@ transf.lnortortet.digby(xi)
 }
 \details{
    The following transformation functions are currently implemented:
+
    \itemize{
    \item \code{transf.rtoz}: Fisher's r-to-z transformation for correlation coefficients (same as \code{atanh(x)}).
    \item \code{transf.ztor}: inverse of the former (i.e., the z-to-r transformation; same as \code{tanh(x)}).
@@ -106,6 +117,8 @@ transf.lnortortet.digby(xi)
    \item \code{transf.iahw}: inverse of the former.
    \item \code{transf.abt}: transformation of coefficient alpha as suggested by Bonett (2002), except that \mjeqn{-\ln(1-\alpha)}{-ln(1-\alpha)} is used (so that the transformed values are a monotonically increasing function of the \mjseqn{\alpha} values).
    \item \code{transf.iabt}: inverse of the former.
+   \item \code{transf.r2toz}: variance stabilizing transformation for the coefficient of determination, given by \mjeqn{z_i = \frac{1}{2} \log \left[\frac{1+\sqrt{R_i^2}}{1-\sqrt{R_i^2}}\right]}{z_i = 1/2 log[(1+\sqrt(R_i^2))/(1-\sqrt(R_i^2))]} (see Olkin & Finn, 1995, but with the additional \mjseqn{\frac{1}{2}} factor).
+   \item \code{transf.ztor2}: inverse of the former.
    \item \code{transf.ztor.int}: integral transformation method for the z-to-r transformation.
    \item \code{transf.exp.int}: integral transformation method for the exponential transformation.
    \item \code{transf.ilogit.int}: integral transformation method for the inverse logit transformation.
@@ -113,11 +126,14 @@ transf.lnortortet.digby(xi)
    \item \code{transf.dtou2}: transformation of standardized mean differences to Cohen's \mjseqn{U_2} values (Cohen, 1988). Under the same assumptions as above, Cohen's \mjseqn{U_2} indicates the proportion in the first group that exceeds the same proportion in the second group (i.e., when \mjseqn{d=0}, then \mjseqn{U_2} is equal to 0.5, which goes to 1 as \mjseqn{d} increases).
    \item \code{transf.dtou3}: transformation of standardized mean differences to Cohen's \mjseqn{U_3} values (Cohen, 1988). Under the same assumptions as above, Cohen's \mjseqn{U_3} indicates the proportion of individuals in the first group that have a higher value than the mean of those in the second group (i.e., when \mjseqn{d=0}, then \mjseqn{U_3} is equal to 0.5, which goes to 1 as \mjseqn{d} increases).
    \item \code{transf.dtocles}: transformation of standardized mean differences to common language effect size (CLES) values (McGraw & Wong, 1992) (also called the probability of superiority). A CLES value indicates the probability that a randomly sampled individual from the first group has a higher value than a randomly sampled individual from the second group (i.e., when \mjseqn{d=0}, then the CLES is equal to 0.5, which goes to 1 as \mjseqn{d} increases).
-   \item \code{transf.dtorpb}: transformation of standardized mean differences to point-biserial correlations. Arguments \code{n1i} and \code{n2i} can be used to denote the number of individuals in the first and second group, respectively. If \code{n1i} and \code{n2i} are not specified, the function assumes \code{n1i = n2i} and uses the approximate formula \mjeqn{r_{pb} = \frac{d}{\sqrt{d^2 + 4}}}{r_pb = d / \sqrt{d^2 + 4}}. If \code{n1i} and \code{n2i} are specified, the function uses the exact transformation formula \mjeqn{r_{pb} = \frac{d}{\sqrt{d^2 + h}}}{r_pb = d / \sqrt{d^2 + h}}, where \mjeqn{h = \frac{m}{n_1} + \frac{m}{n_2}}{h = m / n_1 + m / n_2} and \mjseqn{m = n_1 + n_2 - 2} (Jacobs & Viechtbauer, 2017).
    \item \code{transf.dtobesd}: transformation of standardized mean differences to binomial effect size display values (Rosenthal & Rubin, 1982). Note that the function only provides the proportion in the first group scoring above the median (the proportion in the second group scoring above the median is simply one minus this value).
    \item \code{transf.dtomd}: transformation of standardized mean differences to mean differences given a known standard deviation (which needs to be specified via the \code{targs} argument).
-   \item \code{transf.rtorpb}: transformation of Pearson product-moment correlations to point-biserial correlations, when one of the two variables is dichotomized. Argument \code{pi} denotes the proportion of individuals falling into the first of the two groups that is created by the dichotomization (hence, \code{1-pi} falls into the second group). If \code{pi} is not specified, the function assumes \code{pi=0.5}, which corresponds to dichotomization at the median. The transformation is carried out with \mjeqn{r_{pb} = \frac{r \times f(z_p)}{\sqrt{p(1-p)}}}{r_pb = r f(z_p) / (p*(1-p))}, where \mjseqn{f(z_p)} denotes the density of the standard normal distribution at value \mjseqn{z_p}, which is the point for which \mjseqn{P(Z > z_p) = p}, with \mjseqn{Z} denoting a random variable following a standard normal distribution (Jacobs & Viechtbauer, 2017).
-   \item \code{transf.rtod}: transformation of Pearson product-moment correlations to standardized mean differences, when one of the two variables is dichotomized. Arguments \code{n1i} and \code{n2i} can be used to denote the number of individuals in the first and second group created by the dichotomization. If \code{n1i} and \code{n2i} are not specified, the function assumes \code{n1i = n2i}. Essentially, this function first uses \code{transf.rtorpb} to convert the Pearson product-moment correlations to point-biserial correlations and then uses the inverse of \code{transf.dtorpb} to convert the latter to standardized mean differences (Jacobs & Viechtbauer, 2017).
+   \item \code{transf.dtorpb}: transformation of standardized mean differences to point-biserial correlations. Arguments \code{n1i} and \code{n2i} denote the number of individuals in the first and second group, respectively. If \code{n1i} and \code{n2i} are not specified, the function assumes \code{n1i = n2i} and uses the approximate formula \mjeqn{r_{pb} = \frac{d}{\sqrt{d^2 + 4}}}{r_pb = d / \sqrt{d^2 + 4}}. If \code{n1i} and \code{n2i} are specified, the function uses the exact transformation formula \mjeqn{r_{pb} = \frac{d}{\sqrt{d^2 + h}}}{r_pb = d / \sqrt{d^2 + h}}, where \mjeqn{h = \frac{m}{n_1} + \frac{m}{n_2}}{h = m / n_1 + m / n_2} and \mjseqn{m = n_1 + n_2 - 2} (Jacobs & Viechtbauer, 2017).
+   \item \code{transf.dtorbis}: transformation of standardized mean differences to biserial correlations. Like \code{transf.dtorpb}, but the point-biserial correlations are then transformed to biserial correlations with \mjeqn{r_{bis} = \frac{\sqrt{p(1-p)}}{f(z_p)} r_{pb}}{r_bis = sqrt(p*(1-p)) / f(z_p) r_pb}, where \mjseqn{p = \frac{n1}{n1+n2}} and \mjseqn{f(z_p)} denotes the density of the standard normal distribution at value \mjseqn{z_p}, which is the point for which \mjseqn{P(Z > z_p) = p}, with \mjseqn{Z} denoting a random variable following a standard normal distribution (Jacobs & Viechtbauer, 2017).
+   \item \code{transf.rpbtorbis}: transformation of point-biserial correlations to biserial correlations. Argument \code{pi} denotes the proportion of individuals falling into the first of the two groups that is created by the dichotomization (hence, \code{1-pi} falls into the second group). If \code{pi} is not specified, the function assumes \code{pi=0.5}, which corresponds to dichotomization at the median. The transformation is carried out as described for \code{transf.dtorbis}.
+   \item \code{transf.rtorpb}: transformation of Pearson product-moment correlations to the corresponding point-biserial correlations, when one of the two variables is dichotomized. Argument \code{pi} can be used to denote the proportion of individuals falling into the first of the two groups that is created by the dichotomization (hence, \code{1-pi} falls into the second group). If \code{pi} is not specified, the function assumes \code{pi=0.5}, which corresponds to dichotomization at the median. This function is simply the inverse of \code{transf.rpbtorbis}.
+   \item \code{transf.rtod}: transformation of Pearson product-moment correlations to the corresponding standardized mean differences, when one of the two variables is dichotomized. Arguments \code{n1i} and \code{n2i} can be used to denote the number of individuals in the first and second group created by the dichotomization. If \code{n1i} and \code{n2i} are not specified, the function assumes \code{n1i = n2i}. This function is simply the inverse of \code{transf.dtorbis}.
+   \item \code{transf.rpbtod}: transformation of point-biserial correlations to standardized mean differences. This is simply the inverse of \code{transf.dtorpb}.
    \item \code{transf.lnortord}: transformation of log odds ratios to risk differences, assuming a particular value for the control group risk (which needs to be specified via the \code{pc} argument).
    \item \code{transf.lnortorr}: transformation of log odds ratios to risk ratios, assuming a particular value for the control group risk (which needs to be specified via the \code{pc} argument).
    \item \code{transf.lnortod.norm}: transformation of log odds ratios to standardized mean differences (assuming normal distributions) (Cox & Snell, 1989).
@@ -159,6 +175,8 @@ transf.lnortortet.digby(xi)
    McGraw, K. O., & Wong, S. P. (1992). A common language effect size statistic. \emph{Psychological Bulletin}, \bold{111}(2), 361--365. \verb{https://doi.org/10.1037/0033-2909.111.2.361}
 
    Miller, J. J. (1978). The inverse of the Freeman-Tukey double arcsine transformation. \emph{American Statistician}, \bold{32}(4), 138. \verb{https://doi.org/10.1080/00031305.1978.10479283}
+
+   Olkin, I., & Finn, J. D. (1995). Correlations redux. \emph{Psychological Bulletin}, \bold{118}(1), 155--164. \verb{https://doi.org/10.1037/0033-2909.118.1.155}
 
    Pearson, K. (1900). Mathematical contributions to the theory of evolution. VII. On the correlation of characters not quantitatively measurable. \emph{Philosophical Transactions of the Royal Society of London, Series A}, \bold{195}, 1--47. \verb{https://doi.org/10.1098/rsta.1900.0022}
 

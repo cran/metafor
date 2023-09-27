@@ -23,11 +23,11 @@
    \item{annotate}{logical to specify whether annotations should be added to the plot (the default is \code{TRUE}).}
    \item{showweights}{logical to specify whether the annotations should also include the inverse variance weights (the default is \code{FALSE}).}
    \item{header}{logical to specify whether column headings should be added to the plot (the default is \code{FALSE}). Can also be a character vector to specify the left and right headings  (or only the left one).}
-   \item{xlim}{horizontal limits of the plot region. If unspecified, the function tries to set the horizontal plot limits to some sensible values.}
-   \item{alim}{the x-axis limits. If unspecified, the function tries to set the x-axis limits to some sensible values.}
+   \item{xlim}{horizontal limits of the plot region. If unspecified, the function sets the horizontal plot limits to some sensible values.}
+   \item{alim}{the x-axis limits. If unspecified, the function sets the x-axis limits to some sensible values.}
    \item{olim}{optional argument to specify observation/outcome limits. If unspecified, no limits are used.}
    \item{ylim}{the y-axis limits of the plot. If unspecified, the function sets the y-axis limits to some sensible values.}
-   \item{at}{position of the x-axis tick marks and corresponding labels. If unspecified, the function tries to set the tick mark positions/labels to some sensible values.}
+   \item{at}{position of the x-axis tick marks and corresponding labels. If unspecified, the function sets the tick mark positions/labels to some sensible values.}
    \item{steps}{the number of tick marks for the x-axis (the default is 5). Ignored when the positions are specified via the \code{at} argument.}
    \item{level}{numeric value between 0 and 100 to specify the confidence interval level (the default is 95; see \link[=misc-options]{here} for details).}
    \item{refline}{numeric value to specify the location of the vertical \sQuote{reference} line (the default is 0). The line can be suppressed by setting this argument to \code{NA}.}
@@ -43,19 +43,19 @@
    \item{transf}{optional argument to specify a function to transform the observed outcomes and corresponding confidence interval bounds (e.g., \code{transf=exp}; see also \link{transf}). If unspecified, no transformation is used.}
    \item{atransf}{optional argument to specify a function to transform the x-axis labels and annotations (e.g., \code{atransf=exp}; see also \link{transf}). If unspecified, no transformation is used.}
    \item{targs}{optional arguments needed by the function specified via \code{transf} or \code{atransf}.}
-   \item{rows}{optional vector to specify the rows (or more generally, the horizontal positions) for plotting the outcomes. Can also be a single value to specify the row (horizontal position) of the first outcome (the remaining outcomes are then plotted below this starting row). If unspecified, the function sets this value automatically.}
+   \item{rows}{optional vector to specify the rows (or more generally, the horizontal positions) for plotting the outcomes. Can also be a single value to specify the row (horizontal position) of the first outcome (the remaining outcomes are then plotted below this starting row).}
    \item{efac}{vertical expansion factor for confidence interval limits and arrows. The default value of 1 should usually work okay. Can also be a vector of two numbers, the first for CI limits, the second for arrows.}
    \item{pch}{plotting symbol to use for the observed outcomes. By default, a filled square is used. See \code{\link{points}} for other options. Can also be a vector of values.}
    \item{psize}{optional numeric value to specify the point sizes for the observed outcomes. If unspecified, the point sizes are a function of the precision of the estimates. Can also be a vector of values.}
    \item{plim}{numeric vector of length 2 to scale the point sizes (ignored when \code{psize} is specified). See \sQuote{Details}.}
-   \item{col}{optional character string to specify the color of the observed outcomes. If unspecified, black is used by default. Can also be a vector.}
+   \item{col}{optional character string to specify the color of the observed outcomes. Can also be a vector.}
    \item{shade}{optional character string or a (logical or numeric) vector for shading rows of the plot. See \sQuote{Details}.}
-   \item{colshade}{optional argument to specify the color for the shading. If unspecified, a light shade of gray is used.}
+   \item{colshade}{optional argument to specify the color for the shading.}
    \item{lty}{optional character string to specify the line type for the confidence intervals. If unspecified, the function sets this to \code{"solid"} by default.}
    \item{fonts}{optional character string to specify the font for the study labels, annotations, and the extra information (if specified via \code{ilab}). If unspecified, the default font is used.}
-   \item{cex}{optional character and symbol expansion factor. If unspecified, the function tries to set this to a sensible value.}
-   \item{cex.lab}{optional expansion factor for the x-axis title. If unspecified, the function tries to set this to a sensible value.}
-   \item{cex.axis}{optional expansion factor for the x-axis labels. If unspecified, the function tries to set this to a sensible value.}
+   \item{cex}{optional character and symbol expansion factor. If unspecified, the function sets this to a sensible value.}
+   \item{cex.lab}{optional expansion factor for the x-axis title. If unspecified, the function sets this to a sensible value.}
+   \item{cex.axis}{optional expansion factor for the x-axis labels. If unspecified, the function sets this to a sensible value.}
    \item{\dots}{other arguments.}
 }
 \details{
@@ -64,10 +64,13 @@
    With the \code{transf} argument, the observed outcomes and corresponding confidence interval bounds can be transformed with some suitable function. For example, when plotting log odds ratios, then one could use \code{transf=exp} to obtain a forest plot showing the odds ratios. Alternatively, one can use the \code{atransf} argument to transform the x-axis labels and annotations (e.g., \code{atransf=exp}). See also \link{transf} for some other useful transformation functions in the context of a meta-analysis. The examples below illustrate the use of these arguments.
 
    By default, the studies are ordered from top to bottom (i.e., the first study in the dataset will be placed in row \mjseqn{k}, the second study in row \mjseqn{k-1}, and so on, until the last study, which is placed in the first row). The studies can be reordered with the \code{order} argument:
+
    \itemize{
    \item \code{order="obs"}: the studies are ordered by the observed outcomes,
    \item \code{order="prec"}: the studies are ordered by their sampling variances.
-   } Alternatively, it is also possible to set \code{order} equal to a variable based on which the studies will be ordered (see \sQuote{Examples}).
+   }
+
+   Alternatively, it is also possible to set \code{order} equal to a variable based on which the studies will be ordered (see \sQuote{Examples}).
 
    Additional columns with information about the studies can be added to the plot via the \code{ilab} argument. This can either be a single variable or an entire matrix / data frame (with as many rows as there are studies in the forest plot). The \code{ilab.xpos} argument can then also be specified to indicate the horizontal position of the variables specified via \code{ilab}.
 
@@ -78,7 +81,7 @@
    With the \code{shade} argument, one can shade rows of the plot. The argument can be set to one of the following character strings: \code{"zebra"} (same as \code{shade=TRUE}) or \code{"zebra2"} to use zebra-style shading (starting either at the first or second study) or to \code{"all"} in which case all rows are shaded. Alternatively, the argument can be set to a logical vector to indicates for which studies the rows should be shaded. Finally, the argument can also be a numeric vector to indicate which rows to shade. The \code{colshade} argument can be used to set the color of shaded rows.
 }
 \section{Note}{
-   The function tries to set some sensible values for the optional arguments, but it may be necessary to adjust these in certain circumstances.
+   The function sets some sensible values for the optional arguments, but it may be necessary to adjust these in certain circumstances.
 
    The function actually returns some information about the chosen values invisibly. Printing this information is useful as a starting point to make adjustments to the plot.
 
@@ -88,13 +91,14 @@
 
    The \code{lty} argument can also be a vector of two elements, the first for specifying the line type of the individual CIs (\code{"solid"} by default), the second for the line type of the horizontal line that is automatically added to the plot (\code{"solid"} by default; set to \code{"blank"} to remove it).
 }
-\section{Additional Arguments}{
-   There are some additional arguments that can be passed to the function via \code{...} (hence, they cannot be abbreviated):
+\section{Additional Optional Arguments}{
+   There are some additional optional arguments that can be passed to the function via \code{...} (hence, they cannot be abbreviated):
    \describe{
-   \item{top}{the amount of space to leave empty at the top of the plot (e.g., for adding headers) (the default is 3 rows).}
-   \item{annosym}{optional vector of length 3 to select the left bracket, separation, and right bracket symbols for the annotations (the default is \code{c(" [", ", ", "]")}). Can also include a 4th element to adjust the look of the minus symbol, for example to use a proper minus (\ifelse{latex}{\mjseqn{-}}{\enc{−}{-}}) sign instead of a hyphen-minus (-).}
-   \item{textpos}{optional vector of length 2 to specify the placement of the study labels and the annotations (the default is to use the horizontal limits of the plot region, i.e., the study labels to the right of \code{xlim[1]} and the annotations to the left of \code{xlim[2]}).}
-   \item{rowadj}{optional vector of length 3 to vertically adjust the position of the study labels, the annotations, and the extra information (if specified via \code{ilab}). This is useful for fine-tuning the position of text added with different positional alignments (i.e., argument \code{pos} in the \code{\link{text}} function).}
+   \item{top}{single numeric value to specify the amount of space (in terms of number of rows) to leave empty at the top of the plot (e.g., for adding headers). The default is 3.}
+   \item{annosym}{vector of length 3 to select the left bracket, separation, and right bracket symbols for the annotations. The default is \code{c(" [", ", ", "]")}. Can also include a 4th element to adjust the look of the minus symbol, for example to use a proper minus sign (\ifelse{latex}{\mjseqn{-}}{\enc{−}{-}}) instead of a hyphen-minus (-). Can also include a 5th element that should be a space-like symbol (e.g., an \sQuote{en space}) that is used in place of numbers (only relevant when trying to line up numbers exactly).}
+   \item{tabfig}{single numeric value (either a 1, 2, or 3) to set \code{annosym} automatically to a vector that will exactly align the numbers in the annotations when using a font that provides \sQuote{tabular figures}. The appropriate value for this argument depends on the font used. For example, for fonts Calibri and Carlito, 1 or 2 should work; for fonts Source Sans 3 and Palatino Linotype, 1, 2, and 3 should all work; for Computer Moden and Latin Modern fonts, 2 should work; for Lato, Roboto, and Open Sans (and maybe Arial), 3 should work. Other fonts may work as well, but this is untested.}
+   \item{textpos}{numeric vector of length 2 to specify the placement of the study labels and the annotations. The default is to use the horizontal limits of the plot region, i.e., the study labels to the right of \code{xlim[1]} and the annotations to the left of \code{xlim[2]}.}
+   \item{rowadj}{numeric vector of length 3 to vertically adjust the position of the study labels, the annotations, and the extra information (if specified via \code{ilab}). This is useful for fine-tuning the position of text added with different positional alignments (i.e., argument \code{pos} in the \code{\link{text}} function).}
    }
 }
 \author{

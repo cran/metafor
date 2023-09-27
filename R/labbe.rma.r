@@ -26,6 +26,8 @@ add=x$add, to=x$to, transf, targs, pch=21, psize, plim=c(0.5,3.5), col, bg, grid
    if (!is.element(to, c("all","only0","if0all","none")))
       stop(mstyle$stop("Unknown 'to' argument specified."))
 
+   .start.plot()
+
    if (missing(transf))
       transf <- FALSE
 
@@ -55,13 +57,9 @@ add=x$add, to=x$to, transf, targs, pch=21, psize, plim=c(0.5,3.5), col, bg, grid
 
    ### grid argument can either be a logical or a color
 
-   if (is.logical(grid)) {
-      if (is.element(par("bg"), c("black", "gray10"))) {
-         gridcol <- "gray30"
-      } else {
-         gridcol <- "gray70"
-      }
-   }
+   if (is.logical(grid))
+      gridcol <- .coladj(par("bg","fg"), dark=c(0.2,-0.6), light=c(-0.2,0.6))
+
    if (is.character(grid)) {
       gridcol <- grid
       grid <- TRUE
@@ -102,13 +100,8 @@ add=x$add, to=x$to, transf, targs, pch=21, psize, plim=c(0.5,3.5), col, bg, grid
 
    col <- .getsubset(col, x$subset)
 
-   if (missing(bg)) {
-      if (is.element(par("bg"), c("black", "gray10"))) {
-         bg <- "gray40"
-      } else {
-         bg <- "gray"
-      }
-   }
+   if (missing(bg))
+      bg <- .coladj(par("bg","fg"), dark=0.35, light=-0.35)
 
    if (length(bg) == 1L)
       bg <- rep(bg, x$k.all)

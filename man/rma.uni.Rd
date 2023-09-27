@@ -7,13 +7,13 @@
 }
 \usage{
 rma.uni(yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
-        m1i, m2i, sd1i, sd2i, xi, mi, ri, ti, pi, sdi, r2i, ni, mods, scale,
+        m1i, m2i, sd1i, sd2i, xi, mi, ri, ti, fi, pi, sdi, r2i, ni, mods, scale,
         measure="GEN", intercept=TRUE, data, slab, subset,
         add=1/2, to="only0", drop00=FALSE, vtype="LS",
         method="REML", weighted=TRUE, test="z",
         level=95, btt, att, tau2, verbose=FALSE, digits, control, \dots)
 rma(yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
-        m1i, m2i, sd1i, sd2i, xi, mi, ri, ti, pi, sdi, r2i, ni, mods, scale,
+        m1i, m2i, sd1i, sd2i, xi, mi, ri, ti, fi, pi, sdi, r2i, ni, mods, scale,
         measure="GEN", intercept=TRUE, data, slab, subset,
         add=1/2, to="only0", drop00=FALSE, vtype="LS",
         method="REML", weighted=TRUE, test="z",
@@ -42,13 +42,14 @@ rma(yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
    \item{mi}{see below and the documentation of the \code{\link{escalc}} function for more details.}
    \item{ri}{see below and the documentation of the \code{\link{escalc}} function for more details.}
    \item{ti}{see below and the documentation of the \code{\link{escalc}} function for more details.}
+   \item{fi}{see below and the documentation of the \code{\link{escalc}} function for more details.}
    \item{pi}{see below and the documentation of the \code{\link{escalc}} function for more details.}
    \item{sdi}{see below and the documentation of the \code{\link{escalc}} function for more details.}
    \item{r2i}{see below and the documentation of the \code{\link{escalc}} function for more details.}
    \item{ni}{see below and the documentation of the \code{\link{escalc}} function for more details.}
    \item{mods}{optional argument to include one or more moderators in the model. A single moderator can be given as a vector of length \mjseqn{k} specifying the values of the moderator. Multiple moderators are specified by giving a matrix with \mjseqn{k} rows and as many columns as there are moderator variables. Alternatively, a model \code{\link{formula}} can be used to specify the model. See \sQuote{Details}.}
    \item{scale}{optional argument to include one or more predictors for the scale part in a location-scale model. See \sQuote{Details}.}
-   \item{measure}{character string to specify the type of data supplied to the function. When \code{measure="GEN"} (default), the observed effect sizes or outcomes and corresponding sampling variances (or standard errors) should be supplied to the function via the \code{yi}, \code{vi}, and \code{sei} arguments (only one of the two, \code{vi} or \code{sei}, needs to be specified). Alternatively, one can set \code{measure} to one of the effect sizes or outcome measures described under the documentation for the \code{\link{escalc}} function in which case one must specify the required data via the appropriate arguments.}
+   \item{measure}{character string to specify the type of data supplied to the function. When \code{measure="GEN"} (default), the observed effect sizes or outcomes and corresponding sampling variances should be supplied to the function via the \code{yi} and \code{vi} arguments, respectively (instead of the sampling variances, one can supply the standard errors via the \code{sei} argument). Alternatively, one can set \code{measure} to one of the effect sizes or outcome measures described under the documentation for the \code{\link{escalc}} function in which case one must specify the required data via the appropriate arguments (see \code{\link{escalc}}).}
    \item{intercept}{logical to specify whether an intercept should be added to the model (the default is \code{TRUE}). Ignored when \code{mods} is a formula.}
    \item{data}{optional data frame containing the data supplied to the function.}
    \item{slab}{optional vector with labels for the \mjseqn{k} studies.}
@@ -57,7 +58,7 @@ rma(yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
    \item{to}{see the documentation of the \code{\link{escalc}} function.}
    \item{drop00}{see the documentation of the \code{\link{escalc}} function.}
    \item{vtype}{see the documentation of the \code{\link{escalc}} function.}
-   \item{method}{character string to specify whether an equal- or a random-effects model should be fitted. An equal-effects model is fitted when using \code{method="EE"}. A random-effects model is fitted by setting \code{method} equal to one of the following: \code{"DL"}, \code{"HE"}, \code{"HS"}, \code{"HSk"}, \code{"SJ"}, \code{"ML"}, \code{"REML"}, \code{"EB"}, \code{"PM"}, \code{"GENQ"}, \code{"PMM"}, or \code{"GENQM"}. Default is \code{"REML"}. See \sQuote{Details}.}
+   \item{method}{character string to specify whether an equal- or a random-effects model should be fitted. An equal-effects model is fitted when using \code{method="EE"}. A random-effects model is fitted by setting \code{method} equal to one of the following: \code{"DL"}, \code{"HE"}, \code{"HS"}, \code{"HSk"}, \code{"SJ"}, \code{"ML"}, \code{"REML"}, \code{"EB"}, \code{"PM"}, \code{"GENQ"}, \code{"PMM"}, or \code{"GENQM"}. The default is \code{"REML"}. See \sQuote{Details}.}
    \item{weighted}{logical to specify whether weighted (default) or unweighted estimation should be used to fit the model (the default is \code{TRUE}).}
    \item{test}{character string to specify how test statistics and confidence intervals for the fixed effects should be computed. By default (\code{test="z"}), Wald-type tests and CIs are obtained, which are based on a standard normal distribution. When \code{test="t"}, a t-distribution is used instead. When \code{test="knha"}, the method by Knapp and Hartung (2003) is used. See \sQuote{Details} and also \link[=misc-recs]{here} for some recommended practices.}
    \item{level}{numeric value between 0 and 100 to specify the confidence interval level (the default is 95; see \link[=misc-options]{here} for details).}
@@ -86,6 +87,7 @@ rma(yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
       Assuming the observed effect sizes or outcomes and corresponding sampling variances are supplied via the \code{yi} and \code{vi} arguments, an \emph{equal-effects model} can be fitted with \code{rma(yi, vi, method="EE")}. Setting \code{method="FE"} fits a \emph{fixed-effects model} (see \link[=misc-models]{here} for a discussion of this model). Weighted estimation (with inverse-variance weights) is used by default. User-defined weights can be supplied via the \code{weights} argument. Unweighted estimation can be used by setting \code{weighted=FALSE} (which is the same as setting the weights equal to a constant).
 
       A \emph{random-effects model} can be fitted with the same code but setting the \code{method} argument to one of the various estimators for the amount of heterogeneity:
+
       \itemize{
       \item \code{method="DL"} = DerSimonian-Laird estimator (DerSimonian & Laird, 1986; Raudenbush, 2009),
       \item \code{method="HE"} = Hedges estimator (Hedges, 1983, 1992),
@@ -99,7 +101,9 @@ rma(yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
       \item \code{method="GENQ"} = generalized Q-statistic estimator (DerSimonian & Kacker, 2007; Jackson et al., 2014),
       \item \code{method="PMM"} = median-unbiased Paule-Mandel estimator (Viechtbauer, 2021),
       \item \code{method="GENQM"} = median-unbiased generalized Q-statistic estimator (Viechtbauer, 2021).
-      } For a description of the various estimators, see Brannick et al. (2019), DerSimonian and Kacker (2007), Raudenbush (2009), Veroniki et al. (2016), Viechtbauer (2005), and Viechtbauer et al. (2015). Note that the Hedges estimator is also called the \sQuote{variance component estimator} or \sQuote{Cochran estimator}, the Sidik-Jonkman estimator is also called the \sQuote{model error variance estimator}, the empirical Bayes estimator is actually identical to the Paule-Mandel estimator (Viechtbauer et al., 2015), and the generalized Q-statistic estimator is a general method-of-moments estimator (DerSimonian & Kacker, 2007) requiring the specification of weights (the HE and DL estimators are just special cases with equal and inverse sampling variance weights, respectively). Finally, the two median-unbiased estimators are versions of the Paule-Mandel and generalized Q-statistic estimators that equate the respective estimating equations not to their expected values, but to the medians of their theoretical distributions (Viechtbauer, 2021).
+      }
+
+      For a description of the various estimators, see Brannick et al. (2019), DerSimonian and Kacker (2007), Raudenbush (2009), Veroniki et al. (2016), Viechtbauer (2005), and Viechtbauer et al. (2015). Note that the Hedges estimator is also called the \sQuote{variance component estimator} or \sQuote{Cochran estimator}, the Sidik-Jonkman estimator is also called the \sQuote{model error variance estimator}, the empirical Bayes estimator is actually identical to the Paule-Mandel estimator (Viechtbauer et al., 2015), and the generalized Q-statistic estimator is a general method-of-moments estimator (DerSimonian & Kacker, 2007) requiring the specification of weights (the HE and DL estimators are just special cases with equal and inverse sampling variance weights, respectively). Finally, the two median-unbiased estimators are versions of the Paule-Mandel and generalized Q-statistic estimators that equate the respective estimating equations not to their expected values, but to the medians of their theoretical distributions (Viechtbauer, 2021).
 
       One or more moderators can be included in a model via the \code{mods} argument. A single moderator can be given as a (row or column) vector of length \mjseqn{k} specifying the values of the moderator. Multiple moderators are specified by giving an appropriate model matrix (i.e., \mjseqn{X}) with \mjseqn{k} rows and as many columns as there are moderator variables (e.g., \code{mods = cbind(mod1, mod2, mod3)}, where \code{mod1}, \code{mod2}, and \code{mod3} correspond to the names of the variables for three moderator variables). The intercept is added to the model matrix by default unless \code{intercept=FALSE}.
 
@@ -191,7 +195,7 @@ rma(yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
 
    Forest, funnel, radial, \enc{L'Abbé}{L'Abbe}, and Baujat plots can be obtained with \code{\link[=forest.rma]{forest}}, \code{\link[=funnel.rma]{funnel}}, \code{\link[=radial.rma]{radial}}, \code{\link[=labbe.rma]{labbe}}, and \code{\link[=baujat.rma]{baujat}} (radial and \enc{L'Abbé}{L'Abbe} plots only for models without moderators). The \code{\link[=qqnorm.rma.uni]{qqnorm}} function provides normal QQ plots of the standardized residuals. One can also just call \code{\link[=plot.rma.uni]{plot}} on the fitted model object to obtain various plots at once. For random/mixed-effects models, the \code{\link[=profile.rma.uni]{profile}} function can be used to obtain a plot of the (restricted) log-likelihood as a function of \mjseqn{\tau^2}. For location-scale models, \code{\link[=profile.rma.ls]{profile}} draws analogous plots based on the scale coefficients. For models with moderators, \code{\link[=regplot.rma]{regplot}} draws scatter plots / bubble plots, showing the (marginal) relationship between the observed outcomes and a selected moderator from the model.
 
-   Tests for funnel plot asymmetry (which may be indicative of publication bias) can be obtained with \code{\link{ranktest}} and \code{\link{regtest}}. For models without moderators, the \code{\link[=trimfill.rma.uni]{trimfill}} method can be used to carry out a trim and fill analysis and \code{\link[=hc.rma.uni]{hc}} provides a random-effects model analysis that is more robust to publication bias (based on the method by Henmi & Copas, 2010). The test of \sQuote{excess significance} can be carried out with the \code{\link{tes}} function. Selection models can be fitted with the \code{\link{selmodel}} function.
+   Tests for funnel plot asymmetry (which may be indicative of publication bias) can be obtained with \code{\link{ranktest}} and \code{\link{regtest}}. For models without moderators, the \code{\link[=trimfill.rma.uni]{trimfill}} method can be used to carry out a trim and fill analysis and \code{\link[=hc.rma.uni]{hc}} provides a random-effects model analysis that is more robust to publication bias (based on the method by Henmi & Copas, 2010). The test of \sQuote{excess significance} can be carried out with the \code{\link{tes}} function. The fail-safe N (based on a file drawer analysis) can be computed using \code{\link{fsn}}. Selection models can be fitted with the \code{\link{selmodel}} function.
 
    For models without moderators, a cumulative meta-analysis (i.e., adding one observation at a time) can be obtained with \code{\link[=cumul.rma.uni]{cumul}}.
 
@@ -217,6 +221,7 @@ rma(yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
    When including moderators in the model, it is possible that the model matrix is not of full rank (i.e., there is a linear relationship between the moderator variables included in the model). The function automatically tries to reduce the model matrix to full rank by removing redundant predictors, but if this fails the model cannot be fitted and an error will be issued. Deleting (redundant) moderator variables from the model as needed should solve this problem.
 
    Some general words of caution about the assumptions underlying the models:
+
    \itemize{
    \item The sampling variances (i.e., the \code{vi} values) are treated as if they are known constants, even though in practice they are usually estimates themselves. This implies that the distributions of the test statistics and corresponding confidence intervals are only exact and have nominal coverage when the within-study sample sizes are large (i.e., when the error in the sampling variance estimates is small). Certain outcome measures (e.g., the arcsine square root transformed risk difference and Fisher's r-to-z transformed correlation coefficient) are based on variance stabilizing transformations that also help to make the assumption of known sampling variances much more reasonable.
    \item When fitting a mixed/random-effects model, \mjseqn{\tau^2} is estimated and then treated as a known constant thereafter. This ignores the uncertainty in the estimate of \mjseqn{\tau^2}. As a consequence, the standard errors of the parameter estimates tend to be too small, yielding test statistics that are too large and confidence intervals that are not wide enough. The Knapp and Hartung (2003) adjustment (i.e., using \code{test="knha"}) can be used to counter this problem, yielding test statistics and confidence intervals whose properties are closer to nominal.

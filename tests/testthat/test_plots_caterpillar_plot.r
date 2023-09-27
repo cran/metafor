@@ -4,7 +4,7 @@
 
 source("settings.r")
 
-context("Checking plots example: Caterpillar plot")
+context("Checking plots example: caterpillar plot")
 
 test_that("plot can be drawn.", {
 
@@ -21,7 +21,7 @@ test_that("plot can be drawn.", {
    ### fit RE model
    res <- rma(yi, vi)
 
-   opar <- par(no.readonly=TRUE)
+   png("images/test_plots_caterpillar_plot_test.png", res=200, width=1800, height=1500, type="cairo")
 
    ### decrease margins so the full space is used
    par(mar=c(5,1,1,1))
@@ -45,7 +45,10 @@ test_that("plot can be drawn.", {
    addpoly(res, mlab="", cex=1)
    text(-2, -2, "RE Model", pos=4, offset=0, cex=1)
 
-   par(opar)
+   dev.off()
+
+   expect_true(.vistest("images/test_plots_caterpillar_plot_test.png", "images/test_plots_caterpillar_plot.png"))
+
 
 })
 

@@ -2,7 +2,7 @@
 \alias{ranktest}
 \title{Rank Correlation Test for Funnel Plot Asymmetry}
 \description{
-   The function can be used to carry out the rank correlation test for funnel plot asymmetry.
+   Function to carry out the rank correlation test for funnel plot asymmetry.
 }
 \usage{
 ranktest(x, vi, sei, subset, data, digits, \dots)
@@ -19,7 +19,7 @@ ranktest(x, vi, sei, subset, data, digits, \dots)
 \details{
    The function carries out the rank correlation test as described by Begg and Mazumdar (1994). The test can be used to examine whether the observed effect sizes or outcomes and the corresponding sampling variances are correlated. A high correlation would indicate that the funnel plot is asymmetric, which may be a result of publication bias.
 
-   One can either pass a vector with the observed effect sizes or outcomes (via \code{x}) and the corresponding sampling variances via \code{vi} (or the standard errors via \code{sei}) to the function or an object of class \code{"rma"}.
+   One can either pass a vector with the observed effect sizes or outcomes (via \code{x}) and the corresponding sampling variances via \code{vi} (or the standard errors via \code{sei}) to the function or an object of class \code{"rma"}. When passing a model object, the model must be a model without moderators (i.e., either an equal- or a random-effects model).
 }
 \value{
    An object of class \code{"ranktest"}. The object is a list containing the following components:
@@ -42,7 +42,7 @@ ranktest(x, vi, sei, subset, data, digits, \dots)
    Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \verb{https://doi.org/10.18637/jss.v036.i03}
 }
 \seealso{
-   \code{\link{regtest}} for the regression test, \code{\link{trimfill}} for the trim and fill method, \code{\link{tes}} for the test of excess significance, and \code{\link{selmodel}} for selection models.
+   \code{\link{regtest}} for the regression test, \code{\link{trimfill}} for the trim and fill method, \code{\link{tes}} for the test of excess significance, \code{\link{fsn}} to compute the fail-safe N (file drawer analysis), and \code{\link{selmodel}} for selection models.
 }
 \examples{
 ### calculate log risk ratios and corresponding sampling variances

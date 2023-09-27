@@ -2,7 +2,7 @@
 \alias{regtest}
 \title{Regression Test for Funnel Plot Asymmetry}
 \description{
-   The function can be used to carry out (various versions of) Egger's regression test for funnel plot asymmetry. \loadmathjax
+   Function to carry out (various versions of) Egger's regression test for funnel plot asymmetry. \loadmathjax
 }
 \usage{
 regtest(x, vi, sei, ni, subset, data,
@@ -29,6 +29,7 @@ regtest(x, vi, sei, ni, subset, data,
    The model type for the regression test is chosen via the \code{model} argument, with \code{model="lm"} for a weighted regression model with a multiplicative dispersion term or \code{model="rma"} for a (mixed-effects) meta-regression model (the default).
 
    The predictor for the test is chosen via the \code{predictor} argument:
+
    \itemize{
    \item \code{predictor="sei"} for the standard errors (the default),
    \item \code{predictor="vi"} for the sampling variances,
@@ -92,7 +93,7 @@ regtest(x, vi, sei, ni, subset, data,
    Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \verb{https://doi.org/10.18637/jss.v036.i03}
 }
 \seealso{
-   \code{\link{ranktest}} for the rank test, \code{\link{trimfill}} for the trim and fill method, \code{\link{tes}} for the test of excess significance, and \code{\link{selmodel}} for selection models.
+   \code{\link{ranktest}} for the rank correlation test, \code{\link{trimfill}} for the trim and fill method, \code{\link{tes}} for the test of excess significance, \code{\link{fsn}} to compute the fail-safe N (file drawer analysis), and \code{\link{selmodel}} for selection models.
 }
 \examples{
 ### copy data into 'dat' and examine data

@@ -9,7 +9,7 @@
 
 addpoly.default     <- function(x, vi, sei, ci.lb, ci.ub, pi.lb, pi.ub,
 rows=-1, level,         annotate,                digits, width, mlab,
-transf, atransf, targs, efac, col, border, lty, fonts, cex, ...) {
+transf, atransf, targs, efac, col, border, lty, fonts, cex, constarea=FALSE, ...) {
 
    #########################################################################
 
@@ -51,6 +51,19 @@ transf, atransf, targs, efac, col, border, lty, fonts, cex, ...) {
 
    if (missing(efac))
       efac <- .getfromenv("forest", "efac", default=1)
+
+   ### vertical expansion factor: 1st = PI end lines, 2nd = arrows, 3rd = polygon(s)
+   ### vertical expansion factor: 1st = polygon(s), 2nd = PI end lines
+
+   ### note: forest.rma() puts 'efac' into .metafor in the order:
+   ### 1st = CI/PI end lines, 2nd = arrows, 3rd = summary polygon or fitted polygons
+   ### so need to pick out the 3rd and 1st element in that order
+
+   if (length(efac) == 3L)
+      efac <- c(efac[3], efac[1])
+
+   if (length(efac) == 1L)
+      efac <- rep(efac, 2L)
 
    if (missing(fonts))
       fonts <- .getfromenv("forest", "fonts", default=NULL)
@@ -98,16 +111,18 @@ transf, atransf, targs, efac, col, border, lty, fonts, cex, ...) {
    }
 
    if (is.null(annosym))
-      annosym <- c(" [", ", ", "]", "-") # 4th element for minus sign symbol
+      annosym <- c(" [", ", ", "]", "-", " ") # 4th element for minus sign symbol; 5th for space (in place of numbers and +)
    if (length(annosym) == 3L)
-      annosym <- c(annosym, "-")
-   if (length(annosym) != 4L)
-      stop(mstyle$stop("Argument 'annosym' must be a vector of length 3 (or 4)."))
+      annosym <- c(annosym, "-", " ")
+   if (length(annosym) == 4L)
+      annosym <- c(annosym, " ")
+   if (length(annosym) != 5)
+      stop(mstyle$stop("Argument 'annosym' must be a vector of length 3 (or 4 or 5)."))
 
-   if (!is.null(ddd$lcol)) {
-      lcol <- ddd$lcol
+   if (is.null(ddd$lcol)) {
+      lcol <- .coladj(par("fg"), dark=-0.3, light=0.3)
    } else {
-      lcol <- "gray50"
+      lcol <- ddd$lcol
    }
 
    lsegments <- function(..., cr.lb, cr.ub, addcred, pi.type, lcol, annosym, textpos) segments(...)
@@ -327,7 +342,6 @@ transf, atransf, targs, efac, col, border, lty, fonts, cex, ...) {
       }
 
       annotext <- fmtx(annotext, digits[[1]])
-      annotext <- sub("-", annosym[4], annotext, fixed=TRUE)
 
       if (is.null(width)) {
          width <- apply(annotext, 2, function(x) max(nchar(x)))
@@ -341,7 +355,11 @@ transf, atransf, targs, efac, col, border, lty, fonts, cex, ...) {
       }
 
       annotext <- cbind(annotext[,1], annosym[1], annotext[,2], annosym[2], annotext[,3], annosym[3])
+
       annotext <- apply(annotext, 1, paste, collapse="")
+      annotext <- gsub("-", annosym[4], annotext, fixed=TRUE)
+      annotext <- gsub(" ", annosym[5], annotext, fixed=TRUE)
+
       par(family=names(fonts)[2], font=fonts[2])
       ltext(x=textpos[2], rows, labels=annotext, pos=2, cex=cex, ...)
       par(family=names(fonts)[1], font=fonts[1])
@@ -357,17 +375,26 @@ transf, atransf, targs, efac, col, border, lty, fonts, cex, ...) {
    if (length(lcol) == 1L)
       lcol <- rep(lcol, k)
 
+   if (isTRUE(constarea)) {
+      areas <- (ci.ub - ci.lb) * (height/100)*cex*efac[1]
+      areas <- areas / min(areas, na.rm=TRUE)
+      invareas <- 1 / areas
+      heights <- (height/100)*cex*efac[1]*invareas
+   } else {
+      heights <- rep((height/100)*cex*efac[1], k)
+   }
+
    ### add polygon(s)
 
    for (i in seq_len(k)) {
 
       ### prediction interval(s)
       lsegments(pi.lb[i], rows[i], pi.ub[i], rows[i], lty=lty[1], col=lcol[i], ...)
-      lsegments(pi.lb[i], rows[i]-(height/150)*cex*efac, pi.lb[i], rows[i]+(height/150)*cex*efac, col=lcol[i], lty=lty[2], ...)
-      lsegments(pi.ub[i], rows[i]-(height/150)*cex*efac, pi.ub[i], rows[i]+(height/150)*cex*efac, col=lcol[i], lty=lty[2], ...)
+      lsegments(pi.lb[i], rows[i]-(height/150)*cex*efac[2], pi.lb[i], rows[i]+(height/150)*cex*efac[2], col=lcol[i], lty=lty[2], ...)
+      lsegments(pi.ub[i], rows[i]-(height/150)*cex*efac[2], pi.ub[i], rows[i]+(height/150)*cex*efac[2], col=lcol[i], lty=lty[2], ...)
 
       ### polygon(s)
-      lpolygon(x=c(ci.lb[i], yi[i], ci.ub[i], yi[i]), y=c(rows[i], rows[i]+(height/100)*cex*efac, rows[i], rows[i]-(height/100)*cex*efac), col=col[i], border=border[i], ...)
+      lpolygon(x=c(ci.lb[i], yi[i], ci.ub[i], yi[i]), y=c(rows[i], rows[i]+heights[i], rows[i], rows[i]-heights[i]), col=col[i], border=border[i], ...)
 
       ### label(s)
       if (!is.null(mlab)) {

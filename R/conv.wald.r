@@ -8,6 +8,14 @@ conv.wald <- function(out, ci.lb, ci.ub, zval, pval, n, data, include,
    if (missing(out) && missing(ci.lb) && missing(ci.ub) && missing(zval) && missing(pval))
       stop(mstyle$stop("Must specify at least some of these arguments: 'out', 'ci.lb', 'ci.ub', 'zval', 'pval'."))
 
+   if (is.logical(replace)) {
+      if (isTRUE(replace)) {
+         replace <- "all"
+      } else {
+         replace <- "ifna"
+      }
+   }
+
    replace <- match.arg(replace, c("ifna","all"))
 
    ### get ... argument and check for extra/superfluous arguments
@@ -47,6 +55,7 @@ conv.wald <- function(out, ci.lb, ci.ub, zval, pval, n, data, include,
                stop(mstyle$stop("Cannot determine name of the 'yi' variable."))
             yi.name <- "yi"
          }
+
          if (!is.null(attr(x, "vi.names"))) { # if vi.names attributes is available
             vi.name <- attr(x, "vi.names")[1] # take the first entry to be the vi variable
          } else {                             # if not, see if 'vi' is in the object and assume that is the vi variable

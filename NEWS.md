@@ -1,3 +1,47 @@
+# metafor 4.4-0 (2023-09-27)
+
+- added `getmfopt()` and `setmfopt()` functions for getting and setting package options and made some of the options more flexible
+
+- removed argument `weighted` from `fsn()` (whether weighted or unweighted averages are used in Orwin's method is now simply determined by whether sampling variances are specified or not); added `type="General"` to `fsn()` as a generalization of the Orwin and Rosenberg methods (that allows for a fail-safe N calculation based on a random-effects model); can now pass an `rma` object to the `fsn()` function
+
+- further improved the theming of all plots based on the foreground and background colors; within RStudio, plot colors can also be automatically chosen based on the theme (with `setmfopt(theme="auto")`)
+
+- added additional/optional argument `tabfig` to the various `forest()` functions, for easily setting the `annosym` argument to an appropriate vector for exactly aligning numbers (when using a matching font)
+
+- added (for now undocumented) `vccon` argument to `rma.mv()` for setting equality constraints on variance/correlation components
+
+- `replace` argument in `conv.2x2()`, `conv.delta()`, `conv.fivenum()`, and `conv.wald()` can now also be a logical
+
+- added `summary.matreg()` and `print.summary.matreg()` methods for including additional statistics in the output (R^2 and the omnibus test) and added `coef.matreg()` and `vcov.matreg()` extractor functions
+
+- formatting functions `fmtp()`, `fmtx()`, and `fmtt()` gain a `quote` argument, which is set to `FALSE` by default
+
+- for measures `"PCOR"`, `"ZPCOR"`, `"SPCOR"`, and `"ZSPCOR"`, argument `mi` in `escalc()` now refers to the total number of predictors in the regression models (i.e., also counting the focal predictor of interest)
+
+- added measures `"R2"` and "`ZR2"` to `escalc()`
+
+- `addpoly.default()` and `addpoly.rma.predict()` gain a `constarea` argument (for the option to draw the polygons with a constant area)
+
+- `plot.rma.uni.selmodel()` gains a `shade` argument (for shading the confidence interval region)
+
+- `plot.permutest.rma.uni()` gains a `legend` argument
+
+- `vcalc()` gains a `sparse` argument
+
+- `aggregate.escalc` gains `var.names` argument
+
+- made the `legend` argument more flexible in `funnel()`
+
+- made the `append` argument more flexible in `to.long()`
+
+- added a few more transformation functions
+
+- small bug fixes
+
+- added automated visual comparison tests of plots
+
+- improved the documentation a bit
+
 # metafor 4.2-0 (2023-05-08)
 
 - improved the various plotting functions so they respect `par("fg")`; as a result, one can now create plots with a dark background and light plotting colors

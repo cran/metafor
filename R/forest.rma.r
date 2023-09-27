@@ -30,6 +30,8 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
    if (is.function(transf) && is.function(atransf))
       stop(mstyle$stop("Use either 'transf' or 'atransf' to specify a transformation (not both)."))
 
+   .start.plot()
+
    if (missing(targs))
       targs <- NULL
 
@@ -68,13 +70,8 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
       shade <- .getx("shade", mf=mf, data=x$data)
    }
 
-   if (missing(colshade)) {
-      if (is.element(par("bg"), c("black", "gray10"))) {
-         colshade <- "gray20"
-      } else {
-         colshade <- "gray90"
-      }
-   }
+   if (missing(colshade))
+      colshade <- .coladj(par("bg","fg"), dark=0.1, light=-0.1)
 
    if (missing(pch)) {
       pch <- 15
@@ -118,40 +115,29 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
    if (x$int.only) {
 
       if (missing(col)) {
-         col <- c(par("fg"), "gray50") # 1st color for summary polygon, 2nd color for prediction interval line
+         col <- c(par("fg"), .coladj(par("fg"), dark=-0.3, light=0.3)) # 1st = summary polygon, 2nd = PI
       } else {
-         if (length(col) == 1L)        # if user only specified one value, assume it is for the summary polygon
-            col <- c(col, "gray50")
+         if (length(col) == 1L) # if user only specified one value, assume it is for the summary polygon
+            col <- c(col, .coladj(col, dark=-0.3, light=0.3))
       }
 
       if (missing(border))
-         border <- par("fg")           # border color of summary polygon
+         border <- par("fg") # border color of summary polygon
 
    } else {
 
-      if (missing(col)) {
-         if (is.element(par("bg"), c("black", "gray10"))) {
-            col <- "gray40"            # color of fitted values
-         } else {
-            col <- "gray"              # color of fitted values
-         }
-      }
+      if (missing(col))
+         col <- .coladj(par("bg","fg"), dark=0.2, light=-0.2) # color for fitted value polygons
 
-      if (missing(border)) {
-         if (is.element(par("bg"), c("black", "gray10"))) {
-            border <- "gray30"         # border color of fitted values
-         } else {
-            border <- "gray"           # border color of fitted values
-         }
-
-      }
+      if (missing(border))
+         border <- .coladj(par("bg","fg"), dark=0.3, light=-0.3)
 
    }
 
    ### set default line types if user has not specified 'lty' argument
 
    if (missing(lty)) {
-      lty <- c("solid", "dotted", "solid") # 1st value = CIs, 2nd value = prediction interval, 3rd = horizontal line(s)
+      lty <- c("solid", "dotted", "solid") # 1st = CIs, 2nd = PI, 3rd = horizontal line(s)
    } else {
       if (length(lty) == 1L)
          lty <- c(lty, "dotted", "solid")
@@ -159,25 +145,36 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
          lty <- c(lty, "solid")
    }
 
-   ### vertical expansion factor: 1st = CI end lines, 2nd = arrows, 3rd = summary polygon or fitted polygons
+   ### vertical expansion factor: 1st = CI/PI end lines, 2nd = arrows, 3rd = summary polygon or fitted polygons
 
    if (length(efac) == 1L)
       efac <- rep(efac, 3L)
 
    if (length(efac) == 2L)
-      efac <- c(efac[1], efac[1], efac[2]) # if 2 values specified: 1st = CI end lines and arrows, 2nd = summary polygon or fitted polygons
+      efac <- c(efac[1], efac[1], efac[2]) # if 2 values specified: 1st = CI/PI end lines and arrows, 2nd = summary polygon or fitted polygons
 
    ### annotation symbols vector
 
    if (is.null(ddd$annosym)) {
-      annosym <- c(" [", ", ", "]", "-") # 4th element for minus sign symbol
+      annosym <- c(" [", ", ", "]", "-", " ") # 4th element for minus sign symbol; 5th for space (in place of numbers and +); see [a]
    } else {
       annosym <- ddd$annosym
       if (length(annosym) == 3L)
-         annosym <- c(annosym, "-")
-      if (length(annosym) != 4L)
-         stop(mstyle$stop("Argument 'annosym' must be a vector of length 3 (or 4)."))
+         annosym <- c(annosym, "-", " ")
+      if (length(annosym) == 4L)
+         annosym <- c(annosym, " ")
+      if (length(annosym) != 5L)
+         stop(mstyle$stop("Argument 'annosym' must be a vector of length 3 (or 4 or 5)."))
    }
+
+   ### adjust annosym for tabular figures
+
+   if (isTRUE(ddd$tabfig == 1))
+      annosym <- c("\u2009[", ",\u2009", "]", "\u2212", "\u2002") # \u2009 thin space; \u2212 minus, \u2002 en space
+   if (isTRUE(ddd$tabfig == 2))
+      annosym <- c("\u2009[", ",\u2009", "]", "\u2013", "\u2002") # \u2009 thin space; \u2013 en dash, \u2002 en space
+   if (isTRUE(ddd$tabfig == 3))
+      annosym <- c("\u2009[", ",\u2009", "]", "\u2212", "\u2007") # \u2009 thin space; \u2212 minus, \u2007 figure space
 
    ### get measure from object
 
@@ -263,14 +260,14 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
       xlabfont <- ddd$xlabfont
    }
 
-   lplot     <- function(..., textpos, addcred, pi.type, decreasing, clim, rowadj, annosym, top, xlabadj, xlabfont) plot(...)
-   labline   <- function(..., textpos, addcred, pi.type, decreasing, clim, rowadj, annosym, top, xlabadj, xlabfont) abline(...)
-   lsegments <- function(..., textpos, addcred, pi.type, decreasing, clim, rowadj, annosym, top, xlabadj, xlabfont) segments(...)
-   laxis     <- function(..., textpos, addcred, pi.type, decreasing, clim, rowadj, annosym, top, xlabadj, xlabfont) axis(...)
-   lmtext    <- function(..., textpos, addcred, pi.type, decreasing, clim, rowadj, annosym, top, xlabadj, xlabfont) mtext(...)
-   lpolygon  <- function(..., textpos, addcred, pi.type, decreasing, clim, rowadj, annosym, top, xlabadj, xlabfont) polygon(...)
-   ltext     <- function(..., textpos, addcred, pi.type, decreasing, clim, rowadj, annosym, top, xlabadj, xlabfont) text(...)
-   lpoints   <- function(..., textpos, addcred, pi.type, decreasing, clim, rowadj, annosym, top, xlabadj, xlabfont) points(...)
+   lplot     <- function(..., textpos, addcred, pi.type, decreasing, clim, rowadj, annosym, tabfig, top, xlabadj, xlabfont) plot(...)
+   labline   <- function(..., textpos, addcred, pi.type, decreasing, clim, rowadj, annosym, tabfig, top, xlabadj, xlabfont) abline(...)
+   lsegments <- function(..., textpos, addcred, pi.type, decreasing, clim, rowadj, annosym, tabfig, top, xlabadj, xlabfont) segments(...)
+   laxis     <- function(..., textpos, addcred, pi.type, decreasing, clim, rowadj, annosym, tabfig, top, xlabadj, xlabfont) axis(...)
+   lmtext    <- function(..., textpos, addcred, pi.type, decreasing, clim, rowadj, annosym, tabfig, top, xlabadj, xlabfont) mtext(...)
+   lpolygon  <- function(..., textpos, addcred, pi.type, decreasing, clim, rowadj, annosym, tabfig, top, xlabadj, xlabfont) polygon(...)
+   ltext     <- function(..., textpos, addcred, pi.type, decreasing, clim, rowadj, annosym, tabfig, top, xlabadj, xlabfont) text(...)
+   lpoints   <- function(..., textpos, addcred, pi.type, decreasing, clim, rowadj, annosym, tabfig, top, xlabadj, xlabfont) points(...)
 
    if (is.character(showweights)) {
       weighttype  <- match.arg(showweights, c("diagonal", "rowsum"))
@@ -731,7 +728,7 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
    plot.multp.r <- area.anno / area.forest
 
    if (missing(xlim)) {
-      if (min(ci.ub, na.rm=TRUE) < alim[1]) {
+      if (min(ci.lb, na.rm=TRUE) < alim[1]) {
          f.1 <- alim[1]
       } else {
          f.1 <- min(ci.lb, na.rm=TRUE)
@@ -918,7 +915,7 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
       if (inherits(x, "rma.mv") && x$withG && x$tau2s > 1) {
 
          if (!is.logical(addpred)) {
-            ### for multiple tau^2 (and gamma^2) values, need to specify level(s) of the inner factor(s) to compute the prediction interval
+            ### for multiple tau^2 (and gamma^2) values, need to specify level(s) of the inner factor(s) to compute the PI
             ### this can be done via the addpred argument (i.e., instead of using a logical, one specifies the level(s))
             if (length(addpred) == 1L)
                addpred <- c(addpred, addpred)
@@ -1162,8 +1159,6 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
          annotext <- fmtx(annotext, digits[[1]])
       }
 
-      annotext <- sub("-", annosym[4], annotext, fixed=TRUE)
-
       if (missing(width)) {
          width <- apply(annotext, 2, function(x) max(nchar(x)))
       } else {
@@ -1181,20 +1176,24 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
          width <- width[-1] # remove the first entry for the weights (so this can be used by addpoly() via .metafor)
 
       if (showweights) {
-         annotext <- cbind(annotext[,1], "%   ", annotext[,2], annosym[1], annotext[,3], annosym[2], annotext[,4], annosym[3])
+         annotext <- cbind(annotext[,1], paste0("%", paste0(rep(substr(annosym[1],1,1),3), collapse="")), annotext[,2], annosym[1], annotext[,3], annosym[2], annotext[,4], annosym[3])
       } else {
          annotext <- cbind(annotext[,1], annosym[1], annotext[,2], annosym[2], annotext[,3], annosym[3])
       }
 
       annotext <- apply(annotext, 1, paste, collapse="")
       annotext[grepl("NA", annotext, fixed=TRUE)] <- ""
+      annotext <- gsub("-", annosym[4], annotext, fixed=TRUE) # [a]
+      annotext <- gsub(" ", annosym[5], annotext, fixed=TRUE)
 
       par(family=names(fonts)[2], font=fonts[2])
+
       if (addfit && x$int.only) {
          ltext(textpos[2], c(rows,-1)+rowadj[2], labels=annotext, pos=2, cex=cex, ...)
       } else {
          ltext(textpos[2], rows+rowadj[2], labels=annotext, pos=2, cex=cex, ...)
       }
+
       par(family=names(fonts)[1], font=fonts[1])
 
    } else {
@@ -1234,7 +1233,7 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
 
    ### put stuff into the .metafor environment, so that it can be used by addpoly()
 
-   sav <- c(res, list(level=level, annotate=annotate, digits=digits[[1]], width=width, transf=transf, atransf=atransf, targs=targs, efac=efac[3], fonts=fonts[1:2], annosym=annosym))
+   sav <- c(res, list(level=level, annotate=annotate, digits=digits[[1]], width=width, transf=transf, atransf=atransf, targs=targs, efac=efac, fonts=fonts[1:2], annosym=annosym))
    try(assign("forest", sav, envir=.metafor), silent=TRUE)
 
    invisible(res)

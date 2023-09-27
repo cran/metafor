@@ -4,13 +4,18 @@
 
 source("settings.r")
 
-context("Checking plots example: Scatter/bubble plot")
+context("Checking plots example: scatter/bubble plot")
 
 test_that("plot can be drawn.", {
 
    expect_equivalent(TRUE, TRUE) # avoid 'Empty test' message
 
    skip_on_cran()
+
+   png("images/test_plots_regplot_test.png", res=200, width=1800, height=1500, type="cairo")
+
+   ### adjust margins so the space is better used
+   par(mar=c(5,5,1,2))
 
    ### calculate (log) risk ratios and corresponding sampling variances
    dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
@@ -24,6 +29,10 @@ test_that("plot can be drawn.", {
                   label=c(4,7,12,13), offset=c(1.6,0.8), labsize=0.9,
                   pi=TRUE, legend=TRUE, grid=TRUE)
    points(sav)
+
+   dev.off()
+
+   expect_true(.vistest("images/test_plots_regplot_test.png", "images/test_plots_regplot.png"))
 
 })
 

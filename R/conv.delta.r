@@ -8,6 +8,14 @@ conv.delta <- function(yi, vi, ni, data, include, transf, var.names, append=TRUE
    if (missing(transf))
       stop(mstyle$stop("Must specify 'transf' argument."))
 
+   if (is.logical(replace)) {
+      if (isTRUE(replace)) {
+         replace <- "all"
+      } else {
+         replace <- "ifna"
+      }
+   }
+
    replace <- match.arg(replace, c("ifna","all"))
 
    #########################################################################
@@ -39,6 +47,7 @@ conv.delta <- function(yi, vi, ni, data, include, transf, var.names, append=TRUE
                stop(mstyle$stop("Cannot determine name of the 'yi' variable."))
             yi.name <- "yi"
          }
+
          if (!is.null(attr(x, "vi.names"))) { # if vi.names attributes is available
             vi.name <- attr(x, "vi.names")[1] # take the first entry to be the vi variable
          } else {                             # if not, see if 'vi' is in the object and assume that is the vi variable
@@ -158,7 +167,7 @@ conv.delta <- function(yi, vi, ni, data, include, transf, var.names, append=TRUE
 
    for (i in 1:k) {
 
-      args <- c(yi[i], as.list(sapply(dotarglist, `[`, i)))
+      args <- c(yi[[i]], as.list(sapply(dotarglist, `[[`, i))) # use [[]] in case yi is a named vector
       #print(args)
 
       tmp <- try(suppressWarnings(do.call(transf, args)), silent=TRUE)

@@ -25,6 +25,35 @@
 
 ############################################################################
 
+### function to check vccon elements
+
+.chkvccon <- function(ids, vcvals) {
+
+   # get name of vcvals
+
+   vcname <- as.character(match.call()[[3]])
+
+   if (is.null(ids) || is.null(vcvals))
+      return(vcvals)
+
+   if (length(ids) != length(vcvals)) {
+      mstyle <- .get.mstyle("crayon" %in% .packages())
+      stop(mstyle$stop(paste0("Length of 'vccon$", vcname, "' (", length(ids), ") does not match length of ", vcname, " (", length(vcvals), ").")), call.=FALSE)
+   }
+
+   for (id in unique(ids))
+      vcvals[ids == id] <- mean(vcvals[ids == id], na.rm=TRUE)
+
+   # if all elements are NA, then the mean will be NaN, so fix this back to NA
+
+   vcvals[is.nan(vcvals)] <- NA_real_
+
+   return(vcvals)
+
+}
+
+############################################################################
+
 .process.G.aftersub <- function(mf.g, struct, formula, tau2, rho, isG, k, sparse, verbose) {
 
    mstyle <- .get.mstyle("crayon" %in% .packages())
@@ -38,8 +67,10 @@
 
    ### check that the number of variables is correct for the chosen structure
 
-   if (is.element(struct, c("CS","HCS","UN","UNR","AR","HAR","CAR","ID","DIAG","PHYBM","PHYPL","PHYPD")) && nvars != 2)
+   if (is.element(struct, c("CS","HCS","UN","UNR","AR","HAR","CAR","ID","DIAG","PHYBM","PHYPL","PHYPD")) && sum(sapply(mf.g, NCOL)) != 2)
       stop(mstyle$stop(paste0("Only a single inner variable allowed for an '~ inner | outer' term when 'struct=\"", struct, "\"'.")), call.=FALSE)
+
+   # note: need to use sum(sapply(mf.g, NCOL)) above because when 'random = ~ X | study' (and X is a matrix with 2+ columns), nvars will still be 2 for (unless struct="GEN")
 
    ### get variables names in mf.g
 
@@ -55,7 +86,7 @@
    if (is.element(struct, c("CAR"))) {
       if (!is.numeric(mf.g[[1]]))
          stop(mstyle$stop("Inner variable in '~ inner | outer' term must be numeric for 'struct=\"CAR\"'."), call.=FALSE)
-      g.values <- sort(unique(round(mf.g[[1]], digits=8))) ### aweful hack to avoid floating points issues
+      g.values <- sort(unique(round(mf.g[[1]], digits=8L))) # aweful hack to avoid floating points issues
    } else {
       g.values <- NULL
    }
@@ -664,13 +695,13 @@
 
    if (!cholesky) {
       if (vctransf) {
-         v <- ifelse(is.na(v.val), exp(v), v.val)           ### variances are optimized in log space, so exponentiate
+         v <- ifelse(is.na(v.val), exp(v), v.val)           # variances are optimized in log space, so exponentiate
          if (struct == "CAR")
-            r <- ifelse(is.na(r.val), plogis(r), r.val)     ### CAR correlation is optimized in qlogis space, so use plogis
+            r <- ifelse(is.na(r.val), plogis(r), r.val)     # CAR correlation is optimized in qlogis space, so use plogis
          if (is.element(struct, c("SPEXP","SPGAU","SPLIN","SPRAT","SPSPH","PHYBM","PHYPL","PHYPD")))
-            r <- ifelse(is.na(r.val), exp(r), r.val)        ### spatial and phylogenetic 'correlation' parameter is optimized in log space, so exponentiate
+            r <- ifelse(is.na(r.val), exp(r), r.val)        # spatial and phylogenetic 'correlation' parameter is optimized in log space, so exponentiate
          if (!is.element(struct, c("CAR","SPEXP","SPGAU","SPLIN","SPRAT","SPSPH","PHYBM","PHYPL","PHYPD")))
-            r <- ifelse(is.na(r.val), tanh(r), r.val)       ### other correlations are optimized in atanh space, so use tanh
+            r <- ifelse(is.na(r.val), tanh(r), r.val)       # other correlations are optimized in atanh space, so use tanh
       } else {
          ### for Hessian computation, can choose to leave as is
          v <- ifelse(is.na(v.val), v, v.val)
@@ -685,10 +716,10 @@
          }
          if (!is.element(struct, c("CAR","SPEXP","SPGAU","SPLIN","SPRAT","SPSPH","PHYBM","PHYPL","PHYPD")) && !vccov) {
             r[r < -1] <- -1
-            r[r > 1] <- 1
+            r[r >  1] <-  1
          }
       }
-      v <- ifelse(v <= .Machine$double.eps*10, 0, v) ### don't do this with Cholesky factorization, since values can be negative
+      v <- ifelse(v <= .Machine$double.eps*10, 0, v) # don't do this with Cholesky factorization, since values can be negative
    }
 
    ncol.Z1 <- ncol(Z1)
@@ -708,32 +739,32 @@
    if (is.element(struct, c("UN","GEN"))) {
       if (cholesky) {
          E <- .con.vcov.UN.chol(v, r)
-         v <- diag(E)                  ### need this, so correct values are shown when verbose=TRUE
-         r <- cov2cor(E)[lower.tri(E)] ### need this, so correct values are shown when verbose=TRUE
-         v[!is.na(v.val)] <- v.val[!is.na(v.val)] ### replace any fixed values
-         r[!is.na(r.val)] <- r.val[!is.na(r.val)] ### replace any fixed values
+         v <- diag(E)                  # need this, so correct values are shown when verbose=TRUE
+         r <- cov2cor(E)[lower.tri(E)] # need this, so correct values are shown when verbose=TRUE
+         v[!is.na(v.val)] <- v.val[!is.na(v.val)] # replace any fixed values
+         r[!is.na(r.val)] <- r.val[!is.na(r.val)] # replace any fixed values
       }
       E <- .con.vcov.UN(v, r, vccov)
       if (nearpd) {
-         E <- as.matrix(nearPD(E)$mat) ### nearPD() in Matrix package
-         v <- diag(E)                  ### need this, so correct values are shown when verbose=TRUE
-         r <- cov2cor(E)[lower.tri(E)] ### need this, so correct values are shown when verbose=TRUE
+         E <- as.matrix(nearPD(E)$mat) # nearPD() in Matrix package
+         v <- diag(E)                  # need this, so correct values are shown when verbose=TRUE
+         r <- cov2cor(E)[lower.tri(E)] # need this, so correct values are shown when verbose=TRUE
       }
    }
 
    if (struct == "UNR") {
       if (cholesky) {
          E <- .con.vcov.UNR.chol(v, r)
-         v <- diag(E)[1,1]             ### need this, so correct values are shown when verbose=TRUE
-         r <- cov2cor(E)[lower.tri(E)] ### need this, so correct values are shown when verbose=TRUE
-         v[!is.na(v.val)] <- v.val[!is.na(v.val)] ### replace any fixed values
-         r[!is.na(r.val)] <- r.val[!is.na(r.val)] ### replace any fixed values
+         v <- diag(E)[1,1]             # need this, so correct values are shown when verbose=TRUE
+         r <- cov2cor(E)[lower.tri(E)] # need this, so correct values are shown when verbose=TRUE
+         v[!is.na(v.val)] <- v.val[!is.na(v.val)] # replace any fixed values
+         r[!is.na(r.val)] <- r.val[!is.na(r.val)] # replace any fixed values
       }
       E <- .con.vcov.UNR(v, r)
       if (nearpd) {
-         E <- as.matrix(nearPD(E, keepDiag=TRUE)$mat) ### nearPD() in Matrix package
-         v <- E[1,1]                   ### need this, so correct values are shown when verbose=TRUE
-         r <- cov2cor(E)[lower.tri(E)] ### need this, so correct values are shown when verbose=TRUE
+         E <- as.matrix(nearPD(E, keepDiag=TRUE)$mat) # nearPD() in Matrix package
+         v <- E[1,1]                   # need this, so correct values are shown when verbose=TRUE
+         r <- cov2cor(E)[lower.tri(E)] # need this, so correct values are shown when verbose=TRUE
       }
    }
 
@@ -831,7 +862,7 @@
                        sigma2s, tau2s, rhos, gamma2s, phis,
                        withS, withG, withH,
                        struct, g.levels.r, h.levels.r, g.values, h.values,
-                       sparse, cholesky, nearpd, vctransf, vccov,
+                       sparse, cholesky, nearpd, vctransf, vccov, vccon,
                        verbose, digits, REMLf, dofit=FALSE, hessian=FALSE) {
 
    mstyle <- .get.mstyle("crayon" %in% .packages())
@@ -840,10 +871,12 @@
 
    if (withS) {
 
+      vars <- par[seq_len(sigma2s)]
+
       if (vctransf) {
-         sigma2 <- ifelse(is.na(sigma2.val), exp(par[seq_len(sigma2s)]), sigma2.val) ### sigma2 is optimized in log space, so exponentiate
+         sigma2 <- ifelse(is.na(sigma2.val), exp(vars), sigma2.val) # sigma2 is optimized in log space, so exponentiate
       } else {
-         sigma2 <- ifelse(is.na(sigma2.val), par[seq_len(sigma2s)], sigma2.val)      ### for Hessian computation, can choose to leave as is
+         sigma2 <- ifelse(is.na(sigma2.val), vars, sigma2.val)      # for Hessian computation, can choose to leave as is
          sigma2[sigma2 < 0] <- 0
       }
 
@@ -852,6 +885,11 @@
 
       ### set really small sigma2 values equal to 0 (anything below .Machine$double.eps*10 is essentially 0)
       sigma2 <- ifelse(sigma2 <= .Machine$double.eps*10, 0, sigma2)
+
+      if (!is.null(vccon) && !is.null(vccon$sigma2)) {
+         for (id in unique(vccon$sigma2))
+            sigma2[vccon$sigma2 == id] <- mean(sigma2[vccon$sigma2 == id])
+      }
 
       for (j in seq_len(sigma2s)) {
          M <- M + sigma2[j] * D.S[[j]]
@@ -871,6 +909,28 @@
       rho  <- resG$r
       G    <- resG$E
 
+      if (!is.null(vccon)) {
+
+         if (!is.null(vccon$tau2)) {
+            for (id in unique(vccon$tau2))
+               tau2[vccon$tau2 == id] <- mean(tau2[vccon$tau2 == id])
+         }
+
+         if (!is.null(vccon$rho)) {
+            for (id in unique(vccon$rho)) {
+               rho[vccon$rho == id] <- mean(rho[vccon$rho == id])
+            }
+         }
+
+         resG <- .con.E(v=tau2, r=rho,
+                        v.val=tau2.val, r.val=rho.val, Z1=Z.G1, Z2=Z.G2, levels.r=g.levels.r, values=g.values, Dmat=g.Dmat,
+                        struct=struct[1], cholesky=FALSE, vctransf=FALSE, vccov=vccov, nearpd=nearpd, sparse=sparse)
+         tau2 <- resG$v
+         rho  <- resG$r
+         G    <- resG$E
+
+      }
+
       M <- M + (Z.G1 %*% G %*% t(Z.G1)) * tcrossprod(Z.G2)
 
    }
@@ -886,6 +946,29 @@
       gamma2 <- resH$v
       phi    <- resH$r
       H      <- resH$E
+
+      if (!is.null(vccon)) {
+
+         if (!is.null(vccon$gamma2)) {
+            for (id in unique(vccon$gamma2)) {
+               gamma2[vccon$gamma2 == id] <- mean(gamma2[vccon$gamma2 == id])
+            }
+         }
+
+         if (!is.null(vccon$phi)) {
+            for (id in unique(vccon$phi)) {
+               phi[vccon$phi == id] <- mean(phi[vccon$phi == id])
+            }
+         }
+
+         resH <- .con.E(v=gamma2, r=phi,
+                        v.val=gamma2.val, r.val=phi.val, Z1=Z.H1, Z2=Z.H2, levels.r=h.levels.r, values=h.values, Dmat=h.Dmat,
+                        struct=struct[2], cholesky=FALSE, vctransf=FALSE, vccov=vccov, nearpd=nearpd, sparse=sparse)
+         gamma2 <- resH$v
+         phi    <- resH$r
+         H      <- resH$E
+
+      }
 
       M <- M + (Z.H1 %*% H %*% t(Z.H1)) * tcrossprod(Z.H2)
 
@@ -1070,14 +1153,21 @@
 
       ### fit model without data from ith cluster
 
-      args <- list(yi=obj$yi, V=obj$V, W=obj$W, mods=obj$X, random=obj$random, struct=obj$struct, intercept=FALSE, data=obj$mf.r, method=obj$method, test=obj$test, dfs=obj$dfs, level=obj$level, R=obj$R, Rscale=obj$Rscale, sigma2=ifelse(obj$vc.fix$sigma2, obj$sigma2, NA), tau2=ifelse(obj$vc.fix$tau2, obj$tau2, NA), rho=ifelse(obj$vc.fix$rho, obj$rho, NA), gamma2=ifelse(obj$vc.fix$gamma2, obj$gamma2, NA), phi=ifelse(obj$vc.fix$phi, obj$phi, NA), sparse=obj$sparse, dist=obj$dist, control=control, subset=!incl, outlist=outlist)
+      args <- list(yi=obj$yi, V=obj$V, W=obj$W, mods=obj$X, random=obj$random, struct=obj$struct, intercept=FALSE, data=obj$mf.r, method=obj$method,
+                   test=obj$test, dfs=obj$dfs, level=obj$level, R=obj$R, Rscale=obj$Rscale,
+                   sigma2=ifelse(obj$vc.fix$sigma2, obj$sigma2, NA), tau2=ifelse(obj$vc.fix$tau2, obj$tau2, NA), rho=ifelse(obj$vc.fix$rho, obj$rho, NA),
+                   gamma2=ifelse(obj$vc.fix$gamma2, obj$gamma2, NA), phi=ifelse(obj$vc.fix$phi, obj$phi, NA),
+                   sparse=obj$sparse, dist=obj$dist, vccon=obj$vccon, control=control, subset=!incl, outlist=outlist)
       res <- try(suppressWarnings(.do.call(rma.mv, args)), silent=TRUE)
 
    } else {
 
       ### set values of variance/correlation components to those from the 'full' model
 
-      args <- list(yi=obj$yi, V=obj$V, W=obj$W, mods=obj$X, random=obj$random, struct=obj$struct, intercept=FALSE, data=obj$mf.r, method=obj$method, test=obj$test, dfs=obj$dfs, level=obj$level, R=obj$R, Rscale=obj$Rscale, sigma2=obj$sigma2, tau2=obj$tau2, rho=obj$rho, gamma2=obj$gamma2, phi=obj$phi, sparse=obj$sparse, dist=obj$dist, control=obj$control, subset=!incl, outlist=outlist)
+      args <- list(yi=obj$yi, V=obj$V, W=obj$W, mods=obj$X, random=obj$random, struct=obj$struct, intercept=FALSE, data=obj$mf.r, method=obj$method,
+                   test=obj$test, dfs=obj$dfs, level=obj$level, R=obj$R, Rscale=obj$Rscale,
+                   sigma2=obj$sigma2, tau2=obj$tau2, rho=obj$rho, gamma2=obj$gamma2, phi=obj$phi,
+                   sparse=obj$sparse, dist=obj$dist, vccon=obj$vccon, control=obj$control, subset=!incl, outlist=outlist)
       res <- try(suppressWarnings(.do.call(rma.mv, args)), silent=TRUE)
 
    }
@@ -1126,14 +1216,21 @@
 
       ### fit model without data from ith cluster
 
-      args <- list(yi=obj$yi, V=obj$V, W=obj$W, mods=obj$X, random=obj$random, struct=obj$struct, intercept=FALSE, data=obj$mf.r, method=obj$method, test=obj$test, dfs=obj$dfs, level=obj$level, R=obj$R, Rscale=obj$Rscale, sigma2=ifelse(obj$vc.fix$sigma2, obj$sigma2, NA), tau2=ifelse(obj$vc.fix$tau2, obj$tau2, NA), rho=ifelse(obj$vc.fix$rho, obj$rho, NA), gamma2=ifelse(obj$vc.fix$gamma2, obj$gamma2, NA), phi=ifelse(obj$vc.fix$phi, obj$phi, NA), sparse=obj$sparse, dist=obj$dist, control=control, subset=!incl, outlist=outlist)
+      args <- list(yi=obj$yi, V=obj$V, W=obj$W, mods=obj$X, random=obj$random, struct=obj$struct, intercept=FALSE, data=obj$mf.r, method=obj$method,
+                   test=obj$test, dfs=obj$dfs, level=obj$level, R=obj$R, Rscale=obj$Rscale,
+                   sigma2=ifelse(obj$vc.fix$sigma2, obj$sigma2, NA), tau2=ifelse(obj$vc.fix$tau2, obj$tau2, NA), rho=ifelse(obj$vc.fix$rho, obj$rho, NA),
+                   gamma2=ifelse(obj$vc.fix$gamma2, obj$gamma2, NA), phi=ifelse(obj$vc.fix$phi, obj$phi, NA),
+                   sparse=obj$sparse, dist=obj$dist, vccon=obj$vccon, control=control, subset=!incl, outlist=outlist)
       res <- try(suppressWarnings(.do.call(rma.mv, args)), silent=TRUE)
 
    } else {
 
       ### set values of variance/correlation components to those from the 'full' model
 
-      args <- list(yi=obj$yi, V=obj$V, W=obj$W, mods=obj$X, random=obj$random, struct=obj$struct, intercept=FALSE, data=obj$mf.r, method=obj$method, test=obj$test, dfs=obj$dfs, level=obj$level, R=obj$R, Rscale=obj$Rscale, sigma2=obj$sigma2, tau2=obj$tau2, rho=obj$rho, gamma2=obj$gamma2, phi=obj$phi, sparse=obj$sparse, dist=obj$dist, control=obj$control, subset=!incl, outlist=outlist)
+      args <- list(yi=obj$yi, V=obj$V, W=obj$W, mods=obj$X, random=obj$random, struct=obj$struct, intercept=FALSE, data=obj$mf.r, method=obj$method,
+                   test=obj$test, dfs=obj$dfs, level=obj$level, R=obj$R, Rscale=obj$Rscale,
+                   sigma2=obj$sigma2, tau2=obj$tau2, rho=obj$rho, gamma2=obj$gamma2, phi=obj$phi,
+                   sparse=obj$sparse, dist=obj$dist, vccon=obj$vccon, control=obj$control, subset=!incl, outlist=outlist)
       res <- try(suppressWarnings(.do.call(rma.mv, args)), silent=TRUE)
 
    }
@@ -1152,7 +1249,10 @@
 
    ### fit model based on all data but with var/cor components fixed to those from res
 
-   args <- list(yi=obj$yi, V=obj$V, W=obj$W, mods=obj$X, random=obj$random, struct=obj$struct, intercept=FALSE, data=obj$mf.r, method=obj$method, test=obj$test, dfs=obj$dfs, level=obj$level, R=obj$R, Rscale=obj$Rscale, sigma2=res$sigma2, tau2=res$tau2, rho=res$rho, gamma2=res$gamma2, phi=res$phi, sparse=obj$sparse, dist=obj$dist, control=obj$control, outlist=outlist)
+   args <- list(yi=obj$yi, V=obj$V, W=obj$W, mods=obj$X, random=obj$random, struct=obj$struct, intercept=FALSE, data=obj$mf.r, method=obj$method,
+                test=obj$test, dfs=obj$dfs, level=obj$level, R=obj$R, Rscale=obj$Rscale,
+                sigma2=res$sigma2, tau2=res$tau2, rho=res$rho, gamma2=res$gamma2, phi=res$phi,
+                sparse=obj$sparse, dist=obj$dist, vccon=obj$vccon, control=obj$control, outlist=outlist)
    tmp <- try(suppressWarnings(.do.call(rma.mv, args)), silent=TRUE)
 
    Xi <- obj$X[incl,,drop=FALSE]
@@ -1200,14 +1300,21 @@
 
       ### fit model without data from ith cluster
 
-      args <- list(yi=obj$yi, V=obj$V, W=obj$W, mods=obj$X, random=obj$random, struct=obj$struct, intercept=FALSE, data=obj$mf.r, method=obj$method, test=obj$test, dfs=obj$dfs, level=obj$level, R=obj$R, Rscale=obj$Rscale, sigma2=ifelse(obj$vc.fix$sigma2, obj$sigma2, NA), tau2=ifelse(obj$vc.fix$tau2, obj$tau2, NA), rho=ifelse(obj$vc.fix$rho, obj$rho, NA), gamma2=ifelse(obj$vc.fix$gamma2, obj$gamma2, NA), phi=ifelse(obj$vc.fix$phi, obj$phi, NA), sparse=obj$sparse, dist=obj$dist, control=control, subset=!incl, outlist=outlist)
+      args <- list(yi=obj$yi, V=obj$V, W=obj$W, mods=obj$X, random=obj$random, struct=obj$struct, intercept=FALSE, data=obj$mf.r, method=obj$method,
+                   test=obj$test, dfs=obj$dfs, level=obj$level, R=obj$R, Rscale=obj$Rscale,
+                   sigma2=ifelse(obj$vc.fix$sigma2, obj$sigma2, NA), tau2=ifelse(obj$vc.fix$tau2, obj$tau2, NA), rho=ifelse(obj$vc.fix$rho, obj$rho, NA),
+                   gamma2=ifelse(obj$vc.fix$gamma2, obj$gamma2, NA), phi=ifelse(obj$vc.fix$phi, obj$phi, NA),
+                   sparse=obj$sparse, dist=obj$dist, vccon=obj$vccon, control=control, subset=!incl, outlist=outlist)
       res <- try(suppressWarnings(.do.call(rma.mv, args)), silent=TRUE)
 
    } else {
 
       ### set values of variance/correlation components to those from the 'full' model
 
-      args <- list(yi=obj$yi, V=obj$V, W=obj$W, mods=obj$X, random=obj$random, struct=obj$struct, intercept=FALSE, data=obj$mf.r, method=obj$method, test=obj$test, dfs=obj$dfs, level=obj$level, R=obj$R, Rscale=obj$Rscale, sigma2=obj$sigma2, tau2=obj$tau2, rho=obj$rho, gamma2=obj$gamma2, phi=obj$phi, sparse=obj$sparse, dist=obj$dist, control=obj$control, subset=!incl, outlist=outlist)
+      args <- list(yi=obj$yi, V=obj$V, W=obj$W, mods=obj$X, random=obj$random, struct=obj$struct, intercept=FALSE, data=obj$mf.r, method=obj$method,
+                   test=obj$test, dfs=obj$dfs, level=obj$level, R=obj$R, Rscale=obj$Rscale,
+                   sigma2=obj$sigma2, tau2=obj$tau2, rho=obj$rho, gamma2=obj$gamma2, phi=obj$phi,
+                   sparse=obj$sparse, dist=obj$dist, vccon=obj$vccon, control=obj$control, subset=!incl, outlist=outlist)
       res <- try(suppressWarnings(.do.call(rma.mv, args)), silent=TRUE)
 
    }
@@ -1226,7 +1333,10 @@
 
    ### fit model based on all data but with var/cor components fixed to those from res
 
-   args <- list(yi=obj$yi, V=obj$V, W=obj$W, mods=obj$X, random=obj$random, struct=obj$struct, intercept=FALSE, data=obj$mf.r, method=obj$method, test=obj$test, dfs=obj$dfs, level=obj$level, R=obj$R, Rscale=obj$Rscale, sigma2=res$sigma2, tau2=res$tau2, rho=res$rho, gamma2=res$gamma2, phi=res$phi, sparse=obj$sparse, dist=obj$dist, control=obj$control, outlist=outlist)
+   args <- list(yi=obj$yi, V=obj$V, W=obj$W, mods=obj$X, random=obj$random, struct=obj$struct, intercept=FALSE, data=obj$mf.r, method=obj$method,
+                test=obj$test, dfs=obj$dfs, level=obj$level, R=obj$R, Rscale=obj$Rscale,
+                sigma2=res$sigma2, tau2=res$tau2, rho=res$rho, gamma2=res$gamma2, phi=res$phi,
+                sparse=obj$sparse, dist=obj$dist, vccon=obj$vccon, control=obj$control, outlist=outlist)
    tmp <- try(suppressWarnings(.do.call(rma.mv, args)), silent=TRUE)
 
    ### compute dfbeta value(s)

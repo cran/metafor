@@ -39,7 +39,7 @@ matreg(y, x, R, n, V, cov=FALSE, means, ztor=FALSE,
    \item{vb}{the variance-covariance matrix of the estimated model coefficients.}
    \item{\dots}{some additional elements/values.}
 
-   The results are formatted and printed with the \code{\link[=print.matreg]{print}} function.
+   The results are formatted and printed with the \code{\link[=print.matreg]{print}} function. Extractor functions include \code{\link[=coef.matreg]{coef}} and \code{\link[=vcov.matreg]{vcov}}.
 }
 \note{
    Only the lower triangular part of \code{R} (and \code{V} if it is specified) is used in the computations.
@@ -64,6 +64,53 @@ matreg(y, x, R, n, V, cov=FALSE, means, ztor=FALSE,
    \code{\link{rcalc}} for a function to construct the variance-covariance matrix of dependent correlation coefficients.
 }
 \examples{
+############################################################################
+
+### first an example unrelated to meta-analysis, simply demonstrating that
+### one can obtain the same results from lm() and matreg()
+
+### fit a regression model with lm() to the 'mtcars' dataset
+res <- lm(mpg ~ hp + wt + am, data=mtcars)
+summary(res)
+
+### covariance matrix of the dataset
+S <- cov(mtcars)
+
+### fit the same regression model using matreg()
+res <- matreg(y="mpg", x=c("hp","wt","am"), R=S, cov=TRUE,
+              means=colMeans(mtcars), n=nrow(mtcars))
+summary(res)
+
+### copy the 'mtcars' dataset to 'dat' and standardize all variables
+dat <- mtcars
+dat[] <- scale(dat)
+
+### fit a regression model with lm() to obtain standardized regression coefficients ('betas')
+res <- lm(mpg ~ 0 + hp + wt + am, data=dat)
+summary(res)
+
+### correlation matrix of the dataset
+R <- cor(mtcars)
+
+### fit the same regression model using matreg()
+res <- matreg(y="mpg", x=c("hp","wt","am"), R=R, n=nrow(mtcars))
+summary(res)
+
+### note: the standard errors of the betas should not be used to construct CIs
+### as they assume that the null hypothesis (H0: beta_j = 0) is true
+
+### construct the var-cov matrix of correlations in R
+V <- rcalc(R, ni=nrow(mtcars))$V
+
+### fit the same regression model using matreg() but now supply V
+res <- matreg(y="mpg", x=c("hp","wt","am"), R=R, V=V)
+summary(res)
+
+### the standard errors computed in this way can now be used to construct
+### CIs for the betas (here, the difference is relatively small)
+
+############################################################################
+
 ### copy data into 'dat'
 dat <- dat.craft2003
 
@@ -113,13 +160,14 @@ matreg(1, 2:4, R=R, V=vcov(res), ztor=TRUE)
 ### a different example based on van Houwelingen et al. (2002)
 
 ### create dataset in long format
-dat.long <- to.long(measure="OR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.colditz1994)
+dat.long <- to.long(measure="OR", ai=tpos, bi=tneg, ci=cpos, di=cneg,
+                    data=dat.colditz1994, append=FALSE)
 dat.long <- escalc(measure="PLO", xi=out1, mi=out2, data=dat.long)
-dat.long$tpos <- dat.long$tneg <- dat.long$cpos <- dat.long$cneg <- NULL
 levels(dat.long$group) <- c("CON", "EXP")
+dat.long
 
 ### fit bivariate model
-res <- rma.mv(yi, vi, mods = ~ group - 1, random = ~ group | trial, struct="UN",
+res <- rma.mv(yi, vi, mods = ~ group - 1, random = ~ group | study, struct="UN",
               data=dat.long, method="ML")
 res
 
@@ -130,7 +178,7 @@ matreg(y=2, x=1, R=res$G, cov=TRUE, means=coef(res), n=res$g.levels.comb.k)
 ### it was a var-cov matrix computed from raw data based on res$g.levels.comb.k (= 13) data points
 
 ### fit bivariate model and get the var-cov matrix of the estimates in res$G
-res <- rma.mv(yi, vi, mods = ~ group - 1, random = ~ group | trial, struct="UN",
+res <- rma.mv(yi, vi, mods = ~ group - 1, random = ~ group | study, struct="UN",
               data=dat.long, method="ML", cvvc="varcov", control=list(nearpd=TRUE))
 
 ### now use res$vvc as the var-cov matrix of the estimates in res$G

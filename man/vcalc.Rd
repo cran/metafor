@@ -2,11 +2,11 @@
 \alias{vcalc}
 \title{Construct or Approximate the Variance-Covariance Matrix of Dependent Effect Sizes or Outcomes}
 \description{
-   The function can be used to construct or approximate the variance-covariance matrix of dependent effect sizes or outcomes, or more precisely, of their sampling errors (i.e., the \code{V} matrix in \code{\link{rma.mv}}). \loadmathjax
+   Function to construct or approximate the variance-covariance matrix of dependent effect sizes or outcomes, or more precisely, of their sampling errors (i.e., the \code{V} matrix in \code{\link{rma.mv}}). \loadmathjax
 }
 \usage{
 vcalc(vi, cluster, subgroup, obs, type, time1, time2, grp1, grp2, w1, w2,
-      data, rho, phi, rvars, checkpd=TRUE, nearpd=FALSE, \dots)
+      data, rho, phi, rvars, checkpd=TRUE, nearpd=FALSE, sparse=FALSE, \dots)
 }
 \arguments{
    \item{vi}{numeric vector to specify the sampling variances of the observed effect sizes or outcomes.}
@@ -26,6 +26,7 @@ vcalc(vi, cluster, subgroup, obs, type, time1, time2, grp1, grp2, w1, w2,
    \item{rvars}{optional argument for specifying the variables that correspond to the correlation matrices of the studies (if this is specified, all arguments above except for \code{cluster} and \code{subgroup} are ignored). See \sQuote{Details}.}
    \item{checkpd}{logical to specify whether to check that the variance-covariance matrices within clusters are positive definite (the default is \code{TRUE}). See \sQuote{Note}.}
    \item{nearpd}{logical to specify whether the \code{\link[Matrix]{nearPD}} function from the \href{https://cran.r-project.org/package=Matrix}{Matrix} package should be used on variance-covariance matrices that are not positive definite. See \sQuote{Note}.}
+   \item{sparse}{logical to specify whether the variance-covariance matrix should be returned as a sparse matrix (the default is \code{FALSE}).}
    \item{\dots}{other arguments.}
 }
 \details{
@@ -61,13 +62,13 @@ vcalc(vi, cluster, subgroup, obs, type, time1, time2, grp1, grp2, w1, w2,
 
    \item Many effect sizes or outcome measures (e.g., raw or standardized mean differences, log-transformed ratios of means, log risk/odds ratios and risk differences) reflect the difference between two conditions (i.e., a contrast). Within a study, there may be more than two conditions, allowing the computation of multiple such contrasts (e.g., treatment A versus a control condition and treatment B versus the same control condition) and hence corresponding effect sizes. The reuse of information from the \sQuote{shared} condition (in this example, the control condition) then induces correlation among the effect sizes.
 
-   To account for this, arguments \code{grp1} and \code{grp2} should be specified to indicate (within each cluster) which two groups were compared in the computation of each effect size (e.g., in the example above, the coding could be \code{grp1=c(1,2)} and \code{grp2=c(3,3)}; whether numbers or strings are used as identifiers is irrelevant).
+   To account for this, arguments \code{grp1} and \code{grp2} should be specified to indicate (within each cluster) which two groups were compared in the computation of each effect size (e.g., in the example above, the coding could be \code{grp1=c(2,3)} and \code{grp2=c(1,1)}; whether numbers or strings are used as identifiers is irrelevant).
 
    The degree of correlation between two contrast-type effect sizes that is induced by the use of a shared condition is a function of the size of the groups involved in the computation of the two effect sizes (or, more generally, the inverse-sampling variance weights of the condition-specific outcomes). By default, the group sizes (weights) are assumed to be identical across conditions, which implies a correlation of 0.5. If the group sizes (weights) are known, they can be specified via arguments \code{w1} and \code{w2} (in which case this information is used by the function to calculate a more accurate estimate of the correlation induced by the shared condition).
 
    Moreover, a contrast-type effect size can be based on a between- or a within-subjects design. When at least one or more of the contrast-type effect sizes are based on a within-subjects design, then \code{time1} and \code{time2} should be used in combination with \code{grp1} and \code{grp2} to indicate for each effect size the group(s) and time point(s) involved.
 
-   For example, \code{grp1=c(1,2)} and \code{grp2=c(3,3)} as above in combination with \code{time1=c(1,1)} and \code{time2=c(1,1)} would imply a between-subjects design involving three groups where two effect sizes were computed contrasting groups 1 and 2 versus group 3 at a single time point. On the other hand, \code{grp1=c(1,1)} and \code{grp2=c(1,1)} in combination with \code{time1=c(2,1)} and \code{time2=c(3,1)} would imply a within-subjects design where two effect sizes were computed contrasting time points 2 and 3 versus time point 1 in a single group. Argument \code{phi} is then used as above to indicate the autocorrelation of the measurements within groups (i.e., for the within-subjects design above, it would be the autocorrelation between time points 2 and 1 or equivalently, between time points 3 and 2).
+   For example, \code{grp1=c(2,3)} and \code{grp2=c(1,1)} as above in combination with \code{time1=c(1,1)} and \code{time2=c(1,1)} would imply a between-subjects design involving three groups where two effect sizes were computed contrasting groups 2 and 3 versus group 1 at a single time point. On the other hand, \code{grp1=c(1,1)} and \code{grp2=c(1,1)} in combination with \code{time1=c(2,3)} and \code{time2=c(1,1)} would imply a within-subjects design where two effect sizes were computed contrasting time points 2 and 3 versus time point 1 in a single group. Argument \code{phi} is then used as above to indicate the autocorrelation of the measurements within groups (i.e., for the within-subjects design above, it would be the autocorrelation between time points 2 and 1 or equivalently, between time points 3 and 2).
    }
 
    All of the arguments above can be specified together to account for a fairly wide variety of dependency types.
@@ -99,7 +100,7 @@ vcalc(vi, cluster, subgroup, obs, type, time1, time2, grp1, grp2, w1, w2,
 
 }
 \value{
-   A \mjseqn{k \times k} variance-covariance matrix, where \mjseqn{k} denotes the length of the \code{vi} variable (i.e., the number of rows in the dataset).
+   A \mjseqn{k \times k} variance-covariance matrix (given as a sparse matrix when \code{sparse=TRUE}), where \mjseqn{k} denotes the length of the \code{vi} variable (i.e., the number of rows in the dataset).
 }
 \note{
    Depending on the data structure, the specified variables, and the specified values for \code{rho} and/or \code{phi}, it is possible that the constructed variance-covariance matrix is not positive definite within one or more clusters (this is checked when \code{checkpd=TRUE}, which is the default). If such non-positive definite submatrices are found, the reasons for this should be carefully checked since this might indicate misapplication of the function and/or the specification of implausible values for \code{rho} and/or \code{phi}.

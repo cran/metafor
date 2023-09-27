@@ -304,26 +304,29 @@
 ############################################################################
 
 .space <- function(x=TRUE) {
-   no.rmspace <- !exists(".rmspace")
-   if (no.rmspace && x)
+   if (exists(".rmspace")) {
+      addspace <- FALSE
+   } else {
+      addspace <- isTRUE(getmfopt("space", default=TRUE))
+   }
+   if (addspace && x)
       cat("\n")
-   if (!no.rmspace && !x)
+   if (!addspace && !x)
       cat("\n")
 }
 
 .get.footsym <- function() {
 
-   if (exists(".footsym")) {
-      fs <- get(".footsym")
-   } else {
+   fs <- getmfopt("footsym")
+
+   if (is.null(fs) || length(fs) != 6L)
       fs <- c("\u00b9", "1)", "\u00b2", "2)", "\u00b3", "3)")
-   }
 
    return(fs)
 
 }
 
-# .footsym <- c("\u00b9", "\u00b9\u207e", "\u00b2", "\u00b2\u207e", "\u00b3", "\u00b3\u207e")
+# setmfopt(footsym = c("\u00b9", "\u00b9\u207e", "\u00b2", "\u00b2\u207e", "\u00b3", "\u00b3\u207e"))
 
 ############################################################################
 
@@ -813,6 +816,26 @@
          }
       }
       ######################################################################
+      if (measure == "R2") {
+         if (identical(transf.char, "FALSE") && identical(atransf.char, "FALSE")) {
+            lab <- ifelse(short, expression(R^2), "Coefficient of Determination")
+         } else {
+            lab <- ifelse(short, lab, "Transformed Coefficient of Determination")
+         }
+      }
+      if (measure == "ZR2") {
+         if (identical(transf.char, "FALSE") && identical(atransf.char, "FALSE")) {
+            lab <- ifelse(short, expression(z[R^2]), "z Transformed Coefficient of Determination")
+         } else {
+            lab <- ifelse(short, lab, "Transformed z Transformed Coefficient of Determination")
+            funlist <- lapply(list(transf.ztor2), deparse)
+            if (any(sapply(funlist, identical, atransf.char)))
+               lab <- ifelse(short, expression(R^2), "Coefficient of Determination")
+            if (any(sapply(funlist, identical, transf.char)))
+               lab <- ifelse(short, expression(R^2), "Coefficient of Determination")
+         }
+      }
+      ######################################################################
       if (measure == "PR") {
          if (identical(transf.char, "FALSE") && identical(atransf.char, "FALSE")) {
             lab <- ifelse(short, "Proportion", "Proportion")
@@ -1077,11 +1100,17 @@
 
       if (exists(".mstyle")) {
          .mstyle <- get(".mstyle")
-         if (!is.list(.mstyle))
-            .mstyle <- list(.mstyle)
       } else {
          .mstyle <- list()
       }
+
+      styleopt <- getmfopt("style")
+
+      if (!is.null(styleopt))
+         .mstyle <- styleopt
+
+      if (!is.list(.mstyle))
+         .mstyle <- list(.mstyle)
 
       if (is.null(.mstyle$section)) {
          section <- crayon::bold
@@ -1148,6 +1177,7 @@
    } else {
 
       tmp <- function(...) paste0(...)
+
       section <- tmp
       header  <- tmp
       body1   <- tmp
@@ -1255,6 +1285,14 @@
 
    if (exists(".digits")) {
       .digits <- get(".digits")
+      pos <- pmatch(names(.digits), names(res))
+      res[c(na.omit(pos))] <- .digits[!is.na(pos)]
+   }
+
+   if (!is.null(getmfopt("digits"))) {
+      .digits <- getmfopt("digits")
+      if (length(.digits) == 1L)
+         .digits <- c(est=.digits[[1]], se=.digits[[1]], test=.digits[[1]], pval=.digits[[1]], ci=.digits[[1]], var=.digits[[1]], sevar=.digits[[1]], fit=.digits[[1]], het=.digits[[1]])
       pos <- pmatch(names(.digits), names(res))
       res[c(na.omit(pos))] <- .digits[!is.na(pos)]
    }
@@ -1434,84 +1472,6 @@
       w <- w[i]
    }
    sum(x*w) / sum(w)
-}
-
-############################################################################
-
-.tes.intfun <- function(x, theta, tau, sei, H0, alternative, crit) {
-   if (alternative == "two.sided")
-      pow <- (pnorm(crit, mean=(x-H0)/sei, sd=1, lower.tail=FALSE) + pnorm(-crit, mean=(x-H0)/sei, sd=1, lower.tail=TRUE))
-   if (alternative == "greater")
-      pow <- pnorm(crit, mean=(x-H0)/sei, sd=1, lower.tail=FALSE)
-   if (alternative == "less")
-      pow <- pnorm(crit, mean=(x-H0)/sei, sd=1, lower.tail=TRUE)
-   res <- pow * dnorm(x, theta, tau)
-   return(res)
-}
-
-.tes.lim <- function(theta, yi, vi, H0, alternative, alpha, tau2, test, tes.alternative, progbar, tes.alpha, correct, rel.tol, subdivisions, tau2.lb) {
-   pval <- tes(x=yi, vi=vi, H0=H0, alternative=alternative, alpha=alpha, theta=theta, tau2=tau2, test=test, tes.alternative=tes.alternative, progbar=progbar,
-                       tes.alpha=tes.alpha, correct=correct, rel.tol=rel.tol, subdivisions=subdivisions, tau2.lb=tau2.lb, find.lim=FALSE)$pval
-   #cat("theta = ", theta, " pval = ", pval, "\n")
-   return(pval - tes.alpha)
-}
-
-############################################################################
-
-.fsn.fisher <- function(fsnum, pi, alpha) {
-   k <- length(pi)
-   X2 <- -2*sum(log(c(pi, rep(0.5, fsnum))))
-   return(pchisq(X2, df=2*(k+fsnum), lower.tail=FALSE) - alpha)
-}
-
-.fsn.fitre <- function(yi, vi) {
-
-   k     <- length(yi)
-   wi    <- 1/vi
-   sumwi <- sum(wi)
-   est   <- sum(wi*yi)/sumwi
-   Q     <- sum(wi * (yi - est)^2)
-   tau2  <- max(0, (Q - (k-1)) / (sumwi - sum(wi^2)/sumwi))
-   wi    <- 1 / (vi + tau2)
-   sumwi <- sum(wi)
-   est   <- sum(wi*yi)/sumwi
-   se    <- sqrt(1 / sumwi)
-   zval  <- est / se
-   pval  <- 2*pnorm(abs(zval), lower.tail=FALSE)
-
-   return(list(est=est, se=se, zval=zval, pval=pval, tau2=tau2))
-
-}
-
-.fsn.fitnew <- function(new, yi, vi, vnew, tau2, alpha, iters) {
-
-   new <- ceiling(new)
-
-   mus   <- rep(NA_real_, iters)
-   pvals <- rep(NA_real_, iters)
-
-   for (j in seq_len(iters)) {
-      yinew <- c(yi, rnorm(new, 0, sqrt(vnew+tau2)))
-      vinew <- c(vi, rep(vnew, new))
-      tmp <- .fsn.fitre(yinew, vinew)
-      mus[j] <- tmp$est
-      pvals[j] <- tmp$pval
-   }
-
-   return(list(mean = mean(mus), rejrate = mean(pvals <= alpha)))
-
-}
-
-.fsn.re <- function(fsnum, yi, vi, vnew, tau2, target, alpha, iters, verbose=FALSE) {
-
-   fsnum <- ceiling(fsnum)
-   tmp <- .fsn.fitnew(fsnum, yi, vi, vnew, tau2, alpha, iters)
-   est <- tmp$mean
-   diff <- est - target
-   if (verbose)
-      cat("fsnum =", formatC(fsnum, width=4, format="d"), "  est =", fmtx(est), "  target =", fmtx(target), "  diff =", fmtx(diff, flag=" "), "\n")
-   return(diff)
-
 }
 
 ############################################################################
@@ -1700,7 +1660,7 @@
    ### convergence checks
 
    if (inherits(opt.res, "try-error"))
-      stop(mstyle$stop(paste0("Error during the optimization. Use verbose=TRUE and see help(", fun, ") for more details on the optimization routines.")), call.=FALSE)
+      stop(mstyle$stop(paste0("Error during the optimization. Use verbose=TRUE and see\n       help(", fun, ") for more details on the optimization routines.")), call.=FALSE)
 
    if (optimizer == "lbfgsb3c::lbfgsb3c" && is.null(opt.res$convergence)) # special provision for lbfgsb3c in case 'convergence' is missing
       opt.res$convergence <- -99
@@ -1779,6 +1739,149 @@
          lines(h, col=col, border=border, freq=freq, ...)
       }
 
+   }
+
+}
+
+############################################################################
+
+# theme="default" - uses the default par() of the plotting device
+# theme="light"   - forces par(fg="black",  bg="white", ...)
+# theme="dark"    - forces par(fg="gray95", bg="gray10", ...)
+# theme="auto"    - in RStudio, picks fg/bg based on theme that is set (outside RStudio, same as "default")
+# theme="custom"  - uses getmfopt("fg") and getmfopt("bg")
+
+.start.plot <- function(x=TRUE) {
+
+   if (!x)
+      return()
+
+   themeopt <- getmfopt("theme", default="default")[[1]]
+   themeopt <- sub("2", "", themeopt, fixed=TRUE)
+
+   if (!is.element(themeopt, c("default", "light", "dark", "auto", "custom")))
+      themeopt <- "default"
+
+   if (exists(".darkplots"))
+      themeopt <- "dark"
+
+   if (isTRUE(themeopt == "light")) {
+      fg <- "black"
+      bg <- "white"
+      #fg <- "gray5"
+      #bg <- "gray95"
+   }
+
+   if (isTRUE(themeopt == "dark")) {
+      fg <- "gray95"
+      bg <- "gray10"
+   }
+
+   if (isTRUE(themeopt == "auto")) {
+
+      rsapi <- try(rstudioapi::isAvailable(), silent=TRUE)
+
+      if (inherits(rsapi, "try-error") || isFALSE(rsapi)) {
+         themeopt <- "default"
+      } else {
+         fg <- .rsapicol2rgb(rstudioapi::getThemeInfo()$foreground)
+         bg <- .rsapicol2rgb(rstudioapi::getThemeInfo()$background)
+      }
+
+   }
+
+   if (isTRUE(themeopt == "custom")) {
+
+      fgopt <- getmfopt("fg")
+      bgopt <- getmfopt("bg")
+
+      if (is.null(fgopt) || is.null(bgopt)) {
+         themeopt <- "default"
+      } else {
+         fg <- fgopt
+         bg <- bgopt
+      }
+
+   }
+
+   if (themeopt != "default")
+      par(fg=fg, bg=bg, col=fg, col.axis=fg, col.lab=fg, col.main=fg, col.sub=fg)
+
+   invisible()
+
+}
+
+# convert the string "rgb(val1, val2, val3)" into rgb(val1, val2, val3, maxColorValue=255)
+
+.rsapicol2rgb <- function(col) {
+
+   col  <- strsplit(col, ",")[[1]]
+   col  <- trimws(col)
+   col1 <- as.numeric(sub("rgb(", "", col[1], fixed=TRUE))
+   col2 <- as.numeric(col[2])
+   col3 <- as.numeric(trimws(sub(")", "", col[3], fixed=TRUE)))
+   col  <- rgb(col1, col2, col3, maxColorValue=255)
+   return(col)
+
+}
+
+.is.dark <- function() {
+
+   rgb <- col2rgb(par("bg"))
+   res <- sum(rgb) <= 384 # note: sum(col2rgb(rgb(0.5,0.5,0.5))) == 384
+   return(res)
+
+}
+
+.coladj <- function(col, dark, light) {
+
+   themeopt <- getmfopt("theme", default="default")
+
+   if (length(col) == 2L && substr(themeopt, nchar(themeopt), nchar(themeopt)) == "2") {
+      pos <- 2
+      if (length(dark) == 1L)
+         dark <- c(dark, ifelse(dark > 0, dark-1, dark+1))
+      if (length(light) == 1L)
+         light <- c(light, ifelse(light > 0, light-1, light+1))
+   } else {
+      pos <- 1
+   }
+
+   col <- c(col2rgb(col[[pos]]))
+
+   if (.is.dark()) {
+      col <- col + round(dark*255)[[pos]]
+   } else {
+      col <- col + round(light*255)[[pos]]
+   }
+   col[col < 0] <- 0
+   col[col > 255] <- 255
+
+   col <- rgb(col[1], col[2], col[3], maxColorValue=255)
+   return(col)
+
+}
+
+############################################################################
+
+.chkpd <- function(x, tol=.Machine$double.eps, corr=FALSE, nearpd=FALSE) {
+
+   if (any(eigen(x, symmetric=TRUE, only.values=TRUE)$values <= tol)) {
+      ispd <- FALSE
+      if (nearpd) {
+         tmp <- nearPD(x, corr=corr)
+         x <- as.matrix(tmp$mat)
+         if (tmp$converged)
+            ispd <- TRUE
+      }
+   } else {
+      ispd <- TRUE
+   }
+
+   if (nearpd) {
+      return(list(ispd=ispd, x=x))
+   } else {
+      return(ispd)
    }
 
 }

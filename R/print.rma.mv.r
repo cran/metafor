@@ -19,7 +19,12 @@ print.rma.mv <- function(x, digits, showfit=FALSE, signif.stars=getOption("show.
    if (is.null(ddd$legend)) {
       legend <- ifelse(inherits(x, "robust.rma"), TRUE, FALSE)
    } else {
-      legend <- .isTRUE(ddd$legend)
+      if (is.na(ddd$legend)) { # can suppress legend and legend symbols with legend=NA
+         legend <- FALSE
+         footsym <- rep("", 6)
+      } else {
+         legend <- .isTRUE(ddd$legend)
+      }
    }
 
    .space()
@@ -390,7 +395,7 @@ print.rma.mv <- function(x, digits, showfit=FALSE, signif.stars=getOption("show.
 
    if (is.element(x$test, c("knha","adhoc","t"))) {
       res.table <- data.frame(estimate=fmtx(c(x$beta), digits[["est"]]), se=fmtx(x$se, digits[["se"]]), tval=fmtx(x$zval, digits[["test"]]), df=round(x$ddf,2), pval=fmtp(x$pval, digits[["pval"]]), ci.lb=fmtx(x$ci.lb, digits[["ci"]]), ci.ub=fmtx(x$ci.ub, digits[["ci"]]), stringsAsFactors=FALSE)
-      if (inherits(x, "robust.rma"))
+      if (inherits(x, "robust.rma") && footsym[1] != "")
          res.table <- .addfootsym(res.table, 2:7, footsym[1])
    } else {
       res.table <- data.frame(estimate=fmtx(c(x$beta), digits[["est"]]), se=fmtx(x$se, digits[["se"]]), zval=fmtx(x$zval, digits[["test"]]), pval=fmtp(x$pval, digits[["pval"]]), ci.lb=fmtx(x$ci.lb, digits[["ci"]]), ci.ub=fmtx(x$ci.ub, digits[["ci"]]), stringsAsFactors=FALSE)
@@ -402,8 +407,10 @@ print.rma.mv <- function(x, digits, showfit=FALSE, signif.stars=getOption("show.
       colnames(res.table)[ncol(res.table)] <- ""
    }
 
-   if (.isTRUE(ddd$num))
-      rownames(res.table) <- paste0(seq_len(nrow(res.table)), ") ", rownames(res.table))
+   if (.isTRUE(ddd$num)) {
+      width <- nchar(nrow(res.table))
+      rownames(res.table) <- paste0(formatC(seq_len(nrow(res.table)), format="d", width=width), ") ", rownames(res.table))
+   }
 
    if (x$int.only)
       res.table <- res.table[1,]

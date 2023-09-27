@@ -8,37 +8,19 @@ plot.vif.rma <- function(x,
 
    .chkclass(class(x), must="vif.rma")
 
-   if (missing(col)) {
-      if (is.element(par("bg"), c("black", "gray10"))) {
-         col <- "gray50"
-      } else {
-         col <- "gray"
-      }
-   }
+   .start.plot()
 
-   if (missing(border)) {
-      if (is.element(par("bg"), c("black", "gray10"))) {
-         border <- par("bg")
-      } else {
-         border <- "white"
-      }
-   }
+   if (missing(col))
+      col <- .coladj(par("bg","fg"), dark=0.3, light=-0.3)
 
-   if (missing(col.out)) {
-      if (is.element(par("bg"), c("black", "gray10"))) {
-         col.out <- rgb(1,0,0,0.4)
-      } else {
-         col.out <- rgb(1,0,0,0.5)
-      }
-   }
+   if (missing(border))
+      border <- .coladj(par("bg"), dark=0.1, light=-0.1)
 
-   if (missing(col.density)) {
-      if (is.element(par("bg"), c("black", "gray10"))) {
-         col.density <- "dodgerblue"
-      } else {
-         col.density <- "blue"
-      }
-   }
+   if (missing(col.out))
+      col.out <- rgb(1,0,0,0.5)
+
+   if (missing(col.density))
+      col.density <- ifelse(.is.dark(), "dodgerblue", "blue")
 
    par.mfrow <- par("mfrow")
 
@@ -188,12 +170,14 @@ plot.vif.rma <- function(x,
       x$vifs[i] <- min(x$vifs[i], usr[2])
 
       par(xpd = TRUE)
-      lsegments(x$vifs[i], usr[3], x$vifs[i], usr[4], lwd=lwd[1], lty="dashed", ...)
+      if (lwd[1] > 0)
+         lsegments(x$vifs[i], usr[3], x$vifs[i], usr[4], lwd=lwd[1], lty="dashed", ...)
       par(xpd = FALSE)
 
       #den$y <- den$y[den$x <= par()$xaxp[2]]
       #den$x <- den$x[den$x <= par()$xaxp[2]]
-      llines(den, lwd=lwd[2], col=col.density, ...)
+      if (lwd[2] > 0)
+         llines(den, lwd=lwd[2], col=col.density, ...)
 
    }
 
