@@ -1,6 +1,6 @@
 leave1out.rma.peto <- function(x, digits, transf, targs, progbar=FALSE, ...) {
 
-   mstyle <- .get.mstyle("crayon" %in% .packages())
+   mstyle <- .get.mstyle()
 
    .chkclass(class(x), must="rma.peto")
 
@@ -92,7 +92,7 @@ leave1out.rma.peto <- function(x, digits, transf, targs, progbar=FALSE, ...) {
 
    ### if requested, apply transformation function
 
-   if (.isTRUE(transf)) ### if transf=TRUE, apply exp transformation to ORs
+   if (.isTRUE(transf)) # if transf=TRUE, apply exp transformation to ORs
       transf <- exp
 
    if (is.function(transf)) {

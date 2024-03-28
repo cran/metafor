@@ -3,7 +3,7 @@ fsn <- function(x, vi, sei, subset, data, type, alpha=.05, target,
 
    #########################################################################
 
-   mstyle <- .get.mstyle("crayon" %in% .packages())
+   mstyle <- .get.mstyle()
 
    na.act <- getOption("na.action")
 
@@ -19,37 +19,15 @@ fsn <- function(x, vi, sei, subset, data, type, alpha=.05, target,
 
    .chkdots(ddd, c("pool", "mumiss", "interval", "maxint", "tol", "maxiter", "tau2", "test", "weighted"))
 
-   if (is.null(ddd$pool)) {
-      pool <- "stouffer"
-   } else {
-      pool <- match.arg(tolower(ddd$pool), c("stouffer", "fisher"))
-   }
+   pool <- .chkddd(ddd$pool, "stouffer", match.arg(tolower(ddd$pool), c("stouffer", "fisher")))
 
-   if (is.null(ddd$mumiss)) {
-      mumiss <- 0
-   } else {
-      mumiss <- ddd$mumiss
-   }
+   mumiss <- .chkddd(ddd$mumiss, 0)
 
    # note: default interval set below; see [a] (based on k)
 
-   if (is.null(ddd$maxint)) {
-      maxint <- 10^7
-   } else {
-      maxint <- ddd$maxint
-   }
-
-   if (is.null(ddd$tol)) {
-      tol <- .Machine$double.eps^0.25
-   } else {
-      tol <- ddd$tol
-   }
-
-   if (is.null(ddd$maxiter)) {
-      maxiter <- 1000
-   } else {
-      maxiter <- ddd$maxiter
-   }
+   maxint  <- .chkddd(ddd$maxint, 10^7)
+   tol     <- .chkddd(ddd$tol, .Machine$double.eps^0.25)
+   maxiter <- .chkddd(ddd$maxiter, 1000)
 
    ### observed values (to be replaced as needed)
 
@@ -233,11 +211,7 @@ fsn <- function(x, vi, sei, subset, data, type, alpha=.05, target,
 
    ### set interval for uniroot() [a]
 
-   if (is.null(ddd$interval)) {
-      interval <- c(0, k*50)
-   } else {
-      interval <- ddd$interval
-   }
+   interval  <- .chkddd(ddd$interval, c(0,k*50))
 
    #########################################################################
 
@@ -358,7 +332,7 @@ fsn <- function(x, vi, sei, subset, data, type, alpha=.05, target,
       tmp <- try(rma(yi, vi, method=method, tau2=tau2fix, test=test, weighted=weighted, verbose=verbose), silent=!verbose)
 
       if (inherits(tmp, "try-error"))
-         stop(mstyle$stop("Could not fit random-effects model (use verbose=TRUE for more info)."), call.=FALSE)
+         stop(mstyle$stop("Could not fit random-effects model (use verbose=TRUE for more info)."))
 
       vt   <- 1 / mean(1/vi)
       est  <- tmp$beta[1]

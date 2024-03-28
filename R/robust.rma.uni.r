@@ -1,6 +1,6 @@
 robust.rma.uni <- function(x, cluster, adjust=TRUE, clubSandwich=FALSE, digits, ...) {
 
-   mstyle <- .get.mstyle("crayon" %in% .packages())
+   mstyle <- .get.mstyle()
 
    .chkclass(class(x), must="rma.uni", notav=c("rma.ls", "rma.gen", "rma.uni.selmodel"))
 
@@ -22,8 +22,10 @@ robust.rma.uni <- function(x, cluster, adjust=TRUE, clubSandwich=FALSE, digits, 
    #########################################################################
 
    ### process cluster variable
-   ### note: cluster variable is assumed to be of the same length as the original data passed to the model fitting function
-   ###       so we have to apply the same subsetting (if necessary) and removing of missings as done during model fitting
+
+   ### note: cluster variable must be of the same length as the original dataset
+   ###       so we have to apply the same subsetting (if necessary) and removing
+   ###       of NAs as was done during model fitting
 
    mf <- match.call()
    cluster <- .getx("cluster", mf=mf, data=x$data)
@@ -64,16 +66,10 @@ robust.rma.uni <- function(x, cluster, adjust=TRUE, clubSandwich=FALSE, digits, 
 
       ### check for vcov, coef_test, conf_test, and wald_test arguments in ... and set values accordingly
 
-      if (is.null(ddd$vcov)) {
-         ddd$vcov <- "CR2"
-      } else {
-         ddd$vcov <- match.arg(ddd$vcov, c("CR0", "CR1", "CR1p", "CR1S", "CR2", "CR3"))
-      }
-      if (is.null(ddd$coef_test)) {
-         ddd$coef_test <- "Satterthwaite"
-      } else {
-         ddd$coef_test <- match.arg(ddd$coef_test, c("z", "naive-t", "naive-tp", "Satterthwaite", "saddlepoint"))
-      }
+      ddd$vcov <- .chkddd(ddd$vcov, "CR2", match.arg(ddd$vcov, c("CR0", "CR1", "CR1p", "CR1S", "CR2", "CR3")))
+
+      ddd$coef_test <- .chkddd(ddd$coef_test, "Satterthwaite", match.arg(ddd$coef_test, c("z", "naive-t", "naive-tp", "Satterthwaite", "saddlepoint")))
+
       if (is.null(ddd$conf_test)) {
          ddd$conf_test <- ddd$coef_test
          if (ddd$conf_test == "saddlepoint") {
@@ -83,11 +79,8 @@ robust.rma.uni <- function(x, cluster, adjust=TRUE, clubSandwich=FALSE, digits, 
       } else {
          ddd$conf_test <- match.arg(ddd$conf_test, c("z", "naive-t", "naive-tp", "Satterthwaite"))
       }
-      if (is.null(ddd$wald_test)) {
-         ddd$wald_test <- "HTZ"
-      } else {
-         ddd$wald_test <- match.arg(ddd$wald_test, c("chi-sq", "Naive-F", "Naive-Fp", "HTA", "HTB", "HTZ", "EDF", "EDT"))
-      }
+
+      ddd$wald_test <- .chkddd(ddd$wald_test, "HTZ", match.arg(ddd$wald_test, c("chi-sq", "Naive-F", "Naive-Fp", "HTA", "HTB", "HTZ", "EDF", "EDT")))
 
       ### calculate cluster-robust var-cov matrix of the estimated fixed effects
 
@@ -120,7 +113,7 @@ robust.rma.uni <- function(x, cluster, adjust=TRUE, clubSandwich=FALSE, digits, 
          cs.wald <- try(clubSandwich::Wald_test(x, cluster=cluster, vcov=vb, test=ddd$wald_test, constraints=clubSandwich::constrain_zero(x$btt)), silent=!isTRUE(ddd$verbose))
 
          if (inherits(cs.wald, "try-error")) {
-            warning(mstyle$warning("Could not obtain the cluster-robust omnibus Wald test (use verbose=TRUE for more details)."))
+            warning(mstyle$warning("Could not obtain the cluster-robust omnibus Wald test (use verbose=TRUE for more details)."), call.=FALSE)
             cs.wald <- list(Fstat=NA_real_, df_num=NA_integer_, df_denom=NA_real_)
          }
 
@@ -256,7 +249,7 @@ robust.rma.uni <- function(x, cluster, adjust=TRUE, clubSandwich=FALSE, digits, 
       QM <- try(as.vector(t(beta)[x$btt] %*% chol2inv(chol(vb[x$btt,x$btt])) %*% beta[x$btt]), silent=TRUE)
 
       if (inherits(QM, "try-error") || is.na(QM)) {
-         warning(mstyle$warning("Could not obtain the cluster-robust omnibus Wald test."))
+         warning(mstyle$warning("Could not obtain the cluster-robust omnibus Wald test."), call.=FALSE)
          QM <- NA_real_
       }
 

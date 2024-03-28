@@ -36,9 +36,9 @@
 
    For models including one or more moderators, \code{predict(object)} returns the estimated (average) outcomes for values of the moderator(s) equal to those of the \mjseqn{k} studies included in the meta-analysis (i.e., the \sQuote{fitted values} for the \mjseqn{k} studies).
 
-   For models including \mjseqn{p'} moderator variables, new moderator values (for \mjeqn{k_{new}}{k_new} hypothetical new studies) can be specified by setting \code{newmods} equal to a \mjeqn{k_{new} \times p'}{k_new x p'} matrix with the corresponding new moderator values. If the model object included an intercept, then it should not be explicitly specified under \code{newmods}, as it will be added by default (unless one sets \code{intercept=FALSE}). Also, any factors in the original model get turned into the appropriate contrast variables within the \code{rma} function, so that \code{newmods} should actually include the values for the contrast variables. Examples are shown below.
+   For models including \mjseqn{p'} moderator variables, new moderator values (for \mjeqn{k_{new}}{k_new} hypothetical new studies) can be specified by setting \code{newmods} equal to a \mjeqn{k_{new} \times p'}{k_new x p'} matrix with the corresponding new moderator values (if \code{newmods} is a vector, then only a single predicted value is computed unless the model only includes a single moderator variable, in which case predicted values corresponding to all the vector values are computed). If the model object included an intercept, then it should not be explicitly specified under \code{newmods}, as it will be added by default (unless one sets \code{intercept=FALSE}). Also, any factors in the original model get turned into the appropriate contrast variables within the \code{rma} function, so that \code{newmods} should actually include the values for the contrast variables. If the matrix specified via \code{newmods} has row names, then these are used to label the predicted values in the output. Examples are shown below.
 
-   For random/mixed-effects models, a prediction interval is also computed (Riley et al., 2011). The interval estimates where \code{level} \% of the true effect sizes or outcomes fall in the hypothetical population of studies (and hence where the true effect or outcome of a new study from the population of studies should fall in \code{level} \% of the cases).
+   For random/mixed-effects models, a prediction interval is also computed (Riley et al., 2011). The interval estimates where \code{level}\% of the true effect sizes or outcomes fall in the hypothetical population of studies (and hence where the true effect or outcome of a new study from the population of studies should fall in \code{level}\% of the cases).
 
    For random-effects models that were fitted with the \code{\link{rma.mv}} function, the model may actually include multiple \mjseqn{\tau^2} values (i.e., when the \code{random} argument includes an \sQuote{\code{~ inner | outer}} term and \code{struct="HCS"}, \code{struct="DIAG"}, \code{struct="HAR"}, or \code{struct="UN"}). In that case, the function will provide prediction intervals for each level of the inner factor (since the prediction intervals differ depending on the \mjseqn{\tau^2} value). Alternatively, one can use the \code{tau2.levels} argument to specify for which level(s) the prediction interval should be provided. If the model includes a second \sQuote{\code{~ inner | outer}} term with multiple \mjseqn{\gamma^2} values, prediction intervals for each combination of levels of the inner factors will be provided. Alternatively, one can use the \code{tau2.levels} and \code{gamma2.levels} arguments to specify for which level combination(s) the prediction interval should be provided.
 
@@ -65,7 +65,7 @@
    The object is formatted and printed with the \code{\link[=print.list.rma]{print}} function. To format the results as a data frame, one can use the \code{\link[=as.data.frame.list.rma]{as.data.frame}} function.
 }
 \note{
-   Confidence and prediction intervals are constructed based on the critical values from a standard normal distribution (i.e., \mjeqn{\pm 1.96}{±1.96} for \code{level=95}). When the model was fitted with \code{test="t"} or \code{test="knha"}, then a t-distribution with \mjseqn{k-p} degrees of freedom is used.
+   Confidence and prediction intervals are constructed based on the critical values from a standard normal distribution (i.e., \mjeqn{\pm 1.96}{±1.96} for \code{level=95}). When the model was fitted with \code{test="t"}, \code{test="knha"}, \code{test="hksj"}, or \code{test="adhoc"}, then a t-distribution with \mjseqn{k-p} degrees of freedom is used.
 
    For a random-effects model (where \mjseqn{p=1}) fitted with the \code{\link{rma.uni}} function, note that this differs slightly from Riley et al. (2011), who suggest to use a t-distribution with \mjseqn{k-2} degrees of freedom for constructing the prediction interval. Neither a normal, nor a t-distribution with \mjseqn{k-1} or \mjseqn{k-2} degrees of freedom is correct; all of these are approximations. The computations are done in the way described above, so that the prediction interval is identical to the confidence interval when \mjeqn{\hat{\tau}^2 = 0}{hat(\tau)^2 = 0}, which could be argued is the logical thing that should happen. If the prediction interval should be computed exactly as described by Riley et al. (2011), then one can use argument \code{pi.type="Riley"}.
 
@@ -113,19 +113,22 @@ res <- rma(yi, vi, mods = ~ ablat + year, data=dat)
 ### predicted average risk ratios for 10 and 60 degrees latitude in 1950 and 1980
 predict(res, newmods=cbind(c(10,60,10,60),c(1950,1950,1980,1980)), transf=exp, addx=TRUE)
 
+### predicted average risk ratios for 10 and 60 degrees latitude in 1970 (row names as labels)
+predict(res, newmods=rbind(at10=c(10,1970), at60=c(60,1970)), transf=exp)
+
 ### fit mixed-effects model with two moderators (one of which is a factor)
 res <- rma(yi, vi, mods = ~ ablat + factor(alloc), data=dat)
 
 ### examine how the factor was actually coded for the studies in the dataset
 predict(res, addx=TRUE)
 
-### predictd average risk ratios at 30 degrees for the three factor levels
+### predicted average risk ratios at 30 degrees for the three factor levels
 ### note: the contrast (dummy) variables need to specified explicitly here
 predict(res, newmods=c(30, 0, 0), addx=TRUE)   # for alternate  allocation
 predict(res, newmods=c(30, 1, 0), addx=TRUE)   # for random     allocation
 predict(res, newmods=c(30, 0, 1), addx=TRUE)   # for systematic allocation
 
-### can also use named vector with arbitrary order and abbreviated variable names
+### can also use a named vector with arbitrary order and abbreviated variable names
 predict(res, newmods=c(sys=0, ran=0, abl=30))
 predict(res, newmods=c(sys=0, ran=1, abl=30))
 predict(res, newmods=c(sys=1, ran=0, abl=30))

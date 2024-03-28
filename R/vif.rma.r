@@ -3,7 +3,7 @@ vif.rma <- function(x, btt, att, table=FALSE, reestimate=FALSE, sim=FALSE, progb
 
    #########################################################################
 
-   mstyle <- .get.mstyle("crayon" %in% .packages())
+   mstyle <- .get.mstyle()
 
    .chkclass(class(x), must="rma")
 
@@ -35,29 +35,11 @@ vif.rma <- function(x, btt, att, table=FALSE, reestimate=FALSE, sim=FALSE, progb
 
    .chkdots(ddd, c("fixed", "intercept", "time", "LB", "joinb", "joina"))
 
-   if (is.null(ddd$fixed)) {
-      fixed <- FALSE
-   } else {
-      fixed <- .isTRUE(ddd$fixed)
-   }
+   fixed     <- .chkddd(ddd$fixed,     FALSE, .isTRUE(ddd$fixed))
+   intercept <- .chkddd(ddd$intercept, FALSE, .isTRUE(ddd$intercept))
 
-   if (is.null(ddd$intercept)) {
-      intercept <- FALSE
-   } else {
-      intercept <- .isTRUE(ddd$intercept)
-   }
-
-   if (is.null(ddd$joinb)) {
-      joinb <- NULL
-   } else {
-      joinb <- ddd$joinb
-   }
-
-   if (is.null(ddd$joina)) {
-      joina <- NULL
-   } else {
-      joina <- ddd$joina
-   }
+   joinb <- ddd$joinb
+   joina <- ddd$joina
 
    if (.isTRUE(ddd$time))
       time.start <- proc.time()
@@ -220,7 +202,7 @@ vif.rma <- function(x, btt, att, table=FALSE, reestimate=FALSE, sim=FALSE, progb
          sim.loc <- 0
 
       if (sim >= 2 && any(x$coef.na)) {
-         warning(mstyle$warning("Cannot use 'sim' when some redundant predictors were dropped from the model."))
+         warning(mstyle$warning("Cannot use 'sim' when some redundant predictors were dropped from the model."), call.=FALSE)
          sim.loc <- 0
       }
 
@@ -341,7 +323,7 @@ vif.rma <- function(x, btt, att, table=FALSE, reestimate=FALSE, sim=FALSE, progb
          sim.scale <- 0
 
       if (sim >= 2 && any(x$coef.na.Z)) {
-         warning(mstyle$warning("Cannot use 'sim' when some redundant predictors were dropped from the model."))
+         warning(mstyle$warning("Cannot use 'sim' when some redundant predictors were dropped from the model."), call.=FALSE)
          sim.scale <- 0
       }
 

@@ -1,7 +1,7 @@
 to.long <- function(measure, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, m1i, m2i, sd1i, sd2i, xi, mi, ri, ti, sdi, ni,
 data, slab, subset, add=1/2, to="none", drop00=FALSE, vlong=FALSE, append=TRUE, var.names) {
 
-   mstyle <- .get.mstyle("crayon" %in% .packages())
+   mstyle <- .get.mstyle()
 
    ### check argument specifications
 
@@ -23,7 +23,7 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, vlong=FALSE, append=TRUE, 
                               "R2","ZR2",                                          # coefficient of determination (raw and r-to-z transformed)
                               "PR","PLN","PLO","PAS","PFT",                        # single proportions (and transformations thereof)
                               "IR","IRLN","IRS","IRFT",                            # single-group person-time data (and transformations thereof)
-                              "MN","MNLN","CVLN","SDLN","SMN",                     # mean, log(mean), log(CV), log(SD), standardized mean
+                              "MN","SMN","MNLN","CVLN","SDLN",                     # mean, single-group standardized mean, log(mean), log(CV), log(SD),
                               "MC","SMCC","SMCR","SMCRH","ROMC","CVRC","VRC",      # raw/standardized mean change, log(ROM), CVR, and VR for dependent samples
                               "ARAW","AHW","ABT")))                                # alpha (and transformations thereof)
       stop(mstyle$stop("Unknown 'measure' specified."))
@@ -116,7 +116,7 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, vlong=FALSE, append=TRUE, 
       if (!.all.specified(ai, bi, ci, di))
          stop(mstyle$stop("Cannot compute outcomes. Check that all of the required information is specified\n  via the appropriate arguments (i.e., ai, bi, ci, di or ai, n1i, ci, n2i)."))
 
-      k <- length(ai) ### number of outcomes before subsetting
+      k <- length(ai) # number of outcomes before subsetting
 
       if (!is.null(subset)) {
          subset <- .chksubset(subset, k)
@@ -138,7 +138,7 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, vlong=FALSE, append=TRUE, 
       if (any(c(n1i < 0, n2i < 0), na.rm=TRUE))
          stop(mstyle$stop("One or more group sizes are negative."))
 
-      ni.u <- ai + bi + ci + di ### unadjusted total sample sizes
+      ni.u <- ai + bi + ci + di # unadjusted total sample sizes
 
       ### if drop00=TRUE, set counts to NA for studies that have no events (or all events) in both arms
 
@@ -211,7 +211,7 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, vlong=FALSE, append=TRUE, 
       if (!.equal.length(x1i, x2i, t1i, t2i))
          stop(mstyle$stop("Supplied data vectors are not all of the same length."))
 
-      k <- length(x1i) ### number of outcomes before subsetting
+      k <- length(x1i) # number of outcomes before subsetting
 
       if (!is.null(subset)) {
          subset <- .chksubset(subset, k)
@@ -227,7 +227,7 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, vlong=FALSE, append=TRUE, 
       if (any(c(t1i, t2i) <= 0, na.rm=TRUE))
          stop(mstyle$stop("One or more person-times are <= 0."))
 
-      ni.u <- t1i + t2i ### unadjusted total sample sizes
+      ni.u <- t1i + t2i # unadjusted total sample sizes
 
       ### if drop00=TRUE, set counts to NA for studies that have no events in both arms
 
@@ -294,7 +294,7 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, vlong=FALSE, append=TRUE, 
       if (!.equal.length(m1i, m2i, sd1i, sd2i, n1i, n2i))
          stop(mstyle$stop("Supplied data vectors are not all of the same length."))
 
-      k <- length(n1i) ### number of outcomes before subsetting
+      k <- length(n1i) # number of outcomes before subsetting
 
       if (!is.null(subset)) {
          subset <- .chksubset(subset, k)
@@ -312,7 +312,7 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, vlong=FALSE, append=TRUE, 
       if (any(c(n1i, n2i) <= 0, na.rm=TRUE))
          stop(mstyle$stop("One or more group sizes are <= 0."))
 
-      ni.u <- n1i + n2i ### unadjusted total sample sizes
+      ni.u <- n1i + n2i # unadjusted total sample sizes
 
    }
 
@@ -332,7 +332,7 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, vlong=FALSE, append=TRUE, 
       if (!.all.specified(ri, ni))
          stop(mstyle$stop("Cannot compute outcomes. Check that all of the required information is specified\n  via the appropriate arguments (i.e., ri, ni)."))
 
-      k <- length(ri) ### number of outcomes before subsetting
+      k <- length(ri) # number of outcomes before subsetting
 
       if (!is.null(subset)) {
          subset <- .chksubset(subset, k=k)
@@ -346,7 +346,7 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, vlong=FALSE, append=TRUE, 
       if (any(ni <= 0, na.rm=TRUE))
          stop(mstyle$stop("One or more sample sizes are <= 0."))
 
-      ni.u <- ni ### unadjusted total sample sizes
+      ni.u <- ni # unadjusted total sample sizes
 
    }
 
@@ -371,7 +371,7 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, vlong=FALSE, append=TRUE, 
       if (!.all.specified(xi, mi))
          stop(mstyle$stop("Cannot compute outcomes. Check that all of the required information is specified\n  via the appropriate arguments (i.e., xi, mi or xi, ni)."))
 
-      k <- length(xi) ### number of outcomes before subsetting
+      k <- length(xi) # number of outcomes before subsetting
 
       if (!is.null(subset)) {
          subset <- .chksubset(subset, k)
@@ -390,7 +390,7 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, vlong=FALSE, append=TRUE, 
       if (any(ni <= 0, na.rm=TRUE))
          stop(mstyle$stop("One or more group sizes are <= 0."))
 
-      ni.u <- ni ### unadjusted total sample sizes
+      ni.u <- ni # unadjusted total sample sizes
 
       if (to == "all") {
 
@@ -444,7 +444,7 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, vlong=FALSE, append=TRUE, 
       if (!.equal.length(xi, ti))
          stop(mstyle$stop("Supplied data vectors are not all of the same length."))
 
-      k <- length(xi) ### number of outcomes before subsetting
+      k <- length(xi) # number of outcomes before subsetting
 
       if (!is.null(subset)) {
          subset <- .chksubset(subset, k)
@@ -458,7 +458,7 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, vlong=FALSE, append=TRUE, 
       if (any(ti <= 0, na.rm=TRUE))
          stop(mstyle$stop("One or more person-times are <= 0."))
 
-      ni.u <- ti ### unadjusted total sample sizes
+      ni.u <- ti # unadjusted total sample sizes
 
       if (to == "all") {
 
@@ -498,7 +498,7 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, vlong=FALSE, append=TRUE, 
 
    #########################################################################
 
-   if (is.element(measure, c("MN","MNLN","SMN"))) {
+   if (is.element(measure, c("MN","SMN","MNLN"))) {
 
       mi  <- .getx("mi",  mf=mf, data=data, checknumeric=TRUE)
       sdi <- .getx("sdi", mf=mf, data=data, checknumeric=TRUE)
@@ -510,7 +510,7 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, vlong=FALSE, append=TRUE, 
       if (!.equal.length(mi, sdi, ni))
          stop(mstyle$stop("Supplied data vectors are not all of the same length."))
 
-      k <- length(ni) ### number of outcomes before subsetting
+      k <- length(ni) # number of outcomes before subsetting
 
       if (!is.null(subset)) {
          subset <- .chksubset(subset, k)
@@ -528,7 +528,7 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, vlong=FALSE, append=TRUE, 
       if (is.element(measure, c("MNLN","CVLN")) && any(mi < 0, na.rm=TRUE))
          stop(mstyle$stop("One or more means are negative."))
 
-      ni.u <- ni ### unadjusted total sample sizes
+      ni.u <- ni # unadjusted total sample sizes
 
   }
 
@@ -540,10 +540,10 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, vlong=FALSE, append=TRUE, 
       m2i  <- .getx("m2i",  mf=mf, data=data, checknumeric=TRUE)
       sd1i <- .getx("sd1i", mf=mf, data=data, checknumeric=TRUE)
       sd2i <- .getx("sd2i", mf=mf, data=data, checknumeric=TRUE)
-      ri   <- .getx("ri",   mf=mf, data=data, checknumeric=TRUE) ### for SMCR, do not need to supply this
+      ri   <- .getx("ri",   mf=mf, data=data, checknumeric=TRUE) # for SMCR, do not need to supply this
       ni   <- .getx("ni",   mf=mf, data=data, checknumeric=TRUE)
 
-      k <- length(m1i) ### number of outcomes before subsetting
+      k <- length(m1i) # number of outcomes before subsetting
 
       if (is.element(measure, c("MC","SMCC","SMCRH","ROMC","CVRC"))) {
 
@@ -587,7 +587,7 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, vlong=FALSE, append=TRUE, 
       if (any(ni <= 0, na.rm=TRUE))
          stop(mstyle$stop("One or more sample sizes are <= 0."))
 
-      ni.u <- ni ### unadjusted total sample sizes
+      ni.u <- ni # unadjusted total sample sizes
 
    }
 
@@ -605,7 +605,7 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, vlong=FALSE, append=TRUE, 
       if (!.equal.length(ai, mi, ni))
          stop(mstyle$stop("Supplied data vectors are not all of the same length."))
 
-      k <- length(ai) ### number of outcomes before subsetting
+      k <- length(ai) # number of outcomes before subsetting
 
       if (!is.null(subset)) {
          subset <- .chksubset(subset, k)
@@ -623,7 +623,7 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, vlong=FALSE, append=TRUE, 
       if (any(ni <= 0, na.rm=TRUE))
          stop(mstyle$stop("One or more sample sizes are <= 0."))
 
-      ni.u <- ni ### unadjusted total sample sizes
+      ni.u <- ni # unadjusted total sample sizes
 
    }
 
@@ -1252,7 +1252,7 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, vlong=FALSE, append=TRUE, 
 
    #########################################################################
 
-   if (is.element(measure, c("MN","MNLN","SMN"))) {
+   if (is.element(measure, c("MN","SMN","MNLN"))) {
 
       ### check for NAs in table data and act accordingly
 

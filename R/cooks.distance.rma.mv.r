@@ -1,10 +1,10 @@
 cooks.distance.rma.mv <- function(model, progbar=FALSE, cluster, reestimate=TRUE, parallel="no", ncpus=1, cl, ...) {
 
-   mstyle <- .get.mstyle("crayon" %in% .packages())
+   mstyle <- .get.mstyle()
 
    .chkclass(class(model), must="rma.mv")
 
-   #if (inherits(model, "robust.rma")) ### can compute Cook's distance also for 'robust.rma' objects
+   #if (inherits(model, "robust.rma")) # can compute Cook's distance also for 'robust.rma' objects
    #   stop(mstyle$stop("Method not available for objects of class \"robust.rma\"."))
 
    na.act <- getOption("na.action")
@@ -70,10 +70,9 @@ cooks.distance.rma.mv <- function(model, progbar=FALSE, cluster, reestimate=TRUE
 
    ### process cluster variable
 
-   # note: cluster variable is assumed to be of the same length as the size of
-   # the original dataset passed to the model fitting function and so we apply
-   # the same subsetting and removing of missings (if necessary) as was done
-   # during model fitting
+   ### note: cluster variable must be of the same length as the original dataset
+   ###       so we have to apply the same subsetting (if necessary) and removing
+   ###       of NAs as was done during model fitting
 
    if (length(cluster) != x$k.all)
       stop(mstyle$stop(paste0("Length of variable specified via 'cluster' (", length(cluster), ") does not match length of data (", x$k.all, ").")))

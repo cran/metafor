@@ -1,6 +1,6 @@
 cumul.rma.uni <- function(x, order, digits, transf, targs, progbar=FALSE, ...) {
 
-   mstyle <- .get.mstyle("crayon" %in% .packages())
+   mstyle <- .get.mstyle()
 
    .chkclass(class(x), must="rma.uni", notav=c("robust.rma", "rma.ls", "rma.gen", "rma.uni.selmodel"))
 
@@ -31,11 +31,7 @@ cumul.rma.uni <- function(x, order, digits, transf, targs, progbar=FALSE, ...) {
    if (.isTRUE(ddd$time))
       time.start <- proc.time()
 
-   if (is.null(ddd$decreasing)) {
-      decreasing <- FALSE
-   } else {
-      decreasing <- ddd$decreasing
-   }
+   decreasing <- .chkddd(ddd$decreasing, FALSE)
 
    #########################################################################
 
@@ -52,9 +48,9 @@ cumul.rma.uni <- function(x, order, digits, transf, targs, progbar=FALSE, ...) {
    if (length(order) != x$k.all)
       stop(mstyle$stop(paste0("Length of the 'order' argument (", length(order), ") does not correspond to the size of the original dataset (", x$k.all, ").")))
 
-   ### note: order variable is assumed to be of the same length as the size of the
-   ###       original dataset passed to the model fitting function and so we apply
-   ###       the same subsetting (if necessary) as was done during model fitting
+   ### note: order variable must be of the same length as the original dataset
+   ###       so we have to apply the same subsetting (if necessary)
+   ###       as was done during model fitting
 
    order <- .getsubset(order, x$subset)
 

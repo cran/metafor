@@ -1,6 +1,6 @@
 gosh.rma <- function(x, subsets, progbar=TRUE, parallel="no", ncpus=1, cl, ...) {
 
-   mstyle <- .get.mstyle("crayon" %in% .packages())
+   mstyle <- .get.mstyle()
 
    .chkclass(class(x), must="rma", notav=c("rma.glmm", "rma.mv", "robust.rma", "rma.ls", "rma.gen", "rma.uni.selmodel"))
 
@@ -209,6 +209,10 @@ gosh.rma <- function(x, subsets, progbar=TRUE, parallel="no", ncpus=1, cl, ...) 
    } else {
       colnames(beta) <- colnames(x$X)
    }
+
+   ### add tau as column to het
+
+   het <- cbind(het, tau=sqrt(het[,"tau2"]))
 
    ### combine het and beta objects and order incl and res by k
 

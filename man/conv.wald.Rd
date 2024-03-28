@@ -106,7 +106,7 @@ dat
 # 2     2        NA   183        NA   188      0.64 0.17 -0.4463 0.1058
 # 3     3         4    46         7    44        NA   NA -0.6864 0.4437}
 
-      Note that the back-calculated sampling variance for study 2 is not identical in these two examples, because the CI bounds and p-value are rounded to two decimal places, which introduces some inaccuracies. Also, if both (\code{ci.lb}, \code{ci.ub}) and either \code{zval} or {pval} is available for a study, then the back-calculation of \mjseqn{v_i} via the confidence interval is preferred.
+      Note that the back-calculated sampling variance for study 2 is not identical in these two examples, because the CI bounds and p-value are rounded to two decimal places, which introduces some inaccuracies. Also, if both (\code{ci.lb}, \code{ci.ub}) and either \code{zval} or \code{pval} is available for a study, then the back-calculation of \mjseqn{v_i} via the confidence interval is preferred.
 
    }
 
@@ -169,7 +169,7 @@ dat2$ntot[!is.na(dat2$tpos)] <- NA
 dat2
 
 ### in studies 1 and 12, authors reported only the odds ratio and the corresponding p-value
-### in studies 4 and 9, authors reported only the odds ratio and the corresponding 95% CI
+### in studies 4 and 9, authors reported only the odds ratio and the corresponding 95\% CI
 
 ### use escalc() first
 dat2 <- escalc(measure="OR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat2)

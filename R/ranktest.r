@@ -2,7 +2,7 @@ ranktest <- function(x, vi, sei, subset, data, digits, ...) {
 
    #########################################################################
 
-   mstyle <- .get.mstyle("crayon" %in% .packages())
+   mstyle <- .get.mstyle()
 
    na.act <- getOption("na.action")
 
@@ -13,11 +13,7 @@ ranktest <- function(x, vi, sei, subset, data, digits, ...) {
 
    .chkdots(ddd, c("exact"))
 
-   if (is.null(ddd$exact)) {
-      exact <- TRUE
-   } else {
-      exact <- ddd$exact
-   }
+   exact <- .chkddd(ddd$exact, TRUE)
 
    #########################################################################
 

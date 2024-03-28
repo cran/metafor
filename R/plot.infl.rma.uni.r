@@ -1,7 +1,7 @@
 plot.infl.rma.uni <- function(x, plotinf=TRUE, plotdfbs=FALSE, dfbsnew=FALSE, logcov=TRUE,
 layout, slab.style=1, las=0, pch=21, bg, bg.infl, col.na, ...) {
 
-   mstyle <- .get.mstyle("crayon" %in% .packages())
+   mstyle <- .get.mstyle()
 
    .chkclass(class(x), must="infl.rma.uni")
 
@@ -340,7 +340,8 @@ layout, slab.style=1, las=0, pch=21, bg, bg.infl, col.na, ...) {
                lplot(NA, NA, xlim=c(1,len.ids), ylim=c(zi.min,zi.max), xaxt="n", main="QE.del", xlab="", ylab="", las=las, ...)
                laxis(side=1, at=seq_len(len.ids), labels=lab.ids, xlab="", las=las, ...)
                labline(h=x$QE, lty="dashed", ...)
-               #labline(h=qchisq(.95, df=x$k-x$p), lty="dotted")
+               #labline(h=qchisq(.95, df=x$k-x$p), lty="dotted", ...)
+               labline(h=x$k-x$p, lty="dotted", ...)
                if (na.act == "na.exclude" || na.act == "na.pass")
                   llines(seq_len(len.ids)[not.na], zi[not.na], col=col.na, ...)
                llines(seq_len(len.ids), zi, ...)

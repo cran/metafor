@@ -37,7 +37,7 @@
       return(vcvals)
 
    if (length(ids) != length(vcvals)) {
-      mstyle <- .get.mstyle("crayon" %in% .packages())
+      mstyle <- .get.mstyle()
       stop(mstyle$stop(paste0("Length of 'vccon$", vcname, "' (", length(ids), ") does not match length of ", vcname, " (", length(vcvals), ").")), call.=FALSE)
    }
 
@@ -56,7 +56,7 @@
 
 .process.G.aftersub <- function(mf.g, struct, formula, tau2, rho, isG, k, sparse, verbose) {
 
-   mstyle <- .get.mstyle("crayon" %in% .packages())
+   mstyle <- .get.mstyle()
 
    if (verbose > 1)
       message(mstyle$message(paste0("Processing '", paste0(formula, collapse=""), "' term (#1) ...")))
@@ -74,7 +74,7 @@
 
    ### get variables names in mf.g
 
-   g.names <- names(mf.g) ### names for inner and outer factors/variables
+   g.names <- names(mf.g) # names for inner and outer factors/variables
 
    ### check that inner variable is a factor (or character variable) for structures that require this (no longer required)
 
@@ -107,7 +107,7 @@
 
    ### get number of levels of each variable in mf.g (vector with two values, for the inner and outer factor)
 
-   #g.nlevels <- c(nlevels(mf.g[[1]]), nlevels(mf.g[[2]])) ### works only for factors
+   #g.nlevels <- c(nlevels(mf.g[[1]]), nlevels(mf.g[[2]])) # works only for factors
    if (is.element(struct, c("SPEXP","SPGAU","SPLIN","SPRAT","SPSPH","PHYBM","PHYPL","PHYPD","GEN","GDIAG"))) {
       g.nlevels <- c(length(unique(apply(mf.g[-nvars], 1, paste, collapse=" + "))), length(unique(mf.g[[nvars]])))
    } else {
@@ -116,7 +116,7 @@
 
    ### get levels of each variable in mf.g
 
-   #g.levels <- list(levels(mf.g[[1]]), levels(mf.g[[2]])) ### works only for factors
+   #g.levels <- list(levels(mf.g[[1]]), levels(mf.g[[2]])) # works only for factors
    if (is.element(struct, c("SPEXP","SPGAU","SPLIN","SPRAT","SPSPH","PHYBM","PHYPL","PHYPD","GEN","GDIAG"))) {
       g.levels <- list(sort(unique(apply(mf.g[-nvars], 1, paste, collapse=" + "))), sort(unique((mf.g[[nvars]]))))
    } else {
@@ -254,7 +254,7 @@
 
 .process.G.afterrmna <- function(mf.g, g.nlevels, g.levels, g.values, struct, formula, tau2, rho, Z.G1, Z.G2, isG, sparse, distspec, verbose) {
 
-   mstyle <- .get.mstyle("crayon" %in% .packages())
+   mstyle <- .get.mstyle()
 
    if (verbose > 1)
       message(mstyle$message(paste0("Processing '", paste0(formula, collapse=""), "' term (#2) ...")))
@@ -279,7 +279,7 @@
 
    ### redo: get number of levels of each variable in mf.g (vector with two values, for the inner and outer factor)
 
-   #g.nlevels <- c(nlevels(mf.g[[1]]), nlevels(mf.g[[2]])) ### works only for factors
+   #g.nlevels <- c(nlevels(mf.g[[1]]), nlevels(mf.g[[2]])) # works only for factors
    if (is.element(struct, c("SPEXP","SPGAU","SPLIN","SPRAT","SPSPH","PHYBM","PHYPL","PHYPD","GEN","GDIAG"))) {
       g.nlevels <- c(length(unique(apply(mf.g[-nvars], 1, paste, collapse=" + "))), length(unique(mf.g[[nvars]])))
    } else {
@@ -288,7 +288,7 @@
 
    ### redo: get levels of each variable in mf.g
 
-   #g.levels <- list(levels(mf.g[[1]]), levels(mf.g[[2]])) ### works only for factors
+   #g.levels <- list(levels(mf.g[[1]]), levels(mf.g[[2]])) # works only for factors
    if (is.element(struct, c("SPEXP","SPGAU","SPLIN","SPRAT","SPSPH","PHYBM","PHYPL","PHYPD","GEN","GDIAG"))) {
       g.levels <- list(sort(unique(apply(mf.g[-nvars], 1, paste, collapse=" + "))), sort(unique((mf.g[[nvars]]))))
    } else {
@@ -613,7 +613,7 @@
    if (any(g.levels.r) && struct == "UNR") {
       G[g.levels.r,] <- 0
       G[,g.levels.r] <- 0
-      diag(G) <- tau2 ### don't really need this
+      diag(G) <- tau2 # don't really need this
       rho <- G[lower.tri(G)]
       warning(mstyle$warning(paste0("Fixed ", ifelse(isG, 'rho', 'phi'), " value(s) to 0 for removed level(s).")), call.=FALSE)
    }
@@ -689,23 +689,23 @@
 
 ### function to construct var-cov matrix (G or H) for '~ inner | outer' terms
 
-.con.E <- function(v, r, v.val, r.val, Z1, Z2, levels.r, values, Dmat, struct, cholesky, vctransf, vccov, nearpd, sparse) {
+.con.E <- function(v, r, v.arg, r.arg, Z1, Z2, levels.r, values, Dmat, struct, cholesky, vctransf, vccov, nearpd, sparse) {
 
    ### if cholesky=TRUE, back-transformation/substitution is done below; otherwise, back-transform and replace fixed values
 
    if (!cholesky) {
       if (vctransf) {
-         v <- ifelse(is.na(v.val), exp(v), v.val)           # variances are optimized in log space, so exponentiate
+         v <- ifelse(is.na(v.arg), exp(v), v.arg)           # variances are optimized in log space, so exponentiate
          if (struct == "CAR")
-            r <- ifelse(is.na(r.val), plogis(r), r.val)     # CAR correlation is optimized in qlogis space, so use plogis
+            r <- ifelse(is.na(r.arg), plogis(r), r.arg)     # CAR correlation is optimized in qlogis space, so use plogis
          if (is.element(struct, c("SPEXP","SPGAU","SPLIN","SPRAT","SPSPH","PHYBM","PHYPL","PHYPD")))
-            r <- ifelse(is.na(r.val), exp(r), r.val)        # spatial and phylogenetic 'correlation' parameter is optimized in log space, so exponentiate
+            r <- ifelse(is.na(r.arg), exp(r), r.arg)        # spatial and phylogenetic 'correlation' parameter is optimized in log space, so exponentiate
          if (!is.element(struct, c("CAR","SPEXP","SPGAU","SPLIN","SPRAT","SPSPH","PHYBM","PHYPL","PHYPD")))
-            r <- ifelse(is.na(r.val), tanh(r), r.val)       # other correlations are optimized in atanh space, so use tanh
+            r <- ifelse(is.na(r.arg), tanh(r), r.arg)       # other correlations are optimized in atanh space, so use tanh
       } else {
          ### for Hessian computation, can choose to leave as is
-         v <- ifelse(is.na(v.val), v, v.val)
-         r <- ifelse(is.na(r.val), r, r.val)
+         v <- ifelse(is.na(v.arg), v, v.arg)
+         r <- ifelse(is.na(r.arg), r, r.arg)
          v[v < 0] <- 0
          if (struct == "CAR") {
             r[r < 0] <- 0
@@ -741,8 +741,8 @@
          E <- .con.vcov.UN.chol(v, r)
          v <- diag(E)                  # need this, so correct values are shown when verbose=TRUE
          r <- cov2cor(E)[lower.tri(E)] # need this, so correct values are shown when verbose=TRUE
-         v[!is.na(v.val)] <- v.val[!is.na(v.val)] # replace any fixed values
-         r[!is.na(r.val)] <- r.val[!is.na(r.val)] # replace any fixed values
+         v[!is.na(v.arg)] <- v.arg[!is.na(v.arg)] # replace any fixed values
+         r[!is.na(r.arg)] <- r.arg[!is.na(r.arg)] # replace any fixed values
       }
       E <- .con.vcov.UN(v, r, vccov)
       if (nearpd) {
@@ -757,8 +757,8 @@
          E <- .con.vcov.UNR.chol(v, r)
          v <- diag(E)[1,1]             # need this, so correct values are shown when verbose=TRUE
          r <- cov2cor(E)[lower.tri(E)] # need this, so correct values are shown when verbose=TRUE
-         v[!is.na(v.val)] <- v.val[!is.na(v.val)] # replace any fixed values
-         r[!is.na(r.val)] <- r.val[!is.na(r.val)] # replace any fixed values
+         v[!is.na(v.arg)] <- v.arg[!is.na(v.arg)] # replace any fixed values
+         r[!is.na(r.arg)] <- r.arg[!is.na(r.arg)] # replace any fixed values
       }
       E <- .con.vcov.UNR(v, r)
       if (nearpd) {
@@ -854,29 +854,29 @@
 
 ############################################################################
 
-### -1 times the log likelihood (regular or restricted) for rma.mv models
+### -1 times the log-likelihood (regular or restricted) for rma.mv models
 
 .ll.rma.mv <- function(par, reml, Y, M, A, X, k, pX, # note: pX due to nlm(); M=V to begin with
                        D.S, Z.G1, Z.G2, Z.H1, Z.H2, g.Dmat, h.Dmat,
-                       sigma2.val, tau2.val, rho.val, gamma2.val, phi.val, beta.val,
+                       sigma2.arg, tau2.arg, rho.arg, gamma2.arg, phi.arg, beta.arg,
                        sigma2s, tau2s, rhos, gamma2s, phis,
                        withS, withG, withH,
                        struct, g.levels.r, h.levels.r, g.values, h.values,
                        sparse, cholesky, nearpd, vctransf, vccov, vccon,
                        verbose, digits, REMLf, dofit=FALSE, hessian=FALSE) {
 
-   mstyle <- .get.mstyle("crayon" %in% .packages())
+   mstyle <- .get.mstyle()
 
-   ### only NA values in sigma2.val, tau2.val, rho.val, gamma2.val, phi.val should be estimated; otherwise, replace with fixed values
+   ### only NA values in sigma2.arg, tau2.arg, rho.arg, gamma2.arg, phi.arg should be estimated; otherwise, replace with fixed values
 
    if (withS) {
 
       vars <- par[seq_len(sigma2s)]
 
       if (vctransf) {
-         sigma2 <- ifelse(is.na(sigma2.val), exp(vars), sigma2.val) # sigma2 is optimized in log space, so exponentiate
+         sigma2 <- ifelse(is.na(sigma2.arg), exp(vars), sigma2.arg) # sigma2 is optimized in log space, so exponentiate
       } else {
-         sigma2 <- ifelse(is.na(sigma2.val), vars, sigma2.val)      # for Hessian computation, can choose to leave as is
+         sigma2 <- ifelse(is.na(sigma2.arg), vars, sigma2.arg)      # for Hessian computation, can choose to leave as is
          sigma2[sigma2 < 0] <- 0
       }
 
@@ -903,7 +903,7 @@
       cors <- par[(sigma2s+tau2s+1):(sigma2s+tau2s+rhos)]
 
       resG <- .con.E(v=vars, r=cors,
-                     v.val=tau2.val, r.val=rho.val, Z1=Z.G1, Z2=Z.G2, levels.r=g.levels.r, values=g.values, Dmat=g.Dmat,
+                     v.arg=tau2.arg, r.arg=rho.arg, Z1=Z.G1, Z2=Z.G2, levels.r=g.levels.r, values=g.values, Dmat=g.Dmat,
                      struct=struct[1], cholesky=cholesky[1], vctransf=vctransf, vccov=vccov, nearpd=nearpd, sparse=sparse)
       tau2 <- resG$v
       rho  <- resG$r
@@ -923,7 +923,7 @@
          }
 
          resG <- .con.E(v=tau2, r=rho,
-                        v.val=tau2.val, r.val=rho.val, Z1=Z.G1, Z2=Z.G2, levels.r=g.levels.r, values=g.values, Dmat=g.Dmat,
+                        v.arg=tau2.arg, r.arg=rho.arg, Z1=Z.G1, Z2=Z.G2, levels.r=g.levels.r, values=g.values, Dmat=g.Dmat,
                         struct=struct[1], cholesky=FALSE, vctransf=FALSE, vccov=vccov, nearpd=nearpd, sparse=sparse)
          tau2 <- resG$v
          rho  <- resG$r
@@ -941,7 +941,7 @@
       cors <- par[(sigma2s+tau2s+rhos+gamma2s+1):(sigma2s+tau2s+rhos+gamma2s+phis)]
 
       resH <- .con.E(v=vars, r=cors,
-                     v.val=gamma2.val, r.val=phi.val, Z1=Z.H1, Z2=Z.H2, levels.r=h.levels.r, values=h.values, Dmat=h.Dmat,
+                     v.arg=gamma2.arg, r.arg=phi.arg, Z1=Z.H1, Z2=Z.H2, levels.r=h.levels.r, values=h.values, Dmat=h.Dmat,
                      struct=struct[2], cholesky=cholesky[2], vctransf=vctransf, vccov=vccov, nearpd=nearpd, sparse=sparse)
       gamma2 <- resH$v
       phi    <- resH$r
@@ -962,7 +962,7 @@
          }
 
          resH <- .con.E(v=gamma2, r=phi,
-                        v.val=gamma2.val, r.val=phi.val, Z1=Z.H1, Z2=Z.H2, levels.r=h.levels.r, values=h.values, Dmat=h.Dmat,
+                        v.arg=gamma2.arg, r.arg=phi.arg, Z1=Z.H1, Z2=Z.H2, levels.r=h.levels.r, values=h.values, Dmat=h.Dmat,
                         struct=struct[2], cholesky=FALSE, vctransf=FALSE, vccov=vccov, nearpd=nearpd, sparse=sparse)
          gamma2 <- resH$v
          phi    <- resH$r
@@ -1000,7 +1000,7 @@
 
    if (inherits(W, "try-error")) {
 
-      ### if M is not positive-definite, set the (restricted) log likelihood to -Inf
+      ### if M is not positive-definite, set the (restricted) log-likelihood to -Inf
       ### this idea is based on: https://stats.stackexchange.com/q/11368/1934 (this is crude, but should
       ### move the parameter estimates away from values that create the non-positive-definite M matrix)
 
@@ -1036,7 +1036,7 @@
             sX   <- U %*% X
             sY   <- U %*% Y
             beta <- solve(crossprod(sX), crossprod(sX, sY))
-            beta <- ifelse(is.na(beta.val), beta, beta.val)
+            beta <- ifelse(is.na(beta.arg), beta, beta.arg)
             RSS  <- sum(as.vector(sY - sX %*% beta)^2)
             if (dofit)
                vb <- matrix(solve(crossprod(sX)), nrow=pX, ncol=pX)
@@ -1046,7 +1046,7 @@
             stXAX <- chol2inv(chol(as.matrix(t(X) %*% A %*% X)))
             #stXAX <- tcrossprod(qr.solve(sX, diag(k)))
             beta  <- matrix(stXAX %*% crossprod(X,A) %*% Y, ncol=1)
-            beta  <- ifelse(is.na(beta.val), beta, beta.val)
+            beta  <- ifelse(is.na(beta.arg), beta, beta.arg)
             RSS   <- as.vector(t(Y - X %*% beta) %*% W %*% (Y - X %*% beta))
             vb    <- matrix(stXAX %*% t(X) %*% A %*% M %*% A %*% X %*% stXAX, nrow=pX, ncol=pX)
 
@@ -1355,7 +1355,7 @@
 
 .ddf.calc <- function(dfs, X, k, p, mf.s=NULL, mf.g=NULL, mf.h=NULL, beta=TRUE) {
 
-   mstyle <- .get.mstyle("crayon" %in% .packages())
+   mstyle <- .get.mstyle()
 
    if (beta) {
 

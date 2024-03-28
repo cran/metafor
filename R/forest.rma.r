@@ -8,7 +8,7 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
 
    #########################################################################
 
-   mstyle <- .get.mstyle("crayon" %in% .packages())
+   mstyle <- .get.mstyle()
 
    .chkclass(class(x), must="rma", notav=c("rma.ls", "rma.gen"))
 
@@ -153,6 +153,8 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
    if (length(efac) == 2L)
       efac <- c(efac[1], efac[1], efac[2]) # if 2 values specified: 1st = CI/PI end lines and arrows, 2nd = summary polygon or fitted polygons
 
+   efac[efac == 0] <- NA
+
    ### annotation symbols vector
 
    if (is.null(ddd$annosym)) {
@@ -213,17 +215,9 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
    if (!is.null(ddd$addcred))
       addpred <- ddd$addcred
 
-   if (is.null(ddd$pi.type)) {
-      pi.type <- "default"
-   } else {
-      pi.type <- ddd$pi.type
-   }
+   pi.type <- .chkddd(ddd$pi.type, "default")
 
-   if (is.null(ddd$decreasing)) {
-      decreasing <- FALSE
-   } else {
-      decreasing <- ddd$decreasing
-   }
+   decreasing <- .chkddd(ddd$decreasing, FALSE)
 
    if (!is.null(ddd$clim))
       olim <- ddd$clim
@@ -240,11 +234,7 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
          rowadj <- c(rowadj,0) # if two values are specified, use them for 1&2
    }
 
-   if (is.null(ddd$top)) {
-      top <- 3
-   } else {
-      top <- ddd$top
-   }
+   top <- .chkddd(ddd$top, 3)
 
    if (is.null(ddd$xlabadj)) {
       xlabadj <- c(NA,NA)
@@ -254,20 +244,16 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
          xlabadj <- c(xlabadj, 1-xlabadj)
    }
 
-   if (is.null(ddd$xlabfont)) {
-      xlabfont <- 1
-   } else {
-      xlabfont <- ddd$xlabfont
-   }
+   xlabfont <- .chkddd(ddd$xlabfont, 1)
 
-   lplot     <- function(..., textpos, addcred, pi.type, decreasing, clim, rowadj, annosym, tabfig, top, xlabadj, xlabfont) plot(...)
-   labline   <- function(..., textpos, addcred, pi.type, decreasing, clim, rowadj, annosym, tabfig, top, xlabadj, xlabfont) abline(...)
-   lsegments <- function(..., textpos, addcred, pi.type, decreasing, clim, rowadj, annosym, tabfig, top, xlabadj, xlabfont) segments(...)
-   laxis     <- function(..., textpos, addcred, pi.type, decreasing, clim, rowadj, annosym, tabfig, top, xlabadj, xlabfont) axis(...)
-   lmtext    <- function(..., textpos, addcred, pi.type, decreasing, clim, rowadj, annosym, tabfig, top, xlabadj, xlabfont) mtext(...)
-   lpolygon  <- function(..., textpos, addcred, pi.type, decreasing, clim, rowadj, annosym, tabfig, top, xlabadj, xlabfont) polygon(...)
-   ltext     <- function(..., textpos, addcred, pi.type, decreasing, clim, rowadj, annosym, tabfig, top, xlabadj, xlabfont) text(...)
-   lpoints   <- function(..., textpos, addcred, pi.type, decreasing, clim, rowadj, annosym, tabfig, top, xlabadj, xlabfont) points(...)
+   lplot     <- function(..., textpos, addcred, pi.type, decreasing, clim, rowadj, annosym, tabfig, top, xlabadj, xlabfont, at.lab) plot(...)
+   labline   <- function(..., textpos, addcred, pi.type, decreasing, clim, rowadj, annosym, tabfig, top, xlabadj, xlabfont, at.lab) abline(...)
+   lsegments <- function(..., textpos, addcred, pi.type, decreasing, clim, rowadj, annosym, tabfig, top, xlabadj, xlabfont, at.lab) segments(...)
+   laxis     <- function(..., textpos, addcred, pi.type, decreasing, clim, rowadj, annosym, tabfig, top, xlabadj, xlabfont, at.lab) axis(...)
+   lmtext    <- function(..., textpos, addcred, pi.type, decreasing, clim, rowadj, annosym, tabfig, top, xlabadj, xlabfont, at.lab) mtext(...)
+   lpolygon  <- function(..., textpos, addcred, pi.type, decreasing, clim, rowadj, annosym, tabfig, top, xlabadj, xlabfont, at.lab) polygon(...)
+   ltext     <- function(..., textpos, addcred, pi.type, decreasing, clim, rowadj, annosym, tabfig, top, xlabadj, xlabfont, at.lab) text(...)
+   lpoints   <- function(..., textpos, addcred, pi.type, decreasing, clim, rowadj, annosym, tabfig, top, xlabadj, xlabfont, at.lab) points(...)
 
    if (is.character(showweights)) {
       weighttype  <- match.arg(showweights, c("diagonal", "rowsum"))
@@ -408,26 +394,26 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
 
    options(na.action = "na.pass") # using na.pass to get the entire vector (length of yi.f)
 
-      if (x$int.only) {
-         pred <- fitted(x)
-         pred.ci.lb <- rep(NA_real_, k)
-         pred.ci.ub <- rep(NA_real_, k)
+   if (x$int.only) {
+      pred <- fitted(x)
+      pred.ci.lb <- rep(NA_real_, k)
+      pred.ci.ub <- rep(NA_real_, k)
+   } else {
+      temp <- predict(x, level=level, pi.type=pi.type)
+      pred <- temp$pred
+      if (addpred) {
+         pred.ci.lb <- temp$pi.lb
+         pred.ci.ub <- temp$pi.ub
       } else {
-         temp <- predict(x, level=level, pi.type=pi.type)
-         pred <- temp$pred
-         if (addpred) {
-            pred.ci.lb <- temp$pi.lb
-            pred.ci.ub <- temp$pi.ub
-         } else {
-            pred.ci.lb <- temp$ci.lb
-            pred.ci.ub <- temp$ci.ub
-         }
+         pred.ci.lb <- temp$ci.lb
+         pred.ci.ub <- temp$ci.ub
       }
+   }
 
-      weights <- try(weights(x, type=weighttype), silent=TRUE) # does not work for rma.glmm and rma.uni.selmodel objects
+   weights <- try(weights(x, type=weighttype), silent=TRUE) # does not work for rma.glmm and rma.uni.selmodel objects
 
-      if (inherits(weights, "try-error"))
-         weights <- rep(1, k)
+   if (inherits(weights, "try-error"))
+      weights <- rep(1, k)
 
    ### sort the data if requested
 
@@ -602,12 +588,12 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
       if (length(olim) != 2L)
          stop(mstyle$stop("Argument 'olim' must be of length 2."))
       olim <- sort(olim)
-      yi[yi < olim[1]] <- olim[1]
-      yi[yi > olim[2]] <- olim[2]
-      ci.lb[ci.lb < olim[1]] <- olim[1]
-      ci.ub[ci.ub > olim[2]] <- olim[2]
-      pred.ci.lb[pred.ci.lb < olim[1]] <- olim[1]
-      pred.ci.ub[pred.ci.ub > olim[2]] <- olim[2]
+      yi         <- .applyolim(yi, olim)
+      ci.lb      <- .applyolim(ci.lb, olim)
+      ci.ub      <- .applyolim(ci.ub, olim)
+      pred       <- .applyolim(pred, olim)
+      pred.ci.lb <- .applyolim(pred.ci.lb, olim)
+      pred.ci.ub <- .applyolim(pred.ci.ub, olim)
    }
 
    ### set default point sizes (if not specified by user)
@@ -682,16 +668,24 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
 
    ### x-axis labels (apply transformation to axis labels if requested)
 
-   at.lab <- at
+   if (is.null(ddd$at.lab)) {
 
-   if (is.function(atransf)) {
-      if (is.null(targs)) {
-         at.lab <- fmtx(sapply(at.lab, atransf), digits[[2]], drop0ifint=TRUE)
+      at.lab <- at
+
+      if (is.function(atransf)) {
+         if (is.null(targs)) {
+            at.lab <- fmtx(sapply(at.lab, atransf), digits[[2]], drop0ifint=TRUE)
+         } else {
+            at.lab <- fmtx(sapply(at.lab, atransf, targs), digits[[2]], drop0ifint=TRUE)
+         }
       } else {
-         at.lab <- fmtx(sapply(at.lab, atransf, targs), digits[[2]], drop0ifint=TRUE)
+         at.lab <- fmtx(at.lab, digits[[2]], drop0ifint=TRUE)
       }
+
    } else {
-      at.lab <- fmtx(at.lab, digits[[2]], drop0ifint=TRUE)
+
+      at.lab <- ddd$at.lab
+
    }
 
    ### set plot limits (xlim)
@@ -764,11 +758,7 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
 
    ### allow adjustment of position of study labels and annotations via textpos argument
 
-   if (is.null(ddd$textpos)) {
-      textpos <- xlim
-   } else {
-      textpos <- ddd$textpos
-   }
+   textpos <- .chkddd(ddd$textpos, xlim)
 
    if (length(textpos) != 2L)
       stop(mstyle$stop("Argument 'textpos' must be of length 2."))
@@ -788,7 +778,15 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
          ylim <- c(0.5, max(rows, na.rm=TRUE)+top)
       }
    } else {
-      ylim <- sort(ylim)
+      if (length(ylim) == 1L) {
+         if (x$int.only && addfit) {
+            ylim <- c(ylim, max(rows, na.rm=TRUE)+top)
+         } else {
+            ylim <- c(ylim, max(rows, na.rm=TRUE)+top)
+         }
+      } else {
+         ylim <- sort(ylim)
+      }
    }
 
    #########################################################################
@@ -896,7 +894,9 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
          if (is.na(pred[i]))
             next
 
-         lpolygon(x=c(max(pred.ci.lb[i], alim[1]), pred[i], min(pred.ci.ub[i], alim[2]), pred[i]), y=c(rows[i], rows[i]+(height/100)*cex*efac[3], rows[i], rows[i]-(height/100)*cex*efac[3]), col=col, border=border, ...)
+         lpolygon(x=c(max(pred.ci.lb[i], alim[1]), pred[i], min(pred.ci.ub[i], alim[2]), pred[i]),
+                  y=c(rows[i], rows[i]+(height/100)*cex*efac[3], rows[i], rows[i]-(height/100)*cex*efac[3]),
+                  col=col, border=border, ...)
 
          ### this would only draw intervals if bounds fall within alim range
          #if ((pred.ci.lb[i] > alim[1]) && (pred.ci.ub[i] < alim[2]))
@@ -920,7 +920,7 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
             if (length(addpred) == 1L)
                addpred <- c(addpred, addpred)
             temp <- predict(x, level=level, tau2.levels=addpred[1], gamma2.levels=addpred[2], pi.type=pi.type)
-            addpred <- TRUE ### set addpred to TRUE, so if (!is.element(x$method, c("FE","EE","CE")) && addpred) further below works
+            addpred <- TRUE # set addpred to TRUE, so if (!is.element(x$method, c("FE","EE","CE")) && addpred) further below works
          } else {
             if (addpred) {
                ### here addpred=TRUE, but user has not specified the level, so throw an error
@@ -972,12 +972,11 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
       ### apply observation/outcome limits if specified
 
       if (!missing(olim)) {
-         pred[pred < olim[1]] <- olim[1]
-         pred[pred > olim[2]] <- olim[2]
-         beta.ci.lb[beta.ci.lb < olim[1]] <- olim[1]
-         beta.ci.ub[beta.ci.ub > olim[2]] <- olim[2]
-         beta.pi.lb[beta.pi.lb < olim[1]] <- olim[1]
-         beta.pi.ub[beta.pi.ub > olim[2]] <- olim[2]
+         beta       <- .applyolim(beta, olim)
+         beta.ci.lb <- .applyolim(beta.ci.lb, olim)
+         beta.ci.ub <- .applyolim(beta.ci.ub, olim)
+         beta.pi.lb <- .applyolim(beta.pi.lb, olim)
+         beta.pi.ub <- .applyolim(beta.pi.ub, olim)
       }
 
       ### add prediction interval
@@ -1053,13 +1052,13 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
 
       ### if the lower bound is actually larger than upper x-axis limit, then everything is to the right and just draw a polygon pointing in that direction
       if (ci.lb[i] >= alim[2]) {
-         lpolygon(x=c(alim[2], alim[2]-(1.4/100)*cex*(xlim[2]-xlim[1]), alim[2]-(1.4/100)*cex*(xlim[2]-xlim[1]), alim[2]), y=c(rows[i], rows[i]+(height/150)*cex*efac[2], rows[i]-(height/150)*cex*efac[2], rows[i]), col=colout[i], ...)
+         lpolygon(x=c(alim[2], alim[2]-(1.4/100)*cex*(xlim[2]-xlim[1]), alim[2]-(1.4/100)*cex*(xlim[2]-xlim[1]), alim[2]), y=c(rows[i], rows[i]+(height/150)*cex*efac[2], rows[i]-(height/150)*cex*efac[2], rows[i]), col=colout[i], border=colout[i], ...)
          next
       }
 
       ### if the upper bound is actually lower than lower x-axis limit, then everything is to the left and just draw a polygon pointing in that direction
       if (ci.ub[i] <= alim[1]) {
-         lpolygon(x=c(alim[1], alim[1]+(1.4/100)*cex*(xlim[2]-xlim[1]), alim[1]+(1.4/100)*cex*(xlim[2]-xlim[1]), alim[1]), y=c(rows[i], rows[i]+(height/150)*cex*efac[2], rows[i]-(height/150)*cex*efac[2], rows[i]), col=colout[i], ...)
+         lpolygon(x=c(alim[1], alim[1]+(1.4/100)*cex*(xlim[2]-xlim[1]), alim[1]+(1.4/100)*cex*(xlim[2]-xlim[1]), alim[1]), y=c(rows[i], rows[i]+(height/150)*cex*efac[2], rows[i]-(height/150)*cex*efac[2], rows[i]), col=colout[i], border=colout[i], ...)
          next
       }
 
@@ -1068,13 +1067,13 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
       if (ci.lb[i] >= alim[1]) {
          lsegments(ci.lb[i], rows[i]-(height/150)*cex*efac[1], ci.lb[i], rows[i]+(height/150)*cex*efac[1], col=colout[i], ...)
       } else {
-         lpolygon(x=c(alim[1], alim[1]+(1.4/100)*cex*(xlim[2]-xlim[1]), alim[1]+(1.4/100)*cex*(xlim[2]-xlim[1]), alim[1]), y=c(rows[i], rows[i]+(height/150)*cex*efac[2], rows[i]-(height/150)*cex*efac[2], rows[i]), col=colout[i], ...)
+         lpolygon(x=c(alim[1], alim[1]+(1.4/100)*cex*(xlim[2]-xlim[1]), alim[1]+(1.4/100)*cex*(xlim[2]-xlim[1]), alim[1]), y=c(rows[i], rows[i]+(height/150)*cex*efac[2], rows[i]-(height/150)*cex*efac[2], rows[i]), col=colout[i], border=colout[i], ...)
       }
 
       if (ci.ub[i] <= alim[2]) {
          lsegments(ci.ub[i], rows[i]-(height/150)*cex*efac[1], ci.ub[i], rows[i]+(height/150)*cex*efac[1], col=colout[i], ...)
       } else {
-         lpolygon(x=c(alim[2], alim[2]-(1.4/100)*cex*(xlim[2]-xlim[1]), alim[2]-(1.4/100)*cex*(xlim[2]-xlim[1]), alim[2]), y=c(rows[i], rows[i]+(height/150)*cex*efac[2], rows[i]-(height/150)*cex*efac[2], rows[i]), col=colout[i], ...)
+         lpolygon(x=c(alim[2], alim[2]-(1.4/100)*cex*(xlim[2]-xlim[1]), alim[2]-(1.4/100)*cex*(xlim[2]-xlim[1]), alim[2]), y=c(rows[i], rows[i]+(height/150)*cex*efac[2], rows[i]-(height/150)*cex*efac[2], rows[i]), col=colout[i], border=colout[i], ...)
       }
 
    }

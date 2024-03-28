@@ -4,7 +4,7 @@ plot.vif.rma <- function(x,
 
    #########################################################################
 
-   mstyle <- .get.mstyle("crayon" %in% .packages())
+   mstyle <- .get.mstyle()
 
    .chkclass(class(x), must="vif.rma")
 
@@ -62,23 +62,9 @@ plot.vif.rma <- function(x,
 
    ddd <- list(...)
 
-   if (is.null(ddd$tail)) {
-      tail <- "upper"
-   } else {
-      tail <- match.arg(ddd$tail, c("lower", "upper"))
-   }
-
-   if (is.null(ddd$new)) {
-      new <- TRUE
-   } else {
-      new <- FALSE
-   }
-
-   if (is.null(ddd$mainadd)) {
-      mainadd <- ""
-   } else {
-      mainadd <- ddd$mainadd
-   }
+   tail    <- .chkddd(ddd$tail, "upper", match.arg(ddd$tail, c("lower", "upper")))
+   new     <- .chkddd(ddd$new, TRUE, FALSE)
+   mainadd <- .chkddd(ddd$mainadd, "")
 
    ### check if 'sim' was actually used
 
@@ -158,10 +144,10 @@ plot.vif.rma <- function(x,
 
       .coltail(tmp, val=x$vifs[i], col=col.out, border=border, freq=freq, ...)
 
-      usr <- par()$usr
+      usr <- par("usr")
 
       if (x$vifs[i] > usr[2] && lwd[1] > 0) {
-         ya <- mean(par()$yaxp[1:2])
+         ya <- mean(par("yaxp")[1:2])
          arrows(usr[2] - .08*(usr[2]-usr[1]), ya, usr[2] - .01*(usr[2]-usr[1]), ya,
                 length = .02*(grconvertY(usr[4], from="user", to="inches")-
                              (grconvertY(usr[3], from="user", to="inches"))))
@@ -174,8 +160,8 @@ plot.vif.rma <- function(x,
          lsegments(x$vifs[i], usr[3], x$vifs[i], usr[4], lwd=lwd[1], lty="dashed", ...)
       par(xpd = FALSE)
 
-      #den$y <- den$y[den$x <= par()$xaxp[2]]
-      #den$x <- den$x[den$x <= par()$xaxp[2]]
+      #den$y <- den$y[den$x <= par("xaxp")[2]]
+      #den$x <- den$x[den$x <= par("xaxp")[2]]
       if (lwd[2] > 0)
          llines(den, lwd=lwd[2], col=col.density, ...)
 

@@ -1,6 +1,6 @@
 ranef.rma.mv <- function(object, level, digits, transf, targs, verbose=FALSE, ...) {
 
-   mstyle <- .get.mstyle("crayon" %in% .packages())
+   mstyle <- .get.mstyle()
 
    .chkclass(class(object), must="rma.mv")
 
@@ -60,7 +60,7 @@ ranef.rma.mv <- function(object, level, digits, transf, targs, verbose=FALSE, ..
 
    ### compute residuals
 
-   ei <- c(x$yi - x$X %*% x$beta) ### use this instead of resid(), since this guarantees that the length is correct
+   ei <- c(x$yi - x$X %*% x$beta) # use this instead of resid(), since this guarantees that the length is correct
 
    ### create identity matrix
 

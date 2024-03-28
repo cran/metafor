@@ -7,12 +7,12 @@ lcol, lwd, lty, legend=FALSE, xvals, ...) {
 
    #########################################################################
 
-   mstyle <- .get.mstyle("crayon" %in% .packages())
+   mstyle <- .get.mstyle()
 
    .chkclass(class(x), must="rma", notav=c("rma.mh","rma.peto"))
 
    if (x$int.only)
-      stop(mstyle$stop("Plot not applicable to intercept-only models."))
+      stop(mstyle$stop("Cannot draw plot for intercept-only models."))
 
    na.act <- getOption("na.action")
    on.exit(options(na.action=na.act), add=TRUE)
@@ -94,11 +94,10 @@ lcol, lwd, lty, legend=FALSE, xvals, ...) {
       grid <- TRUE
    }
 
-   ### shade argument can either be a logical or a color (first for ci, second for pi)
+   ### shade argument can either be a logical or a color vector (first for ci, second for pi)
 
-   if (is.logical(shade)) {
+   if (is.logical(shade))
       shadecol <- c(.coladj(par("bg","fg"), dark=0.15, light=-0.15), .coladj(par("bg","fg"), dark=0.05, light=-0.05))
-   }
 
    if (is.character(shade)) {
       if (length(shade) == 1L)
@@ -163,32 +162,18 @@ lcol, lwd, lty, legend=FALSE, xvals, ...) {
 
    ddd <- list(...)
 
-   lplot    <- function(..., grep, fixed, box.lty) plot(...)
-   laxis    <- function(..., grep, fixed, box.lty) axis(...)
-   lpolygon <- function(..., grep, fixed, box.lty) polygon(...)
-   llines   <- function(..., grep, fixed, box.lty) lines(...)
-   lpoints  <- function(..., grep, fixed, box.lty) points(...)
-   labline  <- function(..., grep, fixed, box.lty) abline(...)
-   lbox     <- function(..., grep, fixed, box.lty) box(...)
-   ltext    <- function(..., grep, fixed, box.lty) text(...)
+   lplot    <- function(..., grep, fixed, box.lty, at.lab) plot(...)
+   laxis    <- function(..., grep, fixed, box.lty, at.lab) axis(...)
+   lpolygon <- function(..., grep, fixed, box.lty, at.lab) polygon(...)
+   llines   <- function(..., grep, fixed, box.lty, at.lab) lines(...)
+   lpoints  <- function(..., grep, fixed, box.lty, at.lab) points(...)
+   labline  <- function(..., grep, fixed, box.lty, at.lab) abline(...)
+   lbox     <- function(..., grep, fixed, box.lty, at.lab) box(...)
+   ltext    <- function(..., grep, fixed, box.lty, at.lab) text(...)
 
-   if (is.null(ddd$fixed)) {
-      fixed <- FALSE
-   } else {
-      fixed <- .isTRUE(ddd$fixed)
-   }
-
-   if (is.null(ddd$grep)) {
-      grep <- FALSE
-   } else {
-      grep <- .isTRUE(ddd$grep)
-   }
-
-   if (is.null(ddd$box.lty)) {
-      box.lty <- par("lty")
-   } else {
-      box.lty <- ddd$box.lty
-   }
+   grep    <- .chkddd(ddd$grep,  FALSE, .isTRUE(ddd$grep))
+   fixed   <- .chkddd(ddd$fixed, FALSE, .isTRUE(ddd$fixed))
+   box.lty <- .chkddd(ddd$box.lty, par("lty"))
 
    ############################################################################
 
@@ -257,9 +242,8 @@ lcol, lwd, lty, legend=FALSE, xvals, ...) {
 
    options(na.action = na.act)
 
-   ### note: pch (if vector), psize (if vector), col (if vector), bg (if vector)
-   ###       must have the same length as the original dataset so we have to
-   ###       apply the same subsetting (if necessary) and removing of NAs as was
+   ### note: pch, psize, col, and bg (if vectors) must be of the same length as the original dataset
+   ###       so we have to apply the same subsetting (if necessary) and removing of NAs as was
    ###       done during the model fitting (note: NAs are removed further below)
 
    if (length(pch) == 1L)
@@ -404,7 +388,7 @@ lcol, lwd, lty, legend=FALSE, xvals, ...) {
       pred <- pred$pred
 
       if (!is.null(label) && is.character(label) && label %in% c("ciout", "piout")) {
-         warning(mstyle$stop("Cannot label points based on the confidence/prediction interval when passing an object to 'pred'."))
+         warning(mstyle$stop("Cannot label points based on the confidence/prediction interval when passing an object to 'pred'."), call.=FALSE)
          label <- NULL
       }
 
@@ -524,20 +508,26 @@ lcol, lwd, lty, legend=FALSE, xvals, ...) {
    pi.lb <- tmp[,1]
    pi.ub <- tmp[,2]
 
+   tmp <- .psort(yi.ci.lb, yi.ci.ub)
+   yi.ci.lb <- tmp[,1]
+   yi.ci.ub <- tmp[,2]
+
+   tmp <- .psort(yi.pi.lb, yi.pi.ub)
+   yi.pi.lb <- tmp[,1]
+   yi.pi.ub <- tmp[,2]
+
    ### apply observation/outcome limits if specified
 
    if (!missing(olim)) {
       if (length(olim) != 2L)
          stop(mstyle$stop("Argument 'olim' must be of length 2."))
       olim <- sort(olim)
-      yi[yi < olim[1]] <- olim[1]
-      yi[yi > olim[2]] <- olim[2]
-      pred[pred < olim[1]] <- olim[1]
-      pred[pred > olim[2]] <- olim[2]
-      ci.lb[ci.lb < olim[1]] <- olim[1]
-      ci.ub[ci.ub > olim[2]] <- olim[2]
-      pi.lb[pi.lb < olim[1]] <- olim[1]
-      pi.ub[pi.ub > olim[2]] <- olim[2]
+      yi     <- .applyolim(yi, olim)
+      ci.lb  <- .applyolim(ci.lb, olim)
+      ci.ub  <- .applyolim(ci.ub, olim)
+      pred   <- .applyolim(pred, olim)
+      pi.lb  <- .applyolim(pi.lb, olim)
+      pi.ub  <- .applyolim(pi.ub, olim)
    }
 
    ### set default point sizes (if not specified by user)
@@ -625,16 +615,24 @@ lcol, lwd, lty, legend=FALSE, xvals, ...) {
 
    ### y-axis labels (apply transformation to axis labels if requested)
 
-   at.lab <- at
+   if (is.null(ddd$at.lab)) {
 
-   if (is.function(atransf)) {
-      if (is.null(targs)) {
-         at.lab <- fmtx(sapply(at.lab, atransf), digits[[1]], drop0ifint=TRUE)
+      at.lab <- at
+
+      if (is.function(atransf)) {
+         if (is.null(targs)) {
+            at.lab <- fmtx(sapply(at.lab, atransf), digits[[1]], drop0ifint=TRUE)
+         } else {
+            at.lab <- fmtx(sapply(at.lab, atransf, targs), digits[[1]], drop0ifint=TRUE)
+         }
       } else {
-         at.lab <- fmtx(sapply(at.lab, atransf, targs), digits[[1]], drop0ifint=TRUE)
+         at.lab <- fmtx(at.lab, digits[[1]], drop0ifint=TRUE)
       }
+
    } else {
-      at.lab <- fmtx(at.lab, digits[[1]], drop0ifint=TRUE)
+
+      at.lab <- ddd$at.lab
+
    }
 
    ### add y-axis
@@ -791,7 +789,7 @@ lcol, lwd, lty, legend=FALSE, xvals, ...) {
       }
 
       if (length(ltxt) >= 1L)
-         legend(lpos, inset=.01, bg=par("bg"), pch=pch.l, col=col.l, pt.bg=bg.l, lty=lty.l, lwd=lwd.l, text.col=tcol.l, pt.cex=1.5, seg.len=3, legend=ltxt, box.lty=box.lty)
+         legend(lpos, inset=.01, bg=.coladj(par("bg"), dark=0, light=0), pch=pch.l, col=col.l, pt.bg=bg.l, lty=lty.l, lwd=lwd.l, text.col=tcol.l, pt.cex=1.5, seg.len=3, legend=ltxt, box.lty=box.lty)
 
       pch.l  <- NULL
       col.l  <- NULL

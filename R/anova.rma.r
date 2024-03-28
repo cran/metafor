@@ -1,6 +1,6 @@
 anova.rma <- function(object, object2, btt, X, att, Z, rhs, digits, refit=FALSE, ...) {
 
-   mstyle <- .get.mstyle("crayon" %in% .packages())
+   mstyle <- .get.mstyle()
 
    .chkclass(class(object), must="rma", notap=c("rma.mh", "rma.peto"), notav="rma.glmm")
 
@@ -17,17 +17,17 @@ anova.rma <- function(object, object2, btt, X, att, Z, rhs, digits, refit=FALSE,
    if (!is.null(ddd$L))
       X <- ddd$L
 
-   if (is.null(ddd$fixed)) {
-      fixed <- FALSE
-   } else {
-      fixed <- .isTRUE(ddd$fixed)
-   }
+   fixed <- .chkddd(ddd$fixed, FALSE, .isTRUE(ddd$fixed))
 
    if (!missing(att) && !inherits(object, "rma.ls"))
       stop(mstyle$stop("Can only specify 'att' for location-scale models."))
 
    if (!missing(Z) && !inherits(object, "rma.ls"))
       stop(mstyle$stop("Can only specify 'Z' for location-scale models."))
+
+   #mf <- match.call()
+   #if (any(grepl("pairwise(", as.character(mf), fixed=TRUE)))
+   #   try(assign("pairwise", object, envir=.metafor), silent=TRUE)
 
    if (missing(object2)) {
 
@@ -215,8 +215,8 @@ anova.rma <- function(object, object2, btt, X, att, Z, rhs, digits, refit=FALSE,
 
             ### omnibus test of all hypotheses (only possible if 'Z' is of full rank)
 
-            QS  <- NA_real_ ### need this in case QS cannot be calculated below
-            QSp <- NA_real_ ### need this in case QSp cannot be calculated below
+            QS  <- NA_real_ # need this in case QS cannot be calculated below
+            QSp <- NA_real_ # need this in case QSp cannot be calculated below
 
             if (rankMatrix(Z) == m) {
 
@@ -240,24 +240,24 @@ anova.rma <- function(object, object2, btt, X, att, Z, rhs, digits, refit=FALSE,
 
             hyp <- rep("", m)
             for (j in seq_len(m)) {
-               Zj <- round(Z[j,], digits[["est"]]) ### coefficients for the jth contrast
-               sel <- Zj != 0 ### TRUE if coefficient is != 0
-               hyp[j] <- paste(paste(Zj[sel], rownames(x$alpha)[sel], sep="*"), collapse=" + ") ### coefficient*variable + coefficient*variable ...
-               hyp[j] <- gsub("1*", "", hyp[j], fixed=TRUE) ### turn '+1' into '+' and '-1' into '-'
-               hyp[j] <- gsub("+ -", "- ", hyp[j], fixed=TRUE) ### turn '+ -' into '-'
+               Zj <- round(Z[j,], digits[["est"]]) # coefficients for the jth contrast
+               sel <- Zj != 0 # TRUE if coefficient is != 0
+               hyp[j] <- paste(paste(Zj[sel], rownames(x$alpha)[sel], sep="*"), collapse=" + ") # coefficient*variable + coefficient*variable ...
+               hyp[j] <- gsub("1*", "", hyp[j], fixed=TRUE) # turn '+1' into '+' and '-1' into '-'
+               hyp[j] <- gsub("+ -", "- ", hyp[j], fixed=TRUE) # turn '+ -' into '-'
             }
             if (identical(rhs, rep(0,m))) {
-               hyp <- paste0(hyp, " = 0") ### add '= 0' at the right
+               hyp <- paste0(hyp, " = 0") # add '= 0' at the right
             } else {
                if (length(unique(rhs)) == 1L) {
-                  hyp <- paste0(hyp, " = ", round(rhs, digits=digits[["est"]])) ### add '= rhs' at the right
+                  hyp <- paste0(hyp, " = ", round(rhs, digits=digits[["est"]])) # add '= rhs' at the right
                } else {
-                  hyp <- paste0(hyp, " = ", fmtx(rhs, digits=digits[["est"]])) ### add '= rhs' at the right
+                  hyp <- paste0(hyp, " = ", fmtx(rhs, digits=digits[["est"]])) # add '= rhs' at the right
                }
             }
             hyp <- data.frame(hyp, stringsAsFactors=FALSE)
             colnames(hyp) <- ""
-            rownames(hyp) <- paste0(seq_len(m), ":") ### add '1:', '2:', ... as row names
+            rownames(hyp) <- paste0(seq_len(m), ":") # add '1:', '2:', ... as row names
 
             res <- list(QS=QS, QSdf=QSdf, QSp=QSp, hyp=hyp, Za=Za, se=se, zval=zval, pval=pval, k=x$k, q=x$q, m=m, test=x$test, ddf=x$ddf.alpha, digits=digits, type="Wald.Za")
 
@@ -294,7 +294,7 @@ anova.rma <- function(object, object2, btt, X, att, Z, rhs, digits, refit=FALSE,
                ddf <- cs.lc$df
 
                if (!missing(rhs))
-                  warning(mstyle$warning("Cannot use 'rhs' argument for 'robust.rma' objects based on 'clubSandwich'."))
+                  warning(mstyle$warning("Cannot use 'rhs' argument for 'robust.rma' objects based on 'clubSandwich'."), call.=FALSE)
 
                rhs <- rep(0, m)
 
@@ -400,24 +400,24 @@ anova.rma <- function(object, object2, btt, X, att, Z, rhs, digits, refit=FALSE,
 
             hyp <- rep("", m)
             for (j in seq_len(m)) {
-               Xj <- round(X[j,], digits[["est"]]) ### coefficients for the jth contrast
-               sel <- Xj != 0 ### TRUE if coefficient is != 0
-               hyp[j] <- paste(paste(Xj[sel], rownames(x$beta)[sel], sep="*"), collapse=" + ") ### coefficient*variable + coefficient*variable ...
-               hyp[j] <- gsub("1*", "", hyp[j], fixed=TRUE) ### turn '+1' into '+' and '-1' into '-'
-               hyp[j] <- gsub("+ -", "- ", hyp[j], fixed=TRUE) ### turn '+ -' into '-'
+               Xj <- round(X[j,], digits[["est"]]) # coefficients for the jth contrast
+               sel <- Xj != 0 # TRUE if coefficient is != 0
+               hyp[j] <- paste(paste(Xj[sel], rownames(x$beta)[sel], sep="*"), collapse=" + ") # coefficient*variable + coefficient*variable ...
+               hyp[j] <- gsub("1*", "", hyp[j], fixed=TRUE) # turn '+1' into '+' and '-1' into '-'
+               hyp[j] <- gsub("+ -", "- ", hyp[j], fixed=TRUE) # turn '+ -' into '-'
             }
             if (identical(rhs, rep(0,m))) {
-               hyp <- paste0(hyp, " = 0") ### add '= 0' at the right
+               hyp <- paste0(hyp, " = 0") # add '= 0' at the right
             } else {
                if (length(unique(rhs)) == 1L) {
-                  hyp <- paste0(hyp, " = ", round(rhs, digits=digits[["est"]])) ### add '= rhs' at the right
+                  hyp <- paste0(hyp, " = ", round(rhs, digits=digits[["est"]])) # add '= rhs' at the right
                } else {
-                  hyp <- paste0(hyp, " = ", fmtx(rhs,  digits=digits[["est"]])) ### add '= rhs' at the right
+                  hyp <- paste0(hyp, " = ", fmtx(rhs,  digits=digits[["est"]])) # add '= rhs' at the right
                }
             }
             hyp <- data.frame(hyp, stringsAsFactors=FALSE)
             colnames(hyp) <- ""
-            rownames(hyp) <- paste0(seq_len(m), ":") ### add '1:', '2:', ... as row names
+            rownames(hyp) <- paste0(seq_len(m), ":") # add '1:', '2:', ... as row names
 
             res <- list(QM=QM, QMdf=QMdf, QMp=QMp, hyp=hyp, Xb=Xb, se=se, zval=zval, pval=pval, k=x$k, p=x$p, m=m, test=x$test, ddf=ddf, digits=digits, type="Wald.Xb")
 
@@ -442,11 +442,7 @@ anova.rma <- function(object, object2, btt, X, att, Z, rhs, digits, refit=FALSE,
       if (!identical(class(object), class(object2)))
          stop(mstyle$stop("Class of 'object' must be the same as class of 'object2'."))
 
-      if (!is.null(ddd$test)) {
-         test <- match.arg(ddd$test, c("LRT", "Wald"))
-      } else {
-         test <- "LRT"
-      }
+      test <- .chkddd(ddd$test, "LRT", match.arg(ddd$test, c("LRT", "Wald")))
 
       ### assume 'object' is the full model and 'object2' the reduced model
 
@@ -504,7 +500,7 @@ anova.rma <- function(object, object2, btt, X, att, Z, rhs, digits, refit=FALSE,
       ### for LRTs, using anything besides ML/REML is strictly speaking incorrect
 
       if (test == "LRT" && (!is.element(model.f$method, c("FE","EE","CE","ML","REML")) || !is.element(model.r$method, c("FE","EE","CE","ML","REML"))))
-         warning(mstyle$warning("LRTs should be based on ML/REML estimation."))
+         warning(mstyle$warning("LRTs should be based on ML/REML estimation."), call.=FALSE)
 
       ### for LRTs based on REML estimation, check if fixed effects differ
       if (test == "LRT" && model.f$method == "REML" && (!identical(model.f$X, model.r$X))) {

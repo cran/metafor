@@ -4,7 +4,7 @@ plot.permutest.rma.uni <- function(x, beta, alpha, QM=FALSE, QS=FALSE,
 
    #########################################################################
 
-   mstyle <- .get.mstyle("crayon" %in% .packages())
+   mstyle <- .get.mstyle()
 
    .chkclass(class(x), must="permutest.rma.uni")
 
@@ -27,23 +27,9 @@ plot.permutest.rma.uni <- function(x, beta, alpha, QM=FALSE, QS=FALSE,
 
    ddd <- list(...)
 
-   if (is.null(ddd$alternative)) {
-      alternative <- x$alternative
-   } else {
-      alternative <- match.arg(ddd$alternative, c("two.sided", "less", "greater"))
-   }
-
-   if (is.null(ddd$p2defn)) {
-      p2defn <- x$p2defn
-   } else {
-      p2defn <- match.arg(ddd$p2defn, c("abs", "px2"))
-   }
-
-   if (is.null(ddd$stat)) {
-      stat <- x$stat
-   } else {
-      stat <- match.arg(ddd$stat, c("test", "coef"))
-   }
+   alternative <- .chkddd(ddd$alternative, x$alternative, match.arg(ddd$alternative, c("two.sided", "less", "greater")))
+   p2defn      <- .chkddd(ddd$p2defn,      x$p2defn,      match.arg(ddd$p2defn, c("abs", "px2")))
+   stat        <- .chkddd(ddd$stat,        x$stat,        match.arg(ddd$stat, c("test", "coef")))
 
    ### check trim
 
@@ -177,7 +163,7 @@ plot.permutest.rma.uni <- function(x, beta, alpha, QM=FALSE, QS=FALSE,
          ltys  <- ltys[lwds > 0]
          #pchs  <- pchs[lwds > 0]
          lwds  <- lwds[lwds > 0]
-         legend(lpos, inset=.01, bg=par("bg"), lwd=lwds, col=lcols, lty=ltys, legend=ltxt)
+         legend(lpos, inset=.01, bg=.coladj(par("bg"), dark=0, light=0), lwd=lwds, col=lcols, lty=ltys, legend=ltxt)
 
       }
 

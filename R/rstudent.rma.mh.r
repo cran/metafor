@@ -1,6 +1,6 @@
 rstudent.rma.mh <- function(model, digits, progbar=FALSE, ...) {
 
-   mstyle <- .get.mstyle("crayon" %in% .packages())
+   mstyle <- .get.mstyle()
 
    .chkclass(class(model), must="rma.mh")
 
@@ -68,7 +68,7 @@ rstudent.rma.mh <- function(model, digits, progbar=FALSE, ...) {
 
    resid <- x$yi.f - delpred
    resid[abs(resid) < 100 * .Machine$double.eps] <- 0
-   #resid[abs(resid) < 100 * .Machine$double.eps * median(abs(resid), na.rm=TRUE)] <- 0 ### see lm.influence
+   #resid[abs(resid) < 100 * .Machine$double.eps * median(abs(resid), na.rm=TRUE)] <- 0 # see lm.influence
    seresid <- sqrt(x$vi.f + vdelpred)
    stresid <- resid / seresid
 

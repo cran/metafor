@@ -2,7 +2,7 @@ conv.fivenum <- function(min, q1, median, q3, max, n, data, include,
                          method="default", dist="norm", transf=TRUE, test=TRUE,
                          var.names=c("mean","sd"), append=TRUE, replace="ifna", ...) {
 
-   mstyle <- .get.mstyle("crayon" %in% .packages())
+   mstyle <- .get.mstyle()
 
    if (missing(min) && missing(q1) && missing(median) && missing(q3) && missing(max))
       stop(mstyle$stop("Must specify at least some of these arguments: 'min', 'q1', 'median', 'q3', 'max'."))
@@ -23,11 +23,7 @@ conv.fivenum <- function(min, q1, median, q3, max, n, data, include,
 
    .chkdots(ddd, c("verbose", "seed"))
 
-   if (is.null(ddd$verbose)) {
-      verbose <- FALSE
-   } else {
-      verbose <- .isTRUE(ddd$verbose)
-   }
+   verbose <- .chkddd(ddd$verbose, FALSE, .isTRUE(ddd$verbose))
 
    if (!is.null(ddd$seed))
       set.seed(ddd$seed)

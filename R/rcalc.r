@@ -1,6 +1,6 @@
 rcalc <- function(x, ni, data, rtoz=FALSE, nfun="min", sparse=FALSE, ...) {
 
-   mstyle <- .get.mstyle("crayon" %in% .packages())
+   mstyle <- .get.mstyle()
 
    if (!(inherits(x, "formula") || inherits(x, "matrix") || inherits(x, "list")))
       stop(mstyle$stop("Argument 'x' must be either a formula, a matrix, or a list of matrices."))
@@ -17,17 +17,8 @@ rcalc <- function(x, ni, data, rtoz=FALSE, nfun="min", sparse=FALSE, ...) {
 
    .chkdots(ddd, c("upper", "simplify", "rowid", "vnames", "noid"))
 
-   if (is.null(ddd$upper)) {
-      upper <- FALSE
-   } else {
-      upper <- ddd$upper
-   }
-
-   if (is.null(ddd$simplify)) {
-      simplify <- TRUE
-   } else {
-      simplify <- ddd$simplify
-   }
+   upper    <- .chkddd(ddd$upper,    FALSE)
+   simplify <- .chkddd(ddd$simplify, TRUE)
 
    na.act <- getOption("na.action")
    on.exit(options(na.action=na.act), add=TRUE)

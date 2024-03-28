@@ -1,6 +1,6 @@
 confint.rma.peto <- function(object, parm, level, digits, transf, targs, ...) {
 
-   mstyle <- .get.mstyle("crayon" %in% .packages())
+   mstyle <- .get.mstyle()
 
    .chkclass(class(object), must="rma.peto")
 
@@ -42,7 +42,7 @@ confint.rma.peto <- function(object, parm, level, digits, transf, targs, ...) {
 
    ### if requested, apply transformation function
 
-   if (.isTRUE(transf)) ### if transf=TRUE, apply exp transformation to ORs
+   if (.isTRUE(transf)) # if transf=TRUE, apply exp transformation to ORs
       transf <- exp
 
    if (is.function(transf)) {

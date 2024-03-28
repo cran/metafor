@@ -1,3 +1,33 @@
+# metafor 4.6-0 (2024-03-28)
+
+- the `steps` argument in the various `profile()` functions can now also be a numeric vector to specify for which parameter values the likelihood should be evaluated
+
+- a few minor fixes to the dynamic theming of plots based on the foreground and background colors of the plotting device
+
+- slightly improved flexibility for setting package options
+
+- new measures added to `escalc()`: `"SMN"` for the single-group standardized mean / single-group standardized mean difference, `"SMCRP"` for the standardized mean change using raw score standardization with pooled standard deviations, and `"SMCRPH"` for the standardized mean change using raw score standardization with pooled standard deviations and heteroscedastic population variances at the two measurement occasions
+
+- calculation of the sampling variances for measures `"SMDH"`, `"SMD1H"`, and `"SMCRH"` was slightly adjusted for consistency
+
+- in `plot.gosh.rma()`, can also set `het="tau"` (to plot the square root of tau^2 as the measure of heterogeneity)
+
+- in the various `forest()` functions, argument `ylim` can now only be a single value to specify the lower bound (while the upper bound is still set automatically)
+
+- in `forest()` and `regplot()`, observation limits set via `olim` are now properly applied to all elements
+
+- various internal improvements to `selmodel()`
+
+- `selmodel()` no longer stops with an error when one or more intervals defined by the `steps` argument do not contain any observed p-values (instead a warning is issued and model fitting proceeds, but may fail)
+
+- added `decreasing` argument to `selmodel()` for enforcing that the delta estimates must be a monotonically decreasing function of the p-values in the step function model
+
+- added the undocumented argument `pval` to `selmodel()` for passing p-values directly to the function (doing this is highly experimental)
+
+- some internal refactoring of the code
+
+- improved the documentation a bit
+
 # metafor 4.4-0 (2023-09-27)
 
 - added `getmfopt()` and `setmfopt()` functions for getting and setting package options and made some of the options more flexible

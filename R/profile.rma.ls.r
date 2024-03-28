@@ -1,14 +1,27 @@
 profile.rma.ls <- function(fitted, alpha,
-   xlim, ylim, steps=20, lltol=1e-03, progbar=TRUE, parallel="no", ncpus=1, cl, plot=TRUE, pch=19, refline=TRUE, cline=FALSE, ...) {
+   xlim, ylim, steps=20, lltol=1e-03, progbar=TRUE, parallel="no", ncpus=1, cl, plot=TRUE, ...) {
 
-   mstyle <- .get.mstyle("crayon" %in% .packages())
+   mstyle <- .get.mstyle()
 
    .chkclass(class(fitted), must="rma.ls")
 
-   if (steps < 2)
-      stop(mstyle$stop("Argument 'steps' must be >= 2."))
-
    x <- fitted
+
+   if (x$optbeta)
+      stop(mstyle$stop("Profiling not yet implemented for models fitted with 'optbeta=TRUE'."))
+
+   if (anyNA(steps))
+      stop(mstyle$stop("No missing values allowed in 'steps' argument."))
+
+   if (length(steps) >= 2L) {
+      if (missing(xlim))
+         xlim <- range(steps)
+      stepseq <- TRUE
+   } else {
+      if (steps < 2)
+         stop(mstyle$stop("Argument 'steps' must be >= 2."))
+      stepseq <- FALSE
+   }
 
    parallel <- match.arg(parallel, c("no", "snow", "multicore"))
 
@@ -38,9 +51,6 @@ profile.rma.ls <- function(fitted, alpha,
 
    }
 
-   if (x$optbeta)
-      stop(mstyle$stop("Profiling not yet implemented for 'optbeta=TRUE'."))
-
    if (!progbar) {
       pbo <- pbapply::pboptions(type="none")
       on.exit(pbapply::pboptions(pbo), add=TRUE)
@@ -67,7 +77,7 @@ profile.rma.ls <- function(fitted, alpha,
          stop(mstyle$stop("No components in the model for which a profile likelihood can be constructed."))
 
       if (plot) {
-         if (dev.cur() == 1) {
+         if (dev.cur() == 1L) { # if only the 'null device' is currently open, set mfrow
             par(mfrow=n2mfrow(comps))
             #on.exit(par(mfrow=c(1,1)), add=TRUE)
          }
@@ -106,6 +116,11 @@ profile.rma.ls <- function(fitted, alpha,
 
    }
 
+   ### round and take unique values
+
+   if (!missing(alpha) && is.numeric(alpha))
+      alpha <- unique(round(alpha))
+
    ### check if model actually contains (at least one) such a component and that it was actually estimated
 
    if (!missing(alpha) && all(x$alpha.fix))
@@ -143,7 +158,9 @@ profile.rma.ls <- function(fitted, alpha,
 
    #return(list(comp=comp, vc=vc))
 
-   if (missing(xlim)) {
+   #########################################################################
+
+   if (missing(xlim) || is.null(xlim)) {
 
       ### if the user has not specified xlim, set it automatically
 
@@ -152,8 +169,8 @@ profile.rma.ls <- function(fitted, alpha,
             vc.lb <- vc - 4 * abs(vc)
             vc.ub <- vc + 4 * abs(vc)
          } else {
-            vc.lb <- vc - qnorm(.995) * x$se.alpha[alpha]
-            vc.ub <- vc + qnorm(.995) * x$se.alpha[alpha]
+            vc.lb <- vc - qnorm(0.995) * x$se.alpha[alpha]
+            vc.ub <- vc + qnorm(0.995) * x$se.alpha[alpha]
          }
       }
 
@@ -161,6 +178,8 @@ profile.rma.ls <- function(fitted, alpha,
 
       if (is.na(vc.lb) || is.na(vc.ub))
          stop(mstyle$stop("Cannot set 'xlim' automatically. Please set this argument manually."))
+
+      ### apply alpha.min/alpha.max limits (if they exist) on vc.lb/vc.ub as well
 
       if (!is.null(x$control$alpha.min)) {
          if (length(x$control$alpha.min) == 1L)
@@ -184,7 +203,13 @@ profile.rma.ls <- function(fitted, alpha,
 
    }
 
-   vcs <- seq(xlim[1], xlim[2], length.out=steps)
+   if (stepseq) {
+      vcs <- steps
+   } else {
+      vcs <- seq(xlim[1], xlim[2], length.out=steps)
+   }
+
+   #return(vcs)
 
    if (length(vcs) <= 1L)
       stop(mstyle$stop("Cannot set 'xlim' automatically. Please set this argument manually."))
@@ -204,25 +229,19 @@ profile.rma.ls <- function(fitted, alpha,
       if (.isTRUE(ddd$LB)) {
          res <- parallel::parLapplyLB(cl, vcs, .profile.rma.ls, obj=x, comp=comp, alpha.pos=alpha.pos, parallel=parallel, profile=TRUE)
          #res <- parallel::clusterApplyLB(cl, vcs, .profile.rma.ls, obj=x, comp=comp, alpha.pos=alpha.pos, parallel=parallel, profile=TRUE)
+         #res <- parallel::clusterMap(cl, .profile.rma.ls, vcs, MoreArgs=list(obj=x, comp=comp, alpha.pos=alpha.pos, parallel=parallel, profile=TRUE), .scheduling = "dynamic")
       } else {
          res <- pbapply::pblapply(vcs, .profile.rma.ls, obj=x, comp=comp, alpha.pos=alpha.pos, parallel=parallel, profile=TRUE, cl=cl)
          #res <- parallel::parLapply(cl, vcs, .profile.rma.ls, obj=x, comp=comp, alpha.pos=alpha.pos, parallel=parallel, profile=TRUE)
          #res <- parallel::clusterApply(cl, vcs, .profile.rma.ls, obj=x, comp=comp, alpha.pos=alpha.pos, parallel=parallel, profile=TRUE)
+         #res <- parallel::clusterMap(cl, .profile.rma.ls, vcs, MoreArgs=list(obj=x, comp=comp, alpha.pos=alpha.pos, parallel=parallel, profile=TRUE))
       }
    }
 
-   lls <- sapply(res, function(x) x$ll)
+   lls   <- sapply(res, function(x) x$ll)
    beta  <- do.call(rbind, lapply(res, function(x) t(x$beta)))
    ci.lb <- do.call(rbind, lapply(res, function(x) t(x$ci.lb)))
    ci.ub <- do.call(rbind, lapply(res, function(x) t(x$ci.ub)))
-
-   #########################################################################
-
-   if (any(lls >= logLik(x) + lltol, na.rm=TRUE))
-      warning(mstyle$warning("At least one profiled log-likelihood value is larger than the log-likelihood of the fitted model."), call.=FALSE)
-
-   if (all(is.na(lls)))
-      warning(mstyle$warning("All model fits failed. Cannot draw profile likelihood plot."), call.=FALSE)
 
    beta  <- data.frame(beta)
    ci.lb <- data.frame(ci.lb)
@@ -231,18 +250,35 @@ profile.rma.ls <- function(fitted, alpha,
    names(ci.lb) <- rownames(x$beta)
    names(ci.ub) <- rownames(x$beta)
 
+   #########################################################################
+
+   maxll <- c(logLik(x))
+
+   if (any(lls >= maxll + lltol, na.rm=TRUE))
+      warning(mstyle$warning("At least one profiled log-likelihood value is larger than the log-likelihood of the fitted model."), call.=FALSE)
+
+   if (all(is.na(lls)))
+      warning(mstyle$warning("All model fits failed. Cannot draw profile likelihood plot."), call.=FALSE)
+
+   if (.isTRUE(ddd$exp)) {
+      lls <- exp(lls)
+      maxll <- exp(maxll)
+   }
+
    if (missing(ylim)) {
 
       if (any(is.finite(lls))) {
          if (xlim[1] <= vc && xlim[2] >= vc) {
-            ylim <- range(c(logLik(x),lls[is.finite(lls)]), na.rm=TRUE)
+            ylim <- range(c(maxll,lls[is.finite(lls)]), na.rm=TRUE)
          } else {
-            ylim <- range(lls[is.finite(lls)])
+            ylim <- range(lls[is.finite(lls)], na.rm=TRUE)
          }
       } else {
-         ylim <- rep(logLik(x), 2L)
+         ylim <- rep(maxll, 2L)
       }
-      ylim <- ylim + c(-0.1, 0.1)
+
+      if (!.isTRUE(ddd$exp))
+         ylim <- ylim + c(-0.1, 0.1)
 
    } else {
 
@@ -255,24 +291,23 @@ profile.rma.ls <- function(fitted, alpha,
 
    if (comp == "alpha") {
       if (x$alphas == 1L) {
-         xlab <- expression(paste(alpha, " Value"))
+         xlab  <- expression(paste(alpha, " Value"))
          title <- expression(paste("Profile Plot for ", alpha))
       } else {
          if (.isTRUE(ddd$sub1))
             alpha <- alpha - 1
-         xlab <- bquote(alpha[.(alpha)] ~ "Value")
+         xlab  <- bquote(alpha[.(alpha)] ~ "Value")
          title <- bquote("Profile Plot for" ~ alpha[.(alpha)])
       }
    }
 
-   sav <- list(vc=vcs, ll=lls, beta=beta, ci.lb=ci.lb, ci.ub=ci.ub, comps=1, ylim=ylim, method=x$method, vc=vc, maxll=logLik(x), xlab=xlab, title=title)
-   names(sav)[1] <- "alpha"
+   sav <- list(alpha=vcs, ll=lls, beta=beta, ci.lb=ci.lb, ci.ub=ci.ub, comps=1, ylim=ylim, method=x$method, vc=vc, maxll=maxll, xlab=xlab, title=title, exp=ddd$exp)
    class(sav) <- "profile.rma"
 
    #########################################################################
 
    if (plot)
-      plot(sav, pch=pch, refline=refline, cline=cline, ...)
+      plot(sav, ...)
 
    #########################################################################
 

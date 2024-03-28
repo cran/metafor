@@ -1,9 +1,9 @@
 labbe.rma <- function(x, xlim, ylim, xlab, ylab,
 add=x$add, to=x$to, transf, targs, pch=21, psize, plim=c(0.5,3.5), col, bg, grid=FALSE, lty, ...) {
 
-   mstyle <- .get.mstyle("crayon" %in% .packages())
+   mstyle <- .get.mstyle()
 
-   .chkclass(class(x), must="rma", notav=c("rma.ls", "rma.gen", "rma.uni.selmodel"))
+   .chkclass(class(x), must="rma", notav=c("rma.mv", "rma.ls", "rma.gen", "rma.uni.selmodel"))
 
    if (!x$int.only)
       stop(mstyle$stop("L'Abbe plots can only be drawn for models without moderators."))
@@ -52,8 +52,8 @@ add=x$add, to=x$to, transf, targs, pch=21, psize, plim=c(0.5,3.5), col, bg, grid
 
    ### set defaults or get addyi and addvi arguments
 
-   addyi <- ifelse(is.null(ddd$addyi), TRUE, ddd$addyi)
-   addvi <- ifelse(is.null(ddd$addvi), TRUE, ddd$addvi)
+   addyi <- .chkddd(ddd$addyi, TRUE)
+   addvi <- .chkddd(ddd$addvi, TRUE)
 
    ### grid argument can either be a logical or a color
 
@@ -67,9 +67,9 @@ add=x$add, to=x$to, transf, targs, pch=21, psize, plim=c(0.5,3.5), col, bg, grid
 
    #########################################################################
 
-   ### note: 'pch', 'psize', 'col', and 'bg' must be of the same length as the original data passed to rma()
-   ###       so we have to apply the same subsetting (if necessary) and removing of NAs as done during the
-   ###       model fitting (note: NAs are removed further below)
+   ### note: pch, psize, col, and bg (if vectors) must be of the same length as the original dataset
+   ###       so we have to apply the same subsetting (if necessary) and removing of NAs as was
+   ###       done during the model fitting (note: NAs are removed further below)
 
    if (length(pch) == 1L)
       pch <- rep(pch, x$k.all)
@@ -137,7 +137,7 @@ add=x$add, to=x$to, transf, targs, pch=21, psize, plim=c(0.5,3.5), col, bg, grid
    t1i[yi.is.na] <- NA_real_
    t2i[yi.is.na] <- NA_real_
 
-   options(na.action = "na.pass") ### to make sure dat.t and dat.c are of the same length
+   options(na.action = "na.pass") # to make sure dat.t and dat.c are of the same length
 
    measure <- switch(x$measure, "RR"="PLN", "OR"="PLO", "RD"="PR", "AS"="PAS", "IRR"="IRLN", "IRD"="IR", "IRSD"="IRS")
 

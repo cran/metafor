@@ -2,13 +2,13 @@
 
 .funnel.legend <- function(legend, level, shade, back, yaxis, trimfill, pch, col, bg, pch.fill, pch.vec, col.vec, bg.vec, colci) {
 
-   mstyle <- .get.mstyle("crayon" %in% .packages())
+   mstyle <- .get.mstyle()
 
    lopts <- list(x         = "topright",
                  y         = NULL,
                  inset     = 0.01,
                  bty       = "o",
-                 bg        = .coladj(par("bg","fg"), dark=0.00, light=0.00), # avoids a transparent background
+                 bg        = .coladj(par("bg","fg"), dark=c(0,-0.9), light=c(0,0.9)),
                  studies   = TRUE,
                  show      = "pvals",
                  cex       = c(1,2,1),

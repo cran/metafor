@@ -9,7 +9,7 @@
 
 confint.rma.uni <- function(object, parm, level, fixed=FALSE, random=TRUE, type, digits, transf, targs, verbose=FALSE, control, ...) {
 
-   mstyle <- .get.mstyle("crayon" %in% .packages())
+   mstyle <- .get.mstyle()
 
    .chkclass(class(object), must="rma.uni", notav=c("robust.rma", "rma.ls", "rma.gen"))
 
@@ -47,8 +47,6 @@ confint.rma.uni <- function(object, parm, level, fixed=FALSE, random=TRUE, type,
    if (!fixed && !random)
       stop(mstyle$stop("At least one of the arguments 'fixed' and 'random' must be TRUE."))
 
-   level <- .level(level)
-
    ddd <- list(...)
 
    .chkdots(ddd, c("time", "xlim", "extint"))
@@ -57,8 +55,10 @@ confint.rma.uni <- function(object, parm, level, fixed=FALSE, random=TRUE, type,
       time.start <- proc.time()
 
    if (!is.null(ddd$xlim)) {
+      if (length(ddd$xlim) == 1L)
+         ddd$xlim <- c(0, ddd$xlim)
       if (length(ddd$xlim) != 2L)
-         stop(mstyle$stop("Argument 'xlim' should be a vector of length 2."))
+         stop(mstyle$stop("Argument 'xlim' should be a vector of length 1 or 2."))
       control$tau2.min <- ddd$xlim[1]
       control$tau2.max <- ddd$xlim[2]
    }
@@ -74,6 +74,8 @@ confint.rma.uni <- function(object, parm, level, fixed=FALSE, random=TRUE, type,
       if (!is.element(type, c("qp","genq","pl","ht","wald","wald.log","wald.sqrt")))
          stop(mstyle$stop("Unknown 'type' specified."))
    }
+
+   level <- .level(level, stopon100=(type=="pl" && .isTRUE(ddd$extint)))
 
    #########################################################################
    #########################################################################
@@ -124,11 +126,11 @@ confint.rma.uni <- function(object, parm, level, fixed=FALSE, random=TRUE, type,
 
       tau2.lb <- NA_real_
       tau2.ub <- NA_real_
-      ci.null <- FALSE ### logical if CI is a null set
-      lb.conv <- FALSE ### logical if search converged for lower bound (LB)
-      ub.conv <- FALSE ### logical if search converged for upper bound (UB)
-      lb.sign <- ""    ### for sign in case LB must be below tau2.min ("<") or above tau2.max (">")
-      ub.sign <- ""    ### for sign in case UB must be below tau2.min ("<") or above tau2.max (">")
+      ci.null <- FALSE # logical if CI is a null set
+      lb.conv <- FALSE # logical if search converged for lower bound (LB)
+      ub.conv <- FALSE # logical if search converged for upper bound (UB)
+      lb.sign <- ""    # for sign in case LB must be below tau2.min ("<") or above tau2.max (">")
+      ub.sign <- ""    # for sign in case UB must be below tau2.min ("<") or above tau2.max (">")
 
       ######################################################################
 

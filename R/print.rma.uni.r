@@ -1,6 +1,6 @@
 print.rma.uni <- function(x, digits, showfit=FALSE, signif.stars=getOption("show.signif.stars"), signif.legend=signif.stars, ...) {
 
-   mstyle <- .get.mstyle("crayon" %in% .packages())
+   mstyle <- .get.mstyle()
 
    .chkclass(class(x), must="rma.uni")
 
@@ -133,7 +133,7 @@ print.rma.uni <- function(x, digits, showfit=FALSE, signif.stars=getOption("show
             cat(mstyle$result(fmtx(x$I2, 2, postfix="%")))
             cat("\n")
          }
-         if (!is.na(x$H2)) {
+         if (!is.na(x$H2) && !is.infinite(x$H2)) {
             cat(mstyle$text("H^2 (total variability / sampling variability):  "))
             cat(mstyle$result(fmtx(x$H2, 2)))
             cat("\n")
@@ -144,7 +144,7 @@ print.rma.uni <- function(x, digits, showfit=FALSE, signif.stars=getOption("show
             cat(mstyle$result(fmtx(x$I2, 2, postfix="%")))
             cat("\n")
          }
-         if (!is.na(x$H2)) {
+         if (!is.na(x$H2) && !is.infinite(x$H2)) {
             cat(mstyle$text("H^2 (unaccounted variability / sampling variability):   "))
             cat(mstyle$result(fmtx(x$H2, 2)))
             cat("\n")
@@ -339,7 +339,7 @@ print.rma.uni <- function(x, digits, showfit=FALSE, signif.stars=getOption("show
 
       res.table <- data.frame(estimate=fmtx(c(x$delta), digits[["est"]]), se=fmtx(x$se.delta, digits[["se"]]), zval=fmtx(x$zval.delta, digits[["test"]]), pval=fmtp(x$pval.delta, digits[["pval"]]), ci.lb=fmtx(x$ci.lb.delta, digits[["ci"]]), ci.ub=fmtx(x$ci.ub.delta, digits[["ci"]]), stringsAsFactors=FALSE)
 
-      if (x$type == "stepfun") {
+      if (is.element(x$type, c("stepfun","stepcon"))) {
          rownames(res.table) <- rownames(x$ptable)
          res.table <- cbind(k=x$ptable$k, res.table)
       } else {

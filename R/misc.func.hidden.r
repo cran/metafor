@@ -4,18 +4,18 @@
 
 .set.btt <- function(btt, p, int.incl, Xnames, fixed=FALSE) {
 
-   mstyle <- .get.mstyle("crayon" %in% .packages())
+   mstyle <- .get.mstyle()
 
    if (missing(btt) || is.null(btt)) {
 
-      if (p > 1L) {                       ### if the model matrix has more than one column
+      if (p > 1L) {                       # if the model matrix has more than one column
          if (int.incl) {
-            btt <- seq.int(from=2, to=p)     ### and the model has an intercept term, test all coefficients except the intercept
+            btt <- seq.int(from=2, to=p)     # and the model has an intercept term, test all coefficients except the intercept
          } else {
-            btt <- seq_len(p)                ### and the model does not have an intercept term, test all coefficients
+            btt <- seq_len(p)                # and the model does not have an intercept term, test all coefficients
          }
       } else {
-         btt <- 1L                        ### if the model matrix has a single column, test that single coefficient
+         btt <- 1L                        # if the model matrix has a single column, test that single coefficient
       }
 
    } else {
@@ -96,38 +96,83 @@
 
 ### pairwise sorting of the elements of two vectors
 
-.psort <- function(x,y) {
+#.psort.old <- function(x, y) {
+#
+#   if (is.null(x) || length(x) == 0L) # need to catch this
+#      return(NULL)
+#
+#   if (missing(y)) {
+#      if (is.matrix(x)) {
+#         xy <- x
+#      } else {
+#         xy <- rbind(x) # in case x is just a vector
+#      }
+#   } else {
+#      xy <- cbind(x,y)
+#   }
+#
+#   n <- nrow(xy)
+#
+#   for (i in seq_len(n)) {
+#      if (anyNA(xy[i,]))
+#         next
+#      xy[i,] <- sort(xy[i,])
+#   }
+#
+#   colnames(xy) <- NULL
+#
+#   return(xy)
+#
+#}
 
-   ### t(apply(xy, 1, sort)) would be okay, but problematic if there are NAs;
-   ### either they are removed completely (na.last=NA) or they are always put
-   ### first/last (na.last=FALSE/TRUE); but we just want to leave the NAs in
-   ### their position!
+.psort <- function(x, y, as.list=FALSE) {
 
-   if (is.null(x) || length(x) == 0L) ### need to catch this
+   # simpler / vectorized version that also deals with x and y being matrices
+   # (of the same dimensions) for elementwise swapping of pairs as needed
+
+   # t(apply(xy, 1, sort)) would be okay, but problematic if there are NAs;
+   # either they are removed completely (na.last=NA) or they are always put
+   # first/last (na.last=FALSE/TRUE); but we just want to leave the NAs in
+   # their position!
+
+   if (is.null(x) || length(x) == 0L) # need to catch this
       return(NULL)
 
    if (missing(y)) {
       if (is.matrix(x)) {
-         xy <- x
+         y <- x[,2]
+         x <- x[,1]
       } else {
-         xy <- rbind(x) ### in case x is just a vector
+         y <- x[2]
+         x <- x[1]
       }
+   }
+
+   flip <- x > y
+   flip[is.na(flip)] <- FALSE
+
+   x.flip <- x
+   y.flip <- y
+
+   x.flip[flip] <- y[flip]
+   y.flip[flip] <- x[flip]
+
+   if (as.list) {
+      return(list(x=x.flip, y=y.flip))
    } else {
-      xy <- cbind(x,y)
+      return(cbind(x.flip, y.flip))
    }
 
-   n <- nrow(xy)
+}
 
-   for (i in seq_len(n)) {
-      if (anyNA(xy[i,]))
-         next
-      xy[i,] <- sort(xy[i,])
-   }
+############################################################################
 
-   colnames(xy) <- NULL
+### function for applying observation limits
 
-   return(xy)
-
+.applyolim <- function(x, olim) {
+   x[x < olim[1]] <- olim[1]
+   x[x > olim[2]] <- olim[2]
+   return(x)
 }
 
 ############################################################################
@@ -192,6 +237,35 @@
    is.numeric(x)
 }
 
+### sapply()-like function but for matrices that always preserves the matrix dimensions (used in traceplot.rma.uni())
+
+.matapply <- function(x, FUN, targs=NULL) {
+   if (is.null(x))
+      return(NULL)
+   if (is.null(targs)) {
+      x[] <- sapply(x, FUN)
+   } else {
+      x[] <- sapply(x, FUN, targs)
+   }
+   return(x)
+}
+
+### check if ddd element is NULL; if so, return ifnull, otherwise the ddd element or ifnot
+
+.chkddd <- function(x, ifnull=NULL, ifnot=NULL) {
+
+   if (is.null(x)) {
+      return(ifnull)
+   } else {
+      if (is.null(ifnot)) {
+         return(x)
+      } else {
+         return(ifnot)
+      }
+   }
+
+}
+
 ############################################################################
 
 ### function to format p-values (no longer used; use fmtp() instead)
@@ -225,17 +299,21 @@
 
 ### function to handle 'level' argument
 
-.level <- function(level, allow.vector=FALSE) {
+.level <- function(level, allow.vector=FALSE, argname="level", stopon100=FALSE) {
 
-   if (!allow.vector && length(level) != 1L) {
-      mstyle <- .get.mstyle("crayon" %in% .packages())
-      stop(mstyle$stop("Argument 'level' must specify a single value."), call.=FALSE)
-   }
+   mstyle <- .get.mstyle()
 
-   if (!is.numeric(level)) {
-      mstyle <- .get.mstyle("crayon" %in% .packages())
-      stop(mstyle$stop("The 'level' argument must be numeric."), call.=FALSE)
-   }
+   if (any(level > 100) || any(level < 0))
+      stop(mstyle$stop(paste0("Argument '", argname, "' must be between 0 and 100.")), call.=FALSE)
+
+   if (isTRUE(stopon100) && any(level==100))
+      stop(mstyle$stop(paste0("Argument '", argname, "' cannot be equal to 100.")), call.=FALSE)
+
+   if (!allow.vector && length(level) != 1L)
+      stop(mstyle$stop(paste0("Argument '", argname, "' must specify a single value.")), call.=FALSE)
+
+   if (!is.numeric(level))
+      stop(mstyle$stop(paste0("The '", argname, "' argument must be numeric.")), call.=FALSE)
 
    ifelse(level == 0, 1, ifelse(level >= 1, (100-level)/100, ifelse(level > .5, 1-level, level)))
 
@@ -334,7 +412,7 @@
 
 .print.time <- function(x) {
 
-   mstyle <- .get.mstyle("crayon" %in% .packages())
+   mstyle <- .get.mstyle()
 
    hours   <- floor(x/60/60)
    minutes <- floor(x/60) - hours*60
@@ -381,7 +459,7 @@
       ddd[okargs[i]] <- NULL
 
    if (length(ddd) > 0L) {
-      mstyle <- .get.mstyle("crayon" %in% .packages())
+      mstyle <- .get.mstyle()
       warning(mstyle$warning(paste0("Extra argument", ifelse(length(ddd) > 1L, "s ", " "), "(", paste0("'", names(ddd), "'", collapse=", "), ") disregarded.")), call.=FALSE)
    }
 
@@ -391,7 +469,7 @@
 
 .getx <- function(x, mf, data, enclos=sys.frame(sys.parent(n=2)), checknull=TRUE, checknumeric=FALSE, default) {
 
-   mstyle <- .get.mstyle("crayon" %in% .packages())
+   mstyle <- .get.mstyle()
 
    mf.getx <- match.call()
    dname <- deparse1(mf.getx[[match("data", names(mf.getx))]])
@@ -477,7 +555,7 @@
 
 .chkclass <- function(class, must, notap, notav, type="Method") {
 
-   mstyle <- .get.mstyle("crayon" %in% .packages())
+   mstyle <- .get.mstyle()
 
    obj <- as.character(match.call()[2])
    obj <- substr(obj, 7, nchar(obj)-1)
@@ -533,8 +611,8 @@
          ok <- TRUE
 
       if (!ok) {
-         mstyle <- .get.mstyle("crayon" %in% .packages())
-         warning(mstyle$warning(paste0("The 'vi' argument is for specifying the sampling variances,\nbut '", x, "' sounds like this variable may contain standard\nerrors (maybe use 'sei=", x, "' instead?).")), call.=FALSE)
+         mstyle <- .get.mstyle()
+         warning(mstyle$warning(paste0("The 'vi' argument should be used to specify sampling variances,\nbut '", x, "' sounds like this variable may contain standard\nerrors (maybe use 'sei=", x, "' instead?).")), call.=FALSE)
          try(assign("runvicheck", FALSE, envir=.metafor), silent=TRUE)
       }
 
@@ -553,7 +631,7 @@
    if (all(ks == 0L)) { # if all elements have length 0 (are NULL), return TRUE
       return(TRUE)
    } else {
-      ks <- ks[ks > 0L]  # keep the non-zero lengths
+      ks <- ks[ks > 0L] # keep the non-zero lengths
       return(length(unique(ks)) == 1L) # check that they are all identical
    }
 
@@ -943,6 +1021,13 @@
             lab <- ifelse(short, lab, "Transformed Mean")
          }
       }
+      if (measure == "SMN") {
+         if (identical(transf.char, "FALSE") && identical(atransf.char, "FALSE")) {
+            lab <- ifelse(short, "Std. Mean", "Standardized Mean")
+         } else {
+            lab <- ifelse(short, lab, "Transformed Standardized Mean")
+         }
+      }
       if (measure == "MNLN") {
          if (identical(transf.char, "FALSE") && identical(atransf.char, "FALSE")) {
             lab <- ifelse(short, "Log[Mean]", "Log Mean")
@@ -953,13 +1038,6 @@
                lab <- ifelse(short, "Mean", "Mean (log scale)")
             if (any(sapply(funlist, identical, transf.char)))
                lab <- ifelse(short, "Mean", "Mean")
-         }
-      }
-      if (measure == "SMN") {
-         if (identical(transf.char, "FALSE") && identical(atransf.char, "FALSE")) {
-            lab <- ifelse(short, "SM", "Standardized Mean")
-         } else {
-            lab <- ifelse(short, lab, "Transformed Standardized Mean")
          }
       }
       if (measure == "CVLN") {
@@ -994,7 +1072,7 @@
             lab <- ifelse(short, lab, "Transformed Mean Change")
          }
       }
-      if (is.element(measure, c("SMCC","SMCR","SMCRH"))) {
+      if (is.element(measure, c("SMCC","SMCR","SMCRH","SMCRP","SMCRPH"))) {
          if (identical(transf.char, "FALSE") && identical(atransf.char, "FALSE")) {
             lab <- ifelse(short, "SMC", "Standardized Mean Change")
          } else {
@@ -1083,6 +1161,26 @@
          }
       }
       ######################################################################
+      if (measure == "HR") {
+         if (identical(transf.char, "FALSE") && identical(atransf.char, "FALSE")) {
+            lab <- ifelse(short, "Log[HR]", "Log Hazard Ratio")
+         } else {
+            lab <- ifelse(short, lab, "Transformed Log Hazard Ratio")
+            funlist <- lapply(list(exp, transf.exp.int), deparse)
+            if (any(sapply(funlist, identical, atransf.char)))
+               lab <- ifelse(short, "HR", "Hazard Ratio (log scale)")
+            if (any(sapply(funlist, identical, transf.char)))
+               lab <- ifelse(short, "HR", "Hazard Ratio")
+         }
+      }
+      if (measure == "HD") {
+         if (identical(transf.char, "FALSE") && identical(atransf.char, "FALSE")) {
+            lab <- ifelse(short, "HD", "Hazard Difference")
+         } else {
+            lab <- ifelse(short, lab, "Transformed Hazard Difference")
+         }
+      }
+      ######################################################################
 
    }
 
@@ -1094,17 +1192,28 @@
 
 ### stuff related to colored/styled output
 
-.get.mstyle <- function(withcrayon) {
+.get.mstyle <- function() {
 
-   if (withcrayon) {
+   crayonloaded <- "crayon" %in% .packages()
+
+   styleopt <- getmfopt("style")
+
+   if (is.logical(styleopt)) {
+
+      if (isTRUE(styleopt)) {
+         styleopt <- NULL
+      } else {
+         crayonloaded <- FALSE
+      }
+   }
+
+   if (crayonloaded) {
 
       if (exists(".mstyle")) {
          .mstyle <- get(".mstyle")
       } else {
          .mstyle <- list()
       }
-
-      styleopt <- getmfopt("style")
 
       if (!is.null(styleopt))
          .mstyle <- styleopt
@@ -1388,7 +1497,7 @@
    if (is.null(x)) # if x is NULL, return x (i.e., NULL)
       return(x)
 
-   mstyle <- .get.mstyle("crayon" %in% .packages())
+   mstyle <- .get.mstyle()
 
    argname <- deparse(substitute(x))
 
@@ -1436,7 +1545,7 @@
    if (is.null(x) || is.null(subset)) # if x or subset is NULL, return x
       return(x)
 
-   mstyle <- .get.mstyle("crayon" %in% .packages())
+   mstyle <- .get.mstyle()
 
    xname <- deparse(substitute(x))
 
@@ -1476,15 +1585,21 @@
 
 ############################################################################
 
-.chkopt <- function(optimizer, optcontrol) {
+.chkopt <- function(optimizer, optcontrol, ineq=FALSE) {
 
-   mstyle <- .get.mstyle("crayon" %in% .packages())
+   mstyle <- .get.mstyle()
 
-   ### set NLOPT_LN_BOBYQA as the default algorithm for nloptr optimizer
+   ### set NLOPT_LN_BOBYQA as the default algorithm for the nloptr optimizer when ineq=FALSE
+   ### and otherwise use NLOPT_LN_COBYLA to allow for nonlinear inequality constraints
    ### and by default use a relative convergence criterion of 1e-8 on the function value
 
-   if (optimizer == "nloptr" && !is.element("algorithm", names(optcontrol)))
-      optcontrol$algorithm <- "NLOPT_LN_BOBYQA"
+   if (optimizer == "nloptr" && !is.element("algorithm", names(optcontrol))) {
+      if (ineq) {
+         optcontrol$algorithm <- "NLOPT_LN_COBYLA"
+      } else {
+         optcontrol$algorithm <- "NLOPT_LN_BOBYQA"
+      }
+   }
 
    if (optimizer == "nloptr" && !is.element("ftol_rel", names(optcontrol)))
       optcontrol$ftol_rel <- 1e-8
@@ -1545,13 +1660,13 @@
    }
 
    if (optimizer == "Rcgmin") {
-      if (!requireNamespace("Rcgmin", quietly=TRUE))
-         stop(mstyle$stop("Please install the 'Rcgmin' package to use this optimizer."), call.=FALSE)
+      if (!requireNamespace(optimizer, quietly=TRUE))
+         stop(mstyle$stop(paste0("Please install the '", optimizer, "' package to use this optimizer.")), call.=FALSE)
    }
 
    if (optimizer == "Rvmmin") {
-      if (!requireNamespace("Rvmmin", quietly=TRUE))
-         stop(mstyle$stop("Please install the 'Rvmmin' package to use this optimizer."), call.=FALSE)
+      if (!requireNamespace(optimizer, quietly=TRUE))
+         stop(mstyle$stop(paste0("Please install the '", optimizer, "' package to use this optimizer.")), call.=FALSE)
    }
 
    #########################################################################
@@ -1650,7 +1765,7 @@
 
 .chkconv <- function(optimizer, opt.res, optcontrol, fun, verbose) {
 
-   mstyle <- .get.mstyle("crayon" %in% .packages())
+   mstyle <- .get.mstyle()
 
    if (optimizer == "optimParallel::optimParallel" && verbose) {
       tmp <- capture.output(print(opt.res$loginfo))
@@ -1854,6 +1969,7 @@
    } else {
       col <- col + round(light*255)[[pos]]
    }
+
    col[col < 0] <- 0
    col[col > 255] <- 255
 

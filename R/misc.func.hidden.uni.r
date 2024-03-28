@@ -22,7 +22,7 @@
 
 .QE.func <- function(tau2val, Y, vi, X, k, objective, verbose=FALSE, digits=4) {
 
-   mstyle <- .get.mstyle("crayon" %in% .packages())
+   mstyle <- .get.mstyle()
 
    if (any(tau2val + vi < 0))
       stop(mstyle$stop("Some marginal variances are negative."), call.=FALSE)
@@ -45,7 +45,7 @@
 
 .GENQ.func <- function(tau2val, P, vi, Q, level, k, p, getlower, verbose=FALSE, digits=4) {
 
-   mstyle <- .get.mstyle("crayon" %in% .packages())
+   mstyle <- .get.mstyle()
 
    S <- diag(sqrt(vi + tau2val), nrow=k, ncol=k)
    lambda <- Re(eigen(S %*% P %*% S, symmetric=TRUE, only.values=TRUE)$values)
@@ -123,7 +123,7 @@
 
 .permci <- function(val, obj, j, exact, iter, progbar, level, digits, control) {
 
-   mstyle <- .get.mstyle("crayon" %in% .packages())
+   mstyle <- .get.mstyle()
 
    ### fit model with shifted outcome
    args <- list(yi=obj$yi - c(val*obj$X[,j]), vi=obj$vi, weights=obj$weights, mods=obj$X, intercept=FALSE, method=obj$method, weighted=obj$weighted,
@@ -168,18 +168,18 @@
    }
 }
 
-### -1 times the log likelihood (regular or restricted) for location-scale model
+### -1 times the log-likelihood (regular or restricted) for location-scale model
 
 .ll.rma.ls <- function(par, yi, vi, X, Z, reml, k, pX,
-                       alpha.val, beta.val, verbose, digits,
+                       alpha.arg, beta.arg, verbose, digits,
                        REMLf, link, mZ, alpha.min, alpha.max, alpha.transf,
                        tau2.min, tau2.max, optbeta) {
 
-   mstyle <- .get.mstyle("crayon" %in% .packages())
+   mstyle <- .get.mstyle()
 
    if (optbeta) {
       beta  <- par[seq_len(pX)]
-      beta  <- ifelse(is.na(beta.val), beta, beta.val)
+      beta  <- ifelse(is.na(beta.arg), beta, beta.arg)
       alpha <- par[-seq_len(pX)]
    } else {
       alpha <- par
@@ -188,7 +188,7 @@
    if (alpha.transf)
       alpha <- mapply(.mapfun.alpha, alpha, alpha.min, alpha.max)
 
-   alpha <- ifelse(is.na(alpha.val), alpha, alpha.val)
+   alpha <- ifelse(is.na(alpha.arg), alpha, alpha.arg)
 
    ### compute predicted tau2 values
 
@@ -269,7 +269,7 @@
 
 }
 
-.rma.ls.ineqfun.pos <- function(par, yi, vi, X, Z, reml, k, pX, alpha.val, beta.val, verbose, digits, REMLf, link, mZ, alpha.min, alpha.max, alpha.transf, tau2.min, tau2.max, optbeta) {
+.rma.ls.ineqfun.pos <- function(par, yi, vi, X, Z, reml, k, pX, alpha.arg, beta.arg, verbose, digits, REMLf, link, mZ, alpha.min, alpha.max, alpha.transf, tau2.min, tau2.max, optbeta) {
 
    if (optbeta) {
       alpha <- par[-seq_len(pX)]
@@ -280,7 +280,7 @@
    if (alpha.transf)
       alpha <- mapply(.mapfun.alpha, alpha, alpha.min, alpha.max)
 
-   alpha <- ifelse(is.na(alpha.val), alpha, alpha.val)
+   alpha <- ifelse(is.na(alpha.arg), alpha, alpha.arg)
 
    tau2 <- c(Z %*% alpha)
 
@@ -288,7 +288,7 @@
 
 }
 
-.rma.ls.ineqfun.neg <- function(par, yi, vi, X, Z, reml, k, pX, alpha.val, beta.val, verbose, digits, REMLf, link, mZ, alpha.min, alpha.max, alpha.transf, tau2.min, tau2.max, optbeta) {
+.rma.ls.ineqfun.neg <- function(par, yi, vi, X, Z, reml, k, pX, alpha.arg, beta.arg, verbose, digits, REMLf, link, mZ, alpha.min, alpha.max, alpha.transf, tau2.min, tau2.max, optbeta) {
 
    if (optbeta) {
       alpha <- par[-seq_len(pX)]
@@ -299,7 +299,7 @@
    if (alpha.transf)
       alpha <- mapply(.mapfun.alpha, alpha, alpha.min, alpha.max)
 
-   alpha <- ifelse(is.na(alpha.val), alpha, alpha.val)
+   alpha <- ifelse(is.na(alpha.arg), alpha, alpha.arg)
 
    tau2 <- -c(Z %*% alpha)
 

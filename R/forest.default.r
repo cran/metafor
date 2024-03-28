@@ -8,7 +8,7 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
 
    #########################################################################
 
-   mstyle <- .get.mstyle("crayon" %in% .packages())
+   mstyle <- .get.mstyle()
 
    na.act <- getOption("na.action")
 
@@ -106,6 +106,8 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
    if (length(efac) == 1L)
       efac <- rep(efac, 2L)
 
+   efac[efac == 0] <- NA
+
    ### annotation symbols vector
 
    if (is.null(ddd$annosym)) {
@@ -167,11 +169,7 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
    if (!annotate)
       header.right <- NULL
 
-   if (is.null(ddd$decreasing)) {
-      decreasing <- FALSE
-   } else {
-      decreasing <- ddd$decreasing
-   }
+   decreasing <- .chkddd(ddd$decreasing, FALSE)
 
    if (!is.null(ddd$clim))
       olim <- ddd$clim
@@ -188,11 +186,7 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
          rowadj <- c(rowadj,0) # if two values are specified, use them for 1&2
    }
 
-   if (is.null(ddd$top)) {
-      top <- 3
-   } else {
-      top <- ddd$top
-   }
+   top <- .chkddd(ddd$top, 3)
 
    if (is.null(ddd$xlabadj)) {
       xlabadj <- c(NA,NA)
@@ -202,27 +196,23 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
          xlabadj <- c(xlabadj, 1-xlabadj)
    }
 
-   if (is.null(ddd$xlabfont)) {
-      xlabfont <- 1
-   } else {
-      xlabfont <- ddd$xlabfont
-   }
+   xlabfont <- .chkddd(ddd$xlabfont, 1)
 
-   lplot     <- function(..., textpos, decreasing, clim, rowadj, annosym, tabfig, top, xlabadj, xlabfont) plot(...)
-   labline   <- function(..., textpos, decreasing, clim, rowadj, annosym, tabfig, top, xlabadj, xlabfont) abline(...)
-   lsegments <- function(..., textpos, decreasing, clim, rowadj, annosym, tabfig, top, xlabadj, xlabfont) segments(...)
-   laxis     <- function(..., textpos, decreasing, clim, rowadj, annosym, tabfig, top, xlabadj, xlabfont) axis(...)
-   lmtext    <- function(..., textpos, decreasing, clim, rowadj, annosym, tabfig, top, xlabadj, xlabfont) mtext(...)
-   lpolygon  <- function(..., textpos, decreasing, clim, rowadj, annosym, tabfig, top, xlabadj, xlabfont) polygon(...)
-   ltext     <- function(..., textpos, decreasing, clim, rowadj, annosym, tabfig, top, xlabadj, xlabfont) text(...)
-   lpoints   <- function(..., textpos, decreasing, clim, rowadj, annosym, tabfig, top, xlabadj, xlabfont) points(...)
+   lplot     <- function(..., textpos, decreasing, clim, rowadj, annosym, tabfig, top, xlabadj, xlabfont, at.lab) plot(...)
+   labline   <- function(..., textpos, decreasing, clim, rowadj, annosym, tabfig, top, xlabadj, xlabfont, at.lab) abline(...)
+   lsegments <- function(..., textpos, decreasing, clim, rowadj, annosym, tabfig, top, xlabadj, xlabfont, at.lab) segments(...)
+   laxis     <- function(..., textpos, decreasing, clim, rowadj, annosym, tabfig, top, xlabadj, xlabfont, at.lab) axis(...)
+   lmtext    <- function(..., textpos, decreasing, clim, rowadj, annosym, tabfig, top, xlabadj, xlabfont, at.lab) mtext(...)
+   lpolygon  <- function(..., textpos, decreasing, clim, rowadj, annosym, tabfig, top, xlabadj, xlabfont, at.lab) polygon(...)
+   ltext     <- function(..., textpos, decreasing, clim, rowadj, annosym, tabfig, top, xlabadj, xlabfont, at.lab) text(...)
+   lpoints   <- function(..., textpos, decreasing, clim, rowadj, annosym, tabfig, top, xlabadj, xlabfont, at.lab) points(...)
 
    #########################################################################
 
    ### extract data, study labels, and other arguments
 
    if (!missing(vi) && is.function(vi)) # if vi is utils::vi()
-      stop(mstyle$stop("Cannot find variable specified for 'vi' argument."), call.=FALSE)
+      stop(mstyle$stop("Cannot find variable specified for 'vi' argument."))
 
    if (hasArg(ci.lb) && hasArg(ci.ub)) {     # CI bounds are specified by user
       if (length(ci.lb) != length(ci.ub))
@@ -491,10 +481,9 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
       if (length(olim) != 2L)
          stop(mstyle$stop("Argument 'olim' must be of length 2."))
       olim <- sort(olim)
-      yi[yi < olim[1]] <- olim[1]
-      yi[yi > olim[2]] <- olim[2]
-      ci.lb[ci.lb < olim[1]] <- olim[1]
-      ci.ub[ci.ub > olim[2]] <- olim[2]
+      yi    <- .applyolim(yi, olim)
+      ci.lb <- .applyolim(ci.lb, olim)
+      ci.ub <- .applyolim(ci.ub, olim)
    }
 
    if (showweights) {                           # inverse variance weights after ordering/subsetting and
@@ -578,16 +567,24 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
 
    ### x-axis labels (apply transformation to axis labels if requested)
 
-   at.lab <- at
+   if (is.null(ddd$at.lab)) {
 
-   if (is.function(atransf)) {
-      if (is.null(targs)) {
-         at.lab <- fmtx(sapply(at.lab, atransf), digits[[2]], drop0ifint=TRUE)
+      at.lab <- at
+
+      if (is.function(atransf)) {
+         if (is.null(targs)) {
+            at.lab <- fmtx(sapply(at.lab, atransf), digits[[2]], drop0ifint=TRUE)
+         } else {
+            at.lab <- fmtx(sapply(at.lab, atransf, targs), digits[[2]], drop0ifint=TRUE)
+         }
       } else {
-         at.lab <- fmtx(sapply(at.lab, atransf, targs), digits[[2]], drop0ifint=TRUE)
+         at.lab <- fmtx(at.lab, digits[[2]], drop0ifint=TRUE)
       }
+
    } else {
-      at.lab <- fmtx(at.lab, digits[[2]], drop0ifint=TRUE)
+
+      at.lab <- ddd$at.lab
+
    }
 
    ### set plot limits (xlim)
@@ -660,11 +657,7 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
 
    ### allow adjustment of position of study labels and annotations via textpos argument
 
-   if (is.null(ddd$textpos)) {
-      textpos <- xlim
-   } else {
-      textpos <- ddd$textpos
-   }
+   textpos <- .chkddd(ddd$textpos, xlim)
 
    if (length(textpos) != 2L)
       stop(mstyle$stop("Argument 'textpos' must be of length 2."))
@@ -680,7 +673,11 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
    if (missing(ylim)) {
       ylim <- c(0.5, max(rows, na.rm=TRUE)+top)
    } else {
-      ylim <- sort(ylim)
+      if (length(ylim) == 1L) {
+         ylim <- c(ylim, max(rows, na.rm=TRUE)+top)
+      } else {
+         ylim <- sort(ylim)
+      }
    }
 
    #########################################################################
@@ -907,7 +904,7 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
       }
 
       if (showweights) {
-         annotext <- cbind(annotext[,1], paste0("%", rep(substr(annosym[1],1,1),3)), annotext[,2], annosym[1], annotext[,3], annosym[2], annotext[,4], annosym[3])
+         annotext <- cbind(annotext[,1], paste0("%", paste0(rep(substr(annosym[1],1,1),3), collapse="")), annotext[,2], annosym[1], annotext[,3], annosym[2], annotext[,4], annosym[3])
       } else {
          annotext <- cbind(annotext[,1], annosym[1], annotext[,2], annosym[2], annotext[,3], annosym[3])
       }

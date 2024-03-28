@@ -38,7 +38,7 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
 
    ### check argument specifications
 
-   mstyle <- .get.mstyle("crayon" %in% .packages())
+   mstyle <- .get.mstyle()
 
    if (!is.element(method, c("FE","EE","CE","ML","REML")))
       stop(mstyle$stop("Unknown 'method' specified."))
@@ -93,7 +93,7 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
 
    ddd <- list(...)
 
-   .chkdots(ddd, c("tdist", "outlist", "time", "dist", "abbrev", "restart", "beta", "vccon"))
+   .chkdots(ddd, c("tdist", "outlist", "time", "dist", "abbrev", "restart", "beta", "vccon", "retopt"))
 
    ### handle 'tdist' argument from ... (note: overrides test argument)
 
@@ -102,8 +102,13 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
    if (.isTRUE(ddd$tdist))
       test <- "t"
 
-   if (!is.element(test, c("z", "t", "knha", "adhoc")))
+    test <- tolower(test)
+
+   if (!is.element(test, c("z", "t", "knha", "hksj", "adhoc")))
       stop(mstyle$stop("Invalid option selected for 'test' argument."))
+
+   if (test == "hksj")
+      test <- "knha"
 
    if (is.character(dfs))
       dfs <- match.arg(dfs, c("residual", "contain"))
@@ -128,7 +133,11 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
 
    ### handle 'dist' argument from ...
 
-   if (!is.null(ddd$dist)) {
+   if (is.null(ddd$dist)) {
+
+      ddd$dist <- list("euclidean", "euclidean")
+
+   } else {
 
       if (is.data.frame(ddd$dist) || .is.matrix(ddd$dist))
          ddd$dist <- list(ddd$dist)
@@ -162,8 +171,6 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
             stop(mstyle$stop("Please install the 'sp' package to compute great-circle distances."))
       }
 
-   } else {
-      ddd$dist <- list("euclidean", "euclidean")
    }
 
    if (is.null(ddd$vccon)) {
@@ -226,7 +233,7 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
    yi     <- .getx("yi",     mf=mf, data=data)
    V      <- .getx("V",      mf=mf, data=data)
    W      <- .getx("W",      mf=mf, data=data)
-   ni     <- .getx("ni",     mf=mf, data=data) ### not yet possible to specify this
+   ni     <- .getx("ni",     mf=mf, data=data) # not yet possible to specify this
    slab   <- .getx("slab",   mf=mf, data=data)
    subset <- .getx("subset", mf=mf, data=data)
    mods   <- .getx("mods",   mf=mf, data=data)
@@ -236,15 +243,15 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
    if (inherits(yi, "formula")) {
       formula.yi <- yi
       formula.mods <- formula.yi[-2]
-      options(na.action = "na.pass")                   ### set na.action to na.pass, so that NAs are not filtered out (we'll do that later)
-      mods <- model.matrix(yi, data=data)              ### extract model matrix (now mods is no longer a formula, so [a] further below is skipped)
-      attr(mods, "assign") <- NULL                     ### strip assign attribute (not needed at the moment)
-      attr(mods, "contrasts") <- NULL                  ### strip contrasts attribute (not needed at the moment)
-      yi <- model.response(model.frame(yi, data=data)) ### extract yi values from model frame
-      options(na.action = na.act)                      ### set na.action back to na.act
-      names(yi) <- NULL                                ### strip names (1:k) from yi (so res$yi is the same whether yi is a formula or not)
-      intercept <- FALSE                               ### set to FALSE since formula now controls whether the intercept is included or not
-   }                                                   ### note: code further below ([b]) actually checks whether intercept is included or not
+      options(na.action = "na.pass")                   # set na.action to na.pass, so that NAs are not filtered out (we'll do that later)
+      mods <- model.matrix(yi, data=data)              # extract model matrix (now mods is no longer a formula, so [a] further below is skipped)
+      attr(mods, "assign") <- NULL                     # strip assign attribute (not needed at the moment)
+      attr(mods, "contrasts") <- NULL                  # strip contrasts attribute (not needed at the moment)
+      yi <- model.response(model.frame(yi, data=data)) # extract yi values from model frame
+      options(na.action = na.act)                      # set na.action back to na.act
+      names(yi) <- NULL                                # strip names (1:k) from yi (so res$yi is the same whether yi is a formula or not)
+      intercept <- FALSE                               # set to FALSE since formula now controls whether the intercept is included or not
+   }                                                   # note: code further below ([b]) actually checks whether intercept is included or not
 
    ### in case user passed a data frame to yi, convert it to a vector (if possible)
 
@@ -280,7 +287,7 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
 
    measure <- "GEN"
 
-   if (!is.null(attr(yi, "measure"))) ### take 'measure' from yi (if it is there)
+   if (!is.null(attr(yi, "measure"))) # take 'measure' from yi (if it is there)
       measure <- attr(yi, "measure")
 
    ### add measure attribute (back) to the yi vector
@@ -354,7 +361,7 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
    if (!V0 && !.is.square(V))
       stop(mstyle$stop("'V' must be a square matrix."))
 
-   if (!V0 && !isSymmetric(V)) ### note: copy of V is made when doing this
+   if (!V0 && !isSymmetric(V)) # note: copy of V is made when doing this
       stop(mstyle$stop("'V' must be a symmetric matrix."))
 
    ### check length of yi and V
@@ -464,13 +471,13 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
          mods <- matrix(1, nrow=k, ncol=1)
          intercept <- FALSE
       } else {
-         options(na.action = "na.pass")        ### set na.action to na.pass, so that NAs are not filtered out (we'll do that later)
-         mods <- model.matrix(mods, data=data) ### extract model matrix
-         attr(mods, "assign") <- NULL          ### strip assign attribute (not needed at the moment)
-         attr(mods, "contrasts") <- NULL       ### strip contrasts attribute (not needed at the moment)
-         options(na.action = na.act)           ### set na.action back to na.act
-         intercept <- FALSE                    ### set to FALSE since formula now controls whether the intercept is included or not
-      }                                        ### note: code further below ([b]) actually checks whether intercept is included or not
+         options(na.action = "na.pass")        # set na.action to na.pass, so that NAs are not filtered out (we'll do that later)
+         mods <- model.matrix(mods, data=data) # extract model matrix
+         attr(mods, "assign") <- NULL          # strip assign attribute (not needed at the moment)
+         attr(mods, "contrasts") <- NULL       # strip contrasts attribute (not needed at the moment)
+         options(na.action = na.act)           # set na.action back to na.act
+         intercept <- FALSE                    # set to FALSE since formula now controls whether the intercept is included or not
+      }                                        # note: code further below ([b]) actually checks whether intercept is included or not
    }
 
    ### turn a vector for mods into a column vector
@@ -821,8 +828,8 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
 
       k <- length(yi)
 
-      attr(yi, "measure") <- measure ### add measure attribute back
-      attr(yi, "ni")      <- ni      ### add ni attribute back
+      attr(yi, "measure") <- measure # add measure attribute back
+      attr(yi, "ni")      <- ni      # add ni attribute back
 
    }
 
@@ -847,11 +854,11 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
    W.f    <- A
    ni.f   <- ni
    mods.f <- mods
-   #mf.g.f <- mf.g ### copied further below
-   #mf.h.f <- mf.h ### copied further below
-   #mf.s.f <- mf.s ### copied further below
+   #mf.g.f <- mf.g # copied further below
+   #mf.h.f <- mf.h # copied further below
+   #mf.s.f <- mf.s # copied further below
 
-   k.f <- k ### total number of observed outcomes including all NAs
+   k.f <- k # total number of observed outcomes including all NAs
 
    #########################################################################
    #########################################################################
@@ -866,7 +873,7 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
 
       ### get variables names in mf.s
 
-      s.names <- sapply(mf.s, names) ### one name per term
+      s.names <- sapply(mf.s, names) # one name per term
 
       ### turn each variable in mf.s into a factor (and turn each column vector into just a vector)
       ### if a variable was a factor to begin with, this drops any unused levels, but order of existing levels is preserved
@@ -1034,7 +1041,7 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
                ### check if there are levels in R which are not in s.levels (if yes, issue a warning)
 
                if (any(!is.element(colnames(R[[j]]), s.levels[[j]])))
-                  warning(mstyle$warning(paste0("There are rows/columns in the 'R' matrix for '", s.names[j], "' for which there are no data.")))
+                  warning(mstyle$warning(paste0("There are rows/columns in the 'R' matrix for '", s.names[j], "' for which there are no data.")), call.=FALSE)
 
             }
 
@@ -1067,7 +1074,7 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
 
    }
 
-   #mf.s.f <- mf.s ### not needed at the moment
+   #mf.s.f <- mf.s # not needed at the moment
 
    ### copy s.nlevels and s.levels (needed for ranef())
 
@@ -1115,7 +1122,7 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
 
    }
 
-   mf.g.f <- mf.g ### needed for predict()
+   mf.g.f <- mf.g # needed for predict()
 
    #########################################################################
 
@@ -1158,7 +1165,7 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
 
    }
 
-   mf.h.f <- mf.h ### needed for predict()
+   mf.h.f <- mf.h # needed for predict()
 
    # return(list(Z.G1=Z.G1, Z.G2=Z.G2, g.nlevels=g.nlevels, g.levels=g.levels, g.values=g.values, tau2=tau2, rho=rho,
    #             Z.H1=Z.H1, Z.H2=Z.H2, h.nlevels=h.nlevels, h.levels=h.levels, h.values=h.values, gamma2=gamma2, phi=phi))
@@ -1186,7 +1193,7 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
          ni   <- ni[not.na]
          mods <- mods[not.na,,drop=FALSE]
          mf.r <- lapply(mf.r, function(x) x[not.na,,drop=FALSE])
-         mf.s <- lapply(mf.s, function(x) x[not.na]) ### note: mf.s is a list of vectors at this point
+         mf.s <- lapply(mf.s, function(x) x[not.na]) # note: mf.s is a list of vectors at this point
          mf.g <- mf.g[not.na,,drop=FALSE]
          mf.h <- mf.h[not.na,,drop=FALSE]
          if (is.element(struct[1], c("SPEXP","SPGAU","SPLIN","SPRAT","SPSPH","PHYBM","PHYPL","PHYPD"))) {
@@ -1204,8 +1211,8 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
          k    <- length(yi)
          warning(mstyle$warning(paste(sum(has.na), ifelse(sum(has.na) > 1, "rows", "row"), "with NAs omitted from model fitting.")), call.=FALSE)
 
-         attr(yi, "measure") <- measure ### add measure attribute back
-         attr(yi, "ni")      <- ni      ### add ni attribute back
+         attr(yi, "measure") <- measure # add measure attribute back
+         attr(yi, "ni")      <- ni      # add ni attribute back
 
          ### note: slab is always of the same length as the full yi vector (after subsetting), so missings are not removed and slab is not added back to yi
 
@@ -1229,8 +1236,8 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
          warning(mstyle$warning("There are outcomes with non-positive sampling variances."), call.=FALSE)
       vi.neg <- vi < 0
       if (any(vi.neg)) {
-         V[vi.neg,] <- 0 ### note: entire row set to 0 (so covariances are also 0)
-         V[,vi.neg] <- 0 ### note: entire col set to 0 (so covariances are also 0)
+         V[vi.neg,] <- 0 # note: entire row set to 0 (so covariances are also 0)
+         V[,vi.neg] <- 0 # note: entire col set to 0 (so covariances are also 0)
          vi[vi.neg] <- 0
          warning(mstyle$warning("Negative sampling variances constrained to zero."), call.=FALSE)
       }
@@ -1298,9 +1305,9 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
    if (any(is.int)) {
       int.incl <- TRUE
       int.indx <- which(is.int, arr.ind=TRUE)
-      X        <- cbind(intrcpt=1,   X[,-int.indx, drop=FALSE]) ### this removes any duplicate intercepts
-      X.f      <- cbind(intrcpt=1, X.f[,-int.indx, drop=FALSE]) ### this removes any duplicate intercepts
-      intercept <- TRUE ### set intercept appropriately so that the predict() function works
+      X        <- cbind(intrcpt=1,   X[,-int.indx, drop=FALSE]) # this removes any duplicate intercepts
+      X.f      <- cbind(intrcpt=1, X.f[,-int.indx, drop=FALSE]) # this removes any duplicate intercepts
+      intercept <- TRUE # set intercept appropriately so that the predict() function works
    } else {
       int.incl <- FALSE
    }
@@ -1326,18 +1333,18 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
    ### set/check 'btt' argument
 
    btt <- .set.btt(btt, p, int.incl, colnames(X))
-   m <- length(btt) ### number of betas to test (m = p if all betas are tested)
+   m <- length(btt) # number of betas to test (m = p if all betas are tested)
 
    ### check which beta elements are estimated versus fixed
 
    if (is.null(ddd$beta)) {
-      beta.val <- rep(NA_real_, p)
+      beta.arg <- rep(NA_real_, p)
       beta.est <- rep(TRUE, p)
    } else {
-      beta.val <- ddd$beta
-      if (length(beta.val) != p)
-         stop(mstyle$stop(paste0("Length of 'beta' argument (", length(beta.val), ") does not match actual number of fixed effects (", p, ").")))
-      beta.est <- is.na(beta.val)
+      beta.arg <- ddd$beta
+      if (length(beta.arg) != p)
+         stop(mstyle$stop(paste0("Length of 'beta' argument (", length(beta.arg), ") does not match actual number of fixed effects (", p, ").")))
+      beta.est <- is.na(beta.arg)
    }
 
    #########################################################################
@@ -1376,9 +1383,9 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
             Z.S[[j]] <- cbind(rep(1,k))
          } else {
             if (sparse) {
-               Z.S[[j]] <- sparse.model.matrix(~ mf.s[[j]] - 1) ### cannot use this for factors with a single level
+               Z.S[[j]] <- sparse.model.matrix(~ mf.s[[j]] - 1) # cannot use this for factors with a single level
             } else {
-               Z.S[[j]] <- model.matrix(~ mf.s[[j]] - 1) ### cannot use this for factors with a single level
+               Z.S[[j]] <- model.matrix(~ mf.s[[j]] - 1) # cannot use this for factors with a single level
             }
          }
          attr(Z.S[[j]], "assign")    <- NULL
@@ -1413,7 +1420,7 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
       if (Rscale=="cor" || Rscale=="cor0") {
          R[Rfix] <- lapply(R[Rfix], function(x) {
             if (any(diag(x) <= 0))
-               stop(mstyle$stop("Cannot use Rscale=\"cor\" or Rscale=\"cor0\" with non-positive values on the diagonal of an 'R' matrix."), call.=FALSE)
+               stop(mstyle$stop("Cannot use Rscale=\"cor\" or Rscale=\"cor0\" with non-positive values on the diagonal of an 'R' matrix."))
             tmp <- cov2cor(x)
             if (any(abs(tmp) > 1))
                warning(mstyle$warning("Some values are larger than +-1 in an 'R' matrix after cov2cor() (see 'Rscale' argument)."), call.=FALSE)
@@ -1594,7 +1601,7 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
          #total <- max(.001*(sigma2s + tau2s + gamma2s), var(as.vector(sY - sX %*% beta)) - 1/mean(1/diag(V)))
          total  <- max(.001*(sigma2s + tau2s + gamma2s), var(as.vector(Y) - as.vector(X %*% beta.FE)) - 1/mean(1/diag(V)))
 
-         #beta.FE <- ifelse(beta.est, beta.FE, beta.val)
+         #beta.FE <- ifelse(beta.est, beta.FE, beta.arg)
          QE <- sum(as.vector(sY - sX %*% beta.FE)^2)
 
          ### QEp calculated further below
@@ -1742,13 +1749,13 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
 
    ### use of Cholesky factorization only applicable for models with "UN", "UNR", and "GEN" structure
 
-   if (!withG) ### in case user sets cholesky=TRUE and struct="UN", struct="UNR", or struct="GEN" even though there is no 1st 'inner | outer' term
+   if (!withG) # in case user sets cholesky=TRUE and struct="UN", struct="UNR", or struct="GEN" even though there is no 1st 'inner | outer' term
       con$cholesky[1] <- FALSE
 
    if (con$cholesky[1] && !is.element(struct[1], c("UN","UNR","GEN")))
       con$cholesky[1] <- FALSE
 
-   if (!withH) ### in case user sets cholesky=TRUE and struct="UN", struct="UNR", or struct="GEN" even though there is no 2nd 'inner | outer' term
+   if (!withH) # in case user sets cholesky=TRUE and struct="UN", struct="UNR", or struct="GEN" even though there is no 2nd 'inner | outer' term
       con$cholesky[2] <- FALSE
 
    if (con$cholesky[2] && !is.element(struct[2], c("UN","UNR","GEN")))
@@ -1784,8 +1791,8 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
       if (struct[1] == "UNR") {
          con$tau2.init <- log(tau2.init)
       } else {
-         con$tau2.init <- diag(G)        ### note: con$tau2.init and con$rho.init are the 'choled' values of the initial G matrix, so con$rho.init really
-         con$rho.init <- G[lower.tri(G)] ### contains the 'choled' covariances; and these values are also passed on the .ll.rma.mv as the initial values
+         con$tau2.init <- diag(G)        # note: con$tau2.init and con$rho.init are the 'choled' values of the initial G matrix, so con$rho.init really
+         con$rho.init <- G[lower.tri(G)] # contains the 'choled' covariances; and these values are also passed on the .ll.rma.mv as the initial values
       }
       if (length(con$rho.init) == 0L)
          con$rho.init <- 0
@@ -1804,8 +1811,8 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
       H <- try(chol(H), silent=TRUE)
       if (inherits(H, "try-error") || anyNA(H))
          stop(mstyle$stop("Cannot take Choleski decomposition of initial 'H' matrix."))
-      con$gamma2.init <- diag(H)      ### note: con$gamma2.init and con$phi.init are the 'choled' values of the initial H matrix, so con$phi.init really
-      con$phi.init <- H[lower.tri(H)] ### contains the 'choled' covariances; and these values are also passed on the .ll.rma.mv as the initial values
+      con$gamma2.init <- diag(H)      # note: con$gamma2.init and con$phi.init are the 'choled' values of the initial H matrix, so con$phi.init really
+      con$phi.init <- H[lower.tri(H)] # contains the 'choled' covariances; and these values are also passed on the .ll.rma.mv as the initial values
       if (length(con$phi.init) == 0L)
          con$phi.init <- 0
    } else {
@@ -1829,7 +1836,7 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
    parallel   <- con$parallel
    cl         <- con$cl
    ncpus      <- con$ncpus
-   optcontrol <- control[is.na(con.pos)] ### get arguments that are control arguments for optimizer
+   optcontrol <- control[is.na(con.pos)] # get arguments that are control arguments for optimizer
 
    if (length(optcontrol) == 0L)
       optcontrol <- list()
@@ -2007,15 +2014,15 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
 
       if (anyNA(c(sigma2, tau2, rho, gamma2, phi))) {
 
-         optcall <- paste(optimizer, "(", par.arg, "=c(con$sigma2.init, con$tau2.init, con$rho.init, con$gamma2.init, con$phi.init),
+         optcall <- paste0(optimizer, "(", par.arg, "=c(con$sigma2.init, con$tau2.init, con$rho.init, con$gamma2.init, con$phi.init),
             .ll.rma.mv, reml=reml, ", ifelse(optimizer=="optim", "method=optmethod, ", ""), "Y=Y, M=V, A=NULL, X=X, k=k, pX=p,
             D.S=D.S, Z.G1=Z.G1, Z.G2=Z.G2, Z.H1=Z.H1, Z.H2=Z.H2, g.Dmat=g.Dmat, h.Dmat=h.Dmat,
-            sigma2.val=sigma2, tau2.val=tau2, rho.val=rho, gamma2.val=gamma2, phi.val=phi, beta.val=beta.val,
+            sigma2.arg=sigma2, tau2.arg=tau2, rho.arg=rho, gamma2.arg=gamma2, phi.arg=phi, beta.arg=beta.arg,
             sigma2s=sigma2s, tau2s=tau2s, rhos=rhos, gamma2s=gamma2s, phis=phis,
             withS=withS, withG=withG, withH=withH, struct=struct,
             g.levels.r=g.levels.r, h.levels.r=h.levels.r, g.values=g.values, h.values=h.values,
             sparse=sparse, cholesky=cholesky, nearpd=nearpd, vctransf=TRUE, vccov=FALSE, vccon=vccon,
-            verbose=verbose, digits=digits, REMLf=con$REMLf, dofit=FALSE, hessian=FALSE", ctrl.arg, ")\n", sep="")
+            verbose=verbose, digits=digits, REMLf=con$REMLf, dofit=FALSE, hessian=FALSE", ctrl.arg, ")\n")
 
          #return(optcall)
 
@@ -2028,7 +2035,8 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
             opt.res <- try(suppressWarnings(eval(str2lang(optcall))), silent=!verbose)
          }
 
-         #return(opt.res)
+         if (isTRUE(ddd$retopt))
+            return(opt.res)
 
          ### convergence checks (if verbose print optimParallel log, if verbose > 2 print opt.res, and unify opt.res$par)
 
@@ -2057,11 +2065,11 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
 
       ### save these for Hessian computation
 
-      sigma2.val <- sigma2
-      tau2.val   <- tau2
-      rho.val    <- rho
-      gamma2.val <- gamma2
-      phi.val    <- phi
+      sigma2.arg <- sigma2
+      tau2.arg   <- tau2
+      rho.arg    <- rho
+      gamma2.arg <- gamma2
+      phi.arg    <- phi
 
    } else {
 
@@ -2075,7 +2083,7 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
 
    fitcall <- .ll.rma.mv(opt.res$par, reml=reml, Y=Y, M=V, A=A, X=X, k=k, pX=p,
       D.S=D.S, Z.G1=Z.G1, Z.G2=Z.G2, Z.H1=Z.H1, Z.H2=Z.H2, g.Dmat=g.Dmat, h.Dmat=h.Dmat,
-      sigma2.val=sigma2, tau2.val=tau2, rho.val=rho, gamma2.val=gamma2, phi.val=phi, beta.val=beta.val,
+      sigma2.arg=sigma2, tau2.arg=tau2, rho.arg=rho, gamma2.arg=gamma2, phi.arg=phi, beta.arg=beta.arg,
       sigma2s=sigma2s, tau2s=tau2s, rhos=rhos, gamma2s=gamma2s, phis=phis,
       withS=withS, withG=withG, withH=withH, struct=struct,
       g.levels.r=g.levels.r, h.levels.r=h.levels.r, g.values=g.values, h.values=h.values,
@@ -2151,7 +2159,7 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
    if (is.element(test, c("knha","adhoc"))) {
       knha.rma.mv.warn <- .getfromenv("knha.rma.mv.warn", default=TRUE)
       if (knha.rma.mv.warn) {
-         warning(mstyle$warning("Use of Knapp and Hartung method for 'rma.mv()' models is experimental.\nNote: This warning is only issued once per session (ignore at your peril)."), call.=FALSE)
+         warning(mstyle$warning("Use of the Knapp and Hartung method for 'rma.mv()' models is experimental.\nNote: This warning is only issued once per session (ignore at your peril)."), call.=FALSE)
          try(assign("knha.rma.mv.warn", FALSE, envir=.metafor), silent=TRUE)
       }
       RSS <- try(as.vector(t(Y - X %*% beta) %*% chol2inv(chol(M)) %*% (Y - X %*% beta)), silent=TRUE)
@@ -2272,7 +2280,7 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
             hessian <- try(numDeriv::hessian(func=.ll.rma.mv, x = c(sigma2, tau2, cov1, gamma2, cov2),
                method.args=con$hessianCtrl, reml=reml, Y=Y, M=V, A=NULL, X=X, k=k, pX=p,
                D.S=D.S, Z.G1=Z.G1, Z.G2=Z.G2, Z.H1=Z.H1, Z.H2=Z.H2, g.Dmat=g.Dmat, h.Dmat=h.Dmat,
-               sigma2.val=sigma2.val, tau2.val=tau2.val, rho.val=rho.val, gamma2.val=gamma2.val, phi.val=phi.val, beta.val=beta.val,
+               sigma2.arg=sigma2.arg, tau2.arg=tau2.arg, rho.arg=rho.arg, gamma2.arg=gamma2.arg, phi.arg=phi.arg, beta.arg=beta.arg,
                sigma2s=sigma2s, tau2s=tau2s, rhos=rhos, gamma2s=gamma2s, phis=phis,
                withS=withS, withG=withG, withH=withH, struct=struct,
                g.levels.r=g.levels.r, h.levels.r=h.levels.r, g.values=g.values, h.values=h.values,
@@ -2282,7 +2290,7 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
             hessian <- try(pracma::hessian(f=.ll.rma.mv, x0 = c(sigma2, tau2, cov1, gamma2, cov2),
                reml=reml, Y=Y, M=V, A=NULL, X=X, k=k, pX=p,
                D.S=D.S, Z.G1=Z.G1, Z.G2=Z.G2, Z.H1=Z.H1, Z.H2=Z.H2, g.Dmat=g.Dmat, h.Dmat=h.Dmat,
-               sigma2.val=sigma2.val, tau2.val=tau2.val, rho.val=rho.val, gamma2.val=gamma2.val, phi.val=phi.val, beta.val=beta.val,
+               sigma2.arg=sigma2.arg, tau2.arg=tau2.arg, rho.arg=rho.arg, gamma2.arg=gamma2.arg, phi.arg=phi.arg, beta.arg=beta.arg,
                sigma2s=sigma2s, tau2s=tau2s, rhos=rhos, gamma2s=gamma2s, phis=phis,
                withS=withS, withG=withG, withH=withH, struct=struct,
                g.levels.r=g.levels.r, h.levels.r=h.levels.r, g.values=g.values, h.values=h.values,
@@ -2297,7 +2305,7 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
             hessian <- try(numDeriv::hessian(func=.ll.rma.mv, x = if (cvvc=="transf") opt.res$par else c(sigma2, tau2, rho, gamma2, phi),
                method.args=con$hessianCtrl, reml=reml, Y=Y, M=V, A=NULL, X=X, k=k, pX=p,
                D.S=D.S, Z.G1=Z.G1, Z.G2=Z.G2, Z.H1=Z.H1, Z.H2=Z.H2, g.Dmat=g.Dmat, h.Dmat=h.Dmat,
-               sigma2.val=sigma2.val, tau2.val=tau2.val, rho.val=rho.val, gamma2.val=gamma2.val, phi.val=phi.val, beta.val=beta.val,
+               sigma2.arg=sigma2.arg, tau2.arg=tau2.arg, rho.arg=rho.arg, gamma2.arg=gamma2.arg, phi.arg=phi.arg, beta.arg=beta.arg,
                sigma2s=sigma2s, tau2s=tau2s, rhos=rhos, gamma2s=gamma2s, phis=phis,
                withS=withS, withG=withG, withH=withH, struct=struct,
                g.levels.r=g.levels.r, h.levels.r=h.levels.r, g.values=g.values, h.values=h.values,
@@ -2308,7 +2316,7 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
             hessian <- try(pracma::hessian(f=.ll.rma.mv, x0 = if (cvvc=="transf") opt.res$par else c(sigma2, tau2, rho, gamma2, phi),
                reml=reml, Y=Y, M=V, A=NULL, X=X, k=k, pX=p,
                D.S=D.S, Z.G1=Z.G1, Z.G2=Z.G2, Z.H1=Z.H1, Z.H2=Z.H2, g.Dmat=g.Dmat, h.Dmat=h.Dmat,
-               sigma2.val=sigma2.val, tau2.val=tau2.val, rho.val=rho.val, gamma2.val=gamma2.val, phi.val=phi.val, beta.val=beta.val,
+               sigma2.arg=sigma2.arg, tau2.arg=tau2.arg, rho.arg=rho.arg, gamma2.arg=gamma2.arg, phi.arg=phi.arg, beta.arg=beta.arg,
                sigma2s=sigma2s, tau2s=tau2s, rhos=rhos, gamma2s=gamma2s, phis=phis,
                withS=withS, withG=withG, withH=withH, struct=struct,
                g.levels.r=g.levels.r, h.levels.r=h.levels.r, g.values=g.values, h.values=h.values,
@@ -2330,36 +2338,36 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
 
          ### row/column names
 
-         colnames(hessian) <- seq_len(ncol(hessian)) ### need to do this, so the subsetting of colnames below works
+         colnames(hessian) <- seq_len(ncol(hessian)) # need to do this, so the subsetting of colnames below works
 
          if (sigma2s == 1) {
             colnames(hessian)[1] <- "sigma^2"
          } else {
-            colnames(hessian)[1:sigma2s] <- paste("sigma^2.", seq_len(sigma2s), sep="")
+            colnames(hessian)[1:sigma2s] <- paste0("sigma^2.", seq_len(sigma2s))
          }
          if (tau2s == 1) {
             colnames(hessian)[sigma2s+1] <- "tau^2"
          } else {
-            colnames(hessian)[(sigma2s+1):(sigma2s+tau2s)] <- paste("tau^2.", seq_len(tau2s), sep="")
+            colnames(hessian)[(sigma2s+1):(sigma2s+tau2s)] <- paste0("tau^2.", seq_len(tau2s))
          }
          term <- ifelse(cvvc == "varcov", ifelse(withH, "cov1", "cov"), "rho")
          if (rhos == 1) {
             colnames(hessian)[sigma2s+tau2s+1] <- term
          } else {
-            colnames(hessian)[(sigma2s+tau2s+1):(sigma2s+tau2s+rhos)] <- paste(term, ".", outer(seq_len(g.nlevels.f[1]), seq_len(g.nlevels.f[1]), paste, sep=".")[lower.tri(matrix(NA,nrow=g.nlevels.f,ncol=g.nlevels.f))], sep="")
-            #colnames(hessian)[(sigma2s+tau2s+1):(sigma2s+tau2s+rhos)] <- paste(term, ".", seq_len(rhos), sep="")
+            colnames(hessian)[(sigma2s+tau2s+1):(sigma2s+tau2s+rhos)] <- paste0(term, ".", outer(seq_len(g.nlevels.f[1]), seq_len(g.nlevels.f[1]), paste, sep=".")[lower.tri(matrix(NA,nrow=g.nlevels.f,ncol=g.nlevels.f))])
+            #colnames(hessian)[(sigma2s+tau2s+1):(sigma2s+tau2s+rhos)] <- paste0(term, ".", seq_len(rhos))
          }
          if (gamma2s == 1) {
             colnames(hessian)[sigma2s+tau2s+rhos+1] <- "gamma^2"
          } else {
-            colnames(hessian)[(sigma2s+tau2s+rhos+1):(sigma2s+tau2s+rhos+gamma2s)] <- paste("gamma^2.", seq_len(gamma2s), sep="")
+            colnames(hessian)[(sigma2s+tau2s+rhos+1):(sigma2s+tau2s+rhos+gamma2s)] <- paste0("gamma^2.", seq_len(gamma2s))
          }
          term <- ifelse(cvvc == "varcov", "cov2", "phi")
          if (phis == 1) {
             colnames(hessian)[sigma2s+tau2s+rhos+gamma2s+1] <- term
          } else {
-            colnames(hessian)[(sigma2s+tau2s+rhos+gamma2s+1):(sigma2s+tau2s+rhos+gamma2s+phis)] <- paste(term, ".", outer(seq_len(h.nlevels.f[1]), seq_len(h.nlevels.f[1]), paste, sep=".")[lower.tri(matrix(NA,nrow=h.nlevels.f,ncol=h.nlevels.f))], sep="")
-            #colnames(hessian)[(sigma2s+tau2s+rhos+gamma2s+1):(sigma2s+tau2s+rhos+gamma2s+phis)] <- paste(term, ".", seq_len(phis), sep="")
+            colnames(hessian)[(sigma2s+tau2s+rhos+gamma2s+1):(sigma2s+tau2s+rhos+gamma2s+phis)] <- paste0(term, ".", outer(seq_len(h.nlevels.f[1]), seq_len(h.nlevels.f[1]), paste, sep=".")[lower.tri(matrix(NA,nrow=h.nlevels.f,ncol=h.nlevels.f))])
+            #colnames(hessian)[(sigma2s+tau2s+rhos+gamma2s+1):(sigma2s+tau2s+rhos+gamma2s+phis)] <- paste0(term, ".", seq_len(phis))
          }
 
          rownames(hessian) <- colnames(hessian)
@@ -2431,7 +2439,7 @@ cvvc=FALSE, sparse=FALSE, verbose=FALSE, digits, control, ...) {
    ###### fit statistics
 
    if (verbose > 1)
-      message(mstyle$message("Computing fit statistics and log likelihood ..."))
+      message(mstyle$message("Computing fit statistics and log-likelihood ..."))
 
    ### note: this only counts *estimated* variance components and correlations for the total number of parameters
 
