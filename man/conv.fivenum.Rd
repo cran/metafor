@@ -18,8 +18,8 @@ conv.fivenum(min, q1, median, q3, max, n, data, include,
    \item{n}{vector with the sample sizes.}
    \item{data}{optional data frame containing the variables given to the arguments above.}
    \item{include}{optional (logical or numeric) vector to specify the subset of studies for which means and standard deviations should be estimated.}
-   \item{method}{character string indicating the method to use. Either \code{"default"} (same as \code{"luo/wan/shi"} which is the current default), \code{"qe"}, \code{"bc"}, \code{"mln"}, or \code{"blue"}. Can be abbreviated. See \sQuote{Details}.}
-   \item{dist}{character string indicating the distribution assumed for the underlying data (either \code{"norm"} for a normal distribution or \code{"lnorm"} for a log-normal distribution). Can also be a string vector if different distributions are assumed for different studies. Only relevant when \code{method="default"}.}
+   \item{method}{character string to specify the method to use. Either \code{"default"} (same as \code{"luo/wan/shi"} which is the current default), \code{"qe"}, \code{"bc"}, \code{"mln"}, or \code{"blue"}. Can be abbreviated. See \sQuote{Details}.}
+   \item{dist}{character string to specify the assumed distribution for the underlying data (either \code{"norm"} for a normal distribution or \code{"lnorm"} for a log-normal distribution). Can also be a string vector if different distributions are assumed for different studies. Only relevant when \code{method="default"}.}
    \item{transf}{logical to specify whether the estimated means and standard deviations of the log-transformed data should be back-transformed as described by Shi et al. (2020b) (the default is \code{TRUE}). Only relevant when \code{dist="lnorm"} and when \code{method="default"}.}
    \item{test}{logical to specify whether a study should be excluded from the estimation if the test for skewness is significant (the default is \code{TRUE}, but whether this is applicable depends on the method; see \sQuote{Details}).}
    \item{var.names}{character vector with two elements to specify the name of the variable for the estimated means and the name of the variable for the estimated standard deviations (the defaults are \code{"mean"} and \code{"sd"}).}
@@ -95,7 +95,7 @@ conv.fivenum(min, q1, median, q3, max, n, data, include,
    Also note that the development of methods for estimating means and SDs based on five-number summary values is an active area of research. Currently, when \code{method="default"}, then this is identical to \code{method="luo/wan/shi"}, but this might change in the future. For reproducibility, it is therefore recommended to explicitly set \code{method="luo/wan/shi"} (or one of the other methods) when running this function.
 }
 \author{
-   Wolfgang Viechtbauer \email{wvb@metafor-project.org} \url{https://www.metafor-project.org}
+   Wolfgang Viechtbauer (\email{wvb@metafor-project.org}, \url{https://www.metafor-project.org}).
 }
 \references{
    Bland, M. (2015). Estimating mean and standard deviation from the sample size, three quartiles, minimum, and maximum. \emph{International Journal of Statistics in Medical Research}, \bold{4}(1), 57--64. \verb{https://doi.org/10.6000/1929-6029.2015.04.01.6}
@@ -116,7 +116,7 @@ conv.fivenum(min, q1, median, q3, max, n, data, include,
 
    Shi, J., Luo, D., Wan, X., Liu, Y., Liu, J., Bian, Z. & Tong, T. (2023). Detecting the skewness of data from the five-number summary and its application in meta-analysis. \emph{Statistical Methods in Medical Research}, \bold{32}(7), 1338--1360. \verb{https://doi.org/10.1177/09622802231172043}
 
-   Walter, S. D. & Yao, X. (2007). Effect sizes can be calculated for studies reporting ranges for outcome variables in systematic reviews. \emph{Journal of Clinical Epidemiology}, \bold{60}(8), 849-852. \verb{https://doi.org/10.1016/j.jclinepi.2006.11.003}
+   Walter, S. D. & Yao, X. (2007). Effect sizes can be calculated for studies reporting ranges for outcome variables in systematic reviews. \emph{Journal of Clinical Epidemiology}, \bold{60}(8), 849--852. \verb{https://doi.org/10.1016/j.jclinepi.2006.11.003}
 
    Wan, X., Wang, W., Liu, J. & Tong, T. (2014). Estimating the sample mean and standard deviation from the sample size, median, range and/or interquartile range. \emph{BMC Medical Research Methodology}, \bold{14}, 135. \verb{https://doi.org/10.1186/1471-2288-14-135}
 

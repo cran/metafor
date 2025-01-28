@@ -3,7 +3,7 @@
 .chktargsint <- function(targs) {
 
    if (length(targs) > 3L)
-      stop("Length of 'targs' argument must be <= 3.", call.=FALSE)
+      stop("Length of the 'targs' argument must be <= 3.", call.=FALSE)
 
    if (.is.vector(targs)) {
       if (is.null(names(targs))) {
@@ -11,15 +11,16 @@
          targs <- as.list(targs)
       } else {
          targs <- list(tau2=unname(targs[startsWith(names(targs), "t")]), lower=unname(targs[startsWith(names(targs), "l")]), upper=unname(targs[startsWith(names(targs), "u")]))
-         targs <- targs[sapply(targs, length) > 0L]
+         targs <- targs[lengths(targs) > 0L]
       }
    }
 
-   if (any(sapply(targs, length) > 1L))
-      stop("Elements of 'targs' arguments must be scalars.", call.=FALSE)
+   if (any(lengths(targs) > 1L))
+      stop("Elements of the 'targs' arguments must be scalars.", call.=FALSE)
 
    if (is.null(targs$tau2))
-      targs$tau2 <- 0
+      stop("Must specify a 'tau2' value via the 'targs' argument.", call.=FALSE)
+      #targs$tau2 <- 0
 
    return(targs)
 
@@ -38,9 +39,6 @@ transf.ztor <- function(xi)
 
 transf.ztor.int <- function(xi, targs=NULL) {
 
-   if (is.na(xi))
-      return(NA_real_)
-
    targs <- .chktargsint(targs)
 
    if (is.null(targs$lower))
@@ -51,8 +49,14 @@ transf.ztor.int <- function(xi, targs=NULL) {
    toint <- function(zval, xi, tau2)
       tanh(zval) * dnorm(zval, mean=xi, sd=sqrt(tau2))
 
-   cfunc <- function(xi, tau2, lower, upper)
-      integrate(toint, lower=lower, upper=upper, xi=xi, tau2=tau2)$value
+   cfunc <- function(xi, tau2, lower, upper) {
+      out <- try(integrate(toint, lower=lower, upper=upper, xi=xi, tau2=tau2), silent=TRUE)
+      if (inherits(out, "try-error")) {
+         return(NA_real_)
+      } else {
+         return(out$value)
+      }
+   }
 
    if (targs$tau2 == 0) {
       zi <- transf.ztor(xi)
@@ -63,6 +67,37 @@ transf.ztor.int <- function(xi, targs=NULL) {
    return(c(zi))
 
 }
+
+transf.ztor.mode <- function(xi, targs=NULL) {
+
+   if (is.null(targs) || (is.list(targs) && is.null(targs$tau2)))
+      stop("Must specify a 'tau2' value via the 'targs' argument.", call.=FALSE)
+   if (is.list(targs)) {
+      tau2 <- targs$tau2
+   } else {
+      tau2 <- targs
+   }
+
+   tau <- sqrt(tau2)
+
+   dfun <- function(x, mu, sigma)
+      dnorm(atanh(x), mean=mu, sd=sigma) / (1 - x^2)
+
+   zi <- sapply(xi, function(x) {
+      if (tau2 == 0)
+         return(tanh(xi))
+      res <- try(optimize(dfun, maximum=TRUE, lower=-0.9999, upper=0.9999, mu=x, sigma=tau))
+      if (inherits(res, "try-error")) {
+         return(NA_real_)
+      } else {
+         return(res$maximum)
+      }
+   })
+
+   return(c(zi))
+
+}
+############################################################################
 
 transf.r2toz <- function(xi) {
    xi[xi > 1] <- 1
@@ -75,31 +110,53 @@ transf.ztor2 <- function(xi)
 
 ############################################################################
 
+#transf.exp.int <- function(xi, targs=NULL) {
+#
+#   targs <- .chktargsint(targs)
+#
+#   if (is.null(targs$lower))
+#      targs$lower <- xi-10*sqrt(targs$tau2)
+#   if (is.null(targs$upper))
+#      targs$upper <- xi+10*sqrt(targs$tau2)
+#
+#   toint <- function(zval, xi, tau2)
+#      exp(zval) * dnorm(zval, mean=xi, sd=sqrt(tau2))
+#
+#   cfunc <- function(xi, tau2, lower, upper) {
+#      out <- try(integrate(toint, lower=lower, upper=upper, xi=xi, tau2=tau2), silent=TRUE)
+#      if (inherits(out, "try-error")) {
+#         return(NA_real_)
+#      } else {
+#         return(out$value)
+#      }
+#   }
+#
+#   if (targs$tau2 == 0) {
+#      zi <- exp(xi)
+#   } else {
+#      zi <- mapply(xi, FUN=cfunc, tau2=targs$tau2, lower=targs$lower, upper=targs$upper)
+#   }
+#
+#   return(c(zi))
+#
+#}
+
 transf.exp.int <- function(xi, targs=NULL) {
-
-   if (is.na(xi))
-      return(NA_real_)
-
    targs <- .chktargsint(targs)
+   return(exp(xi + targs$tau2/2))
+}
 
-   if (is.null(targs$lower))
-      targs$lower <- xi-10*sqrt(targs$tau2)
-   if (is.null(targs$upper))
-      targs$upper <- xi+10*sqrt(targs$tau2)
+transf.exp.mode <- function(xi, targs=NULL) {
 
-   toint <- function(zval, xi, tau2)
-      exp(zval) * dnorm(zval, mean=xi, sd=sqrt(tau2))
-
-   cfunc <- function(xi, tau2, lower, upper)
-      integrate(toint, lower=lower, upper=upper, xi=xi, tau2=tau2)$value
-
-   if (targs$tau2 == 0) {
-      zi <- exp(xi)
+   if (is.null(targs) || (is.list(targs) && is.null(targs$tau2)))
+      stop("Must specify a 'tau2' value via the 'targs' argument.", call.=FALSE)
+   if (is.list(targs)) {
+      tau2 <- targs$tau2
    } else {
-      zi <- mapply(xi, FUN=cfunc, tau2=targs$tau2, lower=targs$lower, upper=targs$upper)
+      tau2 <- targs
    }
 
-   return(c(zi))
+   return(c(exp(xi - tau2)))
 
 }
 
@@ -113,9 +170,6 @@ transf.ilogit <- function(xi)
 
 transf.ilogit.int <- function(xi, targs=NULL) {
 
-   if (is.na(xi))
-      return(NA_real_)
-
    targs <- .chktargsint(targs)
 
    if (is.null(targs$lower))
@@ -126,14 +180,58 @@ transf.ilogit.int <- function(xi, targs=NULL) {
    toint <- function(zval, xi, tau2)
       plogis(zval) * dnorm(zval, mean=xi, sd=sqrt(tau2))
 
-   cfunc <- function(xi, tau2, lower, upper)
-      integrate(toint, lower=lower, upper=upper, xi=xi, tau2=tau2)$value
+   cfunc <- function(xi, tau2, lower, upper) {
+      out <- try(integrate(toint, lower=lower, upper=upper, xi=xi, tau2=tau2), silent=TRUE)
+      if (inherits(out, "try-error")) {
+         return(NA_real_)
+      } else {
+         return(out$value)
+      }
+   }
 
    if (targs$tau2 == 0) {
       zi <- transf.ilogit(xi)
    } else {
       zi <- mapply(xi, FUN=cfunc, tau2=targs$tau2, lower=targs$lower, upper=targs$upper)
    }
+
+   return(c(zi))
+
+}
+
+transf.ilogit.mode <- function(xi, targs=NULL) {
+
+   if (is.null(targs) || (is.list(targs) && is.null(targs$tau2)))
+      stop("Must specify a 'tau2' value via the 'targs' argument.", call.=FALSE)
+   if (is.list(targs)) {
+      tau2 <- targs$tau2
+   } else {
+      tau2 <- targs
+   }
+
+   tau <- sqrt(tau2)
+
+   xs <- seq(0, 1, length=10^5)
+
+   modefun <- function(x, mu, sigma)
+      sigma^2 * (2*x - 1) + mu - qlogis(x)
+
+   zi <- sapply(xi, function(x) {
+      if (tau2 == 0)
+         return(plogis(xi))
+      ys <- modefun(xs, mu=x, sigma=tau)
+      nmodes <- length(unique(sign(diff(ys)))) # check if there is a single mode
+      if (nmodes == 1L) {
+         res <- try(uniroot(modefun, lower=0, upper=1, mu=x, sigma=tau), silent=TRUE)
+         if (inherits(res, "try-error")) {
+            return(NA_real_)
+         } else {
+            return(res$root)
+         }
+      } else {
+         return(NA_real_)
+      }
+   })
 
    return(c(zi))
 
@@ -153,9 +251,6 @@ transf.iarcsin <- function(xi) {
 
 # transf.iarcsin.int <- function(xi, targs=NULL) {
 #
-#   if (is.na(xi))
-#      return(NA_real_)
-#
 #   targs <- .chktargsint(targs)
 #
 #   if (is.null(targs$lower))
@@ -166,8 +261,14 @@ transf.iarcsin <- function(xi) {
 #   toint <- function(zval, xi, tau2)
 #      transf.iarcsin(zval) * dnorm(zval, mean=xi, sd=sqrt(tau2))
 #
-#   cfunc <- function(xi, tau2, lower, upper)
-#      integrate(toint, lower=lower, upper=upper, xi=xi, tau2=tau2)$value
+#   cfunc <- function(xi, tau2, lower, upper) {
+#      out <- try(integrate(toint, lower=lower, upper=upper, xi=xi, tau2=tau2), silent=TRUE)
+#      if (inherits(out, "try-error")) {
+#         return(NA_real_)
+#      } else {
+#         return(out$value)
+#      }
+#   }
 #
 #   if (targs$tau2 == 0) {
 #      zi <- transf.iarcsin(xi)
@@ -283,8 +384,14 @@ transf.dtou2 <- function(xi)
 transf.dtou3 <- function(xi)
    pnorm(xi)
 
-transf.dtocles <- function(xi)
+transf.dtoovl <- function(xi)
+   2*pnorm(-abs(xi)/2)
+
+transf.dtocles <- function(xi) # note: this does not assume homoscedasticity
    pnorm(xi/sqrt(2))
+
+transf.dtocliffd <- function(xi) # note: this does not assume homoscedasticity
+   2 * pnorm(xi/sqrt(2)) - 1
 
 transf.dtobesd <- function(xi) {
    rpbi <- xi / sqrt(xi^2 + 4)
@@ -309,9 +416,9 @@ transf.dtorpb <- function(xi, n1i, n2i) {
       hi <- 4
    } else {
       if (length(n1i) != length(n2i))
-         stop("Length of 'n1i' does not match length of 'n2i'.", call.=FALSE)
+         stop("Length of 'n1i' does not match the length of 'n2i'.", call.=FALSE)
       if (length(n1i) != length(xi))
-         stop("Length of 'n1i' and 'n2i' does not match length of 'xi'.", call.=FALSE)
+         stop("Length of 'n1i' and 'n2i' does not match the length of 'xi'.", call.=FALSE)
       mi <- n1i + n2i - 2
       hi <- mi / n1i + mi / n2i
    }
@@ -325,25 +432,24 @@ transf.dtorbis <- function(xi, n1i, n2i) {
       n2i <- 1
    } else {
       if (length(n1i) != length(n2i))
-         stop("Length of 'n1i' does not match length of 'n2i'.", call.=FALSE)
+         stop("Length of 'n1i' does not match the length of 'n2i'.", call.=FALSE)
       if (length(n1i) != length(xi))
-         stop("Length of 'n1i' and 'n2i' does not match length of 'xi'.", call.=FALSE)
+         stop("Lengths of 'n1i' and 'n2i' do not match the length of 'xi'.", call.=FALSE)
       mi <- n1i + n2i - 2
       hi <- mi / n1i + mi / n2i
    }
    rpbi <- xi / sqrt(xi^2 + hi)
    pi <- n1i / (n1i + n2i)
-   return(sqrt(pi*(1-pi)) / dnorm(pnorm(pi)) * rpbi)
+   return(sqrt(pi*(1-pi)) / dnorm(qnorm(pi)) * rpbi)
 }
 
 transf.rpbtorbis <- function(xi, pi) {
    if (missing(pi)) {
       pi <- 0.5
    } else {
-      if (length(pi) == 1L)
-         pi <- rep(pi, length(xi))
+      pi <- .expand1(pi, length(xi))
       if (length(xi) != length(pi))
-         stop("Length of 'xi' does not match length of 'pi'.", call.=FALSE)
+         stop("Length of 'xi' does not match the length of 'pi'.", call.=FALSE)
    }
    if (any(pi < 0 | pi > 1, na.rm=TRUE))
       stop("One or more 'pi' values are < 0 or > 1.", call.=FALSE)
@@ -354,10 +460,9 @@ transf.rtorpb <- function(xi, pi) {
    if (missing(pi)) {
       pi <- 0.5
    } else {
-      if (length(pi) == 1L)
-         pi <- rep(pi, length(xi))
+      pi <- .expand1(pi, length(xi))
       if (length(xi) != length(pi))
-         stop("Length of 'xi' does not match length of 'pi'.", call.=FALSE)
+         stop("Length of 'xi' does not match the length of 'pi'.", call.=FALSE)
    }
    if (any(pi < 0 | pi > 1, na.rm=TRUE))
       stop("One or more 'pi' values are < 0 or > 1.", call.=FALSE)
@@ -371,9 +476,9 @@ transf.rtod <- function(xi, n1i, n2i) {
       n2i <- 1
    } else {
       if (length(n1i) != length(n2i))
-         stop("Length of 'n1i' does not match length of 'n2i'.", call.=FALSE)
+         stop("Length of 'n1i' does not match the length of 'n2i'.", call.=FALSE)
       if (length(n1i) != length(xi))
-         stop("Length of 'n1i' and 'n2i' does not match length of 'xi'.", call.=FALSE)
+         stop("Lengths of 'n1i' and 'n2i' do not match the length of 'xi'.", call.=FALSE)
       mi <- n1i + n2i - 2
       hi <- mi / n1i + mi / n2i
    }
@@ -389,9 +494,9 @@ transf.rpbtod <- function(xi, n1i, n2i) {
       hi <- 4
    } else {
       if (length(n1i) != length(n2i))
-         stop("Length of 'n1i' does not match length of 'n2i'.", call.=FALSE)
+         stop("Length of 'n1i' does not match the length of 'n2i'.", call.=FALSE)
       if (length(n1i) != length(xi))
-         stop("Length of 'n1i' and 'n2i' does not match length of 'xi'.", call.=FALSE)
+         stop("Lengths of 'n1i' and 'n2i' do not match the length of 'xi'.", call.=FALSE)
       mi <- n1i + n2i - 2
       hi <- mi / n1i + mi / n2i
    }
@@ -399,20 +504,18 @@ transf.rpbtod <- function(xi, n1i, n2i) {
 }
 
 transf.lnortord <- function(xi, pc) {
-   if (length(pc) == 1L)
-      pc <- rep(pc, length(xi))
+   pc <- .expand1(pc, length(xi))
    if (length(xi) != length(pc))
-      stop("Length of 'xi' does not match length of 'pc'.", call.=FALSE)
+      stop("Length of 'xi' does not match the length of 'pc'.", call.=FALSE)
    if (any(pc < 0) || any(pc > 1))
       stop("The control group risk 'pc' must be between 0 and 1.", call.=FALSE)
    return(exp(xi)*pc / (1 - pc + pc * exp(xi)) - pc)
 }
 
 transf.lnortorr <- function(xi, pc) {
-   if (length(pc) == 1L)
-      pc <- rep(pc, length(xi))
+   pc <- .expand1(pc, length(xi))
    if (length(xi) != length(pc))
-      stop("Length of 'xi' does not match length of 'pc'.", call.=FALSE)
+      stop("Length of 'xi' does not match the length of 'pc'.", call.=FALSE)
    if (any(pc < 0) || any(pc > 1))
       stop("The control group risk 'pc' must be between 0 and 1.", call.=FALSE)
    return(exp(xi) / (pc * (exp(xi) - 1) + 1))

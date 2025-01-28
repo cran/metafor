@@ -38,7 +38,7 @@
 
    if (length(ids) != length(vcvals)) {
       mstyle <- .get.mstyle()
-      stop(mstyle$stop(paste0("Length of 'vccon$", vcname, "' (", length(ids), ") does not match length of ", vcname, " (", length(vcvals), ").")), call.=FALSE)
+      stop(mstyle$stop(paste0("Length of 'vccon$", vcname, "' (", length(ids), ") does not match the length of ", vcname, " (", length(vcvals), ").")), call.=FALSE)
    }
 
    for (id in unique(ids))
@@ -167,20 +167,18 @@
 
    ### allow quickly setting all tau2 values to a fixed value
 
-   if (length(tau2) == 1L)
-      tau2 <- rep(tau2, tau2s)
+   tau2 <- .expand1(tau2, tau2s)
 
    ### allow quickly setting all rho values to a fixed value
 
-   if (length(rho) == 1L)
-      rho <- rep(rho, rhos)
+   rho <- .expand1(rho, rhos)
 
    ### check if tau2 and rho are of correct length
 
    if (length(tau2) != tau2s)
-      stop(mstyle$stop(paste0("Length of ", ifelse(isG, 'tau2', 'gamma2'), " argument (", length(tau2), ") does not match actual number of variance components (", tau2s, ").")), call.=FALSE)
+      stop(mstyle$stop(paste0("Length of the ", ifelse(isG, 'tau2', 'gamma2'), " argument (", length(tau2), ") does not match the actual number of variance components (", tau2s, ").")), call.=FALSE)
    if (length(rho) != rhos)
-      stop(mstyle$stop(paste0("Length of ", ifelse(isG, 'rho', 'phi'), " argument (", length(rho), ") does not match actual number of correlations (", rhos, ").")), call.=FALSE)
+      stop(mstyle$stop(paste0("Length of the ", ifelse(isG, 'rho', 'phi'), " argument (", length(rho), ") does not match the actual number of correlations (", rhos, ").")), call.=FALSE)
 
    ### checks on any fixed values of tau2 and rho arguments
 
@@ -252,7 +250,7 @@
 
 ############################################################################
 
-.process.G.afterrmna <- function(mf.g, g.nlevels, g.levels, g.values, struct, formula, tau2, rho, Z.G1, Z.G2, isG, sparse, distspec, verbose) {
+.process.G.afterrmna <- function(mf.g, g.nlevels, g.levels, g.values, struct, formula, tau2, rho, Z.G1, Z.G2, isG, sparse, distspec, check.k.gtr.1, verbose) {
 
    mstyle <- .get.mstyle()
 
@@ -327,18 +325,18 @@
    if (is.element(struct, c("SPEXP","SPGAU","SPLIN","SPRAT","SPSPH","PHYBM","PHYPL","PHYPD","GEN","GDIAG"))) {
       g.levels.k <- table(factor(apply(mf.g[-nvars], 1, paste, collapse=" + "), levels=g.levels.f[[1]]))
    } else {
-      g.levels.k <- table(factor(mf.g[[1]], levels=g.levels.f[[1]]))
+      #g.levels.k <- table(factor(mf.g[[1]], levels=g.levels.f[[1]]))
+      g.levels.k <- apply(table(factor(mf.g[[1]], levels=g.levels.f[[1]]), mf.g[[2]]), 1, function(x) sum(x>0L))
    }
 
    ### for "HCS","UN","DIAG","HAR": if a particular level of the inner factor only occurs once, then set corresponding tau2 value to 0 (if not already fixed)
-   ### note: no longer done; variance component should still be (weakly) identifiable
 
-   #if (is.element(struct, c("HCS","UN","DIAG","HAR"))) {
-   #   if (any(is.na(tau2) & g.levels.k == 1)) {
-   #      tau2[is.na(tau2) & g.levels.k == 1] <- 0
-   #      warning(mstyle$warning("Inner factor has k=1 for one or more levels. Corresponding 'tau2' value(s) fixed to 0."), call.=FALSE)
-   #   }
-   #}
+   if (is.element(struct, c("HCS","UN","DIAG","HAR")) && check.k.gtr.1) {
+      if (any(is.na(tau2) & g.levels.k == 1)) {
+         tau2[is.na(tau2) & g.levels.k == 1] <- 0
+         warning(mstyle$warning("Inner factor has k=1 for one or more levels. Corresponding 'tau2' value(s) fixed to 0."), call.=FALSE)
+      }
+   }
 
    ### check if each study has only a single arm (could be different arms!)
    ### for "CS","HCS","AR","HAR","CAR" must then fix rho to 0 (if not already fixed)
@@ -863,9 +861,15 @@
                        withS, withG, withH,
                        struct, g.levels.r, h.levels.r, g.values, h.values,
                        sparse, cholesky, nearpd, vctransf, vccov, vccon,
-                       verbose, digits, REMLf, dofit=FALSE, hessian=FALSE) {
+                       verbose, digits, REMLf,
+                       dofit=FALSE, hessian=FALSE, optbeta=FALSE, lambda=0, intercept=TRUE) {
 
    mstyle <- .get.mstyle()
+
+   if (optbeta) {
+      beta <- par[1:pX]
+      par  <- par[-c(1:pX)]
+   }
 
    ### only NA values in sigma2.arg, tau2.arg, rho.arg, gamma2.arg, phi.arg should be estimated; otherwise, replace with fixed values
 
@@ -990,6 +994,8 @@
    if (nearpd)
       M <- as.matrix(nearPD(M)$mat)
 
+   ### compute W = M^-1 via Cholesky decomposition
+
    if (verbose > 1) {
       W <- try(chol2inv(chol(M)), silent=FALSE)
    } else {
@@ -1005,88 +1011,81 @@
       ### move the parameter estimates away from values that create the non-positive-definite M matrix)
 
       if (dofit) {
-         stop(mstyle$stop("Final variance-covariance matrix not positive definite."), call.=FALSE)
+         stop(mstyle$stop("Final variance-covariance matrix is not positive definite."), call.=FALSE)
       } else {
          llval <- -Inf
       }
 
    } else {
 
-      if (verbose > 1) {
-         U <- try(chol(W), silent=FALSE)
+      if (!dofit || is.null(A)) {
+
+         stXWX <- chol2inv(chol(as.matrix(t(X) %*% W %*% X))) # TODO: catch if this fails
+         if (!optbeta)
+            beta <- matrix(stXWX %*% crossprod(X,W) %*% Y, ncol=1)
+         beta  <- ifelse(is.na(beta.arg), beta, beta.arg)
+         RSS   <- as.vector(t(Y - X %*% beta) %*% W %*% (Y - X %*% beta))
+         if (optbeta && lambda > 0) {
+            if (intercept) {
+               RSS <- RSS + c(lambda * crossprod(beta[-1]))
+               #RSS <- RSS + c(lambda * sum(abs(beta[-1])))
+            } else {
+               RSS <- RSS + c(lambda * crossprod(beta))
+               #RSS <- RSS + c(lambda * sum(abs(beta)))
+            }
+         }
+         vb    <- stXWX
+
       } else {
-         U <- try(suppressWarnings(chol(W)), silent=TRUE)
+
+         stXAX <- chol2inv(chol(as.matrix(t(X) %*% A %*% X))) # TODO: catch if this fails
+         beta  <- matrix(stXAX %*% crossprod(X,A) %*% Y, ncol=1)
+         beta  <- ifelse(is.na(beta.arg), beta, beta.arg)
+         RSS   <- as.vector(t(Y - X %*% beta) %*% W %*% (Y - X %*% beta))
+         if (optbeta && lambda > 0) {
+            if (intercept) {
+               RSS <- RSS + c(lambda * crossprod(beta[-1]))
+            } else {
+               RSS <- RSS + c(lambda * crossprod(beta))
+            }
+         }
+         vb    <- matrix(stXAX %*% t(X) %*% A %*% M %*% A %*% X %*% stXAX, nrow=pX, ncol=pX)
+
       }
 
-      ### Y ~ N(Xbeta, M), so UY ~ N(UXbeta, UMU) where UMU = I
-      ### return(U %*% M %*% U)
+      llvals <- c(NA_real_, NA_real_)
 
-      if (inherits(U, "try-error")) {
+      if (dofit || !reml)
+         llvals[1]  <- -1/2 * (k) * log(2*base::pi) - 1/2 * determinant(M, logarithm=TRUE)$modulus - 1/2 * RSS
 
-         if (dofit) {
-            stop(mstyle$stop("Cannot fit model based on estimated marginal variance-covariance matrix."), call.=FALSE)
-         } else {
-            llval <- -Inf
+      if (dofit || reml)
+         llvals[2]  <- -1/2 * (k-pX) * log(2*base::pi) + ifelse(REMLf, 1/2 * determinant(crossprod(X), logarithm=TRUE)$modulus, 0) +
+                       -1/2 * determinant(M, logarithm=TRUE)$modulus - 1/2 * determinant(crossprod(X,W) %*% X, logarithm=TRUE)$modulus - 1/2 * RSS
+
+      if (dofit) {
+
+         res <- list(beta=beta, vb=vb, M=M, llvals=llvals)
+
+         if (withS)
+            res$sigma2 <- sigma2
+
+         if (withG) {
+            res$G <- G
+            res$tau2 <- tau2
+            res$rho <- rho
          }
+
+         if (withH) {
+            res$H <- H
+            res$gamma2 <- gamma2
+            res$phi <- phi
+         }
+
+         return(res)
 
       } else {
 
-         if (!dofit || is.null(A)) {
-
-            sX   <- U %*% X
-            sY   <- U %*% Y
-            beta <- solve(crossprod(sX), crossprod(sX, sY))
-            beta <- ifelse(is.na(beta.arg), beta, beta.arg)
-            RSS  <- sum(as.vector(sY - sX %*% beta)^2)
-            if (dofit)
-               vb <- matrix(solve(crossprod(sX)), nrow=pX, ncol=pX)
-
-         } else {
-
-            stXAX <- chol2inv(chol(as.matrix(t(X) %*% A %*% X)))
-            #stXAX <- tcrossprod(qr.solve(sX, diag(k)))
-            beta  <- matrix(stXAX %*% crossprod(X,A) %*% Y, ncol=1)
-            beta  <- ifelse(is.na(beta.arg), beta, beta.arg)
-            RSS   <- as.vector(t(Y - X %*% beta) %*% W %*% (Y - X %*% beta))
-            vb    <- matrix(stXAX %*% t(X) %*% A %*% M %*% A %*% X %*% stXAX, nrow=pX, ncol=pX)
-
-         }
-
-         llvals <- c(NA_real_, NA_real_)
-
-         if (dofit || !reml)
-            llvals[1]  <- -1/2 * (k) * log(2*base::pi) - 1/2 * determinant(M, logarithm=TRUE)$modulus - 1/2 * RSS
-
-         if (dofit || reml)
-            llvals[2]  <- -1/2 * (k-pX) * log(2*base::pi) + ifelse(REMLf, 1/2 * determinant(crossprod(X), logarithm=TRUE)$modulus, 0) +
-                          -1/2 * determinant(M, logarithm=TRUE)$modulus - 1/2 * determinant(crossprod(X,W) %*% X, logarithm=TRUE)$modulus - 1/2 * RSS
-
-         if (dofit) {
-
-            res <- list(beta=beta, vb=vb, M=M, llvals=llvals)
-
-            if (withS)
-               res$sigma2 <- sigma2
-
-            if (withG) {
-               res$G <- G
-               res$tau2 <- tau2
-               res$rho <- rho
-            }
-
-            if (withH) {
-               res$H <- H
-               res$gamma2 <- gamma2
-               res$phi <- phi
-            }
-
-            return(res)
-
-         } else {
-
-            llval <- ifelse(reml, llvals[2], llvals[1])
-
-         }
+         llval <- ifelse(reml, llvals[2], llvals[1])
 
       }
 
@@ -1099,7 +1098,6 @@
          iteration <- .getfromenv("iteration", default=NULL)
 
          if (!is.null(iteration)) {
-            #cat(mstyle$verbose(paste0("Iteration ", iteration, "\t")))
             cat(mstyle$verbose(paste0("Iteration ", formatC(iteration, width=5, flag="-", format="f", digits=0), " ")))
             try(assign("iteration", iteration+1, envir=.metafor), silent=TRUE)
          }
@@ -1127,10 +1125,13 @@
 
 ############################################################################
 
-.cooks.distance.rma.mv <- function(i, obj, parallel, svb, cluster, ids, reestimate, btt) {
+.cooks.distance.rma.mv <- function(i, obj, parallel, svb, cluster, ids, reestimate, btt, code2=NULL) {
 
    if (parallel == "snow")
       library(metafor)
+
+   if (!is.null(code2))
+      eval(expr = parse(text = code2))
 
    incl <- cluster %in% ids[i]
 
@@ -1157,7 +1158,7 @@
                    test=obj$test, dfs=obj$dfs, level=obj$level, R=obj$R, Rscale=obj$Rscale,
                    sigma2=ifelse(obj$vc.fix$sigma2, obj$sigma2, NA), tau2=ifelse(obj$vc.fix$tau2, obj$tau2, NA), rho=ifelse(obj$vc.fix$rho, obj$rho, NA),
                    gamma2=ifelse(obj$vc.fix$gamma2, obj$gamma2, NA), phi=ifelse(obj$vc.fix$phi, obj$phi, NA),
-                   sparse=obj$sparse, dist=obj$dist, vccon=obj$vccon, control=control, subset=!incl, outlist=outlist)
+                   sparse=obj$sparse, dist=obj$dist, vccon=obj$vccon, optbeta=obj$optbeta, control=control, subset=!incl, outlist=outlist)
       res <- try(suppressWarnings(.do.call(rma.mv, args)), silent=TRUE)
 
    } else {
@@ -1167,7 +1168,7 @@
       args <- list(yi=obj$yi, V=obj$V, W=obj$W, mods=obj$X, random=obj$random, struct=obj$struct, intercept=FALSE, data=obj$mf.r, method=obj$method,
                    test=obj$test, dfs=obj$dfs, level=obj$level, R=obj$R, Rscale=obj$Rscale,
                    sigma2=obj$sigma2, tau2=obj$tau2, rho=obj$rho, gamma2=obj$gamma2, phi=obj$phi,
-                   sparse=obj$sparse, dist=obj$dist, vccon=obj$vccon, control=obj$control, subset=!incl, outlist=outlist)
+                   sparse=obj$sparse, dist=obj$dist, vccon=obj$vccon, optbeta=obj$optbeta, control=obj$control, subset=!incl, outlist=outlist)
       res <- try(suppressWarnings(.do.call(rma.mv, args)), silent=TRUE)
 
    }
@@ -1190,10 +1191,13 @@
 
 }
 
-.rstudent.rma.mv <- function(i, obj, parallel, cluster, ids, reestimate) {
+.rstudent.rma.mv <- function(i, obj, parallel, cluster, ids, reestimate, code2=NULL) {
 
    if (parallel == "snow")
       library(metafor)
+
+   if (!is.null(code2))
+      eval(expr = parse(text = code2))
 
    incl <- cluster %in% ids[i]
 
@@ -1220,7 +1224,7 @@
                    test=obj$test, dfs=obj$dfs, level=obj$level, R=obj$R, Rscale=obj$Rscale,
                    sigma2=ifelse(obj$vc.fix$sigma2, obj$sigma2, NA), tau2=ifelse(obj$vc.fix$tau2, obj$tau2, NA), rho=ifelse(obj$vc.fix$rho, obj$rho, NA),
                    gamma2=ifelse(obj$vc.fix$gamma2, obj$gamma2, NA), phi=ifelse(obj$vc.fix$phi, obj$phi, NA),
-                   sparse=obj$sparse, dist=obj$dist, vccon=obj$vccon, control=control, subset=!incl, outlist=outlist)
+                   sparse=obj$sparse, dist=obj$dist, vccon=obj$vccon, optbeta=obj$optbeta, control=control, subset=!incl, outlist=outlist)
       res <- try(suppressWarnings(.do.call(rma.mv, args)), silent=TRUE)
 
    } else {
@@ -1230,7 +1234,7 @@
       args <- list(yi=obj$yi, V=obj$V, W=obj$W, mods=obj$X, random=obj$random, struct=obj$struct, intercept=FALSE, data=obj$mf.r, method=obj$method,
                    test=obj$test, dfs=obj$dfs, level=obj$level, R=obj$R, Rscale=obj$Rscale,
                    sigma2=obj$sigma2, tau2=obj$tau2, rho=obj$rho, gamma2=obj$gamma2, phi=obj$phi,
-                   sparse=obj$sparse, dist=obj$dist, vccon=obj$vccon, control=obj$control, subset=!incl, outlist=outlist)
+                   sparse=obj$sparse, dist=obj$dist, vccon=obj$vccon, optbeta=obj$optbeta, control=obj$control, subset=!incl, outlist=outlist)
       res <- try(suppressWarnings(.do.call(rma.mv, args)), silent=TRUE)
 
    }
@@ -1252,7 +1256,7 @@
    args <- list(yi=obj$yi, V=obj$V, W=obj$W, mods=obj$X, random=obj$random, struct=obj$struct, intercept=FALSE, data=obj$mf.r, method=obj$method,
                 test=obj$test, dfs=obj$dfs, level=obj$level, R=obj$R, Rscale=obj$Rscale,
                 sigma2=res$sigma2, tau2=res$tau2, rho=res$rho, gamma2=res$gamma2, phi=res$phi,
-                sparse=obj$sparse, dist=obj$dist, vccon=obj$vccon, control=obj$control, outlist=outlist)
+                sparse=obj$sparse, dist=obj$dist, vccon=obj$vccon, optbeta=obj$optbeta, control=obj$control, outlist=outlist)
    tmp <- try(suppressWarnings(.do.call(rma.mv, args)), silent=TRUE)
 
    Xi <- obj$X[incl,,drop=FALSE]
@@ -1276,10 +1280,13 @@
 
 }
 
-.dfbetas.rma.mv <- function(i, obj, parallel, cluster, ids, reestimate) {
+.dfbetas.rma.mv <- function(i, obj, parallel, cluster, ids, reestimate, code2=NULL) {
 
    if (parallel == "snow")
       library(metafor)
+
+   if (!is.null(code2))
+      eval(expr = parse(text = code2))
 
    incl <- cluster %in% ids[i]
 
@@ -1304,7 +1311,7 @@
                    test=obj$test, dfs=obj$dfs, level=obj$level, R=obj$R, Rscale=obj$Rscale,
                    sigma2=ifelse(obj$vc.fix$sigma2, obj$sigma2, NA), tau2=ifelse(obj$vc.fix$tau2, obj$tau2, NA), rho=ifelse(obj$vc.fix$rho, obj$rho, NA),
                    gamma2=ifelse(obj$vc.fix$gamma2, obj$gamma2, NA), phi=ifelse(obj$vc.fix$phi, obj$phi, NA),
-                   sparse=obj$sparse, dist=obj$dist, vccon=obj$vccon, control=control, subset=!incl, outlist=outlist)
+                   sparse=obj$sparse, dist=obj$dist, vccon=obj$vccon, optbeta=obj$optbeta, control=control, subset=!incl, outlist=outlist)
       res <- try(suppressWarnings(.do.call(rma.mv, args)), silent=TRUE)
 
    } else {
@@ -1314,7 +1321,7 @@
       args <- list(yi=obj$yi, V=obj$V, W=obj$W, mods=obj$X, random=obj$random, struct=obj$struct, intercept=FALSE, data=obj$mf.r, method=obj$method,
                    test=obj$test, dfs=obj$dfs, level=obj$level, R=obj$R, Rscale=obj$Rscale,
                    sigma2=obj$sigma2, tau2=obj$tau2, rho=obj$rho, gamma2=obj$gamma2, phi=obj$phi,
-                   sparse=obj$sparse, dist=obj$dist, vccon=obj$vccon, control=obj$control, subset=!incl, outlist=outlist)
+                   sparse=obj$sparse, dist=obj$dist, vccon=obj$vccon, optbeta=obj$optbeta, control=obj$control, subset=!incl, outlist=outlist)
       res <- try(suppressWarnings(.do.call(rma.mv, args)), silent=TRUE)
 
    }
@@ -1336,7 +1343,7 @@
    args <- list(yi=obj$yi, V=obj$V, W=obj$W, mods=obj$X, random=obj$random, struct=obj$struct, intercept=FALSE, data=obj$mf.r, method=obj$method,
                 test=obj$test, dfs=obj$dfs, level=obj$level, R=obj$R, Rscale=obj$Rscale,
                 sigma2=res$sigma2, tau2=res$tau2, rho=res$rho, gamma2=res$gamma2, phi=res$phi,
-                sparse=obj$sparse, dist=obj$dist, vccon=obj$vccon, control=obj$control, outlist=outlist)
+                sparse=obj$sparse, dist=obj$dist, vccon=obj$vccon, optbeta=obj$optbeta, control=obj$control, outlist=outlist)
    tmp <- try(suppressWarnings(.do.call(rma.mv, args)), silent=TRUE)
 
    ### compute dfbeta value(s)
@@ -1361,10 +1368,9 @@
 
       if (is.numeric(dfs)) {
          ddf <- dfs
-         if (length(ddf) == 1L)
-            ddf <- rep(ddf, p)
+         ddf <- .expand1(ddf, p)
          if (length(ddf) != p)
-            stop(mstyle$stop(paste0("Length of 'dfs' argument (", length(dfs), ") does not match the number of model coefficient (", p, ").")), call.=FALSE)
+            stop(mstyle$stop(paste0("Length of the 'dfs' argument (", length(dfs), ") does not match the number of model coefficient (", p, ").")), call.=FALSE)
       }
 
       if (is.character(dfs) && dfs == "residual")

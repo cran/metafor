@@ -8,18 +8,20 @@
 \usage{
 rma.uni(yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
         m1i, m2i, sd1i, sd2i, xi, mi, ri, ti, fi, pi, sdi, r2i, ni, mods, scale,
-        measure="GEN", intercept=TRUE, data, slab, subset,
-        add=1/2, to="only0", drop00=FALSE, vtype="LS",
+        measure="GEN", data, slab, subset,
+        add=1/2, to="only0", drop00=FALSE, intercept=TRUE,
         method="REML", weighted=TRUE, test="z",
         level=95, btt, att, tau2, verbose=FALSE, digits, control, \dots)
 rma(yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
         m1i, m2i, sd1i, sd2i, xi, mi, ri, ti, fi, pi, sdi, r2i, ni, mods, scale,
-        measure="GEN", intercept=TRUE, data, slab, subset,
-        add=1/2, to="only0", drop00=FALSE, vtype="LS",
+        measure="GEN", data, slab, subset,
+        add=1/2, to="only0", drop00=FALSE, intercept=TRUE,
         method="REML", weighted=TRUE, test="z",
         level=95, btt, att, tau2, verbose=FALSE, digits, control, \dots)
 }
 \arguments{
+   \emph{These arguments pertain to data input:}
+
    \item{yi}{vector of length \mjseqn{k} with the observed effect sizes or outcomes. See \sQuote{Details}.}
    \item{vi}{vector of length \mjseqn{k} with the corresponding sampling variances. See \sQuote{Details}.}
    \item{sei}{vector of length \mjseqn{k} with the corresponding standard errors (only relevant when not using \code{vi}). See \sQuote{Details}.}
@@ -50,14 +52,19 @@ rma(yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
    \item{mods}{optional argument to include one or more moderators in the model. A single moderator can be given as a vector of length \mjseqn{k} specifying the values of the moderator. Multiple moderators are specified by giving a matrix with \mjseqn{k} rows and as many columns as there are moderator variables. Alternatively, a model \code{\link{formula}} can be used to specify the model. See \sQuote{Details}.}
    \item{scale}{optional argument to include one or more predictors for the scale part in a location-scale model. See \sQuote{Details}.}
    \item{measure}{character string to specify the type of data supplied to the function. When \code{measure="GEN"} (default), the observed effect sizes or outcomes and corresponding sampling variances should be supplied to the function via the \code{yi} and \code{vi} arguments, respectively (instead of the sampling variances, one can supply the standard errors via the \code{sei} argument). Alternatively, one can set \code{measure} to one of the effect sizes or outcome measures described under the documentation for the \code{\link{escalc}} function in which case one must specify the required data via the appropriate arguments (see \code{\link{escalc}}).}
-   \item{intercept}{logical to specify whether an intercept should be added to the model (the default is \code{TRUE}). Ignored when \code{mods} is a formula.}
    \item{data}{optional data frame containing the data supplied to the function.}
    \item{slab}{optional vector with labels for the \mjseqn{k} studies.}
    \item{subset}{optional (logical or numeric) vector to specify the subset of studies that should be used for the analysis.}
+
+   \emph{These arguments pertain to handling of zero cells/counts/frequencies:}
+
    \item{add}{see the documentation of the \code{\link{escalc}} function.}
    \item{to}{see the documentation of the \code{\link{escalc}} function.}
    \item{drop00}{see the documentation of the \code{\link{escalc}} function.}
-   \item{vtype}{see the documentation of the \code{\link{escalc}} function.}
+
+   \emph{These arguments pertain to the model / computations and output:}
+
+   \item{intercept}{logical to specify whether an intercept should be added to the model (the default is \code{TRUE}). Ignored when \code{mods} is a formula.}
    \item{method}{character string to specify whether an equal- or a random-effects model should be fitted. An equal-effects model is fitted when using \code{method="EE"}. A random-effects model is fitted by setting \code{method} equal to one of the following: \code{"DL"}, \code{"HE"}, \code{"HS"}, \code{"HSk"}, \code{"SJ"}, \code{"ML"}, \code{"REML"}, \code{"EB"}, \code{"PM"}, \code{"GENQ"}, \code{"PMM"}, or \code{"GENQM"}. The default is \code{"REML"}. See \sQuote{Details}.}
    \item{weighted}{logical to specify whether weighted (default) or unweighted estimation should be used to fit the model (the default is \code{TRUE}).}
    \item{test}{character string to specify how test statistics and confidence intervals for the fixed effects should be computed. By default (\code{test="z"}), Wald-type tests and CIs are obtained, which are based on a standard normal distribution. When \code{test="t"}, a t-distribution is used instead. When \code{test="knha"}, the method by Knapp and Hartung (2003) is used. See \sQuote{Details} and also \link[=misc-recs]{here} for some recommended practices.}
@@ -84,7 +91,7 @@ rma(yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
 
       The function can be used to fit equal-, fixed-, and random-effects models, as well as (mixed-effects) meta-regression models including one or multiple moderators (the difference between the various models is described in detail on the introductory \pkg{\link{metafor-package}} help page).
 
-      Assuming the observed effect sizes or outcomes and corresponding sampling variances are supplied via the \code{yi} and \code{vi} arguments, an \emph{equal-effects model} can be fitted with \code{rma(yi, vi, method="EE")}. Setting \code{method="FE"} fits a \emph{fixed-effects model} (see \link[=misc-models]{here} for a discussion of this model). Weighted estimation (with inverse-variance weights) is used by default. User-defined weights can be supplied via the \code{weights} argument. Unweighted estimation can be used by setting \code{weighted=FALSE} (which is the same as setting the weights equal to a constant).
+      Assuming the observed effect sizes or outcomes and corresponding sampling variances are supplied via the \code{yi} and \code{vi} arguments, an \emph{equal-effects model} can be fitted with \code{rma(yi, vi, method="EE")}. Setting \code{method="FE"} fits a \emph{fixed-effects model} (see \link[=misc-models]{here} for a discussion of this model and how the interpretation of these models differ despite yielding identical results). Weighted estimation (with inverse-variance weights) is used by default. User-defined weights can be supplied via the \code{weights} argument. Unweighted estimation can be used by setting \code{weighted=FALSE} (which is the same as setting the weights equal to a constant).
 
       A \emph{random-effects model} can be fitted with the same code but setting the \code{method} argument to one of the various estimators for the amount of heterogeneity:
 
@@ -107,15 +114,15 @@ rma(yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
 
       One or more moderators can be included in a model via the \code{mods} argument. A single moderator can be given as a (row or column) vector of length \mjseqn{k} specifying the values of the moderator. Multiple moderators are specified by giving an appropriate model matrix (i.e., \mjseqn{X}) with \mjseqn{k} rows and as many columns as there are moderator variables (e.g., \code{mods = cbind(mod1, mod2, mod3)}, where \code{mod1}, \code{mod2}, and \code{mod3} correspond to the names of the variables for three moderator variables). The intercept is added to the model matrix by default unless \code{intercept=FALSE}.
 
-      Alternatively, one can use standard \code{\link{formula}} syntax to specify the model. In this case, the \code{mods} argument should be set equal to a one-sided formula of the form \code{mods = ~ model} (e.g., \code{mods = ~ mod1 + mod2 + mod3}). Interactions, polynomial terms, and factors can be easily added to the model in this manner. When specifying a model formula via the \code{mods} argument, the \code{intercept} argument is ignored. Instead, the inclusion/exclusion of the intercept is controlled by the specified formula (e.g., \code{mods = ~ mod1 + mod2 + mod3 - 1} would lead to the removal of the intercept).
+      Alternatively, one can use standard \code{\link{formula}} syntax to specify the model. In this case, the \code{mods} argument should be set equal to a one-sided formula of the form \code{mods = ~ model} (e.g., \code{mods = ~ mod1 + mod2 + mod3}). Interactions, polynomial/spline terms, and factors can be easily added to the model in this manner. When specifying a model formula via the \code{mods} argument, the \code{intercept} argument is ignored. Instead, the inclusion/exclusion of the intercept is controlled by the specified formula (e.g., \code{mods = ~ 0 + mod1 + mod2 + mod3} or \code{mods = ~ mod1 + mod2 + mod3 - 1} would lead to the removal of the intercept).
 
-      When the observed effect sizes or outcomes and corresponding sampling variances are supplied via the \code{yi} and \code{vi} (or \code{sei}) arguments, one can also specify moderators via the \code{yi} argument (e.g., \code{rma(yi ~ mod1 + mod2 + mod3, vi)}). In that case, the \code{mods} argument is ignored and the inclusion/exclusion of the intercept again is controlled by the specified formula.
+      When the observed effect sizes or outcomes and corresponding sampling variances are supplied via the \code{yi} and \code{vi} (or \code{sei}) arguments, one can also specify moderators via the \code{yi} argument (e.g., \code{rma(yi ~ mod1 + mod2 + mod3, vi)}). In that case, the \code{mods} argument is ignored and the inclusion/exclusion of the intercept is again controlled by the specified formula.
 
    }
 
    \subsection{Omnibus Test of Moderators}{
 
-      For models including moderators, an omnibus test of all model coefficients is conducted that excludes the intercept (the first coefficient) if it is included in the model. If no intercept is included in the model, then the omnibus test includes all coefficients in the model including the first. Alternatively, one can manually specify the indices of the coefficients to test via the \code{btt} (\sQuote{betas to test}) argument (i.e., to test \mjseqn{\mbox{H}_0{:}\; \beta_{j \in \texttt{btt}} = 0}, where \mjseqn{\beta_{j \in \texttt{btt}}} is the set of coefficients to be tested). For example, with \code{btt=c(3,4)}, only the third and fourth coefficients from the model are included in the test (if an intercept is included in the model, then it corresponds to the first coefficient in the model). Instead of specifying the coefficient numbers, one can specify a string for \code{btt}. In that case, \code{\link{grep}} will be used to search for all coefficient names that match the string. The omnibus test is called the \mjseqn{Q_M}-test and follows asymptotically a chi-square distribution with \mjseqn{m} degrees of freedom (with \mjseqn{m} denoting the number of coefficients tested) under the null hypothesis (that the true value of all coefficients tested is equal to 0).
+      For models including moderators, an omnibus test of all model coefficients is conducted that excludes the intercept (the first coefficient) if it is included in the model. If no intercept is included in the model, then the omnibus test includes all coefficients in the model including the first. Alternatively, one can manually specify the indices of the coefficients to test via the \code{btt} (\sQuote{betas to test}) argument (i.e., to test \mjseqn{\text{H}_0{:}\; \beta_{j \in \texttt{btt}} = 0}, where \mjseqn{\beta_{j \in \texttt{btt}}} is the set of coefficients to be tested). For example, with \code{btt=c(3,4)}, only the third and fourth coefficients from the model are included in the test (if an intercept is included in the model, then it corresponds to the first coefficient in the model). Instead of specifying the coefficient numbers, one can specify a string for \code{btt}. In that case, \code{\link{grep}} will be used to search for all coefficient names that match the string. The omnibus test is called the \mjseqn{Q_M}-test and follows asymptotically a chi-square distribution with \mjseqn{m} degrees of freedom (with \mjseqn{m} denoting the number of coefficients tested) under the null hypothesis (that the true value of all coefficients tested is equal to 0).
 
    }
 
@@ -193,7 +200,7 @@ rma(yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
 
    A confidence interval for the amount of (residual) heterogeneity in the random/mixed-effects model can be obtained with \code{\link[=confint.rma.uni]{confint}}. For location-scale models, \code{\link[=confint.rma.ls]{confint}} can provide confidence intervals for the scale coefficients.
 
-   Forest, funnel, radial, \enc{L'Abbé}{L'Abbe}, and Baujat plots can be obtained with \code{\link[=forest.rma]{forest}}, \code{\link[=funnel.rma]{funnel}}, \code{\link[=radial.rma]{radial}}, \code{\link[=labbe.rma]{labbe}}, and \code{\link[=baujat.rma]{baujat}} (radial and \enc{L'Abbé}{L'Abbe} plots only for models without moderators). The \code{\link[=qqnorm.rma.uni]{qqnorm}} function provides normal QQ plots of the standardized residuals. One can also just call \code{\link[=plot.rma.uni]{plot}} on the fitted model object to obtain various plots at once. For random/mixed-effects models, the \code{\link[=profile.rma.uni]{profile}} function can be used to obtain a plot of the (restricted) log-likelihood as a function of \mjseqn{\tau^2}. For location-scale models, \code{\link[=profile.rma.ls]{profile}} draws analogous plots based on the scale coefficients. For models with moderators, \code{\link[=regplot.rma]{regplot}} draws scatter plots / bubble plots, showing the (marginal) relationship between the observed outcomes and a selected moderator from the model.
+   Forest, funnel, radial, \enc{L'Abbé}{L'Abbe}, and Baujat plots can be obtained with \code{\link[=forest.rma]{forest}}, \code{\link[=funnel.rma]{funnel}}, \code{\link[=radial.rma]{radial}}, \code{\link[=labbe.rma]{labbe}}, and \code{\link[=baujat.rma]{baujat}} (radial and \enc{L'Abbé}{L'Abbe} plots only for models without moderators). The \code{\link[=qqnorm.rma.uni]{qqnorm}} function provides normal QQ plots of the standardized residuals. One can also call \code{\link[=plot.rma.uni]{plot}} on the fitted model object to obtain various plots at once. For random/mixed-effects models, the \code{\link[=profile.rma.uni]{profile}} function can be used to obtain a plot of the (restricted) log-likelihood as a function of \mjseqn{\tau^2}. For location-scale models, \code{\link[=profile.rma.ls]{profile}} draws analogous plots based on the scale coefficients. For models with moderators, \code{\link[=regplot.rma]{regplot}} draws scatter plots / bubble plots, showing the (marginal) relationship between the observed outcomes and a selected moderator from the model.
 
    Tests for funnel plot asymmetry (which may be indicative of publication bias) can be obtained with \code{\link{ranktest}} and \code{\link{regtest}}. For models without moderators, the \code{\link[=trimfill.rma.uni]{trimfill}} method can be used to carry out a trim and fill analysis and \code{\link[=hc.rma.uni]{hc}} provides a random-effects model analysis that is more robust to publication bias (based on the method by Henmi & Copas, 2010). The test of \sQuote{excess significance} can be carried out with the \code{\link{tes}} function. The fail-safe N (based on a file drawer analysis) can be computed using \code{\link{fsn}}. Selection models can be fitted with the \code{\link{selmodel}} function.
 
@@ -228,18 +235,18 @@ rma(yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
    \item Most effect sizes or outcome measures do not have exactly normal sampling distributions as assumed under the various models. However, the normal approximation usually becomes more accurate for most effect sizes or outcome measures as the within-study sample sizes increase. Therefore, sufficiently large within-study sample sizes are (usually) needed to be certain that the tests and confidence intervals have nominal levels/coverage. Again, certain outcome measures (e.g., Fisher's r-to-z transformed correlation coefficient) may be preferable from this perspective as well.
    }
 
-   For location-scale models, model fitting is done via numerical optimization over the model parameters. By default, \code{\link{nlminb}} is used for the optimization. One can also chose a different optimizer from \code{\link{optim}} via the \code{control} argument (e.g., \code{control=list(optimizer="BFGS")} or \code{control=list(optimizer="Nelder-Mead")}). Besides \code{\link{nlminb}} and one of the methods from \code{\link{optim}}, one can also choose one of the optimizers from the \code{minqa} package (i.e., \code{\link[minqa]{uobyqa}}, \code{\link[minqa]{newuoa}}, or \code{\link[minqa]{bobyqa}}), one of the (derivative-free) algorithms from the \code{\link[nloptr]{nloptr}} package, the Newton-type algorithm implemented in \code{\link{nlm}}, the various algorithms implemented in the \code{dfoptim} package (\code{\link[dfoptim]{hjk}} for the Hooke-Jeeves, \code{\link[dfoptim]{nmk}} for the Nelder-Mead, and \code{\link[dfoptim]{mads}} for the Mesh Adaptive Direct Searches algorithm), the quasi-Newton type optimizers \code{\link[ucminf]{ucminf}} and \code{\link[lbfgsb3c]{lbfgsb3c}} and the subspace-searching simplex algorithm \code{\link[subplex]{subplex}} from the packages of the same name, the Barzilai-Borwein gradient decent method implemented in \code{\link[BB]{BBoptim}}, or the parallelized version of the L-BFGS-B algorithm implemented in \code{\link[optimParallel]{optimParallel}} from the package of the same name. When using an identity link with \code{link="identity"}, constrained optimization (to ensure non-negative \mjseqn{\tau_i^2} values) as implemented in \code{\link{constrOptim}} is used by default. Alternative optimizers in this case are the \code{\link[Rsolnp]{solnp}} solver from the \code{Rsolnp} package, \code{\link[nloptr]{nloptr}}, or the augmented Lagrangian adaptive barrier minimization algorithm \code{\link[alabama]{constrOptim.nl}} from the \code{alabama} package.
+   For location-scale models, model fitting is done via numerical optimization over the model parameters. By default, \code{\link{nlminb}} is used for the optimization. One can also chose a different optimizer from \code{\link{optim}} via the \code{control} argument (e.g., \code{control=list(optimizer="BFGS")} or \code{control=list(optimizer="Nelder-Mead")}). Besides \code{\link{nlminb}} and one of the methods from \code{\link{optim}}, one can also choose one of the optimizers from the \code{minqa} package (i.e., \code{\link[minqa]{uobyqa}}, \code{\link[minqa]{newuoa}}, or \code{\link[minqa]{bobyqa}}), one of the (derivative-free) algorithms from the \code{\link[nloptr]{nloptr}} package, the Newton-type algorithm implemented in \code{\link{nlm}}, the various algorithms implemented in the \code{dfoptim} package (\code{\link[dfoptim]{hjk}} for the Hooke-Jeeves, \code{\link[dfoptim]{nmk}} for the Nelder-Mead, and \code{\link[dfoptim]{mads}} for the Mesh Adaptive Direct Searches algorithm), the quasi-Newton type optimizers \code{\link[ucminf]{ucminf}} and \code{\link[lbfgsb3c]{lbfgsb3c}} and the subspace-searching simplex algorithm \code{\link[subplex]{subplex}} from the packages of the same name, the Barzilai-Borwein gradient decent method implemented in \code{\link[BB]{BBoptim}}, the \code{\link[optimx]{Rcgmin}} and \code{\link[optimx]{Rvmmin}} optimizers, or the parallelized version of the L-BFGS-B algorithm implemented in \code{\link[optimParallel]{optimParallel}} from the package of the same name. When using an identity link with \code{link="identity"}, constrained optimization (to ensure non-negative \mjseqn{\tau_i^2} values) as implemented in \code{\link{constrOptim}} is used by default. Alternative optimizers in this case are the \code{\link[Rsolnp]{solnp}} solver from the \code{Rsolnp} package, \code{\link[nloptr]{nloptr}}, or the augmented Lagrangian adaptive barrier minimization algorithm \code{\link[alabama]{constrOptim.nl}} from the \code{alabama} package.
 
    The optimizer name must be given as a character string (i.e., in quotes). Additional control parameters can be specified via the \code{control} argument (e.g., \code{control=list(iter.max=1000, rel.tol=1e-8)}). For \code{\link[nloptr]{nloptr}}, the default is to use the BOBYQA implementation from that package with a relative convergence criterion of \code{1e-8} on the function value (i.e., log-likelihood), but this can be changed via the \code{algorithm} and \code{ftop_rel} arguments (e.g., \code{control=list(optimizer="nloptr", algorithm="NLOPT_LN_SBPLX", ftol_rel=1e-6)}) (note: when using \code{optimizer="nloptr"} in combination with an identity link, the \code{"NLOPT_LN_COBYLA"} algorithm is automatically used, since it allows for inequality constraints). For \code{\link[optimParallel]{optimParallel}}, the control argument \code{ncpus} can be used to specify the number of cores to use for the parallelization (e.g., \code{control=list(optimizer="optimParallel", ncpus=2)}). With \code{parallel::detectCores()}, one can check on the number of available cores on the local machine.
 
    Under certain circumstances (e.g., when the amount of heterogeneity is very small for certain combinations of values for the scale variables and scale coefficients), the values of the scale coefficients may try to drift towards minus or plus infinity, which can lead to problems with the optimization. One can impose constraints on the scale coefficients via \code{control=list(alpha.min=minval, alpha.max=maxval)} where \code{minval} and \code{maxval} are either scalars or vectors of the appropriate length.
 
-   Finally, for location-scale models, the standard errors of the scale coefficients are obtained by inverting the Hessian, which is numerically approximated using the \code{\link[numDeriv]{hessian}} function from the \code{numDeriv} package. This may fail (especially when using an identity link), leading to \code{NA} values for the standard errors and hence test statistics, p-values, and confidence interval bounds. One can set control argument \code{hessianCtrl} to a list of named arguments to be passed on to the \code{method.args} argument of the \code{\link[numDeriv]{hessian}} function (the default is \code{control=list(hessianCtrl=list(r=8))}). One can also set \code{control=list(hesspack="pracma")} in which case the \code{\link[pracma]{hessian}} function from the \code{pracma} package is used instead for approximating the Hessian.
+   Finally, for location-scale models, the standard errors of the scale coefficients are obtained by inverting the Hessian, which is numerically approximated using the \code{\link[numDeriv]{hessian}} function from the \code{numDeriv} package. This may fail (especially when using an identity link), leading to \code{NA} values for the standard errors and hence test statistics, p-values, and confidence interval bounds. One can set control argument \code{hessianCtrl} to a list of named arguments to be passed on to the \code{method.args} argument of the \code{\link[numDeriv]{hessian}} function (the default is \code{control=list(hessianCtrl=list(r=8))}). One can also set \code{control=list(hesspack="pracma")} or \code{control=list(hesspack="calculus")} in which case the \code{pracma::\link[pracma]{hessian}} or \code{calculus::\link[calculus]{hessian}} functions from the respective packages are used instead for approximating the Hessian.
 
    Even if the Hessian can be approximated and inverted, the standard errors may be unreasonably large when the likelihood surface is very flat around the estimated scale coefficients. This is more likely to happen when \mjseqn{k} is small and when the amount of heterogeneity is very small under some conditions as defined by the scale coefficients/variables. Setting constraints on the scale coefficients as described above can also help to mitigate this issue.
 }
 \author{
-   Wolfgang Viechtbauer \email{wvb@metafor-project.org} \url{https://www.metafor-project.org}
+   Wolfgang Viechtbauer (\email{wvb@metafor-project.org}, \url{https://www.metafor-project.org}).
 }
 \references{
    Berkey, C. S., Hoaglin, D. C., Mosteller, F., & Colditz, G. A. (1995). A random-effects regression model for meta-analysis. \emph{Statistics in Medicine}, \bold{14}(4), 395--411. \verb{https://doi.org/10.1002/sim.4780140406}
@@ -348,14 +355,11 @@ rma(yi, vi, mods = ~ alloc.random + alloc.systematic + year + ablat, data=dat, b
 rma(yi, vi, mods = ~ factor(alloc) + year + ablat, data=dat, btt=2:3)
 
 ### factor() is not needed as character variables are automatically converted to factors
-rma(yi, vi, mods = ~ alloc + year + ablat, data=dat, btt=2:3)
-
-### test all pairwise differences with Holm's method (using the 'multcomp' package if installed)
-res <- rma(yi, vi, mods = ~ factor(alloc) - 1, data=dat)
+res <- rma(yi, vi, mods = ~ alloc + year + ablat, data=dat, btt=2:3)
 res
-if (require(multcomp))
-   summary(glht(res, linfct=contrMat(c("alternate"=1,"random"=1,"systematic"=1),
-           type="Tukey")), test=adjusted("holm"))
+
+### test all pairwise differences between the 'alloc' levels
+anova(res, X=pairmat(btt="alloc"))
 
 ### subgrouping versus using a single model with a factor (subgrouping provides
 ### an estimate of tau^2 within each subgroup, but the number of studies in each
@@ -368,7 +372,7 @@ res.s <- rma(yi, vi, data=dat, subset=(alloc=="systematic"))
 res.a
 res.r
 res.s
-res <- rma(yi, vi, mods = ~ factor(alloc) - 1, data=dat)
+res <- rma(yi, vi, mods = ~ 0 + factor(alloc), data=dat)
 res
 
 ############################################################################

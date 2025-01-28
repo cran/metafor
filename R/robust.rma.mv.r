@@ -4,8 +4,11 @@ robust.rma.mv <- function(x, cluster, adjust=TRUE, clubSandwich=FALSE, digits, .
 
    .chkclass(class(x), must="rma.mv")
 
+   if (is.null(x$yi) || is.null(x$X))
+      stop(mstyle$stop("Information needed for the method is not available in the model object."))
+
    if (missing(cluster))
-      stop(mstyle$stop("Must specify 'cluster' variable."))
+      stop(mstyle$stop("Must specify the 'cluster' variable."))
 
    if (missing(digits)) {
       digits <- .get.digits(xdigits=x$digits, dmiss=TRUE)
@@ -31,7 +34,7 @@ robust.rma.mv <- function(x, cluster, adjust=TRUE, clubSandwich=FALSE, digits, .
    cluster <- .getx("cluster", mf=mf, data=x$data)
 
    if (length(cluster) != x$k.all)
-      stop(mstyle$stop(paste0("Length of variable specified via 'cluster' (", length(cluster), ") does not correspond to the size of the original dataset (", x$k.all, ").")))
+      stop(mstyle$stop(paste0("Length of the variable specified via 'cluster' (", length(cluster), ") does not correspond to the size of the original dataset (", x$k.all, ").")))
 
    cluster <- .getsubset(cluster, x$subset)
 

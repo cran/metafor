@@ -37,6 +37,9 @@ ranktest <- function(x, vi, sei, subset, data, digits, ...) {
 
    if (inherits(x, "rma")) {
 
+      if (is.null(x$yi) || is.null(x$vi))
+         stop(mstyle$stop("Information needed to carry out the test is not available in the model object."))
+
       if (!missing(vi) || !missing(sei) || !missing(subset))
          warning(mstyle$warning("Arguments 'vi', 'sei', and 'subset' ignored when 'x' is a model object."), call.=FALSE)
 
@@ -84,12 +87,12 @@ ranktest <- function(x, vi, sei, subset, data, digits, ...) {
       }
 
       if (is.null(vi))
-         stop(mstyle$stop("Must specify 'vi' or 'sei' argument."))
+         stop(mstyle$stop("Must specify the 'vi' or 'sei' argument."))
 
       ### check length of yi and vi
 
       if (length(yi) != length(vi))
-         stop(mstyle$stop("Length of 'yi' and 'vi' (or 'sei') is not the same."))
+         stop(mstyle$stop("Length of 'yi' and 'vi' (or 'sei') are not the same."))
 
       ### check 'vi' argument for potential misuse
 

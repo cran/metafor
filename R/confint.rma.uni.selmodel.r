@@ -33,12 +33,17 @@ confint.rma.uni.selmodel <- function(object, parm, level, fixed=FALSE, tau2, del
    if (missing(targs))
       targs <- NULL
 
+   funlist <- lapply(list(transf.exp.int, transf.ilogit.int, transf.ztor.int, transf.exp.mode, transf.ilogit.mode, transf.ztor.mode), deparse)
+
+   if (is.null(targs) && any(sapply(funlist, identical, deparse(transf))) && inherits(x, c("rma.uni","rma.glmm")) && length(x$tau2 == 1L))
+      targs <- c(tau2=x$tau2)
+
    if (missing(control))
       control <- list()
 
    ddd <- list(...)
 
-   .chkdots(ddd, c("time", "xlim", "extint"))
+   .chkdots(ddd, c("time", "xlim", "extint", "code1", "code2"))
 
    level <- .level(level, stopon100=.isTRUE(ddd$extint))
 
@@ -69,15 +74,21 @@ confint.rma.uni.selmodel <- function(object, parm, level, fixed=FALSE, tau2, del
       if (comps == 0)
          stop(mstyle$stop("No components for which a CI can be obtained."))
 
+      if (!is.null(ddd[["code1"]]))
+         eval(expr = parse(text = ddd[["code1"]]))
+
       res.all <- list()
       j <- 0
 
       if (!is.element(x$method, c("FE","EE","CE")) && !x$tau2.fix) {
          j <- j + 1
+         if (!is.null(ddd[["code2"]]))
+            eval(expr = parse(text = ddd[["code2"]]))
          cl.vc <- cl
          cl.vc$tau2 <- 1
          cl.vc$time <- FALSE
          #cl.vc$object <- quote(x)
+         cl.vc[[1]] <- str2lang("metafor::confint.rma.uni.selmodel")
          if (verbose)
             cat(mstyle$verbose(paste("\nObtaining CI for tau2\n")))
          res.all[[j]] <- eval(cl.vc, envir=parent.frame())
@@ -86,10 +97,13 @@ confint.rma.uni.selmodel <- function(object, parm, level, fixed=FALSE, tau2, del
       if (any(!x$delta.fix)) {
          for (pos in seq_len(x$deltas)[!x$delta.fix]) {
             j <- j + 1
+            if (!is.null(ddd[["code2"]]))
+               eval(expr = parse(text = ddd[["code2"]]))
             cl.vc <- cl
             cl.vc$delta <- pos
             cl.vc$time <- FALSE
             #cl.vc$object <- quote(x)
+            cl.vc[[1]] <- str2lang("metafor::confint.rma.uni.selmodel")
             if (verbose)
                cat(mstyle$verbose(paste("\nObtaining CI for delta =", pos, "\n")))
             res.all[[j]] <- eval(cl.vc, envir=parent.frame())
@@ -186,8 +200,8 @@ confint.rma.uni.selmodel <- function(object, parm, level, fixed=FALSE, tau2, del
 
       ######################################################################
 
-      ### set control parameters for uniroot() and possibly replace with user-defined values
-      ### set vc.min and vc.max and possibly replace with user-defined values
+      ### set defaults for control parameters for uniroot() and replace with any user-defined values
+      ### set vc.min and vc.max and possibly replace with any user-defined values
 
       con <- list(tol=.Machine$double.eps^0.25, maxiter=1000, verbose=FALSE, eptries=10)
 
@@ -399,6 +413,8 @@ confint.rma.uni.selmodel <- function(object, parm, level, fixed=FALSE, tau2, del
             ci.lb <- sapply(ci.lb, transf)
             ci.ub <- sapply(ci.ub, transf)
          } else {
+            if (!is.primitive(transf) && !is.null(targs) && length(formals(transf)) == 1L)
+               stop(mstyle$stop("Function specified via 'transf' does not appear to have an argument for 'targs'."))
             beta  <- sapply(beta, transf, targs)
             ci.lb <- sapply(ci.lb, transf, targs)
             ci.ub <- sapply(ci.ub, transf, targs)

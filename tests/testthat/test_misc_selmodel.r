@@ -1,4 +1,4 @@
-### library(metafor); library(testthat); Sys.setenv(NOT_CRAN="true")
+### library(metafor); library(testthat); Sys.setenv(NOT_CRAN="true"); Sys.setenv(RUN_VIS_TESTS="true")
 
 context("Checking misc: selmodel() function")
 
@@ -17,16 +17,24 @@ test_that("results are correct for a step function model.", {
    out <- capture.output(print(sav))
 
    expect_equivalent(coef(sav)$delta, c(1, 2.422079, 0.977543, 0.396713), tolerance=.tol[["coef"]])
-   expect_equivalent(sav$se.delta, c(NA, 1.66085, 0.820387, 0.469235), tolerance=.tol[["se"]])
+   expect_equivalent(se(sav)$delta, c(NA, 1.66085, 0.820387, 0.469235), tolerance=.tol[["se"]])
    expect_equivalent(sav$LRT, 7.066137, tolerance=.tol[["test"]])
    expect_identical(sav$LRTdf, 3L)
    expect_equivalent(sav$tau2, 0.03071325, tolerance=.tol[["var"]])
 
-   png(filename="images/test_misc_selmodel_1_test.png", res=200, width=1800, height=1600, type="cairo")
-   plot(sav)
+   png(filename="images/test_misc_selmodel_1_light_test.png", res=200, width=1800, height=1600, type="cairo")
+   plot(sav, ci="wald")
    dev.off()
 
-   expect_true(.vistest("images/test_misc_selmodel_1_test.png", "images/test_misc_selmodel_1.png"))
+   expect_true(.vistest("images/test_misc_selmodel_1_light_test.png", "images/test_misc_selmodel_1_light.png"))
+
+   png(filename="images/test_misc_selmodel_1_dark_test.png", res=200, width=1800, height=1600, type="cairo")
+   setmfopt(theme="dark")
+   plot(sav, ci="wald")
+   setmfopt(theme="default")
+   dev.off()
+
+   expect_true(.vistest("images/test_misc_selmodel_1_dark_test.png", "images/test_misc_selmodel_1_dark.png"))
 
    tmp <- confint(sav)
    expect_equivalent(tmp[[1]]$random[1,], c(0.030713, 0.000224, 0.135284), tolerance=.tol[["var"]])
@@ -71,16 +79,24 @@ test_that("results are correct for the beta function model.", {
    out <- capture.output(print(sav))
 
    expect_equivalent(coef(sav)$delta, c(0.4731131, 4.4613162), tolerance=.tol[["coef"]])
-   expect_equivalent(sav$se.delta, c(0.2352481, 2.1841983), tolerance=.tol[["se"]])
+   expect_equivalent(se(sav)$delta, c(0.2352481, 2.1841983), tolerance=.tol[["se"]])
    expect_equivalent(sav$LRT, 7.846907, tolerance=.tol[["test"]])
    expect_identical(sav$LRTdf, 2L)
    expect_equivalent(sav$tau2, 0.00000243, tolerance=.tol[["var"]])
 
-   png(filename="images/test_misc_selmodel_2_test.png", res=200, width=1800, height=1600, type="cairo")
-   plot(sav)
+   png(filename="images/test_misc_selmodel_2_light_test.png", res=200, width=1800, height=1600, type="cairo")
+   plot(sav, ylim=c(0,50), ci=TRUE, bty="l", seed=1234)
    dev.off()
 
-   expect_true(.vistest("images/test_misc_selmodel_2_test.png", "images/test_misc_selmodel_2.png"))
+   expect_true(.vistest("images/test_misc_selmodel_2_light_test.png", "images/test_misc_selmodel_2_light.png"))
+
+   png(filename="images/test_misc_selmodel_2_dark_test.png", res=200, width=1800, height=1600, type="cairo")
+   setmfopt(theme="dark")
+   plot(sav, ylim=c(0,50), ci=TRUE, bty="l", seed=1234)
+   setmfopt(theme="default")
+   dev.off()
+
+   expect_true(.vistest("images/test_misc_selmodel_2_dark_test.png", "images/test_misc_selmodel_2_dark.png"))
 
    res <- rma(yi, sei^2, mods = ~ xi, method="ML")
 
@@ -88,12 +104,12 @@ test_that("results are correct for the beta function model.", {
    out <- capture.output(print(sav))
 
    expect_equivalent(coef(sav)$delta, c(0.4200973, 5.0959707), tolerance=.tol[["coef"]])
-   expect_equivalent(sav$se.delta, c(0.2391269, 2.4108796), tolerance=.tol[["se"]])
+   expect_equivalent(se(sav)$delta, c(0.2391269, 2.4108796), tolerance=.tol[["se"]])
    expect_equivalent(sav$LRT, 9.044252, tolerance=.tol[["test"]])
    expect_identical(sav$LRTdf, 2L)
    expect_equivalent(sav$tau2, 0.00000193, tolerance=.tol[["var"]])
    expect_equivalent(coef(sav)$beta, c(0.1343001, -0.1363559), tolerance=.tol[["coef"]])
-   expect_equivalent(sav$se, c(0.1707418, 0.1244394), tolerance=.tol[["se"]])
+   expect_equivalent(se(sav)$beta, c(0.1707418, 0.1244394), tolerance=.tol[["se"]])
 
 })
 
@@ -150,8 +166,8 @@ test_that("results are correct for the various exponential function models.", {
    expect_equivalent(c(sav1$se.delta, sav2$se.delta, sav3$se.delta, sav4$se.delta), c(5.644466, 3.627467, 2.306998, 2.134629), tolerance=.tol[["se"]])
 
    sav <- selmodel(res, type="negexppow", alternative=alternative)
-   expect_equivalent(sav$delta, c(2.673818, 1.153199), tolerance=.tol[["coef"]])
-   expect_equivalent(sav$se.delta, c(2.363403, 2.143849), tolerance=.tol[["se"]])
+   expect_equivalent(coef(sav)$delta, c(2.673818, 1.153199), tolerance=.tol[["coef"]])
+   expect_equivalent(se(sav)$delta, c(2.363403, 2.143849), tolerance=.tol[["se"]])
 
 })
 
@@ -192,7 +208,7 @@ test_that("results are correct for a truncated distribution model.", {
    out <- capture.output(print(sav))
 
    expect_equivalent(coef(sav)$delta, 0.3818424, tolerance=.tol[["coef"]])
-   expect_equivalent(sav$se.delta, 0.2235527, tolerance=.tol[["se"]])
+   expect_equivalent(se(sav)$delta, 0.2235527, tolerance=.tol[["se"]])
    expect_equivalent(sav$LRT, 3.054457, tolerance=.tol[["test"]])
    expect_identical(sav$LRTdf, 1L)
    expect_equivalent(sav$tau2, 0.02677134, tolerance=.tol[["var"]])

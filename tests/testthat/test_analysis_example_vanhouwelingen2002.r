@@ -1,6 +1,6 @@
-### library(metafor); library(testthat); Sys.setenv(NOT_CRAN="true")
+### library(metafor); library(testthat); Sys.setenv(NOT_CRAN="true"); Sys.setenv(RUN_VIS_TESTS="true")
 
-### see also: https://www.metafor-project.org/doku.php/analyses:vanhouwelingen2002
+### see: https://www.metafor-project.org/doku.php/analyses:vanhouwelingen2002
 
 context("Checking analysis example: vanhouwelingen2002")
 
@@ -84,8 +84,8 @@ test_that("forest plot of observed log(OR)s and corresponding BLUPs can be drawn
    res <- rma(yi, vi, data=dat, method="ML")
    sav <- blup(res)
 
-   png(filename="images/test_analysis_example_vanhouwelingen2002_forest_test.png", res=200, width=1800, height=1400, family="mono")
-   par(mar=c(5,5,1,2))
+   png(filename="images/test_analysis_example_vanhouwelingen2002_forest_light_test.png", res=200, width=1800, height=1400, family="mono")
+   par(mar=c(5,5,2,2))
    forest(res, refline=res$b, addcred=TRUE, xlim=c(-7,7), alim=c(-3,3), slab=1:13, psize=0.8,
           ilab=paste0("(n = ", formatC(apply(dat[,c(4:7)], 1, sum), width=7, big.mark=","), ")"),
           ilab.xpos=-3.5, ilab.pos=2, rows=13:1+0.15, header="Trial (total n)", lty="dashed")
@@ -93,7 +93,20 @@ test_that("forest plot of observed log(OR)s and corresponding BLUPs can be drawn
    points(sav$pred, 13:1 - 0.15, pch=15, cex=0.8)
    dev.off()
 
-   expect_true(.vistest("images/test_analysis_example_vanhouwelingen2002_forest_test.png", "images/test_analysis_example_vanhouwelingen2002_forest.png"))
+   expect_true(.vistest("images/test_analysis_example_vanhouwelingen2002_forest_light_test.png", "images/test_analysis_example_vanhouwelingen2002_forest_light.png"))
+
+   png(filename="images/test_analysis_example_vanhouwelingen2002_forest_dark_test.png", res=200, width=1800, height=1400, family="mono")
+   setmfopt(theme="dark")
+   par(mar=c(5,5,2,2))
+   forest(res, refline=res$b, addcred=TRUE, xlim=c(-7,7), alim=c(-3,3), slab=1:13, psize=0.8,
+          ilab=paste0("(n = ", formatC(apply(dat[,c(4:7)], 1, sum), width=7, big.mark=","), ")"),
+          ilab.xpos=-3.5, ilab.pos=2, rows=13:1+0.15, header="Trial (total n)", lty="dashed")
+   arrows(sav$pi.lb, 13:1 - 0.15, sav$pi.ub, 13:1 - 0.15, length=0.035, angle=90, code=3)
+   points(sav$pred, 13:1 - 0.15, pch=15, cex=0.8)
+   setmfopt(theme="default")
+   dev.off()
+
+   expect_true(.vistest("images/test_analysis_example_vanhouwelingen2002_forest_dark_test.png", "images/test_analysis_example_vanhouwelingen2002_forest_dark.png"))
 
 })
 
@@ -124,13 +137,23 @@ test_that("L'Abbe plot can be drawn.", {
 
    res <- rma(measure="OR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat, method="EE")
 
-   png(filename="images/test_analysis_example_vanhouwelingen2002_labbe_test.png", res=200, width=1800, height=1400, type="cairo")
+   png(filename="images/test_analysis_example_vanhouwelingen2002_labbe_light_test.png", res=200, width=1800, height=1400, type="cairo")
    par(mar=c(5,5,1,2))
    labbe(res, xlim=c(-7,-1), ylim=c(-7,-1),
          xlab="ln(odds) not-vaccinated group", ylab="ln(odds) vaccinated group")
    dev.off()
 
-   expect_true(.vistest("images/test_analysis_example_vanhouwelingen2002_labbe_test.png", "images/test_analysis_example_vanhouwelingen2002_labbe.png"))
+   expect_true(.vistest("images/test_analysis_example_vanhouwelingen2002_labbe_light_test.png", "images/test_analysis_example_vanhouwelingen2002_labbe_light.png"))
+
+   png(filename="images/test_analysis_example_vanhouwelingen2002_labbe_dark_test.png", res=200, width=1800, height=1400, type="cairo")
+   setmfopt(theme="dark")
+   par(mar=c(5,5,1,2))
+   labbe(res, xlim=c(-7,-1), ylim=c(-7,-1),
+         xlab="ln(odds) not-vaccinated group", ylab="ln(odds) vaccinated group")
+   setmfopt(theme="default")
+   dev.off()
+
+   expect_true(.vistest("images/test_analysis_example_vanhouwelingen2002_labbe_dark_test.png", "images/test_analysis_example_vanhouwelingen2002_labbe_dark.png"))
 
 })
 
@@ -144,7 +167,7 @@ levels(dat.long$group) <- c("CON", "EXP")
 
 test_that("results for the bivariate model are correct.", {
 
-   res <- rma.mv(yi, vi, mods = ~ group - 1, random = ~ group | trial, struct="UN", data=dat.long, method="ML", sparse=.sparse)
+   res <- rma.mv(yi, vi, mods = ~ 0 + group, random = ~ group | trial, struct="UN", data=dat.long, method="ML", sparse=.sparse)
 
    ### compare with results on pages 604-605 (in text)
    expect_equivalent(coef(res), c(-4.0960, -4.8337), tolerance=.tol[["coef"]])
@@ -155,7 +178,7 @@ test_that("results for the bivariate model are correct.", {
 
    ### compare with results on pages 604-605 (in text)
    expect_equivalent(coef(res), c(-4.0960, -0.7378), tolerance=.tol[["coef"]])
-   expect_equivalent(res$se, c(0.4347, 0.1797), tolerance=.tol[["se"]])
+   expect_equivalent(se(res), c(0.4347, 0.1797), tolerance=.tol[["se"]])
 
    ### estimated odds ratio
    tmp <- predict(res, newmods=1, intercept=FALSE, transf=exp, digits=3)
@@ -168,13 +191,13 @@ test_that("results for the bivariate model are correct.", {
    expect_equivalent(tmp, 0.3241, tolerance=.tol[["var"]])
 
    ### regression of log(odds)_EXP on log(odds)_CON
-   res <- rma.mv(yi, vi, mods = ~ group - 1, random = ~ group | trial, struct="UN", data=dat.long, method="ML", sparse=.sparse)
+   res <- rma.mv(yi, vi, mods = ~ 0 + group, random = ~ group | trial, struct="UN", data=dat.long, method="ML", sparse=.sparse)
    reg <- matreg(y=2, x=1, R=res$G, cov=TRUE, means=coef(res), n=res$g.levels.comb.k)
    expect_equivalent(reg$tab$beta, c(-1.8437, 0.7300), tolerance=.tol[["coef"]])
    expect_equivalent(reg$tab$se,   c( 0.3265, 0.0749), tolerance=.tol[["se"]])
 
    ### same idea but now use var-cov matrix of tau^2_1, tau_12, tau^2_2 for this
-   res <- rma.mv(yi, vi, mods = ~ group - 1, random = ~ group | trial, struct="UN", data=dat.long, method="ML", cvvc="varcov", control=list(nearpd=TRUE), sparse=.sparse)
+   res <- rma.mv(yi, vi, mods = ~ 0 + group, random = ~ group | trial, struct="UN", data=dat.long, method="ML", cvvc="varcov", control=list(nearpd=TRUE), sparse=.sparse)
    reg <- matreg(y=2, x=1, R=res$G, cov=TRUE, means=coef(res), V=res$vvc)
    expect_equivalent(reg$tab$beta, c(-1.8437, 0.7300), tolerance=.tol[["coef"]])
    expect_equivalent(reg$tab$se,   c( 0.3548, 0.0866), tolerance=.tol[["se"]])
@@ -189,15 +212,15 @@ test_that("results for the meta-regression analyses are correct.", {
 
    ### compare with results on pages 608-609 (in text)
    expect_equivalent(coef(res), c(0.3710, -0.0327), tolerance=.tol[["coef"]])
-   expect_equivalent(res$se, c(0.1061, 0.0034), tolerance=.tol[["se"]])
+   expect_equivalent(se(res), c(0.1061, 0.0034), tolerance=.tol[["se"]])
    expect_equivalent(res$tau2, 0.0040, tolerance=.tol[["var"]])
    expect_equivalent(res$R2, 98.6691, tolerance=.tol[["r2"]])
 
-   res <- rma.mv(yi, vi, mods = ~ group + group:I(ablat-33) - 1, random = ~ group | trial, struct="UN", data=dat.long, method="ML", sparse=.sparse)
+   res <- rma.mv(yi, vi, mods = ~ 0 + group + group:I(ablat-33), random = ~ group | trial, struct="UN", data=dat.long, method="ML", sparse=.sparse)
 
    ### compare with results on pages 612-613 (in text)
    expect_equivalent(coef(res), c(-4.1174, -4.8257, 0.0725, 0.0391), tolerance=.tol[["coef"]])
-   expect_equivalent(res$se, c(0.3061, 0.3129, 0.0219, 0.0224), tolerance=.tol[["se"]])
+   expect_equivalent(se(res), c(0.3061, 0.3129, 0.0219, 0.0224), tolerance=.tol[["se"]])
    expect_equivalent(res$tau2, c(1.1819, 1.2262), tolerance=.tol[["var"]])
    expect_equivalent(res$rho, 1.0000, tolerance=.tol[["cor"]])
 
@@ -205,7 +228,7 @@ test_that("results for the meta-regression analyses are correct.", {
 
    ### compare with results on pages 612-613 (in text)
    expect_equivalent(coef(res), c(-4.1174, -0.7083, 0.0725, -0.0333), tolerance=.tol[["coef"]])
-   expect_equivalent(res$se, c(0.3061, 0.0481, 0.0219, 0.0028), tolerance=.tol[["se"]])
+   expect_equivalent(se(res), c(0.3061, 0.0481, 0.0219, 0.0028), tolerance=.tol[["se"]])
    expect_equivalent(res$tau2, c(1.1819, 1.2262), tolerance=.tol[["var"]])
    expect_equivalent(res$rho, 1.0000, tolerance=.tol[["cor"]])
 

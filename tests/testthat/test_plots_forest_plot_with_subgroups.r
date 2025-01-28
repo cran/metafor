@@ -1,6 +1,6 @@
-### library(metafor); library(testthat); Sys.setenv(NOT_CRAN="true")
+### library(metafor); library(testthat); Sys.setenv(NOT_CRAN="true"); Sys.setenv(RUN_VIS_TESTS="true")
 
-### see also: https://www.metafor-project.org/doku.php/plots:forest_plot_with_subgroups
+### see: https://www.metafor-project.org/doku.php/plots:forest_plot_with_subgroups
 
 source("settings.r")
 
@@ -14,8 +14,9 @@ test_that("plot can be drawn.", {
 
    png("images/test_plots_forest_plot_with_subgroups_test.png", res=240, width=1800, height=1800, type="cairo")
 
-   ### decrease margins so the full space is used
-   par(mar=c(4,4,1,2))
+   ### decrease the top margin
+   #par(mar=c(4,4,1,2))
+   par(mar=c(5,4,2,2))
 
    ### copy BCG vaccine meta-analysis data into 'dat'
    dat <- dat.bcg
@@ -40,25 +41,21 @@ test_that("plot can be drawn.", {
    ### set up forest plot (with 2x2 table counts added; the 'rows' argument is
    ### used to specify in which rows the outcomes will be plotted)
    forest(res, xlim=c(-16, 4.6), at=log(c(0.05, 0.25, 1, 4)), atransf=exp,
-          ilab=cbind(tpos, tneg, cpos, cneg), ilab.xpos=c(-9.5,-8,-6,-4.5),
-          cex=0.75, ylim=c(-1, 27), order=alloc, rows=c(3:4,9:15,20:23),
-          mlab=mlabfun("RE Model for All Studies", res),
+          ilab=cbind(tpos, tneg, cpos, cneg), ilab.lab=c("TB+","TB-","TB+","TB-"),
+          ilab.xpos=c(-9.5,-8,-6,-4.5), cex=0.75, ylim=c(-2, 28), top=4, order=alloc,
+          rows=c(3:4,9:15,20:23), mlab=mlabfun("RE Model for All Studies", res),
           psize=1, header="Author(s) and Year")
 
-   ### set font expansion factor (as in forest() above) and use a bold font
-   op <- par(cex=0.75, font=2)
+   ### set font expansion factor (as in forest() above)
+   op <- par(cex=0.75)
 
    ### add additional column headings to the plot
-   text(c(-9.5,-8,-6,-4.5), 26, c("TB+", "TB-", "TB+", "TB-"))
-   text(c(-8.75,-5.25),     27, c("Vaccinated", "Control"))
-
-   ### switch to bold italic font
-   par(font=4)
+   text(c(-8.75,-5.25), 27, c("Vaccinated", "Control"), font=2)
 
    ### add text for the subgroups
    text(-16, c(24,16,5), pos=4, c("Systematic Allocation",
                                   "Random Allocation",
-                                  "Alternate Allocation"))
+                                  "Alternate Allocation"), font=4)
 
    ### set par back to the original settings
    par(op)

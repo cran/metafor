@@ -7,6 +7,9 @@ profile.rma.ls <- function(fitted, alpha,
 
    x <- fitted
 
+   if (is.null(x$yi) || is.null(x$vi))
+      stop(mstyle$stop("Information needed for profiling is not available in the model object."))
+
    if (x$optbeta)
       stop(mstyle$stop("Profiling not yet implemented for models fitted with 'optbeta=TRUE'."))
 
@@ -76,10 +79,15 @@ profile.rma.ls <- function(fitted, alpha,
       if (comps == 0)
          stop(mstyle$stop("No components in the model for which a profile likelihood can be constructed."))
 
+      if (!is.null(ddd[["code3"]]))
+         eval(expr = parse(text = ddd[["code3"]]))
+
       if (plot) {
-         if (dev.cur() == 1L) { # if only the 'null device' is currently open, set mfrow
-            par(mfrow=n2mfrow(comps))
-            #on.exit(par(mfrow=c(1,1)), add=TRUE)
+         if (comps > 1L) {
+            # if no plotting device is open or mfrow is too small, set mfrow appropriately
+            if (dev.cur() == 1L || prod(par("mfrow")) < comps)
+               par(mfrow=n2mfrow(comps))
+            on.exit(par(mfrow=c(1L,1L)), add=TRUE)
          }
       }
 
@@ -89,10 +97,13 @@ profile.rma.ls <- function(fitted, alpha,
       if (any(!x$alpha.fix)) {
          for (pos in seq_len(x$alphas)[!x$alpha.fix]) {
             j <- j + 1
+            if (!is.null(ddd[["code4"]]))
+               eval(expr = parse(text = ddd[["code4"]]))
             mc.vc <- mc
             mc.vc$alpha <- pos
             mc.vc$time <- FALSE
             #mc.vc$fitted <- quote(x)
+            mc.vc[[1]] <- str2lang("metafor::profile.rma.ls")
             if (progbar)
                cat(mstyle$verbose(paste("Profiling alpha =", pos, "\n")))
             sav[[j]] <- eval(mc.vc, envir=parent.frame())
@@ -115,6 +126,8 @@ profile.rma.ls <- function(fitted, alpha,
       return(invisible(sav))
 
    }
+
+   #########################################################################
 
    ### round and take unique values
 
@@ -182,13 +195,11 @@ profile.rma.ls <- function(fitted, alpha,
       ### apply alpha.min/alpha.max limits (if they exist) on vc.lb/vc.ub as well
 
       if (!is.null(x$control$alpha.min)) {
-         if (length(x$control$alpha.min) == 1L)
-            x$control$alpha.min <- rep(x$control$alpha.min, x$q)
+         x$control$alpha.min <- .expand1(x$control$alpha.min, x$q)
          vc.lb <- max(vc.lb, x$con$alpha.min[alpha])
       }
       if (!is.null(x$control$alpha.max)) {
-         if (length(x$control$alpha.max) == 1L)
-            x$control$alpha.max <- rep(x$control$alpha.max, x$q)
+         x$control$alpha.max <- .expand1(x$control$alpha.max, x$q)
          vc.ub <- min(vc.ub, x$con$alpha.max[alpha])
       }
 
@@ -214,12 +225,15 @@ profile.rma.ls <- function(fitted, alpha,
    if (length(vcs) <= 1L)
       stop(mstyle$stop("Cannot set 'xlim' automatically. Please set this argument manually."))
 
+   if (!is.null(ddd[["code1"]]))
+      eval(expr = parse(text = ddd[["code1"]]))
+
    if (parallel == "no")
-      res <- pbapply::pblapply(vcs, .profile.rma.ls, obj=x, comp=comp, alpha.pos=alpha.pos, parallel=parallel, profile=TRUE)
+      res <- pbapply::pblapply(vcs, .profile.rma.ls, obj=x, comp=comp, alpha.pos=alpha.pos, parallel=parallel, profile=TRUE, code2=ddd$code2)
 
    if (parallel == "multicore")
-      res <- pbapply::pblapply(vcs, .profile.rma.ls, obj=x, comp=comp, alpha.pos=alpha.pos, parallel=parallel, profile=TRUE, cl=ncpus)
-      #res <- parallel::mclapply(vcs, .profile.rma.ls, obj=x, comp=comp, alpha.pos=alpha.pos, parallel=parallel, profile=TRUE, mc.cores=ncpus)
+      res <- pbapply::pblapply(vcs, .profile.rma.ls, obj=x, comp=comp, alpha.pos=alpha.pos, parallel=parallel, profile=TRUE, code2=ddd$code2, cl=ncpus)
+      #res <- parallel::mclapply(vcs, .profile.rma.ls, obj=x, comp=comp, alpha.pos=alpha.pos, parallel=parallel, profile=TRUE, code2=ddd$code2, mc.cores=ncpus)
 
    if (parallel == "snow") {
       if (is.null(cl)) {
@@ -227,14 +241,14 @@ profile.rma.ls <- function(fitted, alpha,
          on.exit(parallel::stopCluster(cl), add=TRUE)
       }
       if (.isTRUE(ddd$LB)) {
-         res <- parallel::parLapplyLB(cl, vcs, .profile.rma.ls, obj=x, comp=comp, alpha.pos=alpha.pos, parallel=parallel, profile=TRUE)
-         #res <- parallel::clusterApplyLB(cl, vcs, .profile.rma.ls, obj=x, comp=comp, alpha.pos=alpha.pos, parallel=parallel, profile=TRUE)
-         #res <- parallel::clusterMap(cl, .profile.rma.ls, vcs, MoreArgs=list(obj=x, comp=comp, alpha.pos=alpha.pos, parallel=parallel, profile=TRUE), .scheduling = "dynamic")
+         res <- parallel::parLapplyLB(cl, vcs, .profile.rma.ls, obj=x, comp=comp, alpha.pos=alpha.pos, parallel=parallel, profile=TRUE, code2=ddd$code2)
+         #res <- parallel::clusterApplyLB(cl, vcs, .profile.rma.ls, obj=x, comp=comp, alpha.pos=alpha.pos, parallel=parallel, profile=TRUE, code2=ddd$code2)
+         #res <- parallel::clusterMap(cl, .profile.rma.ls, vcs, MoreArgs=list(obj=x, comp=comp, alpha.pos=alpha.pos, parallel=parallel, profile=TRUE, code2=ddd$code2), .scheduling = "dynamic")
       } else {
-         res <- pbapply::pblapply(vcs, .profile.rma.ls, obj=x, comp=comp, alpha.pos=alpha.pos, parallel=parallel, profile=TRUE, cl=cl)
-         #res <- parallel::parLapply(cl, vcs, .profile.rma.ls, obj=x, comp=comp, alpha.pos=alpha.pos, parallel=parallel, profile=TRUE)
-         #res <- parallel::clusterApply(cl, vcs, .profile.rma.ls, obj=x, comp=comp, alpha.pos=alpha.pos, parallel=parallel, profile=TRUE)
-         #res <- parallel::clusterMap(cl, .profile.rma.ls, vcs, MoreArgs=list(obj=x, comp=comp, alpha.pos=alpha.pos, parallel=parallel, profile=TRUE))
+         res <- pbapply::pblapply(vcs, .profile.rma.ls, obj=x, comp=comp, alpha.pos=alpha.pos, parallel=parallel, profile=TRUE, code2=ddd$code2, cl=cl)
+         #res <- parallel::parLapply(cl, vcs, .profile.rma.ls, obj=x, comp=comp, alpha.pos=alpha.pos, parallel=parallel, profile=TRUE, code2=ddd$code2)
+         #res <- parallel::clusterApply(cl, vcs, .profile.rma.ls, obj=x, comp=comp, alpha.pos=alpha.pos, parallel=parallel, profile=TRUE, code2=ddd$code2)
+         #res <- parallel::clusterMap(cl, .profile.rma.ls, vcs, MoreArgs=list(obj=x, comp=comp, alpha.pos=alpha.pos, parallel=parallel, profile=TRUE, code2=ddd$code2))
       }
    }
 

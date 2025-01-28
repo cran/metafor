@@ -8,6 +8,9 @@ transf, targs, pch=21, col, bg, back, arc.res=100, cex, cex.lab, cex.axis, ...) 
 
    .chkclass(class(x), must="rma", notav=c("robust.rma", "rma.mv", "rma.ls", "rma.gen", "rma.uni.selmodel"))
 
+   if (is.null(x$yi) || is.null(x$vi))
+      stop(mstyle$stop("Information needed to construct the plot is not available in the model object."))
+
    if (missing(transf))
       transf <- FALSE
 
@@ -53,7 +56,9 @@ transf, targs, pch=21, col, bg, back, arc.res=100, cex, cex.lab, cex.axis, ...) 
       }
 
    } else {
+
       stop(mstyle$stop("Radial plots only available for models without moderators."))
+
    }
 
    if (center) {
@@ -110,8 +115,8 @@ transf, targs, pch=21, col, bg, back, arc.res=100, cex, cex.lab, cex.axis, ...) 
    par.mar <- par("mar")
    par.mar.adj <- par.mar + c(0,4,0,6)
    par.mar.adj[par.mar.adj < 1] <- 1
-   par(mar = par.mar.adj)
-   on.exit(par(mar = par.mar), add=TRUE)
+   par(mar=par.mar.adj)
+   on.exit(par(mar=par.mar), add=TRUE)
 
    ### label for the x-axis
 
@@ -127,20 +132,20 @@ transf, targs, pch=21, col, bg, back, arc.res=100, cex, cex.lab, cex.axis, ...) 
    par(pty="s")
    on.exit(par(pty = par.pty), add=TRUE)
 
-   if (missing(cex)) {
-      cex <- par("cex")
+   if (missing(cex)) { # this affects only the point sizes
+      cex <- 1
    } else {
       cex <- par("cex") * cex
    }
 
    if (missing(cex.lab)) {
-      cex.lab <- par("cex")
+      cex.lab <- 1
    } else {
       cex.lab <- par("cex") * cex.lab
    }
 
    if (missing(cex.axis)) {
-      cex.axis <- par("cex")
+      cex.axis <- 1
    } else {
       cex.axis <- par("cex") * cex.axis
    }
@@ -172,20 +177,20 @@ transf, targs, pch=21, col, bg, back, arc.res=100, cex, cex.lab, cex.axis, ...) 
    if (missing(zlab)) {
       if (center) {
          if (is.element(x$method, c("FE","EE","CE"))) {
-            mtext(expression(z[i]==frac(y[i]-hat(theta),sqrt(v[i]))), side=2, line=par.mar.adj[2]-1, at=0, adj=0, las=1, cex=cex.lab, ...)
+            mtext(expression(z[i]==frac(y[i]-hat(theta),sqrt(v[i]))), side=2, line=par.mar.adj[2]-1, at=0, adj=0, las=1, cex=par("cex")*cex.lab, ...)
          } else {
-            mtext(expression(z[i]==frac(y[i]-hat(mu),sqrt(v[i]+tau^2))), side=2, line=par.mar.adj[2]-1, adj=0, at=0, las=1, cex=cex.lab, ...)
+            mtext(expression(z[i]==frac(y[i]-hat(mu),sqrt(v[i]+tau^2))), side=2, line=par.mar.adj[2]-1, adj=0, at=0, las=1, cex=par("cex")*cex.lab, ...)
          }
       } else {
          if (is.element(x$method, c("FE","EE","CE"))) {
-            mtext(expression(z[i]==frac(y[i],sqrt(v[i]))), side=2, line=par.mar.adj[2]-2, at=0, adj=0, las=1, cex=cex.lab, ...)
+            mtext(expression(z[i]==frac(y[i],sqrt(v[i]))), side=2, line=par.mar.adj[2]-2, at=0, adj=0, las=1, cex=par("cex")*cex.lab, ...)
          } else {
-            mtext(expression(z[i]==frac(y[i],sqrt(v[i]+tau^2))), side=2, line=par.mar.adj[2]-1, at=0, adj=0, las=1, cex=cex.lab, ...)
+            mtext(expression(z[i]==frac(y[i],sqrt(v[i]+tau^2))), side=2, line=par.mar.adj[2]-1, at=0, adj=0, las=1, cex=par("cex")*cex.lab, ...)
          }
 
       }
    } else {
-      mtext(zlab, side=2, line=par.mar.adj[2]-4, at=0, cex=cex.lab, ...)
+      mtext(zlab, side=2, line=par.mar.adj[2]-4, at=0, cex=par("cex")*cex.lab, ...)
    }
 
 
@@ -230,7 +235,7 @@ transf, targs, pch=21, col, bg, back, arc.res=100, cex, cex.lab, cex.axis, ...) 
    }
 
    len.l <- ya.xpos
-   len.u <- ya.xpos + .015*(xlims[2]-xlims[1])
+   len.u <- ya.xpos + 0.015*(xlims[2]-xlims[1])
    xis.l <- rep(NA_real_, length(atyis))
    zis.l <- rep(NA_real_, length(atyis))
    xis.u <- rep(NA_real_, length(atyis))
@@ -257,7 +262,7 @@ transf, targs, pch=21, col, bg, back, arc.res=100, cex, cex.lab, cex.axis, ...) 
       atyis.lab <- aty.c
    }
 
-   len <- ya.xpos+.02*(xlims[2]-xlims[1])
+   len <- ya.xpos+0.02*(xlims[2]-xlims[1])
    xis <- rep(NA_real_, length(atyis))
    zis <- rep(NA_real_, length(atyis))
    for (i in seq_along(atyis)) {
@@ -269,6 +274,8 @@ transf, targs, pch=21, col, bg, back, arc.res=100, cex, cex.lab, cex.axis, ...) 
       if (is.null(targs)) {
          atyis.lab <- sapply(atyis.lab, transf)
       } else {
+         if (!is.primitive(transf) && !is.null(targs) && length(formals(transf)) == 1L)
+            stop(mstyle$stop("Function specified via 'transf' does not appear to have an argument for 'targs'."))
          atyis.lab <- sapply(atyis.lab, transf, targs)
       }
    }
@@ -276,7 +283,7 @@ transf, targs, pch=21, col, bg, back, arc.res=100, cex, cex.lab, cex.axis, ...) 
    valid <- zis > zlims[1] & zis < zlims[2]
 
    if (any(valid))
-      text(xis[valid], zis[valid], fmtx(atyis.lab[valid], digits), pos=4, cex=cex.axis, ...)
+      text(xis[valid], zis[valid], fmtx(atyis.lab[valid], digits), pos=4, cex=cex.axis*0.85, offset=0.25, ...)
 
    ### add CI arc
 
@@ -297,8 +304,8 @@ transf, targs, pch=21, col, bg, back, arc.res=100, cex, cex.lab, cex.axis, ...) 
    ### add CI tick marks
 
    atyis <- c(ci.lb, beta, ci.ub)
-   len.l <- ci.xpos-.007*(xlims[2]-xlims[1])
-   len.u <- ci.xpos+.007*(xlims[2]-xlims[1])
+   len.l <- ci.xpos-0.007*(xlims[2]-xlims[1])
+   len.u <- ci.xpos+0.007*(xlims[2]-xlims[1])
    xis.l <- rep(NA_real_, 3L)
    zis.l <- rep(NA_real_, 3L)
    xis.u <- rep(NA_real_, 3L)

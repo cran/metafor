@@ -1,7 +1,6 @@
 rma.glmm <- function(ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, xi, mi, ti, ni, mods,
-measure, intercept=TRUE,
-data, slab, subset,
-add=1/2, to="only0", drop00=TRUE, vtype="LS",
+measure, data, slab, subset,
+add=1/2, to="only0", drop00=TRUE, intercept=TRUE,
 model="UM.FS", method="ML", coding=1/2, cor=FALSE,
 test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
 
@@ -15,7 +14,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
    ### (arguments "to" and "vtype" are checked inside escalc function)
 
    if (missing(measure))
-      stop(mstyle$stop("Must specify 'measure' argument."))
+      stop(mstyle$stop("Must specify the 'measure' argument."))
 
    if (!is.element(measure, c("OR","IRR","PLO","IRLN", "PR","RR","RD","PLN")))
       stop(mstyle$stop("Unknown 'measure' specified."))
@@ -26,7 +25,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
    if (!is.element(coding, c(1/2, 1, 0)))
       stop(mstyle$stop("Unknown 'coding' option specified."))
 
-   ### in case user specifies more than one add/to value (as one can do with rma.mh() and rma.peto())
+   ### in case user specified more than one add/to value (as one can do with rma.mh() and rma.peto())
    ### (never apply any kind of continuity correction to the data used in the actual model fitting for models implemented in this function)
 
    if (length(add) > 1L)
@@ -76,7 +75,13 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
 
    ddd <- list(...)
 
-   .chkdots(ddd, c("tdist", "outlist", "onlyo1", "addyi", "addvi", "time", "retdat", "family", "retfit", "skiphet", "i2def", "link"))
+   .chkdots(ddd, c("vtype", "tdist", "outlist", "onlyo1", "addyi", "addvi", "time", "retdat", "family", "retfit", "skiphet", "i2def", "link"))
+
+   if (is.null(ddd$vtype)) {
+      vtype <- "LS"
+   } else {
+      vtype <- ddd$vtype
+   }
 
    ### handle 'tdist' argument from ... (note: overrides test argument)
 
@@ -135,7 +140,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
    if (verbose) .space()
 
    if (verbose > 1)
-      message(mstyle$message("Extracting data and computing yi/vi values ..."))
+      message(mstyle$message("Extracting the data and computing yi/vi values ..."))
 
    ### check if data argument has been specified
 
@@ -184,7 +189,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
          di <- .getsubset(di, subset)
       }
 
-      args <- list(measure=measure, ai=ai, bi=bi, ci=ci, di=di, add=add, to=to, drop00=drop00, vtype=vtype, onlyo1=onlyo1, addyi=addyi, addvi=addvi)
+      args <- list(ai=ai, bi=bi, ci=ci, di=di, add=add, to=to, drop00=drop00, onlyo1=onlyo1, addyi=addyi, addvi=addvi)
 
    }
 
@@ -206,7 +211,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
          t2i <- .getsubset(t2i, subset)
       }
 
-      args <- list(measure=measure, x1i=x1i, x2i=x2i, t1i=t1i, t2i=t2i, add=add, to=to, drop00=drop00, vtype=vtype, onlyo1=onlyo1, addyi=addyi, addvi=addvi)
+      args <- list(x1i=x1i, x2i=x2i, t1i=t1i, t2i=t2i, add=add, to=to, drop00=drop00, onlyo1=onlyo1, addyi=addyi, addvi=addvi)
 
    }
 
@@ -227,7 +232,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
          mi <- .getsubset(mi, subset)
       }
 
-      args <- list(measure=measure, xi=xi, mi=mi, add=add, to=to, vtype=vtype, onlyo1=onlyo1, addyi=addyi, addvi=addvi)
+      args <- list(xi=xi, mi=mi, add=add, to=to, onlyo1=onlyo1, addyi=addyi, addvi=addvi)
 
    }
 
@@ -245,9 +250,11 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
          ti <- .getsubset(ti, subset)
       }
 
-      args <- list(measure=measure, xi=xi, ti=ti, add=add, to=to, vtype=vtype, onlyo1=onlyo1, addyi=addyi, addvi=addvi)
+      args <- list(xi=xi, ti=ti, add=add, to=to, onlyo1=onlyo1, addyi=addyi, addvi=addvi)
 
    }
+
+   args <- c(args, list(measure=measure, vtype=vtype))
 
    dat <- .do.call(escalc, args)
 
@@ -262,7 +269,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
    #########################################################################
 
    if (verbose > 1)
-      message(mstyle$message("Creating model matrix ..."))
+      message(mstyle$message("Creating the model matrix ..."))
 
    ### convert mods formula to X matrix and set intercept equal to FALSE
 
@@ -298,12 +305,12 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
    ### check if mods matrix has the right number of rows
 
    if (!is.null(mods) && nrow(mods) != k)
-      stop(mstyle$stop(paste0("Number of rows in the model matrix (", nrow(mods), ") does not match length of the outcome vector (", k, ").")))
+      stop(mstyle$stop(paste0("Number of rows in the model matrix (", nrow(mods), ") do not match the length of the the outcome vector (", k, ").")))
 
    ### generate study labels if none are specified
 
    if (verbose > 1)
-      message(mstyle$message("Generating/extracting study labels ..."))
+      message(mstyle$message("Generating/extracting the study labels ..."))
 
    if (is.null(slab)) {
 
@@ -316,7 +323,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
          stop(mstyle$stop("NAs in study labels."))
 
       if (length(slab) != k)
-         stop(mstyle$stop("Study labels not of same length as data."))
+         stop(mstyle$stop(paste0("Length of the 'slab' argument (", length(slab), ") does not correspond to the size of the dataset (", k, ").")))
 
       if (is.factor(slab))
          slab <- as.character(slab)
@@ -392,7 +399,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
       if (any(has.na)) {
 
          if (verbose > 1)
-            message(mstyle$message("Handling NAs in table data ..."))
+            message(mstyle$message("Handling NAs in the table data ..."))
 
          if (na.act == "na.omit" || na.act == "na.exclude" || na.act == "na.pass") {
             ai   <- ai[not.na]
@@ -419,7 +426,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
       if (any(has.na)) {
 
          if (verbose > 1)
-            message(mstyle$message("Handling NAs in table data ..."))
+            message(mstyle$message("Handling NAs in the table data ..."))
 
          if (na.act == "na.omit" || na.act == "na.exclude" || na.act == "na.pass") {
             x1i  <- x1i[not.na]
@@ -446,7 +453,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
       if (any(has.na)) {
 
          if (verbose > 1)
-            message(mstyle$message("Handling NAs in table data ..."))
+            message(mstyle$message("Handling NAs in the table data ..."))
 
          if (na.act == "na.omit" || na.act == "na.exclude" || na.act == "na.pass") {
             xi   <- xi[not.na]
@@ -471,7 +478,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
       if (any(has.na)) {
 
          if (verbose > 1)
-            message(mstyle$message("Handling NAs in table data ..."))
+            message(mstyle$message("Handling NAs in the table data ..."))
 
          if (na.act == "na.omit" || na.act == "na.exclude" || na.act == "na.pass") {
             xi   <- xi[not.na]
@@ -493,7 +500,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
 
    ### at least one study left?
 
-   if (k < 1)
+   if (k < 1L)
       stop(mstyle$stop("Processing terminated since k = 0."))
 
    ### check for NAs in yi/vi and act accordingly (yi/vi pair can be NA/NA if add=0 is used)
@@ -623,7 +630,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
 
    #########################################################################
 
-   ### set default control parameters
+   ### set defaults for control parameters
 
    con <- list(verbose = FALSE,            # also passed on to glm/glmer/optim/nlminb/minqa (uobyqa/newuoa/bobyqa)
                package="lme4",             # package for fitting logistic mixed-effects models ("lme4", "GLMMadaptive", "glmmTMB")
@@ -833,10 +840,15 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
             stop(mstyle$stop("Please install the 'BB' package to use this optimizer."))
       }
 
+      if (is.element(optimizer, c("Rcgmin","Rvmmin"))) {
+         if (!requireNamespace("optimx", quietly=TRUE))
+            stop(mstyle$stop(paste0("Please install the 'optimx' package to use this optimizer.")))
+      }
+
       if (is.element(optimizer, c("optim","nlminb","uobyqa","newuoa","bobyqa","nloptr","nlm","hjk","nmk","mads","ucminf","lbfgsb3c","subplex","BBoptim","optimParallel","Rcgmin","Rvmmin"))) {
-         con$hesspack <- match.arg(con$hesspack, c("numDeriv","pracma"))
+         con$hesspack <- match.arg(con$hesspack, c("numDeriv","pracma","calculus"))
          if (!requireNamespace(con$hesspack, quietly=TRUE))
-         stop(mstyle$stop(paste0("Please install the '", con$hesspack, "' package to fit this model.")))
+            stop(mstyle$stop(paste0("Please install the '", con$hesspack, "' package to fit this model.")))
          if (con$dnchgcalc == "dFNCHypergeo") {
             if (!requireNamespace("BiasedUrn", quietly=TRUE))
                stop(mstyle$stop("Please install the 'BiasedUrn' package to fit this model."))
@@ -966,7 +978,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
             ### fit FE model
 
             if (verbose)
-               message(mstyle$message("Fitting FE model ..."))
+               message(mstyle$message("Fitting the FE model ..."))
 
             if (k > 1) {
                res.FE <- try(glm(dat.grp ~ -1 + X.fit + study, offset=dat.off, family=dat.fam, control=glmCtrl), silent=!verbose)
@@ -991,7 +1003,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
             if (!isTRUE(ddd$skiphet)) {
 
                if (k > 1 && verbose)
-                  message(mstyle$message("Fitting saturated model ..."))
+                  message(mstyle$message("Fitting the saturated model ..."))
 
                if (k > 1) {
                   X.QE   <- model.matrix(~ -1 + X.fit + study + study:group1)
@@ -1028,7 +1040,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
                ### fit ML model
 
                if (verbose)
-                  message(mstyle$message("Fitting ML model ..."))
+                  message(mstyle$message("Fitting the ML model ..."))
 
                if (package == "lme4") {
                   if (verbose) {
@@ -1131,7 +1143,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
             ### fit FE model
 
             if (verbose)
-               message(mstyle$message("Fitting FE model ..."))
+               message(mstyle$message("Fitting the FE model ..."))
 
             if (package == "lme4") {
                if (verbose) {
@@ -1176,7 +1188,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
             if (!isTRUE(ddd$skiphet)) {
 
                if (k > 1 && verbose)
-                  message(mstyle$message("Fitting saturated model ..."))
+                  message(mstyle$message("Fitting the saturated model ..."))
 
                if (k > 1) {
 
@@ -1257,7 +1269,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
                ###        3) start=c(sqrt(lme4::VarCorr(res.FE)[[1]][1])) has no effect, since the start value for tau^2 is not specified (and using 0 is probably not ideal for that)
 
                if (verbose)
-                  message(mstyle$message("Fitting ML model ..."))
+                  message(mstyle$message("Fitting the ML model ..."))
 
                if (package == "lme4") {
                   if (verbose) {
@@ -1430,7 +1442,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
          ### fit FE model
 
          if (verbose)
-            message(mstyle$message("Fitting FE model ..."))
+            message(mstyle$message("Fitting the FE model ..."))
 
          res.FE <- try(glm(dat.grp ~ -1 + X.fit, offset=dat.off, family=binomial, control=glmCtrl), silent=!verbose)
 
@@ -1451,7 +1463,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
          if (!isTRUE(ddd$skiphet)) {
 
             if (k > 1 && verbose)
-               message(mstyle$message("Fitting saturated model ..."))
+               message(mstyle$message("Fitting the saturated model ..."))
 
             if (k > 1) {
                X.QE   <- model.matrix(~ -1 + X.fit + study)
@@ -1493,7 +1505,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
             ### notes: 1) suppressMessages to suppress the 'one random effect per observation' warning
 
             if (verbose)
-               message(mstyle$message("Fitting ML model ..."))
+               message(mstyle$message("Fitting the ML model ..."))
 
             if (package == "lme4") {
                if (verbose) {
@@ -1590,7 +1602,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
          ####################################################
 
          if (verbose)
-            message(mstyle$message("Fitting FE model ..."))
+            message(mstyle$message("Fitting the FE model ..."))
 
          if (is.element(optimizer, c("optim","nlminb","uobyqa","newuoa","bobyqa","nloptr","nlm","hjk","nmk","mads","ucminf","lbfgsb3c","subplex","BBoptim","optimParallel","Rcgmin","Rvmmin"))) {
 
@@ -1643,16 +1655,16 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
 
             if (optimizer == "Rcgmin") {
                par.arg <- "par"
-               optimizer <- "Rcgmin::Rcgmin"
-               #ctrl.arg <- ", gr='grnd', control=optCtrl"
-               ctrl.arg <- ", control=optCtrl"
+               optimizer <- "optimx::Rcgmin"
+               ctrl.arg <- ", gr='grnd', control=optCtrl"
+               #ctrl.arg <- ", control=optCtrl"
             }
 
             if (optimizer == "Rvmmin") {
                par.arg <- "par"
-               optimizer <- "Rvmmin::Rvmmin"
-               #ctrl.arg <- ", gr='grnd', control=optCtrl"
-               ctrl.arg <- ", control=optCtrl"
+               optimizer <- "optimx::Rvmmin"
+               ctrl.arg <- ", gr='grnd', control=optCtrl"
+               #ctrl.arg <- ", control=optCtrl"
             }
 
             if (optimizer == "optimParallel") {
@@ -1727,7 +1739,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
 
             ### convergence checks
 
-            if (is.element(optimizer, c("optim","nlminb","dfoptim::hjk","dfoptim::nmk","lbfgsb3c::lbfgsb3c","subplex::subplex","BB::BBoptim","Rcgmin::Rcgmin","Rvmmin:Rvmmin","optimParallel::optimParallel")) && res.FE$convergence != 0)
+            if (is.element(optimizer, c("optim","nlminb","dfoptim::hjk","dfoptim::nmk","lbfgsb3c::lbfgsb3c","subplex::subplex","BB::BBoptim","optimx::Rcgmin","optimx::Rvmmin","optimParallel::optimParallel")) && res.FE$convergence != 0)
                stop(mstyle$stop(paste0("Cannot fit FE model. Optimizer (", optimizer, ") did not achieve convergence (convergence = ", res.FE$convergence, ").")))
 
             if (is.element(optimizer, c("dfoptim::mads")) && res.FE$convergence > optCtrl$tol)
@@ -1755,18 +1767,22 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
             if (optimizer=="nlm")
                res.FE$par <- res.FE$estimate
 
+            res.FE$par <- unname(res.FE$par)
+
             if (verbose > 1)
-               message(mstyle$message("Computing Hessian ..."))
+               message(mstyle$message("Computing the Hessian ..."))
 
             if (con$hesspack == "numDeriv")
                h.FE <- numDeriv::hessian(.dnchg, x=res.FE$par, method.args=hessianCtrl, ai=ai, bi=bi, ci=ci, di=di, X.fit=X.fit, random=FALSE, verbose=verbose, digits=digits, dnchgcalc=con$dnchgcalc, dnchgprec=con$dnchgprec)
             if (con$hesspack == "pracma")
                h.FE <- pracma::hessian(.dnchg, x0=res.FE$par, ai=ai, bi=bi, ci=ci, di=di, X.fit=X.fit, random=FALSE, verbose=verbose, digits=digits, dnchgcalc=con$dnchgcalc, dnchgprec=con$dnchgprec)
+            if (con$hesspack == "calculus")
+               h.FE <- calculus::hessian(.dnchg, var=res.FE$par, params=list(ai=ai, bi=bi, ci=ci, di=di, X.fit=X.fit, random=FALSE, verbose=verbose, digits=digits, dnchgcalc=con$dnchgcalc, dnchgprec=con$dnchgprec))
             #return(list(res.FE=res.FE, h.FE=h.FE))
 
             ### log-likelihood
 
-            if (is.element(optimizer, c("optim","dfoptim::hjk","dfoptim::nmk","dfoptim::mads","ucminf::ucminf","lbfgsb3c::lbfgsb3c","subplex::subplex","BB::BBoptim","Rcgmin::Rcgmin","Rvmmin:Rvmmin","optimParallel::optimParallel")))
+            if (is.element(optimizer, c("optim","dfoptim::hjk","dfoptim::nmk","dfoptim::mads","ucminf::ucminf","lbfgsb3c::lbfgsb3c","subplex::subplex","BB::BBoptim","optimx::Rcgmin","optimx::Rvmmin","optimParallel::optimParallel")))
                ll.FE <- -1 * res.FE$value
             if (is.element(optimizer, c("nlminb","nloptr::nloptr")))
                ll.FE <- -1 * res.FE$objective
@@ -1784,7 +1800,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
             if (QEconv) { # QEconv is FALSE when skiphet=TRUE so this then also gets skipped automatically
 
                if (k > 1 && verbose)
-                  message(mstyle$message("Fitting saturated model ..."))
+                  message(mstyle$message("Fitting the saturated model ..."))
 
                if (k > 1) {
 
@@ -1822,7 +1838,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
 
                   ### convergence checks
 
-                  if (QEconv && is.element(optimizer, c("optim","nlminb","dfoptim::hjk","dfoptim::nmk","lbfgsb3c::lbfgsb3c","subplex::subplex","BB::BBoptim","Rcgmin::Rcgmin","Rvmmin:Rvmmin","optimParallel::optimParallel")) && res.QE$convergence != 0) {
+                  if (QEconv && is.element(optimizer, c("optim","nlminb","dfoptim::hjk","dfoptim::nmk","lbfgsb3c::lbfgsb3c","subplex::subplex","BB::BBoptim","optimx::Rcgmin","optimx:Rvmmin","optimParallel::optimParallel")) && res.QE$convergence != 0) {
                      warning(mstyle$warning(paste0("Cannot fit saturated model. Optimizer (", optimizer, ") did not achieve convergence (convergence = ", res.QE$convergence, ").")), call.=FALSE)
                      QEconv <- FALSE
                      ll.QE <- NA_real_
@@ -1865,13 +1881,17 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
                   if (QEconv && optimizer=="nlm")
                      res.QE$par <- res.QE$estimate
 
+                  res.QE$par <- unname(res.QE$par)
+
                   if (QEconv) {
                      if (verbose > 1)
-                        message(mstyle$message("Computing Hessian ..."))
+                        message(mstyle$message("Computing the Hessian ..."))
                      if (con$hesspack == "numDeriv")
                         h.QE <- numDeriv::hessian(.dnchg, x=res.QE$par, method.args=hessianCtrl, ai=ai, bi=bi, ci=ci, di=di, X.fit=X.QE, random=FALSE, verbose=verbose, digits=digits, dnchgcalc=con$dnchgcalc, dnchgprec=con$dnchgprec)
                      if (con$hesspack == "pracma")
                         h.QE <- pracma::hessian(.dnchg, x0=res.QE$par, ai=ai, bi=bi, ci=ci, di=di, X.fit=X.QE, random=FALSE, verbose=verbose, digits=digits, dnchgcalc=con$dnchgcalc, dnchgprec=con$dnchgprec)
+                     if (con$hesspack == "calculus")
+                        h.QE <- calculus::hessian(.dnchg, var=res.QE$par, params=list(ai=ai, bi=bi, ci=ci, di=di, X.fit=X.QE, random=FALSE, verbose=verbose, digits=digits, dnchgcalc=con$dnchgcalc, dnchgprec=con$dnchgprec))
                   }
 
                } else {
@@ -1887,7 +1907,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
 
                ### log-likelihood
 
-               if (is.element(optimizer, c("optim","dfoptim::hjk","dfoptim::nmk","dfoptim::mads","ucminf::ucminf","lbfgsb3c::lbfgsb3c","subplex::subplex","BB::BBoptim","Rcgmin::Rcgmin","Rvmmin:Rvmmin","optimParallel::optimParallel")))
+               if (is.element(optimizer, c("optim","dfoptim::hjk","dfoptim::nmk","dfoptim::mads","ucminf::ucminf","lbfgsb3c::lbfgsb3c","subplex::subplex","BB::BBoptim","optimx::Rcgmin","optimx::Rvmmin","optimParallel::optimParallel")))
                   ll.QE <- -1 * res.QE$value
                if (is.element(optimizer, c("nlminb","nloptr::nloptr")))
                   ll.QE <- -1 * res.QE$objective
@@ -1916,7 +1936,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
                h.D      <- hessian[-seq_len(p),-seq_len(p),drop=FALSE] # lower right part of hessian (of which we need the inverse)
                chol.h.A <- try(chol(h.A), silent=!verbose)             # see if h.A can be inverted with chol()
                if (inherits(chol.h.A, "try-error") || anyNA(chol.h.A)) {
-                  warning(mstyle$warning("Cannot invert Hessian for saturated model."), call.=FALSE)
+                  warning(mstyle$warning("Cannot invert the Hessian for the saturated model."), call.=FALSE)
                   QE.Wld <- NA_real_
                } else {
                   Ivb2.QE  <- h.D-h.C%*%chol2inv(chol.h.A)%*%h.B       # inverse of the inverse of the lower right part
@@ -1982,7 +2002,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
             if (QEconv) { # QEconv is FALSE when skiphet=TRUE so this then also gets skipped automatically
 
                if (verbose)
-                  message(mstyle$message("Fitting saturated model ..."))
+                  message(mstyle$message("Fitting the saturated model ..."))
 
                b.QE <- coef(res.QE, complete=TRUE) # res.QE is from CM.AL model
                is.aliased <- is.na(b.QE)
@@ -2034,14 +2054,14 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
             ### fit ML model
             ### notes: 1) cannot use clogit() or clogistic() for this (do not allow for the addition of random effects)
             ###        2) mclogit() from mclogit package may be an alternative (but it only provides a PQL method)
-            ###        3) start values from CM.AL model (add .01 to tau^2 estimate, in case estimate of tau^2 is 0)
+            ###        3) start values from CM.AL model (add 0.01 to tau^2 estimate, in case estimate of tau^2 is 0)
             ###        4) optimization involves integration, so intCtrl is relevant
             ###        5) results can be sensitive to the scaling of moderators
 
             if (verbose)
-               message(mstyle$message("Fitting ML model ..."))
+               message(mstyle$message("Fitting the ML model ..."))
 
-            optcall <- paste0(optimizer, "(", par.arg, "=c(beta, log(tau2+.01)),
+            optcall <- paste0(optimizer, "(", par.arg, "=c(beta, log(tau2+0.01)),
                .dnchg, ", ifelse(optimizer=="optim", "method=optmethod, ", ""),
                "ai=ai, bi=bi, ci=ci, di=di, X.fit=X.fit, random=TRUE,
                verbose=verbose, digits=digits,
@@ -2067,7 +2087,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
 
             ### convergence checks
 
-            if (is.element(optimizer, c("optim","nlminb","dfoptim::hjk","dfoptim::nmk","lbfgsb3c::lbfgsb3c","subplex::subplex","BB::BBoptim","Rcgmin::Rcgmin","Rvmmin:Rvmmin","optimParallel::optimParallel")) && res.ML$convergence != 0)
+            if (is.element(optimizer, c("optim","nlminb","dfoptim::hjk","dfoptim::nmk","lbfgsb3c::lbfgsb3c","subplex::subplex","BB::BBoptim","optimx::Rcgmin","optimx::Rvmmin","optimParallel::optimParallel")) && res.ML$convergence != 0)
                stop(mstyle$stop(paste0("Cannot fit ML model. Optimizer (", optimizer, ") did not achieve convergence (convergence = ", res.ML$convergence, ").")))
 
             if (is.element(optimizer, c("dfoptim::mads")) && res.ML$convergence > optCtrl$tol)
@@ -2095,8 +2115,10 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
             if (optimizer=="nlm")
                res.ML$par <- res.ML$estimate
 
+            res.ML$par <- unname(res.ML$par)
+
             if (verbose > 1)
-               message(mstyle$message("Computing Hessian ..."))
+               message(mstyle$message("Computing the Hessian ..."))
 
             tau2eff0 <- exp(res.ML$par[p+1]) < con$tau2tol
 
@@ -2107,11 +2129,13 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
                h.ML <- numDeriv::hessian(.dnchg, x=res.ML$par, method.args=hessianCtrl, ai=ai, bi=bi, ci=ci, di=di, X.fit=X.fit, random=!tau2eff0, verbose=verbose, digits=digits, dnchgcalc=con$dnchgcalc, dnchgprec=con$dnchgprec, intCtrl=intCtrl)
             if (con$hesspack == "pracma")
                h.ML <- pracma::hessian(.dnchg, x0=res.ML$par, ai=ai, bi=bi, ci=ci, di=di, X.fit=X.fit, random=!tau2eff0, verbose=verbose, digits=digits, dnchgcalc=con$dnchgcalc, dnchgprec=con$dnchgprec, intCtrl=intCtrl)
+            if (con$hesspack == "calculus")
+               h.ML <- calculus::hessian(.dnchg, var=res.ML$par, params=list(ai=ai, bi=bi, ci=ci, di=di, X.fit=X.fit, random=!tau2eff0, verbose=verbose, digits=digits, dnchgcalc=con$dnchgcalc, dnchgprec=con$dnchgprec, intCtrl=intCtrl))
             #return(list(res.ML, h.ML))
 
             ### log-likelihood
 
-            if (is.element(optimizer, c("optim","dfoptim::hjk","dfoptim::nmk","dfoptim::mads","ucminf::ucminf","lbfgsb3c::lbfgsb3c","subplex::subplex","BB::BBoptim","Rcgmin::Rcgmin","Rvmmin:Rvmmin","optimParallel::optimParallel")))
+            if (is.element(optimizer, c("optim","dfoptim::hjk","dfoptim::nmk","dfoptim::mads","ucminf::ucminf","lbfgsb3c::lbfgsb3c","subplex::subplex","BB::BBoptim","optimx::Rcgmin","optimx:Rvmmin","optimParallel::optimParallel")))
                ll.ML <- -1 * res.ML$value
             if (is.element(optimizer, c("nlminb","nloptr::nloptr")))
                ll.ML <- -1 * res.ML$objective
@@ -2132,11 +2156,11 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
                chol.h <- try(chol(h.FE[seq_len(p),seq_len(p)]), silent=!verbose)    # see if Hessian can be inverted with chol()
                if (inherits(chol.h, "try-error") || anyNA(chol.h)) {
                   if (anyNA(chol.h))
-                     stop(mstyle$stop(paste0("Cannot invert Hessian for the ", ifelse(method == "T0", "ML", method), " model.")))
+                     stop(mstyle$stop(paste0("Cannot invert the Hessian for the ", ifelse(method == "T0", "ML", method), " model.")))
                   warning(mstyle$warning("Choleski factorization of Hessian failed. Trying inversion via QR decomposition."), call.=FALSE)
                   vb <- try(qr.solve(h.FE[seq_len(p),seq_len(p)]), silent=!verbose) # see if Hessian can be inverted with qr.solve()
                   if (inherits(vb, "try-error"))
-                     stop(mstyle$stop(paste0("Cannot invert Hessian for the ", ifelse(method == "T0", "ML", method), " model.")))
+                     stop(mstyle$stop(paste0("Cannot invert the Hessian for the ", ifelse(method == "T0", "ML", method), " model.")))
                } else {
                   vb <- chol2inv(chol.h)
                }
@@ -2159,11 +2183,11 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
             chol.h <- try(chol(h.ML), silent=!verbose)      # see if Hessian can be inverted with chol()
             if (inherits(chol.h, "try-error") || anyNA(chol.h)) {
                if (anyNA(chol.h))
-                  stop(mstyle$stop("Cannot invert Hessian for the ML model."))
+                  stop(mstyle$stop("Cannot invert the Hessian for the ML model."))
                warning(mstyle$warning("Choleski factorization of Hessian failed. Trying inversion via QR decomposition."), call.=FALSE)
                vb.f <- try(qr.solve(h.ML), silent=!verbose) # see if Hessian can be inverted with qr.solve()
                if (inherits(vb.f, "try-error"))
-                  stop(mstyle$stop("Cannot invert Hessian for the ML model."))
+                  stop(mstyle$stop("Cannot invert the Hessian for the ML model."))
             } else {
                vb.f <- chol2inv(chol.h)
             }
@@ -2265,7 +2289,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
       ### fit FE model
 
       if (verbose)
-         message(mstyle$message("Fitting FE model ..."))
+         message(mstyle$message("Fitting the FE model ..."))
 
       res.FE <- try(glm(dat.grp ~ -1 + X.fit, offset=dat.off, family=dat.fam, control=glmCtrl), silent=!verbose)
 
@@ -2287,7 +2311,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
       if (!isTRUE(ddd$skiphet)) {
 
          if (k > 1 && verbose)
-            message(mstyle$message("Fitting saturated model ..."))
+            message(mstyle$message("Fitting the saturated model ..."))
 
          if (k > 1) {
             X.QE <- model.matrix(~ -1 + X.fit + study)
@@ -2330,7 +2354,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
          ### notes: 1) suppressMessages to suppress the 'one random effect per observation' warning
 
          if (verbose)
-            message(mstyle$message("Fitting ML model ..."))
+            message(mstyle$message("Fitting the ML model ..."))
 
          if (package == "lme4") {
             if (verbose) {
@@ -2429,7 +2453,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
    ### heterogeneity tests (Wald-type and likelihood ratio tests of the extra coefficients in the saturated model)
 
    if (verbose > 1)
-      message(mstyle$message("Conducting heterogeneity tests ..."))
+      message(mstyle$message("Conducting the heterogeneity tests ..."))
 
    if (k > 1 && QEconv) {
 
@@ -2442,12 +2466,12 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
             chol.h <- try(chol(vb2.QE), silent=!verbose) # see if Hessian can be inverted with chol()
 
             if (inherits(chol.h, "try-error") || anyNA(chol.h)) {
-               warning(mstyle$warning("Cannot invert Hessian for saturated model."), call.=FALSE)
+               warning(mstyle$warning("Cannot invert the Hessian for the saturated model."), call.=FALSE)
                QE.Wld <- NA_real_
             } else {
                QE.Wld <- try(c(t(b2.QE) %*% chol2inv(chol.h) %*% b2.QE), silent=!verbose)
                if (inherits(QE.Wld, "try-error")) {
-                  warning(mstyle$warning("Cannot invert Hessian for saturated model."), call.=FALSE)
+                  warning(mstyle$warning("Cannot invert the Hessian for the saturated model."), call.=FALSE)
                   QE.Wld <- NA_real_
                }
             }
@@ -2502,12 +2526,12 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
    ### testing of the fixed effects in the model
 
    if (verbose > 1)
-      message(mstyle$message("Conducting tests of the fixed effects ..."))
+      message(mstyle$message("Conducting the tests of the fixed effects ..."))
 
    chol.h <- try(chol(vb[btt,btt]), silent=!verbose) # see if Hessian can be inverted with chol()
 
    if (inherits(chol.h, "try-error") || anyNA(chol.h)) {
-      warning(mstyle$warning("Cannot invert Hessian for QM test."), call.=FALSE)
+      warning(mstyle$warning("Cannot invert the Hessian for the QM-test."), call.=FALSE)
       QM <- NA_real_
    } else {
       QM <- as.vector(t(beta)[btt] %*% chol2inv(chol.h) %*% beta[btt])
@@ -2577,7 +2601,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
    ###### fit statistics
 
    if (verbose > 1)
-      message(mstyle$message("Computing fit statistics and log-likelihood ..."))
+      message(mstyle$message("Computing the fit statistics and log-likelihood ..."))
 
    ll.ML     <- ifelse(is.element(method, c("FE","EE","CE")), ll.FE, ll.ML)
    ll.REML   <- NA_real_
@@ -2599,7 +2623,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
    ###### prepare output
 
    if (verbose > 1)
-      message(mstyle$message("Preparing output ..."))
+      message(mstyle$message("Preparing the output ..."))
 
    weighted  <- TRUE
 
@@ -2614,6 +2638,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
                   k=k, k.f=k.f, k.yi=k.yi, k.eff=k.eff, k.all=k.all, p=p, p.eff=p.eff, parms=parms,
                   int.only=int.only, int.incl=int.incl, intercept=intercept,
                   yi=yi, vi=vi, X=X, yi.f=yi.f, vi.f=vi.f, X.f=X.f,
+                  chksumyi=digest::digest(as.vector(yi)), chksumvi=digest::digest(as.vector(vi)), chksumX=digest::digest(X),
                   outdat.f=outdat.f, outdat=outdat, ni=ni, ni.f=ni.f,
                   ids=ids, not.na=not.na, subset=subset, not.na.yivi=not.na.yivi, slab=slab, slab.null=slab.null,
                   measure=measure, method=method, model=model, weighted=weighted,
@@ -2635,9 +2660,10 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
                      QE.Wld=QE.Wld, QEp.Wld=QEp.Wld, QE.LRT=QE.LRT, QEp.LRT=QEp.LRT, QE.df=QE.df, QEp=QEp, QM=QM, QMdf=QMdf, QMp=QMp,
                      k=k, k.eff=k.eff, p=p, p.eff=p.eff, parms=parms,
                      int.only=int.only,
+                     chksumyi=digest::digest(as.vector(yi)), chksumvi=digest::digest(as.vector(vi)), chksumX=digest::digest(X),
                      measure=measure, method=method, model=model,
                      test=test, dfs=ddf, ddf=ddf, btt=btt, m=m,
-                     digits=digits,
+                     digits=digits, level=level,
                      fit.stats=fit.stats)
       } else {
          res <- eval(str2lang(paste0("list(", ddd$outlist, ")")))

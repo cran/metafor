@@ -15,8 +15,8 @@ regtest(x, vi, sei, ni, subset, data,
    \item{ni}{optional vector with the corresponding sample sizes (only relevant when using the sample sizes (or a transformation thereof) as predictor).}
    \item{subset}{optional (logical or numeric) vector to specify the subset of studies that should be included in the test (ignored if \code{x} is an object of class \code{"rma"}).}
    \item{data}{optional data frame containing the variables given to the arguments above.}
-   \item{model}{either \code{"rma"} or \code{"lm"} to indicate the type of model to use for the regression test. See \sQuote{Details}.}
-   \item{predictor}{either \code{"sei"} \code{"vi"}, \code{"ni"}, \code{"ninv"}, \code{"sqrtni"}, or \code{"sqrtninv"} to indicate the predictor to use for the regression test. See \sQuote{Details}.}
+   \item{model}{either \code{"rma"} or \code{"lm"} to specify the type of model to use for the regression test. See \sQuote{Details}.}
+   \item{predictor}{either \code{"sei"} \code{"vi"}, \code{"ni"}, \code{"ninv"}, \code{"sqrtni"}, or \code{"sqrtninv"} to specify the predictor to use for the regression test. See \sQuote{Details}.}
    \item{ret.fit}{logical to specify whether the full results from the fitted model should also be returned.}
    \item{digits}{optional integer to specify the number of decimal places to which the printed results should be rounded.}
    \item{\dots}{other arguments.}
@@ -69,7 +69,7 @@ regtest(x, vi, sei, ni, subset, data,
    All of the tests do not directly test for publication bias, but for a relationship between the observed effect sizes or outcomes and the chosen predictor. If such a relationship is present, then this usually implies asymmetry in the funnel plot, which in turn may be an indication of publication bias. However, it is important to keep in mind that there can be other reasons besides publication bias that could lead to asymmetry in the funnel plot.
 }
 \author{
-   Wolfgang Viechtbauer \email{wvb@metafor-project.org} \url{https://www.metafor-project.org}
+   Wolfgang Viechtbauer (\email{wvb@metafor-project.org}, \url{https://www.metafor-project.org}).
 }
 \references{
    Begg, C. B., & Mazumdar, M. (1994). Operating characteristics of a rank correlation test for publication bias. \emph{Biometrics}, \bold{50}(4), 1088--1101. \verb{https://doi.org/10.2307/2533446}

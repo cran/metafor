@@ -6,10 +6,10 @@ data, rho, phi, rvars, checkpd=TRUE, nearpd=FALSE, sparse=FALSE, ...) {
    ############################################################################
 
    if (missing(vi))
-      stop(mstyle$stop("Must specify 'vi' variable."))
+      stop(mstyle$stop("Must specify the 'vi' variable."))
 
    if (missing(cluster))
-      stop(mstyle$stop("Must specify 'cluster' variable."))
+      stop(mstyle$stop("Must specify the 'cluster' variable."))
 
    ### get ... argument and check for extra/superfluous arguments
 
@@ -26,7 +26,7 @@ data, rho, phi, rvars, checkpd=TRUE, nearpd=FALSE, sparse=FALSE, ...) {
       data <- NULL
 
    if (is.null(data) && !missing(rvars))
-      stop(mstyle$stop("Must specify 'data' argument when using 'rvars'."))
+      stop(mstyle$stop("Must specify the 'data' argument when using 'rvars'."))
 
    if (is.null(data)) {
       data <- sys.frame(sys.parent())
@@ -79,7 +79,7 @@ data, rho, phi, rvars, checkpd=TRUE, nearpd=FALSE, sparse=FALSE, ...) {
       stop(mstyle$stop("No missing values allowed in 'cluster' variable."))
 
    if (length(cluster) != k)
-      stop(mstyle$stop(paste0("Length of variable specified via 'cluster' (", length(cluster), ") does not match length of 'vi' (", k, ").")))
+      stop(mstyle$stop(paste0("Length of the variable specified via 'cluster' (", length(cluster), ") does not match the length of 'vi' (", k, ").")))
 
    ### checks on subgroup variable
 
@@ -89,7 +89,7 @@ data, rho, phi, rvars, checkpd=TRUE, nearpd=FALSE, sparse=FALSE, ...) {
          stop(mstyle$stop("No missing values allowed in 'subgroup' variable."))
 
       if (length(subgroup) != k)
-         stop(mstyle$stop(paste0("Length of variable specified via 'subgroup' (", length(subgroup), ") does not match length of 'vi' (", k, ").")))
+         stop(mstyle$stop(paste0("Length of the variable specified via 'subgroup' (", length(subgroup), ") does not match the length of 'vi' (", k, ").")))
 
       cluster <- paste0(cluster, ".", subgroup)
 
@@ -117,7 +117,7 @@ data, rho, phi, rvars, checkpd=TRUE, nearpd=FALSE, sparse=FALSE, ...) {
          stop(mstyle$stop("No missing values allowed in 'type' variable."))
 
       if (length(type) != k)
-         stop(mstyle$stop(paste0("Length of variable specified via 'type' (", length(type), ") does not match length of 'vi' (", k, ").")))
+         stop(mstyle$stop(paste0("Length of the variable specified via 'type' (", length(type), ") does not match the length of 'vi' (", k, ").")))
 
       ### process obs variable
 
@@ -133,7 +133,7 @@ data, rho, phi, rvars, checkpd=TRUE, nearpd=FALSE, sparse=FALSE, ...) {
          stop(mstyle$stop("No missing values allowed in 'obs' variable."))
 
       if (length(obs) != k)
-         stop(mstyle$stop(paste0("Length of variable specified via 'obs' (", length(obs), ") does not match length of 'vi' (", k, ").")))
+         stop(mstyle$stop(paste0("Length of the variable specified via 'obs' (", length(obs), ") does not match the length of 'vi' (", k, ").")))
 
       ### process grp1 and grp2 variables
 
@@ -156,10 +156,10 @@ data, rho, phi, rvars, checkpd=TRUE, nearpd=FALSE, sparse=FALSE, ...) {
          stop(mstyle$stop("No missing values allowed in 'grp2' variable."))
 
       if (length(grp1) != k)
-         stop(mstyle$stop(paste0("Length of variable specified via 'grp1' (", length(grp1), ") does not match length of 'vi' (", k, ").")))
+         stop(mstyle$stop(paste0("Length of the variable specified via 'grp1' (", length(grp1), ") does not match the length of 'vi' (", k, ").")))
 
       if (length(grp2) != k)
-         stop(mstyle$stop(paste0("Length of variable specified via 'grp2' (", length(grp2), ") does not match length of 'vi' (", k, ").")))
+         stop(mstyle$stop(paste0("Length of the variable specified via 'grp2' (", length(grp2), ") does not match the length of 'vi' (", k, ").")))
 
       ### process time1 and time2 variables
 
@@ -192,10 +192,10 @@ data, rho, phi, rvars, checkpd=TRUE, nearpd=FALSE, sparse=FALSE, ...) {
          stop(mstyle$stop("No missing values allowed in 'time2' variable."))
 
       if (length(time1) != k)
-         stop(mstyle$stop(paste0("Length of variable specified via 'time1' (", length(time1), ") does not match length of 'vi' (", k, ").")))
+         stop(mstyle$stop(paste0("Length of the variable specified via 'time1' (", length(time1), ") does not match the length of 'vi' (", k, ").")))
 
       if (length(time2) != k)
-         stop(mstyle$stop(paste0("Length of variable specified via 'time2' (", length(time2), ") does not match length of 'vi' (", k, ").")))
+         stop(mstyle$stop(paste0("Length of the variable specified via 'time2' (", length(time2), ") does not match the length of 'vi' (", k, ").")))
 
       if (!is.numeric(time1))
          stop(mstyle$stop("Variable 'time1' must be a numeric variable."))
@@ -224,10 +224,10 @@ data, rho, phi, rvars, checkpd=TRUE, nearpd=FALSE, sparse=FALSE, ...) {
          stop(mstyle$stop("No missing values allowed in 'w2' variable."))
 
       if (length(w1) != k)
-         stop(mstyle$stop(paste0("Length of variable specified via 'w1' (", length(w1), ") does not match length of 'vi' (", k, ").")))
+         stop(mstyle$stop(paste0("Length of the variable specified via 'w1' (", length(w1), ") does not match the length of 'vi' (", k, ").")))
 
       if (length(w2) != k)
-         stop(mstyle$stop(paste0("Length of variable specified via 'w2' (", length(w2), ") does not match length of 'vi' (", k, ").")))
+         stop(mstyle$stop(paste0("Length of the variable specified via 'w2' (", length(w2), ") does not match the length of 'vi' (", k, ").")))
 
       if (!is.numeric(w1))
          stop(mstyle$stop("Variable 'w1' must be a numeric variable."))
@@ -346,25 +346,57 @@ data, rho, phi, rvars, checkpd=TRUE, nearpd=FALSE, sparse=FALSE, ...) {
          R <- matrix(0, nrow=k, ncol=k)
       }
 
-      diag(R) <- 1
+      cluster_set <- unique(cluster)
 
-      for (i in 2:k) {
-         for (j in 1:i) {
-            if (cluster[i] == cluster[j]) {
+      for (cl in cluster_set) {
 
-               R[i,j] <- ifelse(type[i]==type[j], ifelse(obs[i]==obs[j], 1, rho[[1]][obs[i],obs[j]]), rho[[2]][type[i],type[j]]) *
-                         (ifelse(grp1[i]==grp1[j], ifelse(time1[i]==time1[j], 1, phi^abs(time1[i]-time1[j])), 0) * sqrt(1/w1[i] * 1/w1[j]) -
-                          ifelse(grp1[i]==grp2[j], ifelse(time1[i]==time2[j], 1, phi^abs(time1[i]-time2[j])), 0) * sqrt(1/w1[i] * 1/w2[j]) -
-                          ifelse(grp2[i]==grp1[j], ifelse(time2[i]==time1[j], 1, phi^abs(time2[i]-time1[j])), 0) * sqrt(1/w2[i] * 1/w1[j]) +
-                          ifelse(grp2[i]==grp2[j], ifelse(time2[i]==time2[j], 1, phi^abs(time2[i]-time2[j])), 0) * sqrt(1/w2[i] * 1/w2[j])) /
-                         (sqrt(1/w1[i] + 1/w2[i] - 2*ifelse(grp1[i]==grp2[i], ifelse(time1[i]==time2[i], 1, phi^abs(time1[i]-time2[i])), 0) * sqrt(1/w1[i] * 1/w2[i])) *
-                          sqrt(1/w1[j] + 1/w2[j] - 2*ifelse(grp1[j]==grp2[j], ifelse(time1[j]==time2[j], 1, phi^abs(time1[j]-time2[j])), 0) * sqrt(1/w1[j] * 1/w2[j])))
+         cl_i <- which(cl == cluster)
+         k_c  <- length(cl_i)
+         R_c  <- matrix(0, nrow=k_c, ncol=k_c)
 
+         diag(R_c) <- 1
+
+         if (k_c > 1L) {
+            for (i in 2:k_c) {
+               for (j in 1:i) {
+                  ci <- cl_i[i]
+                  cj <- cl_i[j]
+                  R_c[i,j] <- ifelse(type[ci]==type[cj], ifelse(obs[ci]==obs[cj], 1, rho[[1]][obs[ci],obs[cj]]), rho[[2]][type[ci],type[cj]]) *
+                              (ifelse(grp1[ci]==grp1[cj], ifelse(time1[ci]==time1[cj], 1, phi^abs(time1[ci]-time1[cj])), 0) * sqrt(1/w1[ci] * 1/w1[cj]) -
+                              ifelse(grp1[ci]==grp2[cj], ifelse(time1[ci]==time2[cj], 1, phi^abs(time1[ci]-time2[cj])), 0) * sqrt(1/w1[ci] * 1/w2[cj]) -
+                              ifelse(grp2[ci]==grp1[cj], ifelse(time2[ci]==time1[cj], 1, phi^abs(time2[ci]-time1[cj])), 0) * sqrt(1/w2[ci] * 1/w1[cj]) +
+                              ifelse(grp2[ci]==grp2[cj], ifelse(time2[ci]==time2[cj], 1, phi^abs(time2[ci]-time2[cj])), 0) * sqrt(1/w2[ci] * 1/w2[cj])) /
+                              (sqrt(1/w1[ci] + 1/w2[ci] - 2*ifelse(grp1[ci]==grp2[ci], ifelse(time1[ci]==time2[ci], 1, phi^abs(time1[ci]-time2[ci])), 0) * sqrt(1/w1[ci] * 1/w2[ci])) *
+                              sqrt(1/w1[cj] + 1/w2[cj] - 2*ifelse(grp1[cj]==grp2[cj], ifelse(time1[cj]==time2[cj], 1, phi^abs(time1[cj]-time2[cj])), 0) * sqrt(1/w1[cj] * 1/w2[cj])))
+               }
             }
          }
-      }
 
-      R[upper.tri(R)] <- t(R)[upper.tri(R)]
+         R_c[upper.tri(R_c)] <- t(R_c)[upper.tri(R_c)]
+         R[cl_i, cl_i] <- R_c
+
+     }
+
+      # diag(R) <- 1
+      #
+      # for (i in 2:k) {
+      #    for (j in 1:i) {
+      #       if (cluster[i] == cluster[j]) {
+      #
+      #          R[i,j] <- ifelse(type[i]==type[j], ifelse(obs[i]==obs[j], 1, rho[[1]][obs[i],obs[j]]), rho[[2]][type[i],type[j]]) *
+      #                    (ifelse(grp1[i]==grp1[j], ifelse(time1[i]==time1[j], 1, phi^abs(time1[i]-time1[j])), 0) * sqrt(1/w1[i] * 1/w1[j]) -
+      #                     ifelse(grp1[i]==grp2[j], ifelse(time1[i]==time2[j], 1, phi^abs(time1[i]-time2[j])), 0) * sqrt(1/w1[i] * 1/w2[j]) -
+      #                     ifelse(grp2[i]==grp1[j], ifelse(time2[i]==time1[j], 1, phi^abs(time2[i]-time1[j])), 0) * sqrt(1/w2[i] * 1/w1[j]) +
+      #                     ifelse(grp2[i]==grp2[j], ifelse(time2[i]==time2[j], 1, phi^abs(time2[i]-time2[j])), 0) * sqrt(1/w2[i] * 1/w2[j])) /
+      #                    (sqrt(1/w1[i] + 1/w2[i] - 2*ifelse(grp1[i]==grp2[i], ifelse(time1[i]==time2[i], 1, phi^abs(time1[i]-time2[i])), 0) * sqrt(1/w1[i] * 1/w2[i])) *
+      #                     sqrt(1/w1[j] + 1/w2[j] - 2*ifelse(grp1[j]==grp2[j], ifelse(time1[j]==time2[j], 1, phi^abs(time1[j]-time2[j])), 0) * sqrt(1/w1[j] * 1/w2[j])))
+      #
+      #       }
+      #    }
+      # }
+      #
+      # R[upper.tri(R)] <- t(R)[upper.tri(R)]
+
 
    } else {
 

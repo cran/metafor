@@ -1,5 +1,5 @@
 predict.rma.ls <- function(object, newmods, intercept, addx=FALSE, newscale, addz=FALSE,
-level, digits, transf, targs, vcov=FALSE, ...) {
+level, adjust=FALSE, digits, transf, targs, vcov=FALSE, ...) {
 
    #########################################################################
 
@@ -14,11 +14,22 @@ level, digits, transf, targs, vcov=FALSE, ...) {
 
    x <- object
 
+   mf <- match.call()
+
+   if (any(grepl("pairmat(", as.character(mf), fixed=TRUE))) {
+      try(assign("pairmat", object, envir=.metafor), silent=TRUE)
+      on.exit(suppressWarnings(rm("pairmat", envir=.metafor)))
+   }
+
    if (missing(newmods))
       newmods <- NULL
 
-   if (missing(intercept))
+   if (missing(intercept)) {
       intercept <- x$intercept
+      int.spec <- FALSE
+   } else {
+      int.spec <- TRUE
+   }
 
    if (missing(newscale))
       newscale <- NULL
@@ -39,6 +50,9 @@ level, digits, transf, targs, vcov=FALSE, ...) {
       targs <- NULL
 
    level <- .level(level)
+
+   if (!is.logical(adjust))
+      stop(mstyle$stop("Argument 'adjust' must be a logical."))
 
    ddd <- list(...)
 
@@ -63,8 +77,10 @@ level, digits, transf, targs, vcov=FALSE, ...) {
       if (!(.is.vector(newmods) || inherits(newmods, "matrix")))
          stop(mstyle$stop(paste0("Argument 'newmods' should be a vector or matrix, but is of class '", class(newmods), "'.")))
 
-      if ((!x$int.incl && x$p == 1L) || (x$int.incl && x$p == 2L)) {
-         k.new <- length(newmods)                                # if single moderator (multiple k.new possible) (either without or with intercept in the model)
+      singlemod <- (NCOL(newmods) == 1L) && ((!x$int.incl && x$p == 1L) || (x$int.incl && x$p == 2L))
+
+      if (singlemod) {                                           # if single moderator (multiple k.new possible) (either without or with intercept in the model)
+         k.new <- length(newmods)                                # (but when specifying a matrix, it must be a column vector for this work)
          X.new <- cbind(c(newmods))                              #
          if (.is.vector(newmods)) {                              #
             rnames <- names(newmods)                             #
@@ -121,12 +137,23 @@ level, digits, transf, targs, vcov=FALSE, ...) {
       ### but user can also decide to remove the intercept from the predictions with intercept=FALSE
       ### one special case: when the location model is an intercept-only model, one can set newmods=1 to obtain the predicted intercept
 
-      if (x$int.incl && !(x$int.only && ncol(X.new) == 1L && nrow(X.new) == 1L && X.new[1,1] == 1)) {
-         if (intercept) {
-            X.new <- cbind(intrcpt=1, X.new)
-         } else {
-            X.new <- cbind(intrcpt=0, X.new)
+      if (!singlemod && ncol(X.new) == x$p) {
+
+         if (int.spec)
+            warning(mstyle$warning("Arguments 'intercept' ignored when 'newmods' includes 'p' columns."), call.=FALSE)
+
+      } else {
+
+         if (x$int.incl && !(x$int.only && ncol(X.new) == 1L && nrow(X.new) == 1L && X.new[1,1] == 1)) {
+
+            if (intercept) {
+               X.new <- cbind(intrcpt=1, X.new)
+            } else {
+               X.new <- cbind(intrcpt=0, X.new)
+            }
+
          }
+
       }
 
       if (ncol(X.new) != x$p)
@@ -139,8 +166,10 @@ level, digits, transf, targs, vcov=FALSE, ...) {
       if (!(.is.vector(newscale) || inherits(newscale, "matrix")))
          stop(mstyle$stop(paste0("Argument 'newscale' should be a vector or matrix, but is of class '", class(newscale), "'.")))
 
-      if ((!x$Z.int.incl && x$q == 1L) || (x$Z.int.incl && x$q == 2L)) {
-         Z.k.new <- length(newscale)                             # if single moderator (multiple k.new possible) (either without or with intercept in the model)
+      singlescale <- (NCOL(newscale) == 1L) && ((!x$Z.int.incl && x$q == 1L) || (x$Z.int.incl && x$q == 2L))
+
+      if (singlescale) {                                         # if single moderator (multiple k.new possible) (either without or with intercept in the model)
+         Z.k.new <- length(newscale)                             #
          Z.new <- cbind(c(newscale))                             #
          if (is.null(rnames)) {                                  #
             if (.is.vector(newscale)) {                          #
@@ -201,16 +230,25 @@ level, digits, transf, targs, vcov=FALSE, ...) {
       ### one special case: when the scale model is an intercept-only model, one can set newscale=1 to obtain the predicted intercept
       ### (which can be converted to tau^2 with transf=exp when using a log link)
 
-      if (x$Z.int.incl && !(x$Z.int.only && ncol(Z.new) == 1L && nrow(Z.new) == 1L && Z.new[1,1] == 1)) {
-         if (is.null(newmods)) {
-            if (intercept) {
-               Z.new <- cbind(intrcpt=1, Z.new)
+      if (!singlescale && ncol(Z.new) == x$q) {
+
+         if (int.spec)
+            warning(mstyle$warning("Arguments 'intercept' ignored when 'newscale' includes 'q' columns."), call.=FALSE)
+
+      } else {
+
+         if (x$Z.int.incl && !(x$Z.int.only && ncol(Z.new) == 1L && nrow(Z.new) == 1L && Z.new[1,1] == 1)) {
+            if (is.null(newmods)) {
+               if (intercept) {
+                  Z.new <- cbind(intrcpt=1, Z.new)
+               } else {
+                  Z.new <- cbind(intrcpt=0, Z.new)
+               }
             } else {
-               Z.new <- cbind(intrcpt=0, Z.new)
+               Z.new <- cbind(intrcpt=1, Z.new)
             }
-         } else {
-            Z.new <- cbind(intrcpt=1, Z.new)
          }
+
       }
 
       if (ncol(Z.new) != x$q)
@@ -271,7 +309,12 @@ level, digits, transf, targs, vcov=FALSE, ...) {
             }
          }
 
-         if (length(tau2.f) == 1L) {
+         if (k.new == 1L && Z.k.new > 1L) {
+            X.new <- X.new[rep(1,Z.k.new),,drop=FALSE]
+            k.new <- Z.k.new
+         }
+
+         if (length(tau2.f) == 1L && k.new > 1L) {
             Z.new  <- Z.new[rep(1,k.new),,drop=FALSE]
             tau2.f <- rep(tau2.f, k.new)
          }
@@ -303,9 +346,9 @@ level, digits, transf, targs, vcov=FALSE, ...) {
       }
 
       if (is.element(x$test, c("knha","adhoc","t"))) {
-         crit <- if (ddf > 0) qt(level/2, df=ddf, lower.tail=FALSE) else NA_real_
+         crit <- if (ddf > 0) qt(level/ifelse(adjust, 2*k.new, 2), df=ddf, lower.tail=FALSE) else NA_real_
       } else {
-         crit <- qnorm(level/2, lower.tail=FALSE)
+         crit <- qnorm(level/ifelse(adjust, 2*k.new, 2), lower.tail=FALSE)
       }
 
    } else {
@@ -319,9 +362,9 @@ level, digits, transf, targs, vcov=FALSE, ...) {
       }
 
       if (is.element(x$test, c("knha","adhoc","t"))) {
-         crit <- if (ddf > 0) qt(level/2, df=ddf, lower.tail=FALSE) else NA_real_
+         crit <- if (ddf > 0) qt(level/ifelse(adjust, 2*k.new, 2), df=ddf, lower.tail=FALSE) else NA_real_
       } else {
-         crit <- qnorm(level/2, lower.tail=FALSE)
+         crit <- qnorm(level/ifelse(adjust, 2*k.new, 2), lower.tail=FALSE)
       }
 
    }
@@ -336,10 +379,10 @@ level, digits, transf, targs, vcov=FALSE, ...) {
    if (pred.mui) {
 
       if (vcov)
-         vcovpred <- X.new %*% x$vb %*% t(X.new)
+         vcovpred <- symmpart(X.new %*% x$vb %*% t(X.new))
 
       if (pi.type == "simple") {
-         crit <- qnorm(level/2, lower.tail=FALSE)
+         crit <- qnorm(level/ifelse(adjust, 2*k.new, 2), lower.tail=FALSE)
          vpred <- 0
       }
 
@@ -351,28 +394,28 @@ level, digits, transf, targs, vcov=FALSE, ...) {
          if (pi.type == "t")
             pi.ddf <- x$k - x$p
          pi.ddf[pi.ddf < 1] <- 1
-         crit <- qt(level/2, df=pi.ddf, lower.tail=FALSE)
+         crit <- qt(level/ifelse(adjust, 2*k.new, 2), df=pi.ddf, lower.tail=FALSE)
       }
 
       if (is.null(ddd$newvi)) {
          newvi <- 0
       } else {
          newvi <- ddd$newvi
-         if (length(newvi) == 1L)
-            newvi <- rep(newvi, k.new)
+         newvi <- .expand1(newvi, k.new)
          if (length(newvi) != k.new)
-            stop(mstyle$stop(paste0("Length of 'newvi' argument (", length(newvi), ") does not match the number of predicted values (", k.new, ").")))
+            stop(mstyle$stop(paste0("Length of the 'newvi' argument (", length(newvi), ") does not match the number of predicted values (", k.new, ").")))
       }
 
       ### prediction intervals
 
-      pi.lb <- pred - crit * sqrt(vpred + tau2.f + newvi)
-      pi.ub <- pred + crit * sqrt(vpred + tau2.f + newvi)
+      pi.se <- sqrt(vpred + tau2.f + newvi)
+      pi.lb <- pred - crit * pi.se
+      pi.ub <- pred + crit * pi.se
 
    } else {
 
       if (vcov)
-         vcovpred <- Z.new %*% x$va %*% t(Z.new)
+         vcovpred <- symmpart(Z.new %*% x$va %*% t(Z.new))
 
       pi.lb <- NA_real_
       pi.ub <- NA_real_
@@ -392,6 +435,8 @@ level, digits, transf, targs, vcov=FALSE, ...) {
          pi.lb <- sapply(pi.lb, transf)
          pi.ub <- sapply(pi.ub, transf)
       } else {
+         if (!is.primitive(transf) && !is.null(targs) && length(formals(transf)) == 1L)
+            stop(mstyle$stop("Function specified via 'transf' does not appear to have an argument for 'targs'."))
          pred  <- sapply(pred, transf, targs)
          se    <- rep(NA_real_, k.new)
          ci.lb <- sapply(ci.lb, transf, targs)
@@ -528,8 +573,15 @@ level, digits, transf, targs, vcov=FALSE, ...) {
    if (x$test != "z")
       out$ddf <- ddf
 
-   if (pred.mui && (x$test != "z" || is.element(pi.type, c("riley","t"))) && pi.type != "simple")
-      out$pi.ddf <- pi.ddf
+   if (pred.mui) {
+      if ((x$test != "z" || is.element(pi.type, c("riley","t"))) && pi.type != "simple") {
+         out$pi.dist <- "t"
+         out$pi.ddf <- pi.ddf
+      } else {
+         out$pi.dist <- "norm"
+      }
+      out$pi.se <- pi.se
+   }
 
    class(out) <- c("predict.rma", "list.rma")
 

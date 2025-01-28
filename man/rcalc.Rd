@@ -21,8 +21,8 @@ rcalc(x, ni, data, rtoz=FALSE, nfun="min", sparse=FALSE, \dots)
 
    When computing the covariance between two correlation coefficients, we can distinguish two cases:
    \enumerate{
-   \item In the first case, one of the variables involved in the two correlation coefficients is the same. For example, in \mjseqn{r_{12}} and \mjseqn{r_{13}}, variable 1 is common to both correlation coefficients. This is sometimes called the (partially) \sQuote{overlapping} case. The covariance between the two correlation coefficients, \mjeqn{\mbox{Cov}[r_{12}, r_{13}]}{Cov[r_{12}, r_{13}]}, then depends on the degree of correlation between variables 2 and 3 (i.e., \mjseqn{r_{23}}).
-   \item In the second case, none of the variables are common to both correlation coefficients. For example, this would be the case if we have correlations \mjseqn{r_{12}} and \mjseqn{r_{34}} based on 4 variables. This is sometimes called the \sQuote{non-overlapping} case. The covariance between the two correlation coefficients, \mjeqn{\mbox{Cov}[r_{12}, r_{34}]}{Cov[r_{12}, r_{34}]}, then depends on \mjseqn{r_{13}}, \mjseqn{r_{14}}, \mjseqn{r_{23}}, and \mjseqn{r_{24}}.
+   \item In the first case, one of the variables involved in the two correlation coefficients is the same. For example, in \mjseqn{r_{12}} and \mjseqn{r_{13}}, variable 1 is common to both correlation coefficients. This is sometimes called the (partially) \sQuote{overlapping} case. The covariance between the two correlation coefficients, \mjeqn{\text{Cov}[r_{12}, r_{13}]}{Cov[r_{12}, r_{13}]}, then depends on the degree of correlation between variables 2 and 3 (i.e., \mjseqn{r_{23}}).
+   \item In the second case, none of the variables are common to both correlation coefficients. For example, this would be the case if we have correlations \mjseqn{r_{12}} and \mjseqn{r_{34}} based on 4 variables. This is sometimes called the \sQuote{non-overlapping} case. The covariance between the two correlation coefficients, \mjeqn{\text{Cov}[r_{12}, r_{34}]}{Cov[r_{12}, r_{34}]}, then depends on \mjseqn{r_{13}}, \mjseqn{r_{14}}, \mjseqn{r_{23}}, and \mjseqn{r_{24}}.
    }
 
    Equations to compute these covariances can be found, for example, in Steiger (1980) and Olkin and Finn (1990).
@@ -48,7 +48,7 @@ rcalc(x, ni, data, rtoz=FALSE, nfun="min", sparse=FALSE, \dots)
    For raw and r-to-z transformed coefficients, the variance-covariance matrix will only be computed when the (common) sample size for a study is at least 5.
 }
 \author{
-   Wolfgang Viechtbauer \email{wvb@metafor-project.org} \url{https://www.metafor-project.org}
+   Wolfgang Viechtbauer (\email{wvb@metafor-project.org}, \url{https://www.metafor-project.org}).
 }
 \references{
    Fisher, R. A. (1921). On the \dQuote{probable error} of a coefficient of correlation deduced from a small sample. \emph{Metron}, \bold{1}, 1--32. \verb{http://hdl.handle.net/2440/15169}

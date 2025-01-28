@@ -70,11 +70,10 @@ conv.2x2 <- function(ori, ri, x2i, ni, n1i, n2i, correct=TRUE, data, include,
 
    ### handle correct argument
 
-   if (length(correct) == 1L)
-      correct <- rep(correct, k)
+   correct <- .expand1(correct, k)
 
    if (length(correct) != k)
-      stop(mstyle$stop(paste0("Length of 'correct' argument (", length(correct), ") does not match length of data (", k, ").")))
+      stop(mstyle$stop(paste0("Length of the 'correct' argument (", length(correct), ") does not match the length of the data (", k, ").")))
 
    correct[is.na(correct)] <- TRUE
 
@@ -83,7 +82,7 @@ conv.2x2 <- function(ori, ri, x2i, ni, n1i, n2i, correct=TRUE, data, include,
    if (is.null(include))
       include <- rep(TRUE, k)
 
-   ### turn numeric include vector into logical vector
+   ### turn numeric include vector into a logical vector
 
    include <- .chksubset(include, k, stoponk0=FALSE)
 

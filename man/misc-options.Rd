@@ -160,7 +160,7 @@ res}
       \figure{plots-light.pdf}{options: width=5.5in}
       \figure{plots-dark.pdf}{options: width=5.5in}}
 
-      By setting \code{setmfopt(theme="dark")}, all plots created by the package will automatically use a dark mode. RStudio users can also set \code{setmfopt(theme="auto")}, in which case plotting colors are chosen depending on the RStudio theme used (for some themes, setting this to \code{"auto2"} might be aesthetically more pleasing).
+      By setting \code{setmfopt(theme="dark")}, all plots created by the package will automatically use a dark mode. RStudio users can also set \code{setmfopt(theme="auto")}, in which case plotting colors are chosen depending on the RStudio theme used (for some themes, setting this to \code{"auto2"} might be visually more appealing).
 
    }
 
@@ -188,7 +188,7 @@ res$time}
 
    \subsection{Model Object Sizes}{
 
-      The objects returned by model fitting functions like \code{\link{rma.uni}}, \code{\link{rma.mh}}, \code{\link{rma.peto}}, \code{\link{rma.glmm}}, and \code{\link{rma.mv}} contain information that is needed by some of the method functions that can be applied to such objects, but that can lead to objects that are relatively large in size. As an example, the model objects that are created as part of the example code for \code{\link{dat.moura2021}} are approximately 120MB in size. To reduce the object size, one can make use of the (undocumented) argument \code{outlist}. When setting \code{outlist="minimal"}, the resulting object contains only the minimal information needed to print the object (which results in an object that is around 13KB in size). Alternatively, one can set \code{outlist} to a string that specifies what objects that are created within the model fitting function should be returned (and under which name). For example, \code{outlist="coef=beta, vcov=vb"} would indicate that only the model coefficient(s) (with name \code{coef}) and the corresponding variance-covariance matrix (with name \code{vcov}) should be returned (the resulting object then is only around 2KB in size). Note that this requires knowledge of how objects within the model fitting function are named, so inspection of the source code of a function will then be necessary. Also, there is no guarantee that method functions will still work when including only a subset of the information that is typically stored in model objects.
+      The objects returned by model fitting functions like \code{\link{rma.uni}}, \code{\link{rma.mh}}, \code{\link{rma.peto}}, \code{\link{rma.glmm}}, and \code{\link{rma.mv}} contain information that is needed by some of the method functions that can be applied to such objects, but that can lead to objects that are relatively large in size. As an example, the model objects that are created as part of the example code for \code{\link[metadat]{dat.moura2021}} are approximately 120MB in size. To reduce the object size, one can make use of the (undocumented) argument \code{outlist}. When setting \code{outlist="minimal"}, the resulting object contains only the minimal information needed to print the object (which results in an object that is around 13KB in size). Alternatively, one can set \code{outlist} to a string that specifies what objects that are created within the model fitting function should be returned (and under which name). For example, \code{outlist="coef=beta, vcov=vb"} would indicate that only the model coefficient(s) (with name \code{coef}) and the corresponding variance-covariance matrix (with name \code{vcov}) should be returned (the resulting object then is only around 2KB in size). Note that this requires knowledge of how objects within the model fitting function are named, so inspection of the source code of a function will then be necessary. Also, there is no guarantee that method functions will still work when including only a subset of the information that is typically stored in model objects.
 
    }
 
@@ -200,7 +200,7 @@ res$time}
 
 }
 \author{
-   Wolfgang Viechtbauer \email{wvb@metafor-project.org} \url{https://www.metafor-project.org}
+   Wolfgang Viechtbauer (\email{wvb@metafor-project.org}, \url{https://www.metafor-project.org}).
 }
 \references{
    Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \verb{https://doi.org/10.18637/jss.v036.i03}

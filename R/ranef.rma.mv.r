@@ -11,6 +11,9 @@ ranef.rma.mv <- function(object, level, digits, transf, targs, verbose=FALSE, ..
    if (!is.element(na.act, c("na.omit", "na.exclude", "na.fail", "na.pass")))
       stop(mstyle$stop("Unknown 'na.action' specified under options()."))
 
+   if (is.null(x$yi) || is.null(x$M) || is.null(x$X))
+      stop(mstyle$stop("Information needed to compute the BLUPs is not available in the model object."))
+
    if (missing(level))
       level <- x$level
 
@@ -38,16 +41,19 @@ ranef.rma.mv <- function(object, level, digits, transf, targs, verbose=FALSE, ..
 
    ddd <- list(...)
 
-   .chkdots(ddd, c("expand"))
+   .chkdots(ddd, c("expand", "vcov"))
 
    expand <- ifelse(is.null(expand), FALSE, isTRUE(ddd$expand)) # TODO: make this an option?
+
+   vcov <- list()
 
    #########################################################################
 
    out <- NULL
+   vcov <- NULL
 
    if (verbose)
-      message(mstyle$message("\nComputing inverse marginal var-cov and hat matrix ... "), appendLF = FALSE)
+      message(mstyle$message("\nComputing the inverse marginal var-cov and hat matrix ... "), appendLF = FALSE)
 
    ### compute inverse marginal var-cov and hat matrix
 
@@ -78,10 +84,13 @@ ranef.rma.mv <- function(object, level, digits, transf, targs, verbose=FALSE, ..
       out <- vector(mode="list", length=x$sigma2s)
       names(out) <- x$s.names
 
+      vcov <- vector(mode="list", length=x$sigma2s)
+      names(vcov) <- x$s.names
+
       for (j in seq_len(x$sigma2s)) {
 
          if (verbose)
-            message(mstyle$message(paste0("Computing BLUPs for '", paste0("~ 1 | ", x$s.names[j]), "' term ... ")), appendLF = FALSE)
+            message(mstyle$message(paste0("Computing the BLUPs for '", paste0("~ 1 | ", x$s.names[j]), "' term ... ")), appendLF = FALSE)
 
          if (x$Rfix[j]) {
             if (x$sparse) {
@@ -121,6 +130,9 @@ ranef.rma.mv <- function(object, level, digits, transf, targs, verbose=FALSE, ..
 
             rownames(pred) <- x$s.levels[[j]]
             out[[j]] <- pred
+
+            if (isTRUE(ddd$vcov))
+               vcov[[j]] <- vpred
 
          }
 
@@ -168,7 +180,7 @@ ranef.rma.mv <- function(object, level, digits, transf, targs, verbose=FALSE, ..
       } else {
 
       if (verbose)
-         message(mstyle$message(paste0("Computing BLUPs for '", paste(x$g.names, collapse=" | "), "' term ... ")), appendLF = FALSE)
+         message(mstyle$message(paste0("Computing the BLUPs for '", paste(x$g.names, collapse=" | "), "' term ... ")), appendLF = FALSE)
 
       G <- (x$Z.G1 %*% x$G %*% t(x$Z.G1)) * tcrossprod(x$Z.G2)
       GW <- G %*% W
@@ -203,6 +215,9 @@ ranef.rma.mv <- function(object, level, digits, transf, targs, verbose=FALSE, ..
 
       rownames(pred) <- r.names[!is.dup]
 
+      if (isTRUE(ddd$vcov))
+         vpred <- vpred[!is.dup, !is.dup]
+
       if (is.element(x$struct[1], c("SPEXP","SPGAU","SPLIN","SPRAT","SPSPH","PHYBM","PHYPL","PHYPD","GEN","GDIAG"))) {
          #r.order <- order(x$mf.g[[nvars]][!is.dup], seq_len(x$k)[!is.dup])
          r.order <- seq_len(x$k)
@@ -215,6 +230,12 @@ ranef.rma.mv <- function(object, level, digits, transf, targs, verbose=FALSE, ..
       out <- c(out, list(pred))
       #names(out)[length(out)] <- paste(x$g.names, collapse=" | ")
       names(out)[length(out)] <- paste0(x$formulas[[1]], collapse="")
+
+      if (isTRUE(ddd$vcov)) {
+         vpred <- vpred[r.order, r.order]
+         vcov <- c(vcov, list(vpred))
+         names(vcov)[length(vcov)] <- paste0(x$formulas[[1]], collapse="")
+      }
 
       if (verbose)
          message(mstyle$message("Done!"))
@@ -231,7 +252,7 @@ ranef.rma.mv <- function(object, level, digits, transf, targs, verbose=FALSE, ..
       } else {
 
       if (verbose)
-         message(mstyle$message(paste0("Computing BLUPs for '", paste(x$h.names, collapse=" | "), "' term ... ")), appendLF = FALSE)
+         message(mstyle$message(paste0("Computing the BLUPs for '", paste(x$h.names, collapse=" | "), "' term ... ")), appendLF = FALSE)
 
       H <- (x$Z.H1 %*% x$H %*% t(x$Z.H1)) * tcrossprod(x$Z.H2)
       HW <- H %*% W
@@ -266,6 +287,9 @@ ranef.rma.mv <- function(object, level, digits, transf, targs, verbose=FALSE, ..
 
       rownames(pred) <- r.names[!is.dup]
 
+      if (isTRUE(ddd$vcov))
+         vpred <- vpred[!is.dup, !is.dup]
+
       if (is.element(x$struct[2], c("SPEXP","SPGAU","SPLIN","SPRAT","SPSPH","PHYBM","PHYPL","PHYPD","GEN","GDIAG"))) {
          #r.order <- order(x$mf.h[[nvars]][!is.dup], seq_len(x$k)[!is.dup])
          r.order <- seq_len(x$k)
@@ -278,6 +302,12 @@ ranef.rma.mv <- function(object, level, digits, transf, targs, verbose=FALSE, ..
       out <- c(out, list(pred))
       #names(out)[length(out)] <- paste(x$h.names, collapse=" | ")
       names(out)[length(out)] <- paste0(x$formulas[[2]], collapse="")
+
+      if (isTRUE(ddd$vcov)) {
+         vpred <- vpred[r.order, r.order]
+         vcov <- c(vcov, list(vpred))
+         names(vcov)[length(vcov)] <- paste0(x$formulas[[2]], collapse="")
+      }
 
       if (verbose)
          message(mstyle$message("Done!"))
@@ -297,6 +327,8 @@ ranef.rma.mv <- function(object, level, digits, transf, targs, verbose=FALSE, ..
       if (is.null(targs)) {
          out <- lapply(out, transf)
       } else {
+         if (!is.primitive(transf) && !is.null(targs) && length(formals(transf)) == 1L)
+            stop(mstyle$stop("Function specified via 'transf' does not appear to have an argument for 'targs'."))
          out <- lapply(out, transf, targs)
       }
       out <- lapply(out, function(x) x[,-2,drop=FALSE])
@@ -314,6 +346,10 @@ ranef.rma.mv <- function(object, level, digits, transf, targs, verbose=FALSE, ..
    if (is.null(out)) {
       return()
    } else {
+      if (isTRUE(ddd$vcov)) {
+         out <- list(pred=out)
+         out$vcov <- vcov
+      }
       return(out)
    }
 

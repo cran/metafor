@@ -18,7 +18,7 @@
    \item{scale}{logical to specify whether the function values should be rescaled to a 0 to 1 range (the default is \code{FALSE}).}
    \item{ci}{logical to specify whether a confidence interval should be drawn around the selection function (the default is \code{FALSE}). Can also be a string (with options \code{"boot"} or \code{"wald"}). See \sQuote{Details}.}
    \item{reps}{numeric value to specify the number of bootstrap samples to draw for generating the confidence interval bounds (the default is 1000).}
-   \item{shade}{logical to indicate whether the confidence interval region should be shaded (the default is \code{TRUE}). Can also be a character vector to specify the color for the shading.}
+   \item{shade}{logical to specify whether the confidence interval region should be shaded (the default is \code{TRUE}). Can also be a character vector to specify the color for the shading.}
    \item{rug}{logical to specify whether the observed p-values should be added as tick marks on the x-axis (the default is \code{TRUE}).}
    \item{add}{logical to specify whether the function should be added to an existing plot (the default is \code{FALSE}).}
    \item{lty}{the line types for the selection function and the confidence interval bounds.}
@@ -35,7 +35,7 @@
    For models where the selection function involves a single \mjseqn{\delta} parameter, one can also set \code{ci="wald"}, in which case the confidence interval will be constructed based on the Wald-type CI of the \mjseqn{\delta} parameter (doing so is much quicker than using parametric bootstrapping). This option is also available for step function models (even if they involve multiple \mjseqn{\delta} parameters).
 }
 \author{
-   Wolfgang Viechtbauer \email{wvb@metafor-project.org} \url{https://www.metafor-project.org}
+   Wolfgang Viechtbauer (\email{wvb@metafor-project.org}, \url{https://www.metafor-project.org}).
 }
 \references{
    Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \verb{https://doi.org/10.18637/jss.v036.i03}

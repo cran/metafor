@@ -1,5 +1,5 @@
 addpoly.rma         <- function(x,
-row=-2,  level=x$level, annotate, addpred=FALSE, digits, width, mlab,
+row=-2,  level=x$level, annotate, addpred=FALSE, predstyle, predlim, digits, width, mlab,
 transf, atransf, targs, efac, col, border, lty, fonts, cex, ...) {
 
    #########################################################################
@@ -13,6 +13,16 @@ transf, atransf, targs, efac, col, border, lty, fonts, cex, ...) {
 
    if (missing(annotate))
       annotate <- .getfromenv("forest", "annotate", default=TRUE)
+
+   if (missing(predstyle)) {
+      predstyle <- "line"
+   } else {
+      predstyle <- match.arg(predstyle, c("line", "bar", "shade", "dist"))
+      addpred <- TRUE
+   }
+
+   if (missing(predlim))
+      predlim <- NULL
 
    if (missing(digits))
       digits <- .getfromenv("forest", "digits", default=2)
@@ -57,14 +67,16 @@ transf, atransf, targs, efac, col, border, lty, fonts, cex, ...) {
 
    pi.type <- .chkddd(ddd$pi.type, "default")
 
-   pred <- predict(x, level=level, pi.type=pi.type)
+   predres <- predict(x, level=level, pi.type=pi.type)
 
-   ci.lb <- pred$ci.lb
-   ci.ub <- pred$ci.ub
+   ci.lb <- predres$ci.lb
+   ci.ub <- predres$ci.ub
 
    if (addpred) {
-      pi.lb <- pred$pi.lb
-      pi.ub <- pred$pi.ub
+      pi.lb <- predres$pi.lb
+      pi.ub <- predres$pi.ub
+      if (is.null(pi.lb) || is.null(pi.ub))
+         warning(mstyle$warning("Could not extract prediction interval bounds."), call.=FALSE)
    } else {
       pi.lb <- NA_real_
       pi.ub <- NA_real_
@@ -75,13 +87,15 @@ transf, atransf, targs, efac, col, border, lty, fonts, cex, ...) {
    ### label for model estimate (if not specified)
 
    if (is.null(mlab))
-      mlab <- sapply(x$method, switch, "FE"="FE Model", "EE"="EE Model", "CE"="CE Model", "RE Model", USE.NAMES=FALSE)
+      mlab <- sapply(x$method, switch, "FE"="Fixed-Effect Model", "EE"="Equal-Effects Model", "CE"="Common-Effect Model", "Random-Effects Model", USE.NAMES=FALSE)
+      #mlab <- sapply(x$method, switch, "FE"="FE Model", "EE"="EE Model", "CE"="CE Model", "RE Model", USE.NAMES=FALSE)
 
    ### passing ci.lb and ci.ub, so that the bounds are correct when the model was fitted with test="knha"
 
    addpoly(x$beta, ci.lb=ci.lb, ci.ub=ci.ub, pi.lb=pi.lb, pi.ub=pi.ub,
-           rows=row, level=level, annotate=annotate, digits=digits, width=width,
-           mlab=mlab, transf=transf, atransf=atransf, targs=targs,
+           rows=row, level=level, annotate=annotate, predstyle=predstyle, predlim=predlim,
+           digits=digits, width=width, mlab=mlab,
+           transf=transf, atransf=atransf, targs=targs,
            efac=efac, col=col, border=border, lty=lty, fonts=fonts, cex=cex, ...)
 
 }

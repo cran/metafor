@@ -8,9 +8,11 @@ plot.profile.rma <- function(x, xlim, ylim, pch=19, xlab, ylab, main, refline=TR
 
    .start.plot()
 
-   if (dev.cur() == 1L) { # if only the 'null device' is currently open, set mfrow
-      par(mfrow=n2mfrow(x$comps))
-      #on.exit(par(mfrow=c(1,1)), add=TRUE)
+   if (x$comps > 1L) {
+      # if no plotting device is open or mfrow is too small, set mfrow appropriately
+      if (dev.cur() == 1L || prod(par("mfrow")) < x$comps)
+         par(mfrow=n2mfrow(x$comps))
+      on.exit(par(mfrow=c(1L,1L)), add=TRUE)
    }
 
    missing.xlim <- missing(xlim)
@@ -19,10 +21,8 @@ plot.profile.rma <- function(x, xlim, ylim, pch=19, xlab, ylab, main, refline=TR
    missing.ylab <- missing(ylab)
    missing.main <- missing(main)
 
-   ### filter out some arguments for the plot() function
-
-   lplot   <- function(..., time, LB, startmethod, sub1, sqrt, exp, pred, blup) plot(...)
-   lpoints <- function(..., time, LB, startmethod, sub1, log, sqrt, exp, pred, blup) points(...) # need 'log' here so profile(res, log="x") doesn't throw a warning
+   lplot   <- function(..., time, LB, startmethod, sub1,      sqrt, exp, pred, blup, code1, code2, code3, code4) plot(...)
+   lpoints <- function(..., time, LB, startmethod, sub1, log, sqrt, exp, pred, blup, code1, code2, code3, code4) points(...) # need 'log' here so profile(res, log="x") doesn't throw a warning
 
    #########################################################################
 
@@ -91,8 +91,7 @@ plot.profile.rma <- function(x, xlim, ylim, pch=19, xlab, ylab, main, refline=TR
          if (missing.xlab) {
             xlab <- x[[j]]$xlab
          } else {
-            if (length(xlab) == 1L)
-               xlab <- rep(xlab, x$comps)
+            xlab <- .expand1(xlab, x$comps)
          }
 
          if (missing.ylab) {
@@ -102,16 +101,13 @@ plot.profile.rma <- function(x, xlim, ylim, pch=19, xlab, ylab, main, refline=TR
                ylab <- paste0(ifelse(x$method=="REML", "Restricted ", ""), "Log-Likelihood")
             }
          } else {
-            if (length(ylab) == 1L)
-               ylab <- rep(ylab, x$comps)
+            ylab <- .expand1(ylab, x$comps)
          }
 
          if (missing.main) {
             main <- x[[j]]$title
          } else {
-            if (length(main) == 1L) {
-               main <- rep(main, x$comps)
-            }
+            main <- .expand1(main, x$comps)
          }
 
          lplot(x[[j]], xlim=xlim, ylim=ylim, pch=pch,

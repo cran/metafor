@@ -1,3 +1,65 @@
+# metafor 4.8-0 (2025-01-28)
+
+- some general changes to the various `forest()` functions: argument `header` is now `TRUE` by default, the y-axis is now created with `yaxs="i"`, and the y-axis limits have been tweaked slightly in accordance
+
+- `forest.rma()` and the various `addpoly()` functions now provides multiple styles for drawing the prediction interval via the `predstyle` argument
+
+- `forest.rma()` and `addpoly.rma()` now write out the default label (instead of an abbreviation) for the model results; as before, the label can be changed via the `mlab` argument
+
+- added an `ilab.lab` argument to the various `forest()` functions for adding header labels to the plot for the additional study information columns
+
+- all plot functions that create multi-panel plots now behave in a consistent manner, setting `par(mfrow)` automatically when no plotting device is open or when the number of panels in an open plotting device is too small for the number of panels to be plotted; all multi-panel plots also set `par(mfrow)=c(1L,1L)` upon exit; argument `layout` has been deprecated from `plot.permutest.rma.uni()`, `plot.vif.rma()`, and `plot.infl.rma.uni()`
+
+- the `predict.rma()` and `predict.rma.ls()` functions now also accept a matrix as input that includes a column for the intercept term (in which case the `intercept` argument is ignored and the first column of the matrix controls whether the intercept term is included in calculating the predicted value(s))
+
+- added extractor function `se()` for extracting standard errors from model objects
+
+- added function `pairmat()` to construct a matrix of pairwise contrasts
+
+- added function `deltamethod()` to apply the (multivariate) delta method to a set of estimates
+
+- `anova()` and `predict()` gain an `adjust` argument for adjusting p-values / interval bounds for multiple testing
+
+- fixed `predict()` ignoring the `level` argument for `robust.rma` objects obtained with `clubSandwich=TRUE`
+
+- `print.anova.rma()` and `print.list.anova.rma()` now also print significance stars for some tests (unless `getOption("show.signif.stars")` is `FALSE`)
+
+- added a `collapse` argument to the various `cumul()` functions (to specify whether studies with the same value of the `order` variable should be added simultaneously)
+
+- the various `leave1out()` functions gain a `cluster` argument
+
+- `rma.mv()` now counts the number of levels of a random effect more appropriately; this may trigger more often the check that the number of levels is equal to 1, in which case the corresponding variance component is automatically fixed to 0; this check can be omitted with `control=list(check.k.gtr.1=FALSE)`
+
+- made optimizers `Rcgmin` and `Rvmmin` available again via the `optimx` package
+
+- when unspecified, argument `shade` in `funnel()` now automatically uses a color gradient for the regions when multiple `level` values are specified
+
+- added `lim`, `ci`, `pi`, `legend`, and `flip` arguments to `labbe()`
+
+- `fsn(..., type="General")` now computes the final estimates after rounding the fail-safe N value (not before)
+
+- `permutest.rma.uni()` gains a `btt` argument and `permutest.rma.ls()` gains `btt` and `att` arguments
+
+- `selmodel()` gains a `subset` argument (to specify a subset of studies to which the selection function should apply); for the beta selection model, one can now also specify two `steps` values to fit a truncated beta selection model
+
+- `nobs()` now just returns the number of estimates, not the effective number of observations
+
+- some tweaks were made to `vcalc()` to speed up the calculations (by James Pustejovsky)
+
+- added measures `"PRZ"`, `"CLES"`, `"AUC"`, `"CLESN"`, `"AUCN"`, `"CLESCN"`, `"AUCCN"`, `"R2F"`, and `"ZR2F"` to `escalc()`
+
+- `escalc()` gains a `flip` argument
+
+- `escalc()` gains a `correct` argument (to specify whether a bias correction should be applied)
+
+- added transformation function `transf.dtoovl()` (for transforming standardized mean differences to overlapping coefficient values) and ``transf.dtocliffd()` (for transforming standardized mean differences to Cliff's delta values)
+
+- `qqnorm.rma.uni()` now shades the pseudo confidence region; all `qqnorm()` functions gain a `grid` argument
+
+- better handling of `outlist="minimal"`
+
+- added more tests
+
 # metafor 4.6-0 (2024-03-28)
 
 - the `steps` argument in the various `profile()` functions can now also be a numeric vector to specify for which parameter values the likelihood should be evaluated

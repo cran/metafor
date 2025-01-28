@@ -3,7 +3,7 @@ blsplit <- function(x, cluster, fun, args, sort=FALSE) {
    mstyle <- .get.mstyle()
 
    if (missing(cluster))
-      stop(mstyle$stop("Must specify 'cluster' variable."))
+      stop(mstyle$stop("Must specify the 'cluster' variable."))
 
    if (!is.matrix(x) && !inherits(x, "dgCMatrix"))
       stop(mstyle$stop("Argument 'x' must be a matrix."))
@@ -14,7 +14,7 @@ blsplit <- function(x, cluster, fun, args, sort=FALSE) {
    k <- nrow(x)
 
    if (length(cluster) != k)
-      stop(mstyle$stop(paste0("Length of variable specified via 'cluster' (", length(cluster), ") does not correspond to the dimensions of the matrix (", k, "x", k, ").")))
+      stop(mstyle$stop(paste0("Length of the variable specified via 'cluster' (", length(cluster), ") does not correspond to the dimensions of the matrix (", k, "x", k, ").")))
 
    res <- list()
 

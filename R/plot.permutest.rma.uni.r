@@ -1,6 +1,6 @@
 plot.permutest.rma.uni <- function(x, beta, alpha, QM=FALSE, QS=FALSE,
    breaks="Scott", freq=FALSE, col, border, col.out, col.ref, col.density,
-   trim=0, adjust=1, lwd=c(2,0,0,4), layout, legend=FALSE, ...) {
+   trim=0, adjust=1, lwd=c(2,0,0,4), legend=FALSE, ...) {
 
    #########################################################################
 
@@ -17,7 +17,7 @@ plot.permutest.rma.uni <- function(x, beta, alpha, QM=FALSE, QS=FALSE,
       border <- .coladj(par("bg"), dark=0.1, light=-0.1)
 
    if (missing(col.out))
-      col.out <- rgb(1,0,0,0.5)
+      col.out <- ifelse(.is.dark(), rgb(0.7,0.15,0.15,0.5), rgb(1,0,0,0.5))
 
    if (missing(col.ref))
       col.ref <- .coladj(par("fg"), dark=-0.3, light=0.3)
@@ -30,6 +30,9 @@ plot.permutest.rma.uni <- function(x, beta, alpha, QM=FALSE, QS=FALSE,
    alternative <- .chkddd(ddd$alternative, x$alternative, match.arg(ddd$alternative, c("two.sided", "less", "greater")))
    p2defn      <- .chkddd(ddd$p2defn,      x$p2defn,      match.arg(ddd$p2defn, c("abs", "px2")))
    stat        <- .chkddd(ddd$stat,        x$stat,        match.arg(ddd$stat, c("test", "coef")))
+
+   if (!is.null(ddd$layout))
+      warning(mstyle$warning("Argument 'layout' has been deprecated."), call.=FALSE)
 
    ### check trim
 
@@ -50,9 +53,9 @@ plot.permutest.rma.uni <- function(x, beta, alpha, QM=FALSE, QS=FALSE,
    if (freq)
       lwd[c(2,3)] <- 0
 
-   lhist   <- function(..., alternative, p2defn, stat) hist(...)
-   labline <- function(..., alternative, p2defn, stat) abline(...)
-   llines  <- function(..., alternative, p2defn, stat) lines(...)
+   lhist   <- function(..., alternative, p2defn, stat, layout) hist(...)
+   labline <- function(..., alternative, p2defn, stat, layout) abline(...)
+   llines  <- function(..., alternative, p2defn, stat, layout) lines(...)
 
    ############################################################################
 
@@ -102,7 +105,7 @@ plot.permutest.rma.uni <- function(x, beta, alpha, QM=FALSE, QS=FALSE,
          if (x$Z.int.only) {
             alpha <- 1
          } else {
-            if (x$int.incl) {
+            if (x$Z.int.incl) {
                alpha <- 2:x$q
             } else {
                alpha <- 1:x$q
@@ -173,41 +176,31 @@ plot.permutest.rma.uni <- function(x, beta, alpha, QM=FALSE, QS=FALSE,
 
    ############################################################################
 
-   # number of plots
+   # determine number of plots and set mfrow appropriately if needed
 
    np <- length(beta) + length(alpha) + ifelse(is.null(QM.perm), 0L, 1L) + ifelse(is.null(QS.perm), 0L, 1L)
 
    if (np == 0L)
       stop(mstyle$stop("Must select at least one elements to plot."))
 
-   # set/check layout argument
-
-   if (missing(layout)) {
-      layout <- n2mfrow(np)
-   } else {
-      layout <- layout[layout >= 1]
-      layout <- round(layout)
-      if (length(layout) != 2L)
-         stop(mstyle$stop("Incorrect specification of 'layout' argument."))
+   if (np > 1L) {
+      # if no plotting device is open or mfrow is too small, set mfrow appropriately
+      if (dev.cur() == 1L || prod(par("mfrow")) < np)
+         par(mfrow=n2mfrow(np))
+      on.exit(par(mfrow=c(1L,1L)), add=TRUE)
    }
 
-   #print(list(np, layout))
-
    ############################################################################
-
-   par.mfrow <- par("mfrow")
-   par(mfrow=layout)
-   on.exit(par(mfrow = par.mfrow), add=TRUE)
 
    if (!is.null(QM.perm)) {
 
       pdist <- QM.perm
 
       if (is.na(x$ddf)) {
-         xs <- seq(0, max(qchisq(.995, df=length(x$btt)), max(pdist, na.rm=TRUE)), length=1000)
+         xs <- seq(0, max(qchisq(0.995, df=length(x$btt)), max(pdist, na.rm=TRUE)), length.out=1000)
          ys <- dchisq(xs, df=length(x$btt))
       } else {
-         xs <- seq(0, max(qf(.995, df1=length(x$btt), df2=x$ddf), max(pdist, na.rm=TRUE)), length=1000)
+         xs <- seq(0, max(qf(0.995, df1=length(x$btt), df2=x$ddf), max(pdist, na.rm=TRUE)), length.out=1000)
          ys <- df(xs, df1=length(x$btt), df2=x$ddf)
       }
 
@@ -256,10 +249,10 @@ plot.permutest.rma.uni <- function(x, beta, alpha, QM=FALSE, QS=FALSE,
       pdist <- perm1[[i]]
 
       if (is.na(x$ddf)) {
-         xs <- seq(min(-qnorm(.995), min(pdist, na.rm=TRUE)), max(qnorm(.995), max(pdist, na.rm=TRUE)), length=1000)
+         xs <- seq(min(-qnorm(0.995), min(pdist, na.rm=TRUE)), max(qnorm(0.995), max(pdist, na.rm=TRUE)), length.out=1000)
          ys <- dnorm(xs)
       } else {
-         xs <- seq(min(-qt(.995, df=x$ddf), min(pdist, na.rm=TRUE)), max(qt(.995, df=x$ddf), max(pdist, na.rm=TRUE)), length=1000)
+         xs <- seq(min(-qt(0.995, df=x$ddf), min(pdist, na.rm=TRUE)), max(qt(0.995, df=x$ddf), max(pdist, na.rm=TRUE)), length.out=1000)
          ys <- dt(xs, df=x$ddf)
       }
 
@@ -273,7 +266,7 @@ plot.permutest.rma.uni <- function(x, beta, alpha, QM=FALSE, QS=FALSE,
       if (lwd[2] == 0 && lwd[3] == 0) {
 
          tmp <- lhist(pdist, breaks=breaks, col=col, border=border,
-                      main=ifelse(x$int.only, "", paste0(ifelse(inherits(x, "permutest.rma.ls"), "Location Coefficient: ", "Coefficient: "), names(perm1)[i])),
+                      main=ifelse(np==1L, "", paste0(ifelse(inherits(x, "permutest.rma.ls"), "Location Coefficient: ", "Coefficient: "), names(perm1)[i])),
                       xlab=ifelse(stat == "test", "Value of Test Statistic", "Value of Coefficient"),
                       freq=freq, ...)
 
@@ -284,7 +277,7 @@ plot.permutest.rma.uni <- function(x, beta, alpha, QM=FALSE, QS=FALSE,
          ylim <- c(0, max(ifelse(lwd[2] == 0, 0, max(ys)), ifelse(lwd[3] == 0, 0, max(den$y)), max(tmp$density)))
 
          tmp <- lhist(pdist, breaks=breaks, col=col, border=border,
-                      main=ifelse(x$int.only, "", paste0(ifelse(inherits(x, "permutest.rma.ls"), "Location Coefficient: ", "Coefficient: "), names(perm1)[i])),
+                      main=ifelse(np==1L, "", paste0(ifelse(inherits(x, "permutest.rma.ls"), "Location Coefficient: ", "Coefficient: "), names(perm1)[i])),
                       xlab=ifelse(stat == "test", "Value of Test Statistic", "Value of Coefficient"),
                       freq=freq, ylim=ylim, ...)
 
@@ -358,10 +351,10 @@ plot.permutest.rma.uni <- function(x, beta, alpha, QM=FALSE, QS=FALSE,
          pdist <- QS.perm
 
          if (is.na(x$ddf.alpha)) {
-            xs <- seq(0, max(qchisq(.995, df=length(x$att)), max(pdist, na.rm=TRUE)), length=1000)
+            xs <- seq(0, max(qchisq(0.995, df=length(x$att)), max(pdist, na.rm=TRUE)), length.out=1000)
             ys <- dchisq(xs, df=length(x$att))
          } else {
-            xs <- seq(0, max(qf(.995, df1=length(x$att), df2=x$ddf.alpha), max(pdist, na.rm=TRUE)), length=1000)
+            xs <- seq(0, max(qf(0.995, df1=length(x$att), df2=x$ddf.alpha), max(pdist, na.rm=TRUE)), length.out=1000)
             ys <- df(xs, df1=length(x$att), df2=x$ddf.alpha)
          }
 
@@ -410,10 +403,10 @@ plot.permutest.rma.uni <- function(x, beta, alpha, QM=FALSE, QS=FALSE,
          pdist <- perm2[[i]]
 
          if (is.na(x$ddf.alpha)) {
-            xs <- seq(min(-qnorm(.995), min(pdist, na.rm=TRUE)), max(qnorm(.995), max(pdist, na.rm=TRUE)), length=1000)
+            xs <- seq(min(-qnorm(0.995), min(pdist, na.rm=TRUE)), max(qnorm(0.995), max(pdist, na.rm=TRUE)), length.out=1000)
             ys <- dnorm(xs)
          } else {
-            xs <- seq(min(-qt(.995, df=x$ddf.alpha), min(pdist, na.rm=TRUE)), max(qt(.995, df=x$ddf.alpha), max(pdist, na.rm=TRUE)), length=1000)
+            xs <- seq(min(-qt(0.995, df=x$ddf.alpha), min(pdist, na.rm=TRUE)), max(qt(0.995, df=x$ddf.alpha), max(pdist, na.rm=TRUE)), length.out=1000)
             ys <- dt(xs, df=x$ddf.alpha)
          }
 
@@ -427,7 +420,7 @@ plot.permutest.rma.uni <- function(x, beta, alpha, QM=FALSE, QS=FALSE,
          if (lwd[2] == 0 && lwd[3] == 0) {
 
             tmp <- lhist(pdist, breaks=breaks, col=col, border=border,
-                         main=ifelse(x$Z.int.only, "", paste0("Scale Coefficient: ", names(perm2)[i])),
+                         main=ifelse(np==1L, "", paste0("Scale Coefficient: ", names(perm2)[i])),
                          xlab=ifelse(stat == "test", "Value of Test Statistic", "Value of Coefficient"),
                          freq=freq, ...)
 
@@ -438,7 +431,7 @@ plot.permutest.rma.uni <- function(x, beta, alpha, QM=FALSE, QS=FALSE,
             ylim <- c(0, max(ifelse(lwd[2] == 0, 0, max(ys)), ifelse(lwd[3] == 0, 0, max(den$y)), max(tmp$density)))
 
             tmp <- lhist(pdist, breaks=breaks, col=col, border=border,
-                         main=ifelse(x$Z.int.only, "", paste0("Scale Coefficient: ", names(perm2)[i])),
+                         main=ifelse(np==1L, "", paste0("Scale Coefficient: ", names(perm2)[i])),
                          xlab=ifelse(stat == "test", "Value of Test Statistic", "Value of Coefficient"),
                          freq=freq, ylim=ylim, ...)
 

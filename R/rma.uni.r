@@ -1,7 +1,6 @@
 rma <- rma.uni <- function(yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, m1i, m2i, sd1i, sd2i, xi, mi, ri, ti, fi, pi, sdi, r2i, ni, mods, scale,
-measure="GEN", intercept=TRUE,
-data, slab, subset,
-add=1/2, to="only0", drop00=FALSE, vtype="LS",
+measure="GEN", data, slab, subset,
+add=1/2, to="only0", drop00=FALSE, intercept=TRUE,
 method="REML", weighted=TRUE,
 test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
 
@@ -14,30 +13,30 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
    ### check argument specifications
    ### (arguments "to" and "vtype" are checked inside escalc function)
 
-   if (!is.element(measure, c("RR","OR","PETO","RD","AS","PHI","ZPHI","YUQ","YUY","RTET","ZTET", # 2x2 table measures
-                              "PBIT","OR2D","OR2DN","OR2DL",                                     # 2x2 table transformations to SMDs
-                              "MPRD","MPRR","MPOR","MPORC","MPPETO","MPORM",                     # 2x2 table measures for matched pairs / pre-post data
-                              "IRR","IRD","IRSD",                                                # two-group person-time data (incidence) measures
-                              "MD","SMD","SMDH","SMD1","SMD1H","ROM",                            # two-group mean/SD measures
-                              "CVR","VR",                                                        # coefficient of variation ratio, variability ratio
-                              "RPB","ZPB","RBIS","ZBIS","D2OR","D2ORN","D2ORL",                  # two-group mean/SD transformations to r_pb, r_bis, and log(OR)
-                              "COR","UCOR","ZCOR",                                               # correlations (raw and r-to-z transformed)
-                              "PCOR","ZPCOR","SPCOR","ZSPCOR",                                   # partial and semi-partial correlations
-                              "R2","ZR2",                                                        # coefficient of determination / R^2 (raw and r-to-z transformed)
-                              "PR","PLN","PLO","PAS","PFT",                                      # single proportions (and transformations thereof)
-                              "IR","IRLN","IRS","IRFT",                                          # single-group person-time (incidence) data (and transformations thereof)
-                              "MN","SMN","MNLN","CVLN","SDLN",                                   # mean, single-group standardized mean, log(mean), log(CV), log(SD),
-                              "MC","SMCC","SMCR","SMCRH","SMCRP","SMCRPH","ROMC","CVRC","VRC",   # raw/standardized mean change, log(ROM), CVR, and VR for dependent samples
-                              "ARAW","AHW","ABT",                                                # alpha (and transformations thereof)
-                              "REH",                                                             # relative excess heterozygosity
-                              "HR","HD",                                                         # hazard (rate) ratios and differences
+   if (!is.element(measure, c("RR","OR","PETO","RD","AS","PHI","ZPHI","YUQ","YUY","RTET","ZTET",                # 2x2 table measures
+                              "PBIT","OR2D","OR2DN","OR2DL",                                                    # 2x2 table transformations to SMDs
+                              "MPRD","MPRR","MPOR","MPORC","MPPETO","MPORM",                                    # 2x2 table measures for matched pairs / pre-post data
+                              "IRR","IRD","IRSD",                                                               # two-group person-time data (incidence) measures
+                              "MD","SMD","SMDH","SMD1","SMD1H","ROM",                                           # two-group mean/SD measures
+                              "CVR","VR",                                                                       # coefficient of variation ratio, variability ratio
+                              "RPB","ZPB","RBIS","ZBIS","D2OR","D2ORN","D2ORL",                                 # two-group mean/SD transformations to r_pb, r_bis, and log(OR)
+                              "COR","UCOR","ZCOR",                                                              # correlations (raw and r-to-z transformed)
+                              "PCOR","ZPCOR","SPCOR","ZSPCOR",                                                  # partial and semi-partial correlations
+                              "R2","ZR2","R2F","ZR2F",                                                          # coefficient of determination / R^2 (raw and r-to-z transformed)
+                              "PR","PLN","PLO","PRZ","PAS","PFT",                                               # single proportions (and transformations thereof)
+                              "IR","IRLN","IRS","IRFT",                                                         # single-group person-time (incidence) data (and transformations thereof)
+                              "MN","SMN","MNLN","CVLN","SDLN",                                                  # mean, single-group standardized mean, log(mean), log(CV), log(SD),
+                              "MC","SMCC","SMCR","SMCRH","SMCRP","SMCRPH","CLESCN","AUCCN","ROMC","CVRC","VRC", # raw/standardized mean change, CLES/AUC, log(ROM), CVR, and VR for dependent samples
+                              "ARAW","AHW","ABT",                                                               # alpha (and transformations thereof)
+                              "REH","CLES","CLESN","AUC","AUCN",                                                # relative excess heterozygosity, common language effect size / area under the curve
+                              "HR","HD",                                                                        # hazard (rate) ratios and differences
                               "GEN")))
       stop(mstyle$stop("Unknown 'measure' specified."))
 
    if (!is.element(method[1], c("FE","EE","CE","HS","HSk","HE","DL","DLIT","GENQ","GENQM","SJ","SJIT","PM","MP","PMM","ML","REML","EB")))
       stop(mstyle$stop("Unknown 'method' specified."))
 
-   ### in case user specifies more than one add/to value (as one can do with rma.mh() and rma.peto())
+   ### in case user specified more than one add/to value (as one can do with rma.mh() and rma.peto())
    ### (any kind of continuity correction is directly applied to the outcomes, which are then analyzed as such)
 
    if (length(add) > 1L)
@@ -63,7 +62,13 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
 
    ddd <- list(...)
 
-   .chkdots(ddd, c("knha", "onlyo1", "addyi", "addvi", "i2def", "r2def", "skipr2", "abbrev", "dfs", "time", "outlist", "link", "optbeta", "alpha", "beta", "skiphes", "retopt", "pleasedonotreportI2thankyouverymuch"))
+   .chkdots(ddd, c("vtype", "knha", "onlyo1", "addyi", "addvi", "correct", "i2def", "r2def", "skipr2", "abbrev", "dfs", "time", "outlist", "link", "optbeta", "alpha", "beta", "skiphes", "retopt", "pleasedonotreportI2thankyouverymuch"))
+
+   if (is.null(ddd$vtype)) {
+      vtype <- "LS"
+   } else {
+      vtype <- ddd$vtype
+   }
 
    ### handle 'knha' argument from ... (note: overrides test argument)
 
@@ -86,11 +91,12 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
       model <- "rma.ls"
    }
 
-   ### set defaults or get onlyo1, addyi, and addvi arguments
+   ### set defaults or get onlyo1, addyi, addvi, and correct arguments
 
-   onlyo1 <- .chkddd(ddd$onlyo1, FALSE)
-   addyi  <- .chkddd(ddd$addyi,  TRUE)
-   addvi  <- .chkddd(ddd$addvi,  TRUE)
+   onlyo1  <- .chkddd(ddd$onlyo1,  FALSE)
+   addyi   <- .chkddd(ddd$addyi,   TRUE)
+   addvi   <- .chkddd(ddd$addvi,   TRUE)
+   correct <- .chkddd(ddd$correct, TRUE)
 
    ### set defaults for i2def and r2def
 
@@ -137,7 +143,7 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
    if (verbose) .space()
 
    if (verbose > 1)
-      message(mstyle$message("Extracting/computing yi/vi values ..."))
+      message(mstyle$message("Extracting/computing the yi/vi values ..."))
 
    ### check if data argument has been specified
 
@@ -153,7 +159,7 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
 
    mf <- match.call()
 
-   ### for certain measures, set add=0 by default unless user explicitly sets the add argument
+   ### for certain measures, set add=0 by default unless user explicitly set the add argument
 
    addval <- mf[[match("add", names(mf))]]
 
@@ -261,6 +267,11 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
          }
       }
 
+      ### check if yi is an array
+
+      if (inherits(yi, "array"))
+         stop(mstyle$stop("The object/variable specified for the 'yi' argument is an array."))
+
       ### check if yi is numeric
 
       if (!is.numeric(yi))
@@ -298,7 +309,7 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
 
       if (is.null(vi)) {
          if (is.null(sei)) {
-            stop(mstyle$stop("Must specify 'vi' or 'sei' argument."))
+            stop(mstyle$stop("Must specify the 'vi' or 'sei' argument."))
          } else {
             vi <- sei^2
          }
@@ -326,6 +337,11 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
          }
       }
 
+      ### check if vi is an array
+
+      if (inherits(vi, "array"))
+         stop(mstyle$stop("The object/variable specified for the 'vi' argument is an array."))
+
       ### check if user constrained vi to 0
 
       if ((length(vi) == 1L && vi == 0) || (length(vi) == k && !anyNA(vi) && all(vi == 0))) {
@@ -336,13 +352,12 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
 
       ### allow easy setting of vi to a single value
 
-      if (length(vi) == 1L)
-         vi <- rep(vi, k) # note: k is number of outcomes before subsetting
+      vi <- .expand1(vi, k) # note: k is number of outcomes before subsetting
 
       ### check length of yi and vi
 
       if (length(vi) != k)
-         stop(mstyle$stop("Length of 'yi' and 'vi' (or 'sei') is not the same."))
+         stop(mstyle$stop("Length of 'yi' and 'vi' (or 'sei') are not the same."))
 
       ### if ni has not been specified, try to get it from the attributes of yi
 
@@ -421,7 +436,7 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
             pi <- .getsubset(pi, subset)
          }
 
-         args <- list(measure=measure, ai=ai, bi=bi, ci=ci, di=di, ri=ri, pi=pi, add=add, to=to, drop00=drop00, vtype=vtype, onlyo1=onlyo1, addyi=addyi, addvi=addvi)
+         args <- list(ai=ai, bi=bi, ci=ci, di=di, ri=ri, pi=pi, add=add, to=to, drop00=drop00, onlyo1=onlyo1, addyi=addyi, addvi=addvi)
 
       }
 
@@ -443,7 +458,7 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
             t2i <- .getsubset(t2i, subset)
          }
 
-         args <- list(measure=measure, x1i=x1i, x2i=x2i, t1i=t1i, t2i=t2i, add=add, to=to, drop00=drop00, vtype=vtype, addyi=addyi, addvi=addvi)
+         args <- list(x1i=x1i, x2i=x2i, t1i=t1i, t2i=t2i, add=add, to=to, drop00=drop00, addyi=addyi, addvi=addvi)
 
       }
 
@@ -458,14 +473,18 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
          di   <- .getx("di",   mf=mf, data=data, checknumeric=TRUE)
          ti   <- .getx("ti",   mf=mf, data=data, checknumeric=TRUE)
          pi   <- .getx("pi",   mf=mf, data=data, checknumeric=TRUE)
+         ri   <- .getx("ri",   mf=mf, data=data, checknumeric=TRUE)
 
          if (is.element(measure, c("SMD","RPB","ZPB","RBIS","ZBIS","D2OR","D2ORN","D2ORL"))) {
 
-            if (!.equal.length(m1i, m2i, sd1i, sd2i, n1i, n2i, di, ti, pi))
+            if (!.equal.length(m1i, m2i, sd1i, sd2i, n1i, n2i, di, ti, pi, ri))
                stop(mstyle$stop("Supplied data vectors are not all of the same length."))
 
             ti <- replmiss(ti, .convp2t(pi, df=n1i+n2i-2))
             di <- replmiss(di, ti * sqrt(1/n1i + 1/n2i))
+            mi <- n1i + n2i - 2
+            hi <- mi / n1i + mi / n2i
+            di <- replmiss(di, sqrt(hi) * ri / sqrt(1 - ri^2))
 
             m1i[!is.na(di)]  <- di[!is.na(di)]
             m2i[!is.na(di)]  <- 0
@@ -487,7 +506,7 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
             n2i  <- .getsubset(n2i,  subset)
          }
 
-         args <- list(measure=measure, m1i=m1i, m2i=m2i, sd1i=sd1i, sd2i=sd2i, n1i=n1i, n2i=n2i, vtype=vtype)
+         args <- list(m1i=m1i, m2i=m2i, sd1i=sd1i, sd2i=sd2i, n1i=n1i, n2i=n2i)
 
       }
 
@@ -513,7 +532,7 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
             ni <- .getsubset(ni, subset)
          }
 
-         args <- list(measure=measure, ri=ri, ni=ni, vtype=vtype)
+         args <- list(ri=ri, ni=ni)
 
       }
 
@@ -548,11 +567,11 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
             r2i <- .getsubset(r2i, subset)
          }
 
-         args <- list(measure=measure, ri=ri, mi=mi, ni=ni, r2i=r2i, vtype=vtype)
+         args <- list(ri=ri, mi=mi, ni=ni, r2i=r2i)
 
       }
 
-      if (is.element(measure, c("R2","ZR2"))) {
+      if (is.element(measure, c("R2","ZR2","R2F","ZR2F"))) {
 
          r2i <- .getx("r2i", mf=mf, data=data, checknumeric=TRUE)
          mi  <- .getx("mi",  mf=mf, data=data, checknumeric=TRUE)
@@ -576,11 +595,11 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
             ni  <- .getsubset(ni,  subset)
          }
 
-         args <- list(measure=measure, r2i=r2i, mi=mi, ni=ni, vtype=vtype)
+         args <- list(r2i=r2i, mi=mi, ni=ni)
 
       }
 
-      if (is.element(measure, c("PR","PLN","PLO","PAS","PFT"))) {
+      if (is.element(measure, c("PR","PLN","PLO","PRZ","PAS","PFT"))) {
 
          xi <- .getx("xi", mf=mf, data=data, checknumeric=TRUE)
          mi <- .getx("mi", mf=mf, data=data, checknumeric=TRUE)
@@ -597,7 +616,7 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
             mi <- .getsubset(mi, subset)
          }
 
-         args <- list(measure=measure, xi=xi, mi=mi, add=add, to=to, vtype=vtype, addyi=addyi, addvi=addvi)
+         args <- list(xi=xi, mi=mi, add=add, to=to, addyi=addyi, addvi=addvi)
 
       }
 
@@ -615,7 +634,7 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
             ti <- .getsubset(ti, subset)
          }
 
-         args <- list(measure=measure, xi=xi, ti=ti, add=add, to=to, vtype=vtype, addyi=addyi, addvi=addvi)
+         args <- list(xi=xi, ti=ti, add=add, to=to, addyi=addyi, addvi=addvi)
 
       }
 
@@ -635,11 +654,11 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
             ni  <- .getsubset(ni,  subset)
          }
 
-         args <- list(measure=measure, mi=mi, sdi=sdi, ni=ni, vtype=vtype)
+         args <- list(mi=mi, sdi=sdi, ni=ni)
 
       }
 
-      if (is.element(measure, c("MC","SMCC","SMCR","SMCRH","SMCRP","SMCRPH","ROMC","CVRC","VRC"))) {
+      if (is.element(measure, c("MC","SMCC","SMCR","SMCRH","SMCRP","SMCRPH","CLESCN","AUCCN","ROMC","CVRC","VRC"))) {
 
          m1i  <- .getx("m1i",  mf=mf, data=data, checknumeric=TRUE)
          m2i  <- .getx("m2i",  mf=mf, data=data, checknumeric=TRUE)
@@ -650,6 +669,8 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
          di   <- .getx("di",   mf=mf, data=data, checknumeric=TRUE)
          ti   <- .getx("ti",   mf=mf, data=data, checknumeric=TRUE)
          pi   <- .getx("pi",   mf=mf, data=data, checknumeric=TRUE)
+
+         ri <- .expand1(ri, list(m1i, m2i, sd1i, sd2i, ni, di, ti, pi))
 
          if (measure == "SMCC") {
 
@@ -680,7 +701,7 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
             ri   <- .getsubset(ri,   subset)
          }
 
-         args <- list(measure=measure, m1i=m1i, m2i=m2i, sd1i=sd1i, sd2i=sd2i, ri=ri, ni=ni, vtype=vtype)
+         args <- list(m1i=m1i, m2i=m2i, sd1i=sd1i, sd2i=sd2i, ri=ri, ni=ni)
 
       }
 
@@ -700,7 +721,7 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
             ni <- .getsubset(ni, subset)
          }
 
-         args <- list(measure=measure, ai=ai, mi=mi, ni=ni, vtype=vtype)
+         args <- list(ai=ai, mi=mi, ni=ni)
 
       }
 
@@ -720,9 +741,102 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
             ci <- .getsubset(ci, subset)
          }
 
-         args <- list(measure=measure, ai=ai, bi=bi, ci=ci, vtype=vtype)
+         args <- list(ai=ai, bi=bi, ci=ci)
 
       }
+
+      if (is.element(measure, c("CLES","AUC"))) {
+
+         ai  <- .getx("ai",  mf=mf, data=data, checknumeric=TRUE)
+         n1i <- .getx("n1i", mf=mf, data=data, checknumeric=TRUE)
+         n2i <- .getx("n2i", mf=mf, data=data, checknumeric=TRUE)
+         mi  <- .getx("mi",  mf=mf, data=data, checknumeric=TRUE)
+
+         if (is.null(mi))
+            mi <- rep(0, length(ai))
+
+         mi[is.na(mi)] <- 0
+
+         k <- length(ai) # number of outcomes before subsetting
+         k.all <- k
+
+         if (!is.null(subset)) {
+            subset <- .chksubset(subset, k)
+            ai  <- .getsubset(ai,  subset)
+            n1i <- .getsubset(n1i, subset)
+            n2i <- .getsubset(n2i, subset)
+            mi  <- .getsubset(mi,  subset)
+         }
+
+         args <- list(ai=ai, n1i=n1i, n2i=n2i, mi=mi)
+
+      }
+
+      if (is.element(measure, c("CLESN","AUCN"))) {
+
+         m1i  <- .getx("m1i",  mf=mf, data=data, checknumeric=TRUE)
+         m2i  <- .getx("m2i",  mf=mf, data=data, checknumeric=TRUE)
+         sd1i <- .getx("sd1i", mf=mf, data=data, checknumeric=TRUE)
+         sd2i <- .getx("sd2i", mf=mf, data=data, checknumeric=TRUE)
+         n1i  <- .getx("n1i",  mf=mf, data=data, checknumeric=TRUE)
+         n2i  <- .getx("n2i",  mf=mf, data=data, checknumeric=TRUE)
+         di   <- .getx("di",   mf=mf, data=data, checknumeric=TRUE)
+         ti   <- .getx("ti",   mf=mf, data=data, checknumeric=TRUE)
+         pi   <- .getx("pi",   mf=mf, data=data, checknumeric=TRUE)
+         ai   <- .getx("ai",   mf=mf, data=data, checknumeric=TRUE)
+
+         if (!.equal.length(m1i, m2i, sd1i, sd2i, n1i, n2i, di, ti, pi, ai))
+            stop(mstyle$stop("Supplied data vectors are not all of the same length."))
+
+         if (!.all.specified(n1i, n2i))
+            stop(mstyle$stop("Cannot compute outcomes. Check that all of the required information is specified\n  via the appropriate arguments."))
+
+         k.all <- max(sapply(list(m1i, m2i, sd1i, sd2i, n1i, n2i, di, ti, pi, ai), length))
+
+         vtype <- .expand1(vtype, k.all)
+
+         if (is.null(sd1i) || is.null(sd2i)) {
+            sd1i <- .expand1(NA_real_, k.all)
+            sd2i <- .expand1(NA_real_, k.all)
+         }
+
+         ti <- replmiss(ti, .convp2t(pi, df=n1i+n2i-2))
+         di <- replmiss(di, ti * sqrt(1/n1i + 1/n2i))
+
+         if (!is.null(di))
+            vtype[!is.na(di)] <- "HO"
+
+         sdpi <- ifelse(vtype=="HO", sqrt(((n1i-1)*sd1i^2 + (n2i-1)*sd2i^2)/(n1i+n2i-2)), sqrt((sd1i^2 + sd2i^2)/2))
+         di   <- replmiss(di, (m1i - m2i) / sdpi)
+
+         ai <- replmiss(ai, pnorm(di/sqrt(2)))
+         di <- replmiss(di, qnorm(ai)*sqrt(2))
+
+         k.all <- length(ai)
+
+         sdsmiss <- is.na(sd1i) | is.na(sd2i)
+         sd1i <- ifelse(sdsmiss, 1, sd1i)
+         sd2i <- ifelse(sdsmiss, 1, sd2i)
+         vtype[sdsmiss] <- "HO"
+
+         k <- length(ai) # number of outcomes before subsetting
+         k.all <- k
+
+         if (!is.null(subset)) {
+            subset <- .chksubset(subset, k)
+            vtype  <- .getsubset(vtype,  subset)
+            ai   <- .getsubset(ai,   subset)
+            sd1i <- .getsubset(sd1i, subset)
+            sd2i <- .getsubset(sd2i, subset)
+            n1i  <- .getsubset(n1i,  subset)
+            n2i  <- .getsubset(n2i,  subset)
+         }
+
+         args <- list(ai=ai, sd1i=sd1i, sd2i=sd2i, n1i=n1i, n2i=n2i)
+
+      }
+
+      args <- c(args, list(measure=measure, vtype=vtype, correct=correct))
 
       dat <- .do.call(escalc, args)
 
@@ -741,13 +855,12 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
 
    ### allow easy setting of weights to a single value
 
-   if (length(weights) == 1L)
-      weights <- rep(weights, k) # note: k is number of outcomes before subsetting
+   weights <- .expand1(weights, k) # note: k is number of outcomes before subsetting
 
    ### check length of yi and weights (only if weights is not NULL)
 
    if (!is.null(weights) && (length(weights) != k))
-      stop(mstyle$stop("Length of 'yi' and 'weights' is not the same."))
+      stop(mstyle$stop("Length of 'yi' and 'weights' are not the same."))
 
    ### subsetting of weights
 
@@ -757,7 +870,7 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
    #########################################################################
 
    if (verbose > 1)
-      message(mstyle$message("Creating model matrix ..."))
+      message(mstyle$message("Creating the model matrix ..."))
 
    ### convert mods formula to X matrix and set intercept equal to FALSE
    ### skipped if formula has already been specified via yi argument, since mods is then no longer a formula (see [a])
@@ -795,7 +908,7 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
    ### check if mods matrix has the right number of rows
 
    if (!is.null(mods) && nrow(mods) != k)
-      stop(mstyle$stop(paste0("Number of rows in the model matrix (", nrow(mods), ") does not match length of the outcome vector (", k, ").")))
+      stop(mstyle$stop(paste0("Number of rows in the model matrix (", nrow(mods), ") do not match the length of the outcome vector (", k, ").")))
 
    ### for rma.ls models, get model matrix for the scale part
 
@@ -823,7 +936,7 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
             stop(mstyle$stop("Scale model matrix contains character variables."))
       }
       if (nrow(Z) != k)
-         stop(mstyle$stop(paste0("Number of rows in the model matrix specified via the 'scale' argument (", nrow(Z), ") does not match length of the outcome vector (", k, ").")))
+         stop(mstyle$stop(paste0("Number of rows in the model matrix specified via the 'scale' argument (", nrow(Z), ") do not match the length of the outcome vector (", k, ").")))
    } else {
       Z <- NULL
    }
@@ -831,7 +944,7 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
    ### generate study labels if none are specified (or none have been found in yi)
 
    if (verbose > 1)
-      message(mstyle$message("Generating/extracting study labels ..."))
+      message(mstyle$message("Generating/extracting the study labels ..."))
 
    ### study ids (1:k sequence before subsetting)
 
@@ -848,7 +961,7 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
          stop(mstyle$stop("NAs in study labels."))
 
       if (length(slab) != k)
-         stop(mstyle$stop("Study labels not of same length as data."))
+         stop(mstyle$stop(paste0("Length of the 'slab' argument (", length(slab), ") does not correspond to the size of the dataset (", k, ").")))
 
       slab.null <- FALSE
 
@@ -950,7 +1063,7 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
       vi.neg <- vi < 0
       if (any(vi.neg)) {
          vi[vi.neg] <- 0
-         warning(mstyle$warning("Negative sampling variances constrained to zero."), call.=FALSE)
+         warning(mstyle$warning("Negative sampling variances constrained to 0."), call.=FALSE)
       }
    } else {
       allvipos <- TRUE
@@ -1056,7 +1169,7 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
 
    #########################################################################
 
-   ### set default control parameters
+   ### set defaults for control parameters
 
    con <- list(verbose = FALSE,
                evtol = 1e-07,                  # lower bound for eigenvalues to determine if model matrix is positive definite (also for checking if vimaxmin >= 1/con$evtol)
@@ -1118,7 +1231,7 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
 
    if (model == "rma.ls") {
 
-      con$hesspack <- match.arg(con$hesspack, c("numDeriv","pracma"))
+      con$hesspack <- match.arg(con$hesspack, c("numDeriv","pracma","calculus"))
 
       if (!isTRUE(ddd$skiphes) && !requireNamespace(con$hesspack, quietly=TRUE))
          stop(mstyle$stop(paste0("Please install the '", con$hesspack, "' package to compute the Hessian.")))
@@ -1188,7 +1301,7 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
       }
 
       if (verbose > 1 && !tau2.fix && !is.element(method[1], c("FE","EE","CE")))
-         message(mstyle$message("Estimating tau^2 value ...\n"))
+         message(mstyle$message("Estimating the tau^2 value ...\n"))
 
       if (k == 1L) {
          method.sav <- method[1]
@@ -1321,7 +1434,7 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
             #   stop(mstyle$stop("GENQ estimator cannot be used when there are non-positive sampling variances in the data."))
 
             if (is.null(weights))
-               stop(mstyle$stop("Must specify 'weights' when method='GENQ'."))
+               stop(mstyle$stop("Must specify the 'weights' argument when method='GENQ'."))
 
             A     <- diag(weights, nrow=k, ncol=k)
             stXAX <- .invcalc(X=X, W=A, k=k)
@@ -1340,7 +1453,7 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
          if (method[1] == "GENQM") {
 
             if (is.null(weights))
-               stop(mstyle$stop("Must specify 'weights' when method='GENQM'."))
+               stop(mstyle$stop("Must specify the 'weights' argument when method='GENQM'."))
 
             A     <- diag(weights, nrow=k, ncol=k)
             stXAX <- .invcalc(X=X, W=A, k=k)
@@ -1746,26 +1859,15 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
       if (optimizer == "alabama")
          optimizer <- "constrOptim.nl"
 
-      ### when using an identity link, automatically set 'constrOptim' as the default optimizer (but 'solnp' by default when optbeta=TRUE)
+      ### when using an identity link, automatically set 'constrOptim' as the default optimizer
 
       if (link == "identity") {
-         if (optbeta) {
-            if (optimizer == "nlminb") {
-               optimizer <- "solnp"
-            } else {
-               if (!is.element(optimizer, c("solnp","nloptr","constrOptim.nl"))) {
-                  optimizer <- "solnp"
-                  warning(mstyle$warning(paste0("Can only use optimizers 'solnp', 'nloptr', or 'constrOptim.nl' when link='identity' and optbeta=TRUE (resetting to '", optimizer, "').")), call.=FALSE)
-               }
-            }
+         if (optimizer == "nlminb") {
+            optimizer <- "constrOptim"
          } else {
-            if (optimizer == "nlminb") {
+            if (!is.element(optimizer, c("constrOptim","solnp","nloptr","constrOptim.nl"))) {
                optimizer <- "constrOptim"
-            } else {
-               if (!is.element(optimizer, c("constrOptim","solnp","nloptr","constrOptim.nl"))) {
-                  optimizer <- "constrOptim"
-                  warning(mstyle$warning(paste0("Can only use optimizers 'constrOptim', 'solnp', 'nloptr', or 'constrOptim.nl' when link='identity' (resetting to '", optimizer, "').")), call.=FALSE)
-               }
+               warning(mstyle$warning(paste0("Can only use optimizers 'constrOptim', 'solnp', 'nloptr', or 'constrOptim.nl' when link='identity' (resetting to '", optimizer, "').")), call.=FALSE)
             }
          }
       }
@@ -1823,10 +1925,9 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
       if (missing(alpha) || is.null(alpha) || all(is.na(alpha))) {
          alpha <- rep(NA_real_, q)
       } else {
-         if (length(alpha) == 1L)
-            alpha <- rep(alpha, q)
+         alpha <- .expand1(alpha, q)
          if (length(alpha) != q)
-            stop(mstyle$stop(paste0("Length of 'alpha' argument (", length(alpha), ") does not match actual number of parameters (", q, ").")))
+            stop(mstyle$stop(paste0("Length of the 'alpha' argument (", length(alpha), ") does not match the actual number of parameters (", q, ").")))
       }
 
       ### checks on beta argument
@@ -1836,11 +1937,19 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
          if (missing(beta) || is.null(beta) || all(is.na(beta))) {
             beta <- rep(NA_real_, p)
          } else {
-            if (length(beta) == 1L)
-               beta <- rep(beta, p)
+            beta <- .expand1(beta, p)
             if (length(beta) != p)
-               stop(mstyle$stop(paste0("Length of 'beta' argument (", length(beta), ") does not match actual number of parameters (", p, ").")))
+               stop(mstyle$stop(paste0("Length of the 'beta' argument (", length(beta), ") does not match the actual number of parameters (", p, ").")))
          }
+
+         ### needed for constrOptim() when optbeta=TRUE
+
+         X0 <- X
+         X0[] <- 0
+
+      } else {
+
+         X0 <- NULL
 
       }
 
@@ -1873,7 +1982,7 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
       ### set/transform/check alpha.init
 
       if (verbose > 1)
-         message(mstyle$message("Extracting/computing initial values ..."))
+         message(mstyle$message("Extracting/computing the initial values ..."))
 
       if (is.null(con$alpha.init)) {
 
@@ -1897,7 +2006,7 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
             #tmp <- rma.uni(tmp$resid^2, 1, mods=Z, intercept=FALSE, method="FE")
             alpha.init <- coef(tmp)
             if (any(Z %*% alpha.init < 0))
-               alpha.init <- ifelse(is.int, fit$tau2+.01, 0)
+               alpha.init <- ifelse(is.int, fit$tau2+0.01, 0)
             if (any(Z %*% alpha.init < 0))
                stop(mstyle$stop("Unable to find suitable starting values for the scale parameters."))
 
@@ -1922,7 +2031,7 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
       }
 
       if (length(alpha.init) != q)
-         stop(mstyle$stop(paste0("Length of 'alpha.init' argument (", length(alpha.init), ") does not match actual number of parameters (", q, ").")))
+         stop(mstyle$stop(paste0("Length of the 'alpha.init' argument (", length(alpha.init), ") does not match the actual number of parameters (", q, ").")))
 
       if (anyNA(alpha.init))
          stop(mstyle$stop("No missing values allowed in 'alpha.init'."))
@@ -1938,7 +2047,7 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
             beta.init <- con$beta.init
 
             if (length(beta.init) != p)
-               stop(mstyle$stop(paste0("Length of 'beta.init' argument (", length(beta.init), ") does not match actual number of parameters (", p, ").")))
+               stop(mstyle$stop(paste0("Length of the 'beta.init' argument (", length(beta.init), ") does not match the actual number of parameters (", p, ").")))
 
             if (anyNA(beta.init))
                stop(mstyle$stop("No missing values allowed in 'beta.init'."))
@@ -1953,17 +2062,14 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
 
       ### set potential constraints on alpha values
 
-      if (length(con$alpha.min) == 1L)
-            con$alpha.min <- rep(con$alpha.min, q)
-
-      if (length(con$alpha.max) == 1L)
-            con$alpha.max <- rep(con$alpha.max, q)
+      con$alpha.min <- .expand1(con$alpha.min, q)
+      con$alpha.max <- .expand1(con$alpha.max, q)
 
       if (length(con$alpha.min) != q)
-         stop(mstyle$stop(paste0("Length of 'alpha.min' argument (", length(alpha.min), ") does not match actual number of parameters (", q, ").")))
+         stop(mstyle$stop(paste0("Length of the 'alpha.min' argument (", length(alpha.min), ") does not match the actual number of parameters (", q, ").")))
 
       if (length(con$alpha.max) != q)
-         stop(mstyle$stop(paste0("Length of 'alpha.max' argument (", length(alpha.max), ") does not match actual number of parameters (", q, ").")))
+         stop(mstyle$stop(paste0("Length of the 'alpha.max' argument (", length(alpha.max), ") does not match the actual number of parameters (", q, ").")))
 
       if (any(xor(is.infinite(con$alpha.min),is.infinite(con$alpha.max))))
          stop(mstyle$stop("Constraints on scale coefficients must be placed on both the lower and upper bound."))
@@ -1982,7 +2088,7 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
       ### estimate alpha (and beta) values
 
       if (verbose > 1)
-         message(mstyle$message("Estimating scale parameters ...\n"))
+         message(mstyle$message("Estimating the scale parameters ...\n"))
 
       tmp <- .chkopt(optimizer, optcontrol, ineq=link=="identity")
       optimizer  <- tmp$optimizer
@@ -2042,7 +2148,7 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
       if (link == "identity") {
 
          if (optimizer == "constrOptim")
-            optcall <- paste0("constrOptim(theta=c(beta.init, alpha.init), f=.ll.rma.ls, grad=NULL, ui=Z, ci=rep(0,k),
+            optcall <- paste0("constrOptim(theta=c(beta.init, alpha.init), f=.ll.rma.ls, grad=NULL, ui=cbind(X0,Z), ci=rep(0,k),
                               yi=yi, vi=vi, X=X, Z=Z, reml=reml, k=k, pX=p, alpha.arg=alpha, beta.arg=beta, verbose=verbose, digits=digits,
                               REMLf=con$REMLf, link=link, mZ=mZ, alpha.min=alpha.min, alpha.max=alpha.max, alpha.transf=TRUE,
                               tau2.min=con$tau2.min, tau2.max=con$tau2.max, optbeta=optbeta", ctrl.arg, ")\n")
@@ -2115,18 +2221,25 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
       if (any(hest) && !isTRUE(ddd$skiphes)) {
 
          if (verbose > 1)
-            message(mstyle$message("\nComputing Hessian ..."))
+            message(mstyle$message("\nComputing the Hessian ..."))
 
          if (con$hesspack == "numDeriv")
             H <- try(numDeriv::hessian(func=.ll.rma.ls, x=opt.res$par, method.args=con$hessianCtrl, yi=yi, vi=vi, X=X,
                                        Z=Z, reml=reml, k=k, pX=p, alpha.arg=alpha, beta.arg=beta, verbose=FALSE, digits=digits,
                                        REMLf=con$REMLf, link=link, mZ=mZ, alpha.min=alpha.min, alpha.max=alpha.max, alpha.transf=FALSE,
                                        tau2.min=con$tau2.min, tau2.max=con$tau2.max, optbeta=optbeta), silent=TRUE)
+
          if (con$hesspack == "pracma")
             H <- try(pracma::hessian(f=.ll.rma.ls, x0=opt.res$par, yi=yi, vi=vi, X=X,
                                      Z=Z, reml=reml, k=k, pX=p, alpha.arg=alpha, beta.arg=beta, verbose=FALSE, digits=digits,
                                      REMLf=con$REMLf, link=link, mZ=mZ, alpha.min=alpha.min, alpha.max=alpha.max, alpha.transf=FALSE,
                                      tau2.min=con$tau2.min, tau2.max=con$tau2.max, optbeta=optbeta), silent=TRUE)
+
+         if (con$hesspack == "calculus")
+            H <- try(calculus::hessian(f=.ll.rma.ls, var=opt.res$par, params=list(yi=yi, vi=vi, X=X,
+                                     Z=Z, reml=reml, k=k, pX=p, alpha.arg=alpha, beta.arg=beta, verbose=FALSE, digits=digits,
+                                     REMLf=con$REMLf, link=link, mZ=mZ, alpha.min=alpha.min, alpha.max=alpha.max, alpha.transf=FALSE,
+                                     tau2.min=con$tau2.min, tau2.max=con$tau2.max, optbeta=optbeta)), silent=TRUE)
 
          if (inherits(H, "try-error")) {
 
@@ -2358,7 +2471,7 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
    }
 
    if (verbose > 1)
-      message(mstyle$message("Conducting tests of the fixed effects ..."))
+      message(mstyle$message("Conducting the tests of the fixed effects ..."))
 
    ### the Knapp & Hartung method as described in the literature is for random/mixed-effects models
 
@@ -2438,7 +2551,7 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
    ### heterogeneity test (Wald-type test of the extra coefficients in the saturated model)
 
    if (verbose > 1)
-      message(mstyle$message("Conducting heterogeneity test ..."))
+      message(mstyle$message("Conducting the heterogeneity test ..."))
 
    if (allvipos) {
 
@@ -2504,7 +2617,7 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
    ###### fit statistics
 
    if (verbose > 1)
-      message(mstyle$message("Computing fit statistics and log-likelihood ..."))
+      message(mstyle$message("Computing the fit statistics and log-likelihood ..."))
 
    ### note: tau2 is not counted as a parameter when it was fixed by the user (same for fixed alpha values)
    q.est <- ifelse(model == "rma.uni", 0, sum(is.na(alpha.arg)))
@@ -2674,7 +2787,7 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
    ###### prepare output
 
    if (verbose > 1)
-      message(mstyle$message("Preparing output ..."))
+      message(mstyle$message("Preparing the output ..."))
 
    p.eff <- p
    k.eff <- k
@@ -2688,6 +2801,7 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
                   k=k, k.f=k.f, k.eff=k.eff, k.all=k.all, p=p, p.eff=p.eff, parms=parms,
                   int.only=int.only, int.incl=int.incl, intercept=intercept, allvipos=allvipos, coef.na=coef.na,
                   yi=yi, vi=vi, X=X, weights=weights, yi.f=yi.f, vi.f=vi.f, X.f=X.f, weights.f=weights.f, M=M,
+                  chksumyi=digest::digest(as.vector(yi)), chksumvi=digest::digest(as.vector(vi)), chksumX=digest::digest(X),
                   outdat.f=outdat.f, ni=ni, ni.f=ni.f,
                   ids=ids, not.na=not.na, subset=subset, slab=slab, slab.null=slab.null,
                   measure=measure, method=method[1], model=model, weighted=weighted,
@@ -2708,11 +2822,12 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
                      tau2=tau2, se.tau2=se.tau2, tau2.fix=tau2.fix,
                      I2=I2, H2=H2, R2=R2,
                      QE=QE, QEp=QEp, QM=QM, QMdf=QMdf, QMp=QMp,
-                     k=k, k.eff=k.eff, p=p, p.eff=p.eff, parms=parms,
-                     int.only=int.only,
-                     measure=measure, method=method[1], model=model,
+                     k=k, k.f=k.f, k.eff=k.eff, p=p, p.eff=p.eff, parms=parms,
+                     int.only=int.only, int.incl=int.incl, intercept=intercept,
+                     chksumyi=digest::digest(as.vector(yi)), chksumvi=digest::digest(as.matrix(vi)), chksumX=digest::digest(X),
+                     measure=measure, method=method[1], model=model, weighted=weighted,
                      test=test, dfs=ddf, ddf=ddf, btt=btt, m=m,
-                     digits=digits,
+                     digits=digits, level=level,
                      fit.stats=fit.stats)
       } else {
          res <- eval(str2lang(paste0("list(", ddd$outlist, ")")))

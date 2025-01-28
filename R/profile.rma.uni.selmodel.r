@@ -79,10 +79,15 @@ profile.rma.uni.selmodel <- function(fitted, tau2, delta,
       if (comps == 0)
          stop(mstyle$stop("No components in the model for which a profile likelihood can be constructed."))
 
+      if (!is.null(ddd[["code3"]]))
+         eval(expr = parse(text = ddd[["code3"]]))
+
       if (plot) {
-         if (dev.cur() == 1L) { # if only the 'null device' is currently open, set mfrow
-            par(mfrow=n2mfrow(comps))
-            #on.exit(par(mfrow=c(1,1)), add=TRUE)
+         if (comps > 1L) {
+            # if no plotting device is open or mfrow is too small, set mfrow appropriately
+            if (dev.cur() == 1L || prod(par("mfrow")) < comps)
+               par(mfrow=n2mfrow(comps))
+            on.exit(par(mfrow=c(1L,1L)), add=TRUE)
          }
       }
 
@@ -91,10 +96,13 @@ profile.rma.uni.selmodel <- function(fitted, tau2, delta,
 
       if (!is.element(x$method, c("FE","EE","CE")) && !x$tau2.fix) {
          j <- j + 1
+         if (!is.null(ddd[["code4"]]))
+            eval(expr = parse(text = ddd[["code4"]]))
          mc.vc <- mc
          mc.vc$tau2 <- 1
          mc.vc$time <- FALSE
          #mc.vc$fitted <- quote(x)
+         mc.vc[[1]] <- str2lang("metafor::profile.rma.uni.selmodel")
          if (progbar)
             cat(mstyle$verbose(paste("Profiling tau2\n")))
          sav[[j]] <- eval(mc.vc, envir=parent.frame())
@@ -103,10 +111,13 @@ profile.rma.uni.selmodel <- function(fitted, tau2, delta,
       if (any(!x$delta.fix)) {
          for (pos in seq_len(x$deltas)[!x$delta.fix]) {
             j <- j + 1
+            if (!is.null(ddd[["code4"]]))
+               eval(expr = parse(text = ddd[["code4"]]))
             mc.vc <- mc
             mc.vc$delta <- pos
             mc.vc$time <- FALSE
             #mc.vc$fitted <- quote(x)
+            mc.vc[[1]] <- str2lang("metafor::profile.rma.uni.selmodel")
             if (progbar)
                cat(mstyle$verbose(paste("Profiling delta =", pos, "\n")))
             sav[[j]] <- eval(mc.vc, envir=parent.frame())
@@ -129,6 +140,8 @@ profile.rma.uni.selmodel <- function(fitted, tau2, delta,
       return(invisible(sav))
 
    }
+
+   #########################################################################
 
    ### round and take unique values
 
@@ -264,12 +277,15 @@ profile.rma.uni.selmodel <- function(fitted, tau2, delta,
    if (length(vcs) <= 1L)
       stop(mstyle$stop("Cannot set 'xlim' automatically. Please set this argument manually."))
 
+   if (!is.null(ddd[["code1"]]))
+      eval(expr = parse(text = ddd[["code1"]]))
+
    if (parallel == "no")
-      res <- pbapply::pblapply(vcs, .profile.rma.uni.selmodel, obj=x, comp=comp, delta.pos=delta.pos, parallel=parallel, profile=TRUE)
+      res <- pbapply::pblapply(vcs, .profile.rma.uni.selmodel, obj=x, comp=comp, delta.pos=delta.pos, parallel=parallel, profile=TRUE, code2=ddd$code2)
 
    if (parallel == "multicore")
-      res <- pbapply::pblapply(vcs, .profile.rma.uni.selmodel, obj=x, comp=comp, delta.pos=delta.pos, parallel=parallel, profile=TRUE, cl=ncpus)
-      #res <- parallel::mclapply(vcs, .profile.rma.uni.selmodel, obj=x, comp=comp, delta.pos=delta.pos, parallel=parallel, profile=TRUE, mc.cores=ncpus)
+      res <- pbapply::pblapply(vcs, .profile.rma.uni.selmodel, obj=x, comp=comp, delta.pos=delta.pos, parallel=parallel, profile=TRUE, code2=ddd$code2, cl=ncpus)
+      #res <- parallel::mclapply(vcs, .profile.rma.uni.selmodel, obj=x, comp=comp, delta.pos=delta.pos, parallel=parallel, profile=TRUE, code2=ddd$code2, mc.cores=ncpus)
 
    if (parallel == "snow") {
       if (is.null(cl)) {
@@ -277,14 +293,14 @@ profile.rma.uni.selmodel <- function(fitted, tau2, delta,
          on.exit(parallel::stopCluster(cl), add=TRUE)
       }
       if (.isTRUE(ddd$LB)) {
-         res <- parallel::parLapplyLB(cl, vcs, .profile.rma.uni.selmodel, obj=x, comp=comp, delta.pos=delta.pos, parallel=parallel, profile=TRUE)
-         #res <- parallel::clusterApplyLB(cl, vcs, .profile.rma.uni.selmodel, obj=x, comp=comp, delta.pos=delta.pos, parallel=parallel, profile=TRUE)
-         #res <- parallel::clusterMap(cl, .profile.rma.uni.selmodel, vcs, MoreArgs=list(obj=x, comp=comp, delta.pos=delta.pos, parallel=parallel, profile=TRUE), .scheduling = "dynamic")
+         res <- parallel::parLapplyLB(cl, vcs, .profile.rma.uni.selmodel, obj=x, comp=comp, delta.pos=delta.pos, parallel=parallel, profile=TRUE, code2=ddd$code2)
+         #res <- parallel::clusterApplyLB(cl, vcs, .profile.rma.uni.selmodel, obj=x, comp=comp, delta.pos=delta.pos, parallel=parallel, profile=TRUE, code2=ddd$code2)
+         #res <- parallel::clusterMap(cl, .profile.rma.uni.selmodel, vcs, MoreArgs=list(obj=x, comp=comp, delta.pos=delta.pos, parallel=parallel, profile=TRUE, code2=ddd$code2), .scheduling = "dynamic")
       } else {
-         res <- pbapply::pblapply(vcs, .profile.rma.uni.selmodel, obj=x, comp=comp, delta.pos=delta.pos, parallel=parallel, profile=TRUE, cl=cl)
-         #res <- parallel::parLapply(cl, vcs, .profile.rma.uni.selmodel, obj=x, comp=comp, delta.pos=delta.pos, parallel=parallel, profile=TRUE)
-         #res <- parallel::clusterApply(cl, vcs, .profile.rma.uni.selmodel, obj=x, comp=comp, delta.pos=delta.pos, parallel=parallel, profile=TRUE)
-         #res <- parallel::clusterMap(cl, .profile.rma.uni.selmodel, vcs, MoreArgs=list(obj=x, comp=comp, delta.pos=delta.pos, parallel=parallel, profile=TRUE))
+         res <- pbapply::pblapply(vcs, .profile.rma.uni.selmodel, obj=x, comp=comp, delta.pos=delta.pos, parallel=parallel, profile=TRUE, code2=ddd$code2, cl=cl)
+         #res <- parallel::parLapply(cl, vcs, .profile.rma.uni.selmodel, obj=x, comp=comp, delta.pos=delta.pos, parallel=parallel, profile=TRUE, code2=ddd$code2)
+         #res <- parallel::clusterApply(cl, vcs, .profile.rma.uni.selmodel, obj=x, comp=comp, delta.pos=delta.pos, parallel=parallel, profile=TRUE, code2=ddd$code2)
+         #res <- parallel::clusterMap(cl, .profile.rma.uni.selmodel, vcs, MoreArgs=list(obj=x, comp=comp, delta.pos=delta.pos, parallel=parallel, profile=TRUE, code2=ddd$code2))
       }
    }
 

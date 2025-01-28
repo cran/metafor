@@ -10,14 +10,17 @@ influence.rma.uni <- function(model, digits, progbar=FALSE, ...) {
    if (!is.element(na.act, c("na.omit", "na.exclude", "na.fail", "na.pass")))
       stop(mstyle$stop("Unknown 'na.action' specified under options()."))
 
+   if (is.null(model$yi) || is.null(model$vi))
+      stop(mstyle$stop("Information needed is not available in the model object."))
+
    x <- model
 
-   if (x$k == 1)
+   if (x$k == 1L)
       stop(mstyle$stop("Stopped because k = 1."))
 
    ddd <- list(...)
 
-   .chkdots(ddd, c("btt", "measure", "time"))
+   .chkdots(ddd, c("btt", "measure", "time", "code1", "code2"))
 
    btt <- .set.btt(ddd$btt, x$p, int.incl=FALSE, Xnames=colnames(x$X)) # note: 1:p by default (also in models with intercept)
    m <- length(btt)
@@ -35,6 +38,9 @@ influence.rma.uni <- function(model, digits, progbar=FALSE, ...) {
 
    if (.isTRUE(ddd$time))
       time.start <- proc.time()
+
+   if (!is.null(ddd[["code1"]]))
+      eval(expr = parse(text = ddd[["code1"]]))
 
    #########################################################################
 
@@ -90,6 +96,9 @@ influence.rma.uni <- function(model, digits, progbar=FALSE, ...) {
 
       if (progbar)
          pbapply::setpb(pbar, i)
+
+      if (!is.null(ddd[["code2"]]))
+         eval(expr = parse(text = ddd[["code2"]]))
 
       args <- list(yi=x$yi, vi=x$vi, weights=x$weights, mods=x$X, intercept=FALSE, method=x$method, weighted=x$weighted,
                    test=x$test, level=x$level, tau2=ifelse(x$tau2.fix, x$tau2, NA), control=x$control, subset=-i, skipr2=TRUE, outlist=outlist)
@@ -201,9 +210,9 @@ influence.rma.uni <- function(model, digits, progbar=FALSE, ...) {
    ### determine "influential" cases
 
    is.infl <-
-      #abs(inf$rstudent) > qnorm(.975) |
+      #abs(inf$rstudent) > qnorm(0.975) |
       abs(inf$dffits) > 3*sqrt(x$p/(x$k-x$p)) |
-      pchisq(inf$cook.d, df=m) > .50 |
+      pchisq(inf$cook.d, df=m) > 0.50 |
       #inf$cov.r > 1 + 3*m/(x$k-m) |
       #inf$cov.r < 1 - 3*m/(x$k-m) |
       inf$hat > 3*x$p/x$k |

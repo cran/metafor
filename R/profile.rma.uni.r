@@ -10,6 +10,9 @@ profile.rma.uni <- function(fitted,
 
    x <- fitted
 
+   if (is.null(x$yi) || is.null(x$vi))
+      stop(mstyle$stop("Information needed for profiling is not available in the model object."))
+
    if (anyNA(steps))
       stop(mstyle$stop("No missing values allowed in 'steps' argument."))
 
@@ -73,9 +76,9 @@ profile.rma.uni <- function(fitted,
 
       ### test if predict() works with the given newmods (and to get slab for [a])
 
-      predtest <- predict(x, newmods=newmods)
+      predres <- predict(x, newmods=newmods)
 
-      if (length(predtest$pred) == 0L)
+      if (length(predres$pred) == 0L)
          stop(mstyle$stop("Cannot compute predicted values."))
 
    }
@@ -153,17 +156,20 @@ profile.rma.uni <- function(fitted,
    if (length(vcs) <= 1L)
       stop(mstyle$stop("Cannot set 'xlim' automatically. Please set this argument manually."))
 
+   if (!is.null(ddd[["code1"]]))
+      eval(expr = parse(text = ddd[["code1"]]))
+
    ### if sqrt=TRUE, then the sequence of vcs are tau values, so square them for the actual profiling
 
    if (.isTRUE(ddd$sqrt))
       vcs <- vcs^2
 
    if (parallel == "no")
-      res <- pbapply::pblapply(vcs, .profile.rma.uni, obj=x, parallel=parallel, profile=TRUE, pred=pred, blup=blup, newmods=newmods)
+      res <- pbapply::pblapply(vcs, .profile.rma.uni, obj=x, parallel=parallel, profile=TRUE, pred=pred, blup=blup, newmods=newmods, code2=ddd$code2)
 
    if (parallel == "multicore")
-      res <- pbapply::pblapply(vcs, .profile.rma.uni, obj=x, parallel=parallel, profile=TRUE, cl=ncpus, pred=pred, blup=blup, newmods=newmods)
-      #res <- parallel::mclapply(vcs, .profile.rma.uni, obj=x, parallel=parallel, profile=TRUE, pred=pred, blup=blup, newmods=newmods, mc.cores=ncpus)
+      res <- pbapply::pblapply(vcs, .profile.rma.uni, obj=x, parallel=parallel, profile=TRUE, cl=ncpus, pred=pred, blup=blup, newmods=newmods, code2=ddd$code2)
+      #res <- parallel::mclapply(vcs, .profile.rma.uni, obj=x, parallel=parallel, profile=TRUE, pred=pred, blup=blup, newmods=newmods, code2=ddd$code2, mc.cores=ncpus)
 
    if (parallel == "snow") {
       if (is.null(cl)) {
@@ -171,14 +177,14 @@ profile.rma.uni <- function(fitted,
          on.exit(parallel::stopCluster(cl), add=TRUE)
       }
       if (.isTRUE(ddd$LB)) {
-         res <- parallel::parLapplyLB(cl, vcs, .profile.rma.uni, obj=x, parallel=parallel, profile=TRUE, pred=pred, blup=blup, newmods=newmods)
-         #res <- parallel::clusterApplyLB(cl, vcs, .profile.rma.uni, obj=x, parallel=parallel, profile=TRUE, pred=pred, blup=blup, newmods=newmods)
-         #res <- parallel::clusterMap(cl, .profile.rma.uni, vcs, MoreArgs=list(obj=x, parallel=parallel, profile=TRUE, pred=pred, blup=blup, newmods=newmods), .scheduling = "dynamic")
+         res <- parallel::parLapplyLB(cl, vcs, .profile.rma.uni, obj=x, parallel=parallel, profile=TRUE, pred=pred, blup=blup, newmods=newmods, code2=ddd$code2)
+         #res <- parallel::clusterApplyLB(cl, vcs, .profile.rma.uni, obj=x, parallel=parallel, profile=TRUE, pred=pred, blup=blup, newmods=newmods, code2=ddd$code2)
+         #res <- parallel::clusterMap(cl, .profile.rma.uni, vcs, MoreArgs=list(obj=x, parallel=parallel, profile=TRUE, pred=pred, blup=blup, newmods=newmods, code2=ddd$code2), .scheduling = "dynamic")
       } else {
-         res <- pbapply::pblapply(vcs, .profile.rma.uni, obj=x, parallel=parallel, profile=TRUE, pred=pred, blup=blup, newmods=newmods, cl=cl)
-         #res <- parallel::parLapply(cl, vcs, .profile.rma.uni, obj=x, parallel=parallel, profile=TRUE, pred=pred, blup=blup, newmods=newmods)
-         #res <- parallel::clusterApply(cl, vcs, .profile.rma.uni, obj=x, parallel=parallel, profile=TRUE, pred=pred, blup=blup, newmods=newmods)
-         #res <- parallel::clusterMap(cl, .profile.rma.uni, vcs, MoreArgs=list(obj=x, parallel=parallel, profile=TRUE, pred=pred, blup=blup, newmods=newmods))
+         res <- pbapply::pblapply(vcs, .profile.rma.uni, obj=x, parallel=parallel, profile=TRUE, pred=pred, blup=blup, newmods=newmods, code2=ddd$code2, cl=cl)
+         #res <- parallel::parLapply(cl, vcs, .profile.rma.uni, obj=x, parallel=parallel, profile=TRUE, pred=pred, blup=blup, newmods=newmods, code2=ddd$code2)
+         #res <- parallel::clusterApply(cl, vcs, .profile.rma.uni, obj=x, parallel=parallel, profile=TRUE, pred=pred, blup=blup, newmods=newmods, code2=ddd$code2)
+         #res <- parallel::clusterMap(cl, .profile.rma.uni, vcs, MoreArgs=list(obj=x, parallel=parallel, profile=TRUE, pred=pred, blup=blup, newmods=newmods, code2=ddd$code2))
       }
    }
 
@@ -265,7 +271,7 @@ profile.rma.uni <- function(fitted,
       sav$pred.ci.ub <- do.call(cbind, lapply(res, function(x) x$pred.ci.ub))
       sav$pred.pi.lb <- do.call(cbind, lapply(res, function(x) x$pred.pi.lb))
       sav$pred.pi.ub <- do.call(cbind, lapply(res, function(x) x$pred.pi.ub))
-      rownames(sav$pred) <- rownames(sav$pred.ci.lb) <- rownames(sav$pred.ci.ub) <- rownames(sav$pred.pi.lb) <- rownames(sav$pred.pi.ub) <- predtest$slab # [a]
+      rownames(sav$pred) <- rownames(sav$pred.ci.lb) <- rownames(sav$pred.ci.ub) <- rownames(sav$pred.pi.lb) <- rownames(sav$pred.pi.ub) <- predres$slab # [a]
    }
 
    if (blup) {

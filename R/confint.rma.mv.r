@@ -32,7 +32,7 @@ confint.rma.mv <- function(object, parm, level, fixed=FALSE, sigma2, tau2, rho, 
 
    ddd <- list(...)
 
-   .chkdots(ddd, c("time", "xlim", "extint"))
+   .chkdots(ddd, c("time", "xlim", "extint", "code1", "code2"))
 
    level <- .level(level, stopon100=.isTRUE(ddd$extint))
 
@@ -65,16 +65,22 @@ confint.rma.mv <- function(object, parm, level, fixed=FALSE, sigma2, tau2, rho, 
       if (comps == 0)
          stop(mstyle$stop("No components for which a CI can be obtained."))
 
+      if (!is.null(ddd[["code1"]]))
+         eval(expr = parse(text = ddd[["code1"]]))
+
       res.all <- list()
       j <- 0
 
       if (x$withS && any(!x$vc.fix$sigma2)) {
          for (pos in seq_len(x$sigma2s)[!x$vc.fix$sigma2]) {
             j <- j + 1
+            if (!is.null(ddd[["code2"]]))
+               eval(expr = parse(text = ddd[["code2"]]))
             cl.vc <- cl
             cl.vc$sigma2 <- pos
             cl.vc$time <- FALSE
             #cl.vc$object <- quote(x)
+            cl.vc[[1]] <- str2lang("metafor::confint.rma.mv")
             if (verbose)
                cat(mstyle$verbose(paste("\nObtaining CI for sigma2 =", pos, "\n")))
             res.all[[j]] <- eval(cl.vc, envir=parent.frame())
@@ -85,10 +91,13 @@ confint.rma.mv <- function(object, parm, level, fixed=FALSE, sigma2, tau2, rho, 
          if (any(!x$vc.fix$tau2)) {
             for (pos in seq_len(x$tau2s)[!x$vc.fix$tau2]) {
                j <- j + 1
+               if (!is.null(ddd[["code2"]]))
+                  eval(expr = parse(text = ddd[["code2"]]))
                cl.vc <- cl
                cl.vc$tau2 <- pos
                cl.vc$time <- FALSE
                #cl.vc$object <- quote(x)
+               cl.vc[[1]] <- str2lang("metafor::confint.rma.mv")
                if (verbose)
                   cat(mstyle$verbose(paste("\nObtaining CI for tau2 =", pos, "\n")))
                res.all[[j]] <- eval(cl.vc, envir=parent.frame())
@@ -97,10 +106,13 @@ confint.rma.mv <- function(object, parm, level, fixed=FALSE, sigma2, tau2, rho, 
          if (any(!x$vc.fix$rho)) {
             for (pos in seq_len(x$rhos)[!x$vc.fix$rho]) {
                j <- j + 1
+               if (!is.null(ddd[["code2"]]))
+                  eval(expr = parse(text = ddd[["code2"]]))
                cl.vc <- cl
                cl.vc$rho <- pos
                cl.vc$time <- FALSE
                #cl.vc$object <- quote(x)
+               cl.vc[[1]] <- str2lang("metafor::confint.rma.mv")
                if (verbose)
                   cat(mstyle$verbose(paste("\nObtaining CI for rho =", pos, "\n")))
                res.all[[j]] <- eval(cl.vc, envir=parent.frame())
@@ -112,10 +124,13 @@ confint.rma.mv <- function(object, parm, level, fixed=FALSE, sigma2, tau2, rho, 
          if (any(!x$vc.fix$gamma2)) {
             for (pos in seq_len(x$gamma2s)[!x$vc.fix$gamma2]) {
                j <- j + 1
+               if (!is.null(ddd[["code2"]]))
+                  eval(expr = parse(text = ddd[["code2"]]))
                cl.vc <- cl
                cl.vc$gamma2 <- pos
                cl.vc$time <- FALSE
                #cl.vc$object <- quote(x)
+               cl.vc[[1]] <- str2lang("metafor::confint.rma.mv")
                if (verbose)
                   cat(mstyle$verbose(paste("\nObtaining CI for gamma2 =", pos, "\n")))
                res.all[[j]] <- eval(cl.vc, envir=parent.frame())
@@ -124,10 +139,13 @@ confint.rma.mv <- function(object, parm, level, fixed=FALSE, sigma2, tau2, rho, 
          if (any(!x$vc.fix$phi)) {
             for (pos in seq_len(x$phis)[!x$vc.fix$phi]) {
                j <- j + 1
+               if (!is.null(ddd[["code2"]]))
+                  eval(expr = parse(text = ddd[["code2"]]))
                cl.vc <- cl
                cl.vc$phi <- pos
                cl.vc$time <- FALSE
                #cl.vc$object <- quote(x)
+               cl.vc[[1]] <- str2lang("metafor::confint.rma.mv")
                if (verbose)
                   cat(mstyle$verbose(paste("\nObtaining CI for phi =", pos, "\n")))
                res.all[[j]] <- eval(cl.vc, envir=parent.frame())
@@ -293,8 +311,8 @@ confint.rma.mv <- function(object, parm, level, fixed=FALSE, sigma2, tau2, rho, 
 
       ######################################################################
 
-      ### set control parameters for uniroot() and possibly replace with user-defined values
-      ### set vc.min and vc.max and possibly replace with user-defined values
+      ### set defaults for control parameters for uniroot() and replace with any user-defined values
+      ### set vc.min and vc.max and possibly replace with any user-defined values
 
       con <- list(tol=.Machine$double.eps^0.25, maxiter=1000, verbose=FALSE, eptries=10)
 
@@ -569,6 +587,8 @@ confint.rma.mv <- function(object, parm, level, fixed=FALSE, sigma2, tau2, rho, 
             ci.lb <- sapply(ci.lb, transf)
             ci.ub <- sapply(ci.ub, transf)
          } else {
+            if (!is.primitive(transf) && !is.null(targs) && length(formals(transf)) == 1L)
+               stop(mstyle$stop("Function specified via 'transf' does not appear to have an argument for 'targs'."))
             beta  <- sapply(beta, transf, targs)
             ci.lb <- sapply(ci.lb, transf, targs)
             ci.ub <- sapply(ci.ub, transf, targs)

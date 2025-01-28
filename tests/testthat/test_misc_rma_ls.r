@@ -1,4 +1,4 @@
-### library(metafor); library(testthat); Sys.setenv(NOT_CRAN="true")
+### library(metafor); library(testthat); Sys.setenv(NOT_CRAN="true"); Sys.setenv(RUN_VIS_TESTS="true")
 
 context("Checking misc: location-scale models")
 
@@ -175,6 +175,8 @@ test_that("location-scale model works correctly for multiple predictors", {
    expect_warning(res10 <- rma(yi, vi, data=dat, scale = ~ grade + meta + sqrt(ni), control=list(optimizer="lbfgsb3c")))
    expect_warning(res11 <- rma(yi, vi, data=dat, scale = ~ grade + meta + sqrt(ni), control=list(optimizer="subplex")))
    expect_warning(res12 <- rma(yi, vi, data=dat, scale = ~ grade + meta + sqrt(ni), control=list(optimizer="BBoptim")))
+   expect_warning(res13 <- rma(yi, vi, data=dat, scale = ~ grade + meta + sqrt(ni), control=list(optimizer="Rcgmin")))
+   expect_warning(res14 <- rma(yi, vi, data=dat, scale = ~ grade + meta + sqrt(ni), control=list(optimizer="Rvmmin")))
 
    expect_equivalent(res1$alpha,  c(-1.08826059, -0.03429344, 2.09197456, -0.28439165), tolerance=.tol[["coef"]])
    expect_equivalent(res2$alpha,  c(-1.08879415, -0.03426271, 2.09166227, -0.28432946), tolerance=.tol[["coef"]])
@@ -185,9 +187,11 @@ test_that("location-scale model works correctly for multiple predictors", {
    expect_equivalent(res7$alpha,  c(-1.08867491, -0.03415188, 2.09213170, -0.28436838), tolerance=.tol[["coef"]])
    expect_equivalent(res8$alpha,  c(-1.08825988, -0.03429568, 2.09198084, -0.28439174), tolerance=.tol[["coef"]])
    expect_equivalent(res9$alpha,  c(-1.08826216, -0.03429383, 2.09197932, -0.28439198), tolerance=.tol[["coef"]])
-   expect_equivalent(res10$alpha, c(-1.08847719, -0.03428306, 2.09219886, -0.28439198), tolerance=.tol[["coef"]])
+   expect_equivalent(res10$alpha, c(-1.08825730, -0.03429256, 2.09197369, -0.28439170), tolerance=.tol[["coef"]])
    expect_equivalent(res11$alpha, c(-1.08826074, -0.03429341, 2.09197437, -0.28439162), tolerance=.tol[["coef"]])
-   expect_equivalent(res11$alpha, c(-1.08824263, -0.03429451, 2.09195305, -0.28439121), tolerance=.tol[["coef"]])
+   expect_equivalent(res12$alpha, c(-1.08823316, -0.03429494, 2.09194049, -0.28439102), tolerance=.tol[["coef"]])
+   expect_equivalent(res13$alpha, c(-1.08826085, -0.03429338, 2.09197445, -0.28439162), tolerance=.tol[["coef"]])
+   expect_equivalent(res14$alpha, c(-1.08826091, -0.03429340, 2.09197450, -0.28439161), tolerance=.tol[["coef"]])
 
 })
 
@@ -205,11 +209,19 @@ test_that("permutation tests work correctly for a location-scale model", {
    expect_equivalent(sav$pval, 0.01, tolerance=.tol[["pval"]])
    expect_equivalent(sav$pval.alpha, c(0.81, 0.95, 0.02, 0.04), tolerance=.tol[["coef"]])
 
-   png(filename="images/test_misc_rma_ls_permutest_test.png", res=200, width=1800, height=1800, type="cairo")
-   plot(sav)
+   png(filename="images/test_misc_rma_ls_permutest_light_test.png", res=200, width=1800, height=1800, type="cairo")
+   plot(sav, QS=TRUE, alpha=1:4)
    dev.off()
 
-   expect_true(.vistest("images/test_misc_rma_ls_permutest_test.png", "images/test_misc_rma_ls_permutest.png"))
+   expect_true(.vistest("images/test_misc_rma_ls_permutest_light_test.png", "images/test_misc_rma_ls_permutest_light.png"))
+
+   png(filename="images/test_misc_rma_ls_permutest_dark_test.png", res=200, width=1800, height=1800, type="cairo")
+   setmfopt(theme="dark")
+   plot(sav, QS=TRUE, alpha=1:4)
+   setmfopt(theme="default")
+   dev.off()
+
+   expect_true(.vistest("images/test_misc_rma_ls_permutest_dark_test.png", "images/test_misc_rma_ls_permutest_dark.png"))
 
 })
 
@@ -235,6 +247,9 @@ test_that("predict() works correctly for location-scale models", {
    pred <- predict(res, newmods=0:1)
    expect_equivalent(pred$pred, c(pred0$pred, pred1$pred), tolerance=.tol[["pred"]])
 
+   pred2 <- predict(res, newmods=cbind(1,0:1))
+   expect_equivalent(pred, pred2)
+
    pred <- predict(res, newmods=0:1, newscale=0:1)
 
    expect_equivalent(pred$pred,  c(pred0$pred,  pred1$pred), tolerance=.tol[["pred"]])
@@ -243,6 +258,13 @@ test_that("predict() works correctly for location-scale models", {
    expect_equivalent(pred$ci.ub, c(pred0$ci.ub, pred1$ci.ub), tolerance=.tol[["pred"]])
    expect_equivalent(pred$pi.lb, c(pred0$pi.lb, pred1$pi.lb), tolerance=.tol[["pred"]])
    expect_equivalent(pred$pi.ub, c(pred0$pi.ub, pred1$pi.ub), tolerance=.tol[["pred"]])
+
+   pred2 <- predict(res, newmods=cbind(1,0:1), newscale=0:1)
+   expect_equivalent(pred, pred2)
+   pred2 <- predict(res, newmods=0:1, newscale=cbind(1,0:1))
+   expect_equivalent(pred, pred2)
+   pred2 <- predict(res, newmods=cbind(1,0:1), newscale=cbind(1,0:1))
+   expect_equivalent(pred, pred2)
 
    pred <- predict(res, newscale=0:1, transf=exp)
    expect_equivalent(pred$pred, c(res0$tau2, res1$tau2), tolerance=.tol[["var"]])
@@ -280,11 +302,15 @@ test_that("anova() works correctly for location-scale models", {
    expect_equivalent(sav$QMp, 0.03463035, tolerance=.tol[["pval"]])
    tmp <- predict(res1, newmods=c(1,-1,0,0,0), intercept=FALSE)
    expect_equivalent(sav$Xb[1,1], tmp$pred, tolerance=.tol[["test"]])
+   tmp <- predict(res1, newmods=cbind(0,1,-1,0,0,0))
+   expect_equivalent(sav$Xb[1,1], tmp$pred, tolerance=.tol[["test"]])
 
    sav <- anova(res1, Z=c(0,1,-1,0,0,0))
    expect_equivalent(sav$QS,  0.3679934, tolerance=.tol[["test"]])
    expect_equivalent(sav$QSp, 0.5441001, tolerance=.tol[["pval"]])
    tmp <- predict(res1, newscale=c(1,-1,0,0,0), intercept=FALSE)
+   expect_equivalent(sav$Za[1,1], tmp$pred, tolerance=.tol[["test"]])
+   tmp <- predict(res1, newscale=cbind(0,1,-1,0,0,0))
    expect_equivalent(sav$Za[1,1], tmp$pred, tolerance=.tol[["test"]])
 
    expect_error(anova(res1, X=c(0,1,-1,0,0,0), Z=c(0,1,-1,0,0,0)))

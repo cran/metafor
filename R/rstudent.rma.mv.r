@@ -4,10 +4,16 @@ rstudent.rma.mv <- function(model, digits, progbar=FALSE, cluster, reestimate=TR
 
    .chkclass(class(model), must="rma.mv", notav="robust.rma")
 
+   if (is.null(model$not.na))
+      stop(mstyle$stop("Information needed to compute the residuals is not available in the model object."))
+
    na.act <- getOption("na.action")
 
    if (!is.element(na.act, c("na.omit", "na.exclude", "na.fail", "na.pass")))
       stop(mstyle$stop("Unknown 'na.action' specified under options()."))
+
+   if (is.null(model$yi))
+      stop(mstyle$stop("Information needed to compute the residuals is not available in the model object."))
 
    x <- model
 
@@ -61,7 +67,7 @@ rstudent.rma.mv <- function(model, digits, progbar=FALSE, cluster, reestimate=TR
 
    ddd <- list(...)
 
-   .chkdots(ddd, c("time", "LB"))
+   .chkdots(ddd, c("time", "LB", "code1", "code2"))
 
    if (.isTRUE(ddd$time))
       time.start <- proc.time()
@@ -75,7 +81,7 @@ rstudent.rma.mv <- function(model, digits, progbar=FALSE, cluster, reestimate=TR
    ###       of NAs as was done during model fitting
 
    if (length(cluster) != x$k.all)
-      stop(mstyle$stop(paste0("Length of variable specified via 'cluster' (", length(cluster), ") does not match length of data (", x$k.all, ").")))
+      stop(mstyle$stop(paste0("Length of the variable specified via 'cluster' (", length(cluster), ") does not match the length of the data (", x$k.all, ").")))
 
    cluster <- .getsubset(cluster, x$subset)
 
@@ -96,14 +102,17 @@ rstudent.rma.mv <- function(model, digits, progbar=FALSE, cluster, reestimate=TR
    ids <- unique(cluster)
    n <- length(ids)
 
+   if (!is.null(ddd[["code1"]]))
+      eval(expr = parse(text = ddd[["code1"]]))
+
    #########################################################################
 
    if (parallel == "no")
-      res <- pbapply::pblapply(seq_len(n), .rstudent.rma.mv, obj=x, parallel=parallel, cluster=cluster, ids=ids, reestimate=reestimate)
+      res <- pbapply::pblapply(seq_len(n), .rstudent.rma.mv, obj=x, parallel=parallel, cluster=cluster, ids=ids, reestimate=reestimate, code2=ddd$code2)
 
    if (parallel == "multicore")
-      res <- pbapply::pblapply(seq_len(n), .rstudent.rma.mv, obj=x, parallel=parallel, cluster=cluster, ids=ids, reestimate=reestimate, cl=ncpus)
-      #res <- parallel::mclapply(seq_len(n), .rstudent.rma.mv, obj=x, parallel=parallel, cluster=cluster, ids=ids, reestimate=reestimate, mc.cores=ncpus)
+      res <- pbapply::pblapply(seq_len(n), .rstudent.rma.mv, obj=x, parallel=parallel, cluster=cluster, ids=ids, reestimate=reestimate, code2=ddd$code2, cl=ncpus)
+      #res <- parallel::mclapply(seq_len(n), .rstudent.rma.mv, obj=x, parallel=parallel, cluster=cluster, ids=ids, reestimate=reestimate, code2=ddd$code2, mc.cores=ncpus)
 
    if (parallel == "snow") {
       if (is.null(cl)) {
@@ -111,12 +120,12 @@ rstudent.rma.mv <- function(model, digits, progbar=FALSE, cluster, reestimate=TR
          on.exit(parallel::stopCluster(cl), add=TRUE)
       }
       if (.isTRUE(ddd$LB)) {
-         res <- parallel::parLapplyLB(cl, seq_len(n), .rstudent.rma.mv, obj=x, parallel=parallel, cluster=cluster, ids=ids, reestimate=reestimate)
-         #res <- parallel::clusterApplyLB(cl, seq_len(n), .rstudent.rma.mv, obj=x, parallel=parallel, cluster=cluster, ids=ids, reestimate=reestimate)
+         res <- parallel::parLapplyLB(cl, seq_len(n), .rstudent.rma.mv, obj=x, parallel=parallel, cluster=cluster, ids=ids, reestimate=reestimate, code2=ddd$code2)
+         #res <- parallel::clusterApplyLB(cl, seq_len(n), .rstudent.rma.mv, obj=x, parallel=parallel, cluster=cluster, ids=ids, reestimate=reestimate, code2=ddd$code2)
       } else {
-         res <- pbapply::pblapply(seq_len(n), .rstudent.rma.mv, obj=x, parallel=parallel, cluster=cluster, ids=ids, reestimate=reestimate, cl=cl)
-         #res <- parallel::parLapply(cl, seq_len(n), .rstudent.rma.mv, obj=x, parallel=parallel, cluster=cluster, ids=ids, reestimate=reestimate)
-         #res <- parallel::clusterApply(cl, seq_len(n), .rstudent.rma.mv, obj=x, parallel=parallel, cluster=cluster, ids=ids, reestimate=reestimate)
+         res <- pbapply::pblapply(seq_len(n), .rstudent.rma.mv, obj=x, parallel=parallel, cluster=cluster, ids=ids, reestimate=reestimate, code2=ddd$code2, cl=cl)
+         #res <- parallel::parLapply(cl, seq_len(n), .rstudent.rma.mv, obj=x, parallel=parallel, cluster=cluster, ids=ids, reestimate=reestimate, code2=ddd$code2)
+         #res <- parallel::clusterApply(cl, seq_len(n), .rstudent.rma.mv, obj=x, parallel=parallel, cluster=cluster, ids=ids, reestimate=reestimate, code2=ddd$code2)
       }
    }
 

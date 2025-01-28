@@ -3,10 +3,10 @@ conv.delta <- function(yi, vi, ni, data, include, transf, var.names, append=TRUE
    mstyle <- .get.mstyle()
 
    if (missing(yi) || missing(vi))
-      stop(mstyle$stop("Must specify 'yi' and 'vi' arguments."))
+      stop(mstyle$stop("Must specify the 'yi' and 'vi' arguments."))
 
    if (missing(transf))
-      stop(mstyle$stop("Must specify 'transf' argument."))
+      stop(mstyle$stop("Must specify the 'transf' argument."))
 
    if (is.logical(replace)) {
       if (isTRUE(replace)) {
@@ -90,7 +90,7 @@ conv.delta <- function(yi, vi, ni, data, include, transf, var.names, append=TRUE
    ### check length of yi and vi (and ni)
 
    if (length(yi) != length(vi))
-      stop(mstyle$stop("Length of 'yi' and 'vi' is not the same."))
+      stop(mstyle$stop("Length of 'yi' and 'vi' are not the same."))
 
    if (!.equal.length(yi, vi, ni)) # a bit redundant with the above, but keep
       stop(mstyle$stop("Supplied data vectors are not all of the same length."))
@@ -109,7 +109,7 @@ conv.delta <- function(yi, vi, ni, data, include, transf, var.names, append=TRUE
    if (is.null(include))
       include <- rep(TRUE, k)
 
-   ### turn numeric include vector into logical vector
+   ### turn numeric include vector into a logical vector
 
    include <- .chksubset(include, k, stoponk0=FALSE)
 
@@ -139,8 +139,7 @@ conv.delta <- function(yi, vi, ni, data, include, transf, var.names, append=TRUE
 
    for (i in seq_along(dotargs)) {
       dotarglist[[i]] <- .getx(dotargs[i], mf=mf, data=x, checknumeric=TRUE)
-      if (length(dotarglist[[i]]) == 1L)
-         dotarglist[[i]] <- rep(dotarglist[[i]], k)
+      dotarglist[[i]] <- .expand1(dotarglist[[i]], k)
       names(dotarglist)[i] <- dotargs[i]
    }
 

@@ -36,7 +36,7 @@ vif(x, \dots)
 
       By default (i.e., if \code{btt} is not specified), VIFs are computed for the individual model coefficients.
 
-      Let \mjseqn{b_j} denote the estimate of the \mjeqn{j\textrm{th}}{jth} model coefficient of a particular meta-regression model and \mjeqn{\mbox{Var}[b_j]}{Var[b_j]} its variance (i.e., the corresponding diagonal element from the matrix obtained with the \code{\link[=vcov.rma]{vcov}} function). Moreover, let \mjseqn{b'_j} denote the estimate of the same model coefficient if the other moderator variables in the model had \emph{not} been included in the model and \mjeqn{\mbox{Var}[b'_j]}{Var[b'_j]} the corresponding variance. Then the VIF for the model coefficient is given by \mjdeqn{\mbox{VIF}[b_j] = \frac{\mbox{Var}[b_j]}{\mbox{Var}[b'_j]},}{VIF[b_j] = Var[b_j] / Var[b'_j],} which indicates the inflation in the variance of the estimated model coefficient due to potential collinearity of the \mjeqn{j\textrm{th}}{jth} moderator variable with the other moderator variables in the model. Taking the square root of a VIF gives the corresponding standard error inflation factor (SIF).
+      Let \mjseqn{b_j} denote the estimate of the \mjeqn{j\text{th}}{jth} model coefficient of a particular meta-regression model and \mjeqn{\text{Var}[b_j]}{Var[b_j]} its variance (i.e., the corresponding diagonal element from the matrix obtained with the \code{\link[=vcov.rma]{vcov}} function). Moreover, let \mjseqn{b'_j} denote the estimate of the same model coefficient if the other moderator variables in the model had \emph{not} been included in the model and \mjeqn{\text{Var}[b'_j]}{Var[b'_j]} the corresponding variance. Then the VIF for the model coefficient is given by \mjdeqn{\text{VIF}[b_j] = \frac{\text{Var}[b_j]}{\text{Var}[b'_j]},}{VIF[b_j] = Var[b_j] / Var[b'_j],} which indicates the inflation in the variance of the estimated model coefficient due to potential collinearity of the \mjeqn{j\text{th}}{jth} moderator variable with the other moderator variables in the model. Taking the square root of a VIF gives the corresponding standard error inflation factor (SIF).
 
    }
 
@@ -64,7 +64,7 @@ vif(x, \dots)
 
    \subsection{Simulating the Distribution of (G)VIFs Under Independence}{
 
-      As a more principled approach, we can simulate the distribution of a particular (G)VIF under independence and then examine how extreme the actually observed (G)VIF value is under this distribution. The distribution is simulated by randomly reshuffling the columns of the model matrix (to break any dependence between the moderators) and recomputing the (G)VIF. When setting \code{sim=TRUE}, this is done 1000 times (but one can also set \code{sim} to an integer to indicate how many (G)VIF values should be simulated).
+      As a more principled approach, we can simulate the distribution of a particular (G)VIF under independence and then examine how extreme the actually observed (G)VIF value is under this distribution. The distribution is simulated by randomly reshuffling the columns of the model matrix (to break any dependence between the moderators) and recomputing the (G)VIF. When setting \code{sim=TRUE}, this is done 1000 times (but one can also set \code{sim} to an integer to specify how many (G)VIF values should be simulated).
 
       The way the model matrix is reshuffled depends on how the model was fitted. When the model was specified as a formula via the \code{mods} argument and the data was supplied via the \code{data} argument, then each column of the data frame specified via \code{data} is reshuffled and the formula is evaluated within the reshuffled data (creating the corresponding reshuffled model matrix). This way, factor/character variables are properly reshuffled and derived terms (e.g., interactions, polynomials, splines) are correct constructed. This is the recommended approach.
 
@@ -80,13 +80,13 @@ vif(x, \dots)
 \value{
    An object of class \code{"vif.rma"}. The object is a list containing the following components:
    \item{vif}{a list of data frames with the (G)VIFs and (G)SIFs and some additional information.}
-   \item{vifs}{a vector with just the (G)VIFs.}
+   \item{vifs}{a vector with the (G)VIFs.}
    \item{table}{the model coefficient table (only when \code{table=TRUE}).}
    \item{sim}{a matrix with the simulated (G)VIF values (only when \code{sim=TRUE}).}
-   \item{prop}{vector with the proportions of simulated values that are smaller than the actually observed (G)VIF values (only when \code{sim=TRUE}).}
+   \item{prop}{a vector with the proportions of simulated values that are smaller than the actually observed (G)VIF values (only when \code{sim=TRUE}).}
    \item{\dots}{some additional elements/values.}
 
-   When \code{x} was a location-scale model object and (G)VIFs can be computed for both the location and the scale coefficients, then the object is a list with elements \code{beta} and \code{alpha}, where each element is an \code{"vif.rma"} object as described above.
+   When \code{x} was a location-scale model object and (G)VIFs can be computed for both the location and the scale coefficients, then the object is a list with elements \code{beta} and \code{alpha}, where each element is a \code{"vif.rma"} object as described above.
 
    The results are formatted and printed with the \code{print} function. To format the results as a data frame, one can use the \code{\link[=as.data.frame.vif.rma]{as.data.frame}} function. When \code{sim=TRUE}, the distribution of each (G)VIF can be plotted with the \code{\link[=plot.vif.rma]{plot}} function.
 }
@@ -100,7 +100,7 @@ vif(x, \dots)
    On machines with multiple cores, one can try to speed things up by delegating the model fitting to separate worker processes, that is, by setting \code{parallel="snow"} or \code{parallel="multicore"} and \code{ncpus} to some value larger than 1. Parallel processing makes use of the \code{\link[parallel]{parallel}} package, using the \code{\link[parallel]{makePSOCKcluster}} and \code{\link[parallel]{parLapply}} functions when \code{parallel="snow"} or using \code{\link[parallel]{mclapply}} when \code{parallel="multicore"} (the latter only works on Unix/Linux-alikes). With \code{parallel::detectCores()}, one can check on the number of available cores on the local machine.
 }
 \author{
-   Wolfgang Viechtbauer \email{wvb@metafor-project.org} \url{https://www.metafor-project.org}
+   Wolfgang Viechtbauer (\email{wvb@metafor-project.org}, \url{https://www.metafor-project.org}).
 }
 \references{
    Belsley, D. A., Kuh, E., & Welsch, R. E. (1980). \emph{Regression diagnostics}. New York: Wiley.
@@ -109,7 +109,7 @@ vif(x, \dots)
 
    Horn, J. L. (1965). A rationale and test for the number of factors in factor analysis. \emph{Psychometrika}, \bold{30}(2), 179--185. \verb{https://doi.org/10.1007/BF02289447}
 
-   Stewart, G. W. (1987). Collinearity and least squares regression. \emph{Statistical Science}, \bold{2}(1), 68-84. \verb{https://doi.org/10.1214/ss/1177013439}
+   Stewart, G. W. (1987). Collinearity and least squares regression. \emph{Statistical Science}, \bold{2}(1), 68--84. \verb{https://doi.org/10.1214/ss/1177013439}
 
    Wax, Y. (1992). Collinearity diagnosis for a relative risk regression-analysis: An application to assessment of diet cancer relationship in epidemiologic studies. \emph{Statistics in Medicine}, \bold{11}(10), 1273--1287. \verb{https://doi.org/10.1002/sim.4780111003}
 
@@ -148,6 +148,31 @@ vif(res, reestimate=TRUE)
 
 ### get full table
 vif(res, reestimate=TRUE, table=TRUE)
+
+############################################################################
+
+### an example where the VIFs are close to 1, but actually reflect considerable
+### multicollinearity as can be seen based on the simulation approach
+dat <- dat.mcdaniel1994
+dat <- escalc(measure="ZCOR", ri=ri, ni=ni, data=dat)
+res <- rma(yi, vi, mods = ~ factor(type) + factor(struct), data=dat)
+res
+vif(res)
+
+### use the simulation approach to analyze the size of the VIFs
+\dontrun{
+vifs <- vif(res, sim=TRUE, seed=1234)
+vifs
+plot(vifs, lwd=c(2,2), breaks=seq(1,2,by=0.0015), xlim=c(1,1.08))
+}
+
+### an example for a location-scale model
+res <- rma(yi, vi, mods = ~ factor(type) + factor(struct),
+                   scale = ~ factor(type) + factor(struct), data=dat)
+res
+vif(res)
+
+############################################################################
 
 ### calculate log risk ratios and corresponding sampling variances
 dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)

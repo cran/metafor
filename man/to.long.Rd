@@ -38,7 +38,7 @@ to.long(measure, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
    \item{to}{see the documentation of the \code{\link{escalc}} function.}
    \item{drop00}{see the documentation of the \code{\link{escalc}} function.}
    \item{vlong}{optional logical whether a very long format should be used (only relevant for \mjeqn{2 \times 2}{2x2} or \mjeqn{1 \times 2}{1x2} table data).}
-   \item{append}{logical to specify whether the data frame specified via the \code{data} argument (if one has been specified) should be returned together with the long format data (the default is \code{TRUE}). Can also be a character or numeric vector to indicate which variables from \code{data} to append.}
+   \item{append}{logical to specify whether the data frame specified via the \code{data} argument (if one has been specified) should be returned together with the long format data (the default is \code{TRUE}). Can also be a character or numeric vector to specify which variables from \code{data} to append.}
    \item{var.names}{optional character vector with variable names (the length depends on the data type). If unspecified, the function sets appropriate variable names by default.}
 }
 \details{
@@ -63,7 +63,7 @@ to.long(measure, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
    A data frame with either \mjseqn{k}, \mjeqn{2 \times k}{2*k}, or \mjeqn{4 \times k}{4*k} rows and an appropriate number of columns (depending on the data type) with the data in long format. If \code{append=TRUE} and a data frame was specified via the \code{data} argument, then the data in long format are appended to the original data frame (with rows repeated an appropriate number of times).
 }
 \author{
-   Wolfgang Viechtbauer \email{wvb@metafor-project.org} \url{https://www.metafor-project.org}
+   Wolfgang Viechtbauer (\email{wvb@metafor-project.org}, \url{https://www.metafor-project.org}).
 }
 \references{
    Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \verb{https://doi.org/10.18637/jss.v036.i03}

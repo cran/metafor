@@ -1,11 +1,10 @@
-### library(metafor); library(testthat); Sys.setenv(NOT_CRAN="true")
+### library(metafor); library(testthat); Sys.setenv(NOT_CRAN="true"); Sys.setenv(RUN_VIS_TESTS="true")
+
+### see: https://www.metafor-project.org/doku.php/tips:rma_vs_lm_and_lme
 
 context("Checking tip: rma() results match up with those from lm() and lme()")
 
 source("settings.r")
-
-### this is essentially checking the equivalence of the results as explained here:
-### https://www.metafor-project.org/doku.php/tips:rma_vs_lm_and_lme
 
 test_that("results for rma() and lm() match for method='FE'.", {
 
@@ -18,7 +17,7 @@ test_that("results for rma() and lm() match for method='FE'.", {
    expect_equivalent(coef(res.ee), coef(res.lm), tolerance=.tol[["coef"]])
 
    ### standard errors should be the same after adjusting the 'lm' one for sigma
-   expect_equivalent(res.ee$se, coef(summary(res.lm))[1,2] / sigma(res.lm), tolerance=.tol[["se"]])
+   expect_equivalent(se(res.ee), se(res.lm) / sigma(res.lm), tolerance=.tol[["se"]])
 
    ### fit the same model as is fitted by lm() with rma() function
    res.ee <- rma(yi, vi*sigma(res.lm)^2, data=dat, method="EE")
@@ -27,7 +26,7 @@ test_that("results for rma() and lm() match for method='FE'.", {
    expect_equivalent(coef(res.ee), coef(res.lm), tolerance=.tol[["coef"]])
 
    ### standard errors should be the same
-   expect_equivalent(res.ee$se, coef(summary(res.lm))[1,2], tolerance=.tol[["se"]])
+   expect_equivalent(se(res.ee), se(res.lm), tolerance=.tol[["se"]])
 
 })
 
@@ -45,7 +44,7 @@ test_that("results for rma() and lme() match for method='ML'.", {
    expect_equivalent(coef(res.re), fixef(res.lme), tolerance=.tol[["coef"]])
 
    ### standard errors should be the same after adjusting the 'rma' one by the factor sqrt(k/(k-p))
-   expect_equivalent(res.re$se * sqrt(res.re$k / (res.re$k - res.re$p)), summary(res.lme)$tTable[1,2], tolerance=.tol[["se"]])
+   expect_equivalent(se(res.re) * sqrt(res.re$k / (res.re$k - res.re$p)), summary(res.lme)$tTable[1,2], tolerance=.tol[["se"]])
 
    ### check that BLUPs are the same
    expect_equivalent(blup(res.re)$pred, coef(res.lme)$"(Intercept)", tolerance=.tol[["pred"]])
@@ -66,7 +65,7 @@ test_that("results for rma() and lme() match for method='REML'.", {
    expect_equivalent(coef(res.re), fixef(res.lme), tolerance=.tol[["coef"]])
 
    ### standard errors should be the same
-   expect_equivalent(res.re$se, summary(res.lme)$tTable[1,2], tolerance=.tol[["se"]])
+   expect_equivalent(se(res.re), summary(res.lme)$tTable[1,2], tolerance=.tol[["se"]])
 
    ### check that BLUPs are the same
    expect_equivalent(blup(res.re)$pred, coef(res.lme)$"(Intercept)", tolerance=.tol[["pred"]])

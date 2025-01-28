@@ -9,6 +9,9 @@ rstudent.rma.mh <- function(model, digits, progbar=FALSE, ...) {
    if (!is.element(na.act, c("na.omit", "na.exclude", "na.fail", "na.pass")))
       stop(mstyle$stop("Unknown 'na.action' specified under options()."))
 
+   if (is.null(model$outdat.f))
+      stop(mstyle$stop("Information needed to compute the residuals is not available in the model object."))
+
    x <- model
 
    if (missing(digits)) {
@@ -19,10 +22,13 @@ rstudent.rma.mh <- function(model, digits, progbar=FALSE, ...) {
 
    ddd <- list(...)
 
-   .chkdots(ddd, c("time"))
+   .chkdots(ddd, c("time", "code1", "code2"))
 
    if (.isTRUE(ddd$time))
       time.start <- proc.time()
+
+   if (!is.null(ddd[["code1"]]))
+      eval(expr = parse(text = ddd[["code1"]]))
 
    #########################################################################
 
@@ -42,6 +48,9 @@ rstudent.rma.mh <- function(model, digits, progbar=FALSE, ...) {
 
       if (progbar)
          pbapply::setpb(pbar, i)
+
+      if (!is.null(ddd[["code2"]]))
+         eval(expr = parse(text = ddd[["code2"]]))
 
       if (!x$not.na[i])
          next

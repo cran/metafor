@@ -6,6 +6,9 @@ trimfill.rma.uni <- function(x, side, estimator="L0", maxiter=100, verbose=FALSE
 
    .chkclass(class(x), must="rma.uni", notav=c("robust.rma", "rma.ls", "rma.gen", "rma.uni.selmodel"))
 
+   if (is.null(x$yi) || is.null(x$vi))
+      stop(mstyle$stop("Information needed for trim-and-fill method is not available in the model object."))
+
    if (!x$int.only)
       stop(mstyle$stop("Trim-and-fill method only applicable to models without moderators."))
 
@@ -14,7 +17,7 @@ trimfill.rma.uni <- function(x, side, estimator="L0", maxiter=100, verbose=FALSE
 
    estimator <- match.arg(estimator, c("L0", "R0", "Q0"))
 
-   if (x$k == 1)
+   if (x$k == 1L)
       stop(mstyle$stop("Stopped because k = 1."))
 
    #########################################################################

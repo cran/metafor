@@ -11,6 +11,9 @@ ranef.rma.uni <- function(object, level, digits, transf, targs, ...) {
    if (!is.element(na.act, c("na.omit", "na.exclude", "na.fail", "na.pass")))
       stop(mstyle$stop("Unknown 'na.action' specified under options()."))
 
+   if (is.null(x$yi.f) || is.null(x$vi.f) || is.null(x$X.f))
+      stop(mstyle$stop("Information needed to compute the BLUPs is not available in the model object."))
+
    if (missing(level))
       level <- x$level
 
@@ -47,8 +50,7 @@ ranef.rma.uni <- function(object, level, digits, transf, targs, ...) {
    ### see Appendix in: Raudenbush, S. W., & Bryk, A. S. (1985). Empirical
    ### Bayes meta-analysis. Journal of Educational Statistics, 10(2), 75-98
 
-   if (length(x$tau2.f) == 1L)
-      x$tau2.f <- rep(x$tau2.f, length(x$yi.f))
+   x$tau2.f <- .expand1(x$tau2.f, x$k.f)
 
    li <- ifelse(is.infinite(x$tau2.f), 1, x$tau2.f / (x$tau2.f + x$vi.f))
 
@@ -78,6 +80,8 @@ ranef.rma.uni <- function(object, level, digits, transf, targs, ...) {
          pi.lb <- sapply(pi.lb, transf)
          pi.ub <- sapply(pi.ub, transf)
       } else {
+         if (!is.primitive(transf) && !is.null(targs) && length(formals(transf)) == 1L)
+            stop(mstyle$stop("Function specified via 'transf' does not appear to have an argument for 'targs'."))
          pred  <- sapply(pred, transf, targs)
          se    <- rep(NA_real_, x$k.f)
          pi.lb <- sapply(pi.lb, transf, targs)

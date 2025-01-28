@@ -125,7 +125,7 @@ conv.wald <- function(out, ci.lb, ci.ub, zval, pval, n, data, include,
    if (is.null(include))
       include <- rep(TRUE, k)
 
-   ### turn numeric include vector into logical vector
+   ### turn numeric include vector into a logical vector
 
    include <- .chksubset(include, k, stoponk0=FALSE)
 
@@ -145,8 +145,7 @@ conv.wald <- function(out, ci.lb, ci.ub, zval, pval, n, data, include,
 
    ### if level is a single value, expand to the appropriate length
 
-   if (length(level) == 1L)
-      level <- rep(level, k)
+   level <- .expand1(level, k)
 
    if (length(level) != k)
       stop(mstyle$stop(paste0("Length of the 'level' argument (", length(level), ") does not correspond to the size of the dataset (", k, ").")))

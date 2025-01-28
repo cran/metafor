@@ -1,4 +1,4 @@
-### library(metafor); library(testthat); Sys.setenv(NOT_CRAN="true")
+### library(metafor); library(testthat); Sys.setenv(NOT_CRAN="true"); Sys.setenv(RUN_VIS_TESTS="true")
 
 context("Checking misc: matreg() function")
 
@@ -44,7 +44,7 @@ test_that("matreg() works correctly for 'dat.craft2003'.", {
       levels=c("acog.perf", "asom.perf", "conf.perf", "acog.asom", "acog.conf", "asom.conf"))
 
    ### multivariate random-effects model
-   expect_warning(res <- rma.mv(yi, V, mods = ~ var1.var2 - 1, random = ~ var1.var2 | study, struct="UN", data=dat, sparse=.sparse))
+   expect_warning(res <- rma.mv(yi, V, mods = ~ 0 + var1.var2, random = ~ var1.var2 | study, struct="UN", data=dat, sparse=.sparse))
 
    ### restructure estimated mean correlations into a 4x4 matrix
    R <- matrix(NA, nrow=4, ncol=4)

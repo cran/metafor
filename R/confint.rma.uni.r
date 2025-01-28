@@ -18,12 +18,12 @@ confint.rma.uni <- function(object, parm, level, fixed=FALSE, random=TRUE, type,
 
    x <- object
 
-   k <- x$k
-   p <- x$p
+   k  <- x$k
+   p  <- x$p
    yi <- x$yi
    vi <- x$vi
-   X <- x$X
-   Y <- cbind(yi)
+   X  <- x$X
+   Y  <- cbind(yi)
    weights <- x$weights
 
    if (missing(level))
@@ -40,6 +40,11 @@ confint.rma.uni <- function(object, parm, level, fixed=FALSE, random=TRUE, type,
 
    if (missing(targs))
       targs <- NULL
+
+   funlist <- lapply(list(transf.exp.int, transf.ilogit.int, transf.ztor.int, transf.exp.mode, transf.ilogit.mode, transf.ztor.mode), deparse)
+
+   if (is.null(targs) && any(sapply(funlist, identical, deparse(transf))) && inherits(x, c("rma.uni","rma.glmm")) && length(x$tau2 == 1L))
+      targs <- c(tau2=x$tau2)
 
    if (missing(control))
       control <- list()
@@ -83,7 +88,7 @@ confint.rma.uni <- function(object, parm, level, fixed=FALSE, random=TRUE, type,
 
    if (random) {
 
-      if (k == 1)
+      if (k == 1L)
          stop(mstyle$stop("Stopped because k = 1."))
 
       if (is.element(x$method, c("FE","EE","CE")))
@@ -97,10 +102,10 @@ confint.rma.uni <- function(object, parm, level, fixed=FALSE, random=TRUE, type,
 
       ######################################################################
 
-      ### set control parameters for uniroot() and possibly replace with user-defined values
-      ### set tau2.min and tau2.max and possibly replace with user-defined values
-      ### note: default tau2.min is smaller of 0 or tau2, since tau2 could in principle be negative
-      ### note: default tau2.max must be larger than tau2 and tau2.min and really should be much larger (at least 100)
+      ### set defaults for control parameters for uniroot() and replace with any user-defined values
+      ### set tau2.min and tau2.max and replace with any user-defined values
+      ### note: the default for tau2.min is the smaller of 0 and tau2, since tau2 could in principle be negative
+      ### note: the default for tau2.max must be larger than tau2 and tau2.min and really should be much larger (at least 100)
 
       if (!is.null(x$control$tau2.min) && x$control$tau2.min == -min(x$vi))
          x$control$tau2.min <- x$control$tau2.min + 0.0001 # push tau2.min just a bit above -min(vi) to avoid division by zero
@@ -149,7 +154,7 @@ confint.rma.uni <- function(object, parm, level, fixed=FALSE, random=TRUE, type,
          QE.tau2.max <- .QE.func(con$tau2.max, Y=Y, vi=vi, X=X, k=k, objective=0)
          QE.tau2.min <- try(.QE.func(con$tau2.min, Y=Y, vi=vi, X=X, k=k, objective=0), silent=TRUE)
 
-         #dfs <- 12; curve(dchisq(x, df=dfs), from=0, to=40, ylim=c(0,.1), xlab="", ylab=""); abline(v=qchisq(c(.025, .975), df=dfs)); text(qchisq(c(.025, .975), df=dfs)+1.6, .1, c("crit.l", "crit.u"))
+         #dfs <- 12; curve(dchisq(x, df=dfs), from=0, to=40, ylim=c(0,0.1), xlab="", ylab=""); abline(v=qchisq(c(0.025, 0.975), df=dfs)); text(qchisq(c(0.025, 0.975), df=dfs)+1.6, 0.1, c("crit.l", "crit.u"))
 
          ###################################################################
 
@@ -603,6 +608,8 @@ confint.rma.uni <- function(object, parm, level, fixed=FALSE, random=TRUE, type,
             ci.lb <- sapply(ci.lb, transf)
             ci.ub <- sapply(ci.ub, transf)
          } else {
+            if (!is.primitive(transf) && !is.null(targs) && length(formals(transf)) == 1L)
+               stop(mstyle$stop("Function specified via 'transf' does not appear to have an argument for 'targs'."))
             beta  <- sapply(beta, transf, targs)
             ci.lb <- sapply(ci.lb, transf, targs)
             ci.ub <- sapply(ci.ub, transf, targs)

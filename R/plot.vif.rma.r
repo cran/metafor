@@ -1,6 +1,6 @@
 plot.vif.rma <- function(x,
    breaks="Scott", freq=FALSE, col, border, col.out, col.density,
-   trim=0, adjust=1, lwd=c(2,0), layout, ...) {
+   trim=0, adjust=1, lwd=c(2,0), ...) {
 
    #########################################################################
 
@@ -17,54 +17,50 @@ plot.vif.rma <- function(x,
       border <- .coladj(par("bg"), dark=0.1, light=-0.1)
 
    if (missing(col.out))
-      col.out <- rgb(1,0,0,0.5)
+      col.out <- ifelse(.is.dark(), rgb(0.7,0.15,0.15,0.5), rgb(1,0,0,0.5))
 
    if (missing(col.density))
       col.density <- ifelse(.is.dark(), "dodgerblue", "blue")
-
-   par.mfrow <- par("mfrow")
 
    if (!is.null(x$alpha)) {
 
       if (is.null(x[[2]]$sim)) {
          plot(x[[1]], breaks=breaks, freq=freq, col=col, border=border, trim=trim, col.out=col.out,
-              col.density=col.density, adjust=adjust, lwd=lwd, layout=layout, mainadd="Location ", ...)
+              col.density=col.density, adjust=adjust, lwd=lwd, mainadd="Location ", ...)
          return(invisible())
       }
 
       if (is.null(x[[1]]$sim)) {
          plot(x[[2]], breaks=breaks, freq=freq, col=col, border=border, trim=trim, col.out=col.out,
-              col.density=col.density, adjust=adjust, lwd=lwd, layout=layout, mainadd="Scale ", ...)
+              col.density=col.density, adjust=adjust, lwd=lwd, mainadd="Scale ", ...)
          return(invisible())
       }
 
       np <- length(x[[1]]$vifs) + length(x[[2]]$vifs)
 
-      ### set/check layout argument
-
-      if (missing(layout)) {
-         layout <- n2mfrow(np)
-      } else {
-         layout <- layout[layout >= 1]
-         layout <- round(layout)
-         if (length(layout) != 2L)
-            stop(mstyle$stop("Incorrect specification of 'layout' argument."))
+      if (np > 1L) {
+         # if no plotting device is open or mfrow is too small, set mfrow appropriately
+         if (dev.cur() == 1L || prod(par("mfrow")) < np)
+            par(mfrow=n2mfrow(np))
+         on.exit(par(mfrow=c(1L,1L)), add=TRUE)
       }
 
       plot(x[[1]], breaks=breaks, freq=freq, col=col, border=border, trim=trim, col.out=col.out,
-           col.density=col.density, adjust=adjust, lwd=lwd, layout=layout, mainadd="Location ", ...)
+           col.density=col.density, adjust=adjust, lwd=lwd, mainadd="Location ", setmfrow=FALSE, ...)
       plot(x[[2]], breaks=breaks, freq=freq, col=col, border=border, trim=trim, col.out=col.out,
-           col.density=col.density, adjust=adjust, lwd=lwd, mainadd="Scale ", new=FALSE, par.mfrow=par.mfrow, ...)
-
+           col.density=col.density, adjust=adjust, lwd=lwd, mainadd="Scale ", setmfrow=FALSE, ...)
       return(invisible())
 
    }
 
    ddd <- list(...)
 
-   tail    <- .chkddd(ddd$tail, "upper", match.arg(ddd$tail, c("lower", "upper")))
-   new     <- .chkddd(ddd$new, TRUE, FALSE)
-   mainadd <- .chkddd(ddd$mainadd, "")
+   tail     <- .chkddd(ddd$tail, "upper", match.arg(ddd$tail, c("lower", "upper")))
+   setmfrow <- .chkddd(ddd$setmfrow, TRUE, FALSE)
+   mainadd  <- .chkddd(ddd$mainadd, "")
+
+   if (!is.null(ddd$layout))
+      warning(mstyle$warning("Argument 'layout' has been deprecated."), call.=FALSE)
 
    ### check if 'sim' was actually used
 
@@ -75,15 +71,11 @@ plot.vif.rma <- function(x,
 
    np <- length(x$vifs)
 
-   ### set/check layout argument
-
-   if (missing(layout)) {
-      layout <- n2mfrow(np)
-   } else {
-      layout <- layout[layout >= 1]
-      layout <- round(layout)
-      if (length(layout) != 2L)
-         stop(mstyle$stop("Incorrect specification of 'layout' argument."))
+   if (setmfrow && np > 1L) {
+      # if no plotting device is open or mfrow is too small, set mfrow appropriately
+      if (dev.cur() == 1L || prod(par("mfrow")) < np)
+         par(mfrow=n2mfrow(np))
+      on.exit(par(mfrow=c(1L,1L)), add=TRUE)
    }
 
    ### 1st: obs stat, 2nd: density
@@ -103,18 +95,12 @@ plot.vif.rma <- function(x,
 
    ### local plotting functions
 
-   lhist     <- function(..., tail, new, par.mfrow, mainadd) hist(...)
-   labline   <- function(..., tail, new, par.mfrow, mainadd) abline(...)
-   lsegments <- function(..., tail, new, par.mfrow, mainadd) segments(...)
-   llines    <- function(..., tail, new, par.mfrow, mainadd) lines(...)
+   lhist     <- function(..., tail, setmfrow, mainadd, layout) hist(...)
+   labline   <- function(..., tail, setmfrow, mainadd, layout) abline(...)
+   lsegments <- function(..., tail, setmfrow, mainadd, layout) segments(...)
+   llines    <- function(..., tail, setmfrow, mainadd, layout) lines(...)
 
    ############################################################################
-
-   if (new) {
-      par(mfrow=layout)
-   } else {
-      on.exit(par(mfrow = ddd$par.mfrow), add=TRUE)
-   }
 
    for (i in seq_len(np)) {
 
@@ -148,9 +134,9 @@ plot.vif.rma <- function(x,
 
       if (x$vifs[i] > usr[2] && lwd[1] > 0) {
          ya <- mean(par("yaxp")[1:2])
-         arrows(usr[2] - .08*(usr[2]-usr[1]), ya, usr[2] - .01*(usr[2]-usr[1]), ya,
-                length = .02*(grconvertY(usr[4], from="user", to="inches")-
-                             (grconvertY(usr[3], from="user", to="inches"))))
+         arrows(usr[2] - 0.08*(usr[2]-usr[1]), ya, usr[2] - 0.01*(usr[2]-usr[1]), ya,
+                length = 0.02*(grconvertY(usr[4], from="user", to="inches")-
+                              (grconvertY(usr[3], from="user", to="inches"))))
       }
 
       x$vifs[i] <- min(x$vifs[i], usr[2])

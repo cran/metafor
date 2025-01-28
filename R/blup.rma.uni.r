@@ -9,6 +9,9 @@ blup.rma.uni <- function(x, level, digits, transf, targs, ...) {
    if (!is.element(na.act, c("na.omit", "na.exclude", "na.fail", "na.pass")))
       stop(mstyle$stop("Unknown 'na.action' specified under options()."))
 
+   if (is.null(x$X.f) || is.null(x$yi.f))
+      stop(mstyle$stop("Information needed to compute the BLUPs is not available in the model object."))
+
    if (missing(level))
       level <- x$level
 
@@ -37,6 +40,13 @@ blup.rma.uni <- function(x, level, digits, transf, targs, ...) {
    if (!is.null(x$weights) || !x$weighted)
       stop(mstyle$stop("Extraction of random effects not available for models with non-standard weights."))
 
+   ddd <- list(...)
+
+   .chkdots(ddd, c("code1", "code2"))
+
+   if (!is.null(ddd[["code1"]]))
+      eval(expr = parse(text = ddd[["code1"]]))
+
    #########################################################################
 
    pred  <- rep(NA_real_, x$k.f)
@@ -45,19 +55,25 @@ blup.rma.uni <- function(x, level, digits, transf, targs, ...) {
    ### see Appendix in: Raudenbush, S. W., & Bryk, A. S. (1985). Empirical
    ### Bayes meta-analysis. Journal of Educational Statistics, 10(2), 75-98
 
-   if (length(x$tau2.f) == 1L)
-      x$tau2.f <- rep(x$tau2.f, length(x$yi.f))
+   x$tau2.f <- .expand1(x$tau2.f, x$k.f)
 
    li <- ifelse(is.infinite(x$tau2.f), 1, x$tau2.f / (x$tau2.f + x$vi.f))
 
    for (i in seq_len(x$k.f)[x$not.na]) { # note: skipping NA cases
+
+      if (!is.null(ddd[["code2"]]))
+         eval(expr = parse(text = ddd[["code2"]]))
+
       Xi <- matrix(x$X.f[i,], nrow=1)
+
       pred[i]  <- li[i] * x$yi.f[i] + (1 - li[i])   * Xi %*% x$beta
+
       if (li[i] == 1) {
          vpred[i] <- li[i] * x$vi.f[i]
       } else {
          vpred[i] <- li[i] * x$vi.f[i] + (1 - li[i])^2 * Xi %*% tcrossprod(x$vb,Xi)
       }
+
    }
 
    se <- sqrt(vpred)
@@ -75,6 +91,8 @@ blup.rma.uni <- function(x, level, digits, transf, targs, ...) {
          pi.lb <- sapply(pi.lb, transf)
          pi.ub <- sapply(pi.ub, transf)
       } else {
+         if (!is.primitive(transf) && !is.null(targs) && length(formals(transf)) == 1L)
+            stop(mstyle$stop("Function specified via 'transf' does not appear to have an argument for 'targs'."))
          pred  <- sapply(pred, transf, targs)
          se    <- rep(NA_real_, x$k.f)
          pi.lb <- sapply(pi.lb, transf, targs)

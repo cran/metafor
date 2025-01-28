@@ -8,17 +8,24 @@
 \usage{
 labbe(x, \dots)
 
-\method{labbe}{rma}(x, xlim, ylim, xlab, ylab,
+\method{labbe}{rma}(x, xlim, ylim, lim, xlab, ylab, flip=FALSE,
+      ci=FALSE, pi=FALSE, grid=FALSE, legend=FALSE,
       add=x$add, to=x$to, transf, targs,
       pch=21, psize, plim=c(0.5,3.5),
-      col, bg, grid=FALSE, lty, \dots)
+      col, bg, lty, \dots)
 }
 \arguments{
    \item{x}{an object of class \code{"rma"}.}
    \item{xlim}{x-axis limits. If unspecified, the function sets the x-axis limits to some sensible values.}
    \item{ylim}{y-axis limits. If unspecified, the function sets the y-axis limits to some sensible values.}
+   \item{lim}{axis limits. If specified, this is used for both \code{xlim} and \code{ylim}.}
    \item{xlab}{title for the x-axis. If unspecified, the function sets an appropriate axis title.}
    \item{ylab}{title for the y-axis. If unspecified, the function sets an appropriate axis title.}
+   \item{flip}{logical to specify whether the groups to plot on the x- and y-axis should be flipped (the default is \code{FALSE}).}
+   \item{ci}{logical to specify whether the confidence interval region should be shown in the plot (the default is \code{FALSE}). Can also be a color name.}
+   \item{pi}{logical to specify whether the prediction interval region should be shown in the plot (the default is \code{FALSE}). Can also be a color name.}
+   \item{grid}{logical to specify whether a grid should be added to the plot (the default is \code{FALSE}). Can also be a color name.}
+   \item{legend}{logical to specify whether a legend should be added to the plot (the default is \code{FALSE}). Can also be a keyword to specify the position of the legend (see \code{\link{legend}}).}
    \item{add}{See the documentation of the \code{\link{escalc}} function for more details.}
    \item{to}{See the documentation of the \code{\link{escalc}} function for more details.}
    \item{transf}{optional argument to specify a function to transform the outcomes (e.g., \code{transf=exp}; see also \link{transf}). If unspecified, no transformation is used.}
@@ -28,8 +35,7 @@ labbe(x, \dots)
    \item{plim}{numeric vector of length 2 to scale the point sizes (ignored when \code{psize} is specified). See \sQuote{Details}.}
    \item{col}{optional character string to specify the (border) color of the points. Can also be a vector.}
    \item{bg}{optional character string to specify the background color of open plot symbols. Can also be a vector. Set to \code{NA} to make the plotting symbols transparent.}
-   \item{grid}{logical to specify whether a grid should be added to the plot. Can also be a color name.}
-   \item{lty}{optional character vector to specify the line type for the diagonal reference line of no effect and the line that indicates the estimated effect based on the fitted model. If unspecified, the function sets this to \code{c("solid","dashed")} by default (use \code{"blank"} to suppress a line).}
+   \item{lty}{optional argument to specify the line type for the diagonal reference line of no effect and the line that indicates the estimated effect based on the fitted model. If unspecified, the function sets this to \code{c("solid","dashed")} by default (use \code{"blank"} to suppress a line).}
    \item{\dots}{other arguments.}
 }
 \details{
@@ -39,9 +45,9 @@ labbe(x, \dots)
 
    As described under the documentation for the \code{\link{escalc}} function, zero cells can lead to problems when calculating particular outcomes. Adding a small constant to the cells of the \mjeqn{2 \times 2}{2x2} tables is a common solution to this problem. By default, the functions adopts the same method for handling zero cells as was used when fitting the model.
 
-   By default (i.e., when \code{psize} is not specified), the point sizes are a function of the precision (i.e., inverse standard errors) of the outcomes. This way, more precise estimates are visually more prominent in the plot. By making the point sizes a function of the inverse standard errors of the estimates, their areas are proportional to the inverse sampling variances, which corresponds to the weights they would receive in an equal-effects model. However, the point sizes are rescaled so that the smallest point size is \code{plim[1]} and the largest point size is \code{plim[2]}. As a result, their relative sizes (i.e., areas) no longer exactly correspond to their relative weights in such a model. If exactly relative point sizes are desired, one can set \code{plim[2]} to \code{NA}, in which case the points are rescaled so that the smallest point size corresponds to \code{plim[1]} and all other points are scaled accordingly. As a result, the largest point may be very large. Alternatively, one can set \code{plim[1]} to \code{NA}, in which case the points are rescaled so that the largest point size corresponds to \code{plim[2]} and all other points are scaled accordingly.
+   By default (i.e., when \code{psize} is not specified), the point sizes are a function of the precision (i.e., inverse standard errors) of the outcomes. This way, more precise estimates are visually more prominent in the plot. By making the point sizes a function of the inverse standard errors of the estimates, their areas are proportional to the inverse sampling variances, which corresponds to the weights they would receive in an equal-effects model. However, the point sizes are rescaled so that the smallest point size is \code{plim[1]} and the largest point size is \code{plim[2]}. As a result, their relative sizes (i.e., areas) no longer exactly correspond to their relative weights in such a model. If exactly relative point sizes are desired, one can set \code{plim[2]} to \code{NA}, in which case the points are rescaled so that the smallest point size corresponds to \code{plim[1]} and all other points are scaled accordingly. As a result, the largest point may be very large. Alternatively, one can set \code{plim[1]} to \code{NA}, in which case the points are rescaled so that the largest point size corresponds to \code{plim[2]} and all other points are scaled accordingly. As a result, the smallest point may be very small. To avoid the latter, one can also set \code{plim[3]}, which enforces a minimal point size.
 
-   The solid line corresponds to identical outcomes in the two groups (i.e., the absence of a difference between the two groups). The dashed line indicates the estimated effect based on the fitted model.
+   The solid line corresponds to identical outcomes in the two groups (i.e., the absence of a difference between the two groups). The dashed line indicates the estimated effect based on the fitted model. If \code{ci=TRUE}, then the darker shaded region indicates the corresponding confidence interval. If \code{pi=TRUE}, then the lighter shaded region indicates the corresponding prediction interval.
 }
 \value{
    A data frame with components:
@@ -56,9 +62,11 @@ labbe(x, \dots)
    Note that the data frame is returned invisibly.
 }
 \author{
-   Wolfgang Viechtbauer \email{wvb@metafor-project.org} \url{https://www.metafor-project.org}
+   Wolfgang Viechtbauer (\email{wvb@metafor-project.org}, \url{https://www.metafor-project.org}).
 }
 \references{
+   Jiménez, F. J., Guallar, E., & Martín-Moreno, J. M. (1997). A graphical display useful for meta-analysis. \emph{European Journal of Public Health}, \bold{7}(1), 101--105. \verb{https://doi.org/10.1093/eurpub/8.1.92}
+
    \enc{L'Abbé}{L'Abbe}, K. A., Detsky, A. S., & O'Rourke, K. (1987). Meta-analysis in clinical research. \emph{Annals of Internal Medicine}, \bold{107}(2), 224--233. \verb{https://doi.org/10.7326/0003-4819-107-2-224}
 
    Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \verb{https://doi.org/10.18637/jss.v036.i03}
@@ -67,13 +75,21 @@ labbe(x, \dots)
    \code{\link{rma.uni}}, \code{\link{rma.mh}}, \code{\link{rma.peto}}, and \code{\link{rma.glmm}} for functions to fit models for which \enc{L'Abbé}{L'Abbe} plots can be drawn.
 }
 \examples{
-### meta-analysis of the log risk ratios using a random-effects model
-res <- rma(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
+### meta-analysis of log odds ratios using a random-effects model
+dat <- dat.damico2009
+res <- rma(measure="OR", ai=xt, n1i=nt, ci=xc, n2i=nc, data=dat)
+res
 
-### default plot
+### default plot with log odds on the x- and y-axis
 labbe(res)
 
-### funnel plot with risk values on the x- and y-axis and add grid
-labbe(res, transf=exp, grid=TRUE)
+### plot with odds values on the x- and y-axis and some customization
+labbe(res, ci=TRUE, pi=TRUE, grid=TRUE, legend=TRUE, bty="l",
+      transf=exp, xlab="Odds (Control Group)", ylab="Odds (Treatment Group)")
+
+### plot with risk values on the x- and y-axis and some customization
+labbe(res, ci=TRUE, pi=TRUE, grid=TRUE, legend=TRUE, bty="l",
+      transf=plogis, lim=c(0,1), xlab="Risk (Control Group)",
+      ylab="Risk (Treatment Group)")
 }
 \keyword{hplot}

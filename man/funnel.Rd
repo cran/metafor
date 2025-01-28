@@ -30,7 +30,7 @@ funnel(x, \dots)
    \item{sei}{vector with the corresponding standard errors (note: only one of the two, \code{vi} or \code{sei}, needs to be specified).}
    \item{ni}{vector with the corresponding sample sizes. Only relevant when passing a vector via \code{x}.}
    \item{subset}{optional (logical or numeric) vector to specify the subset of studies that should be included in the plot. Only relevant when passing a vector via \code{x}.}
-   \item{yaxis}{either \code{"sei"}, \code{"vi"}, \code{"seinv"}, \code{"vinv"}, \code{"ni"}, \code{"ninv"}, \code{"sqrtni"}, \code{"sqrtninv"}, \code{"lni"}, or \code{"wi"} to indicate what values should be placed on the y-axis. See \sQuote{Details}.}
+   \item{yaxis}{either \code{"sei"}, \code{"vi"}, \code{"seinv"}, \code{"vinv"}, \code{"ni"}, \code{"ninv"}, \code{"sqrtni"}, \code{"sqrtninv"}, \code{"lni"}, or \code{"wi"} to specify what values should be placed on the y-axis. See \sQuote{Details}.}
    \item{xlim}{x-axis limits. If unspecified, the function sets the x-axis limits to some sensible values.}
    \item{ylim}{y-axis limits. If unspecified, the function sets the y-axis limits to some sensible values.}
    \item{xlab}{title for the x-axis. If unspecified, the function sets an appropriate axis title.}
@@ -42,7 +42,7 @@ funnel(x, \dots)
    \item{targs}{optional arguments needed by the function specified via \code{atransf}.}
    \item{digits}{optional integer to specify the number of decimal places to which the tick mark labels of the x- and y-axis should be rounded. Can also be a vector of two integers, the first to specify the number of decimal places for the x-axis, the second for the y-axis labels (e.g., \code{digits=c(2,3)}). If unspecified, the function tries to set the argument to some sensible values.}
    \item{level}{numeric value between 0 and 100 to specify the level of the pseudo confidence interval region (see \link[=misc-options]{here} for details). For \code{"rma"} objects, the default is to take the value from the object. May also be a vector of values to obtain multiple regions. See \sQuote{Examples}.}
-   \item{addtau2}{logical to indicate whether the amount of heterogeneity should be accounted for when drawing the pseudo confidence interval region (the default is \code{FALSE}). Ignored when \code{x} is a meta-regression model and residuals are plotted. See \sQuote{Details}.}
+   \item{addtau2}{logical to specify whether the amount of heterogeneity should be accounted for when drawing the pseudo confidence interval region (the default is \code{FALSE}). Ignored when \code{x} is a meta-regression model and residuals are plotted. See \sQuote{Details}.}
    \item{type}{either \code{"rstandard"} (default) or \code{"rstudent"} to specify whether the usual or deleted residuals should be used in creating the funnel plot when \code{x} is a meta-regression model. See \sQuote{Details}.}
    \item{back}{optional character string to specify the color of the plotting region background.}
    \item{shade}{optional character string to specify the color of the pseudo confidence interval region. When \code{level} is a vector of values, different shading colors can be specified for each region.}
@@ -55,11 +55,11 @@ funnel(x, \dots)
    \item{bg}{optional character string to specify the background color of open plot symbols. Can also be a vector.}
    \item{label}{argument to control the labeling of the points (the default is \code{FALSE}). See \sQuote{Details}.}
    \item{offset}{argument to control the distance between the points and the corresponding labels.}
-   \item{legend}{logical to indicate whether a legend should be added to the plot (the default is \code{FALSE}). See \sQuote{Details}.}
+   \item{legend}{logical to specify whether a legend should be added to the plot (the default is \code{FALSE}). See \sQuote{Details}.}
    \item{\dots}{other arguments.}
 }
 \details{
-   For equal- and random-effects models (i.e., models not involving moderators), the plot shows the observed effect sizes or outcomes on the x-axis against the corresponding standard errors (i.e., the square root of the sampling variances) on the y-axis. A vertical line indicates the estimate based on the model. A pseudo confidence interval region is drawn around this value with bounds equal to \mjeqn{\pm 1.96 \mbox{SE}}{±1.96*SE}, where \mjeqn{\mbox{SE}}{SE} is the standard error value from the y-axis (assuming \code{level=95}). If \code{addtau2=TRUE} (only for models of class \code{"rma.uni"}), then the bounds of the pseudo confidence interval region are equal to \mjeqn{\pm 1.96 \sqrt{\mbox{SE}^2 + \hat{\tau}^2}}{±1.96*\sqrt(SE^2 + \tau^2)}, where \mjeqn{\hat{\tau}^2}{\tau^2} is the amount of heterogeneity as estimated by the model.
+   For equal- and random-effects models (i.e., models not involving moderators), the plot shows the observed effect sizes or outcomes on the x-axis against the corresponding standard errors (i.e., the square root of the sampling variances) on the y-axis. A vertical line indicates the estimate based on the model. A pseudo confidence interval region is drawn around this value with bounds equal to \mjeqn{\pm 1.96 \text{SE}}{±1.96*SE}, where \mjeqn{\text{SE}}{SE} is the standard error value from the y-axis (assuming \code{level=95}). If \code{addtau2=TRUE} (only for models of class \code{"rma.uni"}), then the bounds of the pseudo confidence interval region are equal to \mjeqn{\pm 1.96 \sqrt{\text{SE}^2 + \hat{\tau}^2}}{±1.96*\sqrt(SE^2 + \tau^2)}, where \mjeqn{\hat{\tau}^2}{\tau^2} is the amount of heterogeneity as estimated by the model.
 
    For (mixed-effects) meta-regression models (i.e., models involving moderators), the plot shows the residuals on the x-axis against their corresponding standard errors. Either the usual or deleted residuals can be used for that purpose (set via the \code{type} argument). See \code{\link[=residuals.rma]{residuals}} for more details on the different types of residuals.
 
@@ -89,7 +89,7 @@ funnel(x, \dots)
 
    With the \code{label} argument, one can control whether points in the plot will be labeled. If \code{label="all"} (or \code{label=TRUE}), all points in the plot will be labeled. If \code{label="out"}, points falling outside of the pseudo confidence region will be labeled. Finally, one can also set this argument to a numeric value (between 1 and \mjseqn{k}) to specify how many of the most extreme points should be labeled (e.g., with \code{label=1} only the most extreme point are labeled, while with \code{label=3}, the most extreme, and the second and third most extreme points are labeled). With the \code{offset} argument, one can adjust the distance between the labels and the corresponding points.
 
-   By setting the \code{legend} argument to \code{TRUE}, a legend is added to the plot. One can also specify a keyword for this argument to indicate the position of the legend (e.g., \code{legend="topleft"}; see \code{\link{legend}} for options). Finally, this argument can also be a list, with elements \code{x}, \code{y}, \code{inset}, \code{bty}, and \code{bg}, which are passed on as the corresponding arguments to the \code{\link{legend}} function for even more control (elements not specified are set to defaults). The list can also include elements \code{studies} (a logical to indicate whether to include \sQuote{Studies} in the legend; default is \code{TRUE}) and \code{show} (either \code{"pvals"} to show the p-values corresponding to the shade regions, \code{"cis"} to show the confidence interval levels corresponding to the shade regions, or \code{NA} to show neither; default is \code{"pvals"}).
+   By setting the \code{legend} argument to \code{TRUE}, a legend is added to the plot. One can also use a keyword for this argument to specify the position of the legend (e.g., \code{legend="topleft"}; see \code{\link{legend}} for options). Finally, this argument can also be a list, with elements \code{x}, \code{y}, \code{inset}, \code{bty}, and \code{bg}, which are passed on as the corresponding arguments to the \code{\link{legend}} function for even more control (elements not specified are set to defaults). The list can also include elements \code{studies} (a logical to specify whether to include \sQuote{Studies} in the legend; default is \code{TRUE}) and \code{show} (either \code{"pvals"} to show the p-values corresponding to the shade regions, \code{"cis"} to show the confidence interval levels corresponding to the shade regions, or \code{NA} to show neither; default is \code{"pvals"}).
 
 }
 \note{
@@ -97,7 +97,7 @@ funnel(x, \dots)
 
    When using unweighted estimation, using \code{yaxis="wi"} will place all points on a horizontal line. When directly passing a vector with the observed effect sizes or outcomes to the function, \code{yaxis="wi"} is equivalent to \code{yaxis="vinv"}, except that the weights are expressed in percent.
 
-   Argument \code{slab} and when specifying vectors for arguments \code{pch}, \code{col}, and/or \code{bg} and \code{x} is an object of class \code{"rma"}, the variables specified are assumed to be of the same length as the data passed to the model fitting function (and if the \code{data} argument was used in the original model fit, then the variables will be searched for within this data frame first). Any subsetting and removal of studies with missing values is automatically applied to the variables specified via these arguments.
+   For argument \code{slab} and when specifying vectors for arguments \code{pch}, \code{col}, and/or \code{bg} and when \code{x} is an object of class \code{"rma"}, the variables specified are assumed to be of the same length as the data passed to the model fitting function (and if the \code{data} argument was used in the original model fit, then the variables will be searched for within this data frame first). Any subsetting and removal of studies with missing values is automatically applied to the variables specified via these arguments.
 }
 \value{
    A data frame with components:
@@ -107,7 +107,7 @@ funnel(x, \dots)
    Note that the data frame is returned invisibly.
 }
 \author{
-   Wolfgang Viechtbauer \email{wvb@metafor-project.org} \url{https://www.metafor-project.org}
+   Wolfgang Viechtbauer (\email{wvb@metafor-project.org}, \url{https://www.metafor-project.org}).
 }
 \references{
    Light, R. J., & Pillemer, D. B. (1984). \emph{Summing up: The science of reviewing research}. Cambridge, MA: Harvard University Press.

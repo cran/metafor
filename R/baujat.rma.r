@@ -10,8 +10,11 @@ baujat.rma <- function(x, xlim, ylim, xlab, ylab, cex, symbol="ids", grid=TRUE, 
    if (!is.element(na.act, c("na.omit", "na.exclude", "na.fail", "na.pass")))
       stop(mstyle$stop("Unknown 'na.action' specified under options()."))
 
-   if (x$k == 1)
+   if (x$k == 1L)
       stop(mstyle$stop("Stopped because k = 1."))
+
+   if (is.null(x$X.f))
+      stop(mstyle$stop("Information needed to construct the plot is not available in the model object."))
 
    .start.plot()
 
@@ -24,6 +27,16 @@ baujat.rma <- function(x, xlim, ylim, xlab, ylab, cex, symbol="ids", grid=TRUE, 
       gridcol <- grid
       grid <- TRUE
    }
+
+   ddd <- list(...)
+
+   lplot   <- function(..., code1, code2) plot(...)
+   lbox    <- function(..., code1, code2) box(...)
+   lpoints <- function(..., code1, code2) points(...)
+   ltext   <- function(..., code1, code2) text(...)
+
+   if (!is.null(ddd[["code1"]]))
+      eval(expr = parse(text = ddd[["code1"]]))
 
    #########################################################################
 
@@ -50,6 +63,9 @@ baujat.rma <- function(x, xlim, ylim, xlab, ylab, cex, symbol="ids", grid=TRUE, 
 
       if (progbar)
          pbapply::setpb(pbar, i)
+
+      if (!is.null(ddd[["code2"]]))
+         eval(expr = parse(text = ddd[["code2"]]))
 
       if (!x$not.na[i])
          next
@@ -122,34 +138,33 @@ baujat.rma <- function(x, xlim, ylim, xlab, ylab, cex, symbol="ids", grid=TRUE, 
 
    ### draw empty plot
 
-   plot(NA, xlab=xlab, ylab=ylab, xlim=xlim, ylim=ylim, ...)
+   lplot(NA, xlab=xlab, ylab=ylab, xlim=xlim, ylim=ylim, ...)
 
    ### add grid (and redraw box)
 
    if (.isTRUE(grid)) {
       grid(col=gridcol)
-      box(...)
+      lbox(...)
    }
 
    if (is.numeric(symbol)) {
 
-      if (length(symbol) == 1L)
-         symbol <- rep(symbol, x$k.all)
+      symbol <- .expand1(symbol, x$k.all)
 
       if (length(symbol) != x$k.all)
          stop(mstyle$stop(paste0("Length of the 'symbol' argument (", length(symbol), ") does not correspond to the size of the original dataset (", x$k.all, ").")))
 
       symbol <- .getsubset(symbol, x$subset)
 
-      points(x=xhati, y=yhati, cex=cex, pch=symbol, ...)
+      lpoints(x=xhati, y=yhati, cex=cex, pch=symbol, ...)
 
    }
 
    if (is.character(symbol) && symbol=="ids")
-      text(xhati, yhati, x$ids, cex=cex, ...)
+      ltext(xhati, yhati, x$ids, cex=cex, ...)
 
    if (is.character(symbol) && symbol=="slab")
-      text(xhati, yhati, x$slab, cex=cex, ...)
+      ltext(xhati, yhati, x$slab, cex=cex, ...)
 
    #########################################################################
 

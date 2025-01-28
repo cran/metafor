@@ -9,7 +9,10 @@ gosh.rma <- function(x, subsets, progbar=TRUE, parallel="no", ncpus=1, cl, ...) 
    if (!is.element(na.act, c("na.omit", "na.exclude", "na.fail", "na.pass")))
       stop(mstyle$stop("Unknown 'na.action' specified under options()."))
 
-   if (x$k == 1)
+   if (is.null(x$yi) || is.null(x$vi))
+      stop(mstyle$stop("Information needed to construct the plot is not available in the model object."))
+
+   if (x$k == 1L)
       stop(mstyle$stop("Stopped because k = 1."))
 
    parallel <- match.arg(parallel, c("no", "snow", "multicore"))
@@ -47,7 +50,7 @@ gosh.rma <- function(x, subsets, progbar=TRUE, parallel="no", ncpus=1, cl, ...) 
 
    ddd <- list(...)
 
-   .chkdots(ddd, c("seed", "time", "LB"))
+   .chkdots(ddd, c("seed", "time", "LB", "code1", "code2"))
 
    if (.isTRUE(ddd$time))
       time.start <- proc.time()
@@ -57,7 +60,7 @@ gosh.rma <- function(x, subsets, progbar=TRUE, parallel="no", ncpus=1, cl, ...) 
    N.tot <- sum(choose(x$k, x$p:x$k))
 
    ### if 'subsets' is missing, include all possible subsets if N.tot is <= 10^6
-   ### and otherwise include 10^6 random subsets; if the user specifies 'subsets'
+   ### and otherwise include 10^6 random subsets; if the user specified 'subsets'
    ### and N.tot <= subsets, then again include all possible subsets
 
    if (missing(subsets)) {
@@ -84,6 +87,9 @@ gosh.rma <- function(x, subsets, progbar=TRUE, parallel="no", ncpus=1, cl, ...) 
 
    if (progbar)
       message(paste0("Fitting ", N.tot, " models (based on ", ifelse(exact, "all possible", "random"), " subsets)."))
+
+   if (!is.null(ddd[["code1"]]))
+      eval(expr = parse(text = ddd[["code1"]]))
 
    #########################################################################
 
@@ -125,29 +131,29 @@ gosh.rma <- function(x, subsets, progbar=TRUE, parallel="no", ncpus=1, cl, ...) 
    if (parallel == "no") {
 
       if (inherits(x, "rma.uni"))
-         res <- pbapply::pbapply(incl, 1, .profile.rma.uni, obj=x, parallel=parallel, subset=TRUE, model=model, outlist=outlist)
+         res <- pbapply::pbapply(incl, 1, .profile.rma.uni, obj=x, parallel=parallel, subset=TRUE, model=model, outlist=outlist, code2=ddd$code2)
 
       if (inherits(x, "rma.mh"))
-         res <- pbapply::pbapply(incl, 1, .profile.rma.mh, obj=x, parallel=parallel, subset=TRUE, outlist=outlist)
+         res <- pbapply::pbapply(incl, 1, .profile.rma.mh, obj=x, parallel=parallel, subset=TRUE, outlist=outlist, code2=ddd$code2)
 
       if (inherits(x, "rma.peto"))
-         res <- pbapply::pbapply(incl, 1, .profile.rma.peto, obj=x, parallel=parallel, subset=TRUE, outlist=outlist)
+         res <- pbapply::pbapply(incl, 1, .profile.rma.peto, obj=x, parallel=parallel, subset=TRUE, outlist=outlist, code2=ddd$code2)
 
    }
 
    if (parallel == "multicore") {
 
       if (inherits(x, "rma.uni"))
-         res <- pbapply::pbapply(incl, 1, .profile.rma.uni, obj=x, parallel=parallel, subset=TRUE, model=model, outlist=outlist, cl=ncpus)
-         #res <- parallel::mclapply(asplit(incl, 1), .profile.rma.uni, obj=x, mc.cores=ncpus, parallel=parallel, subset=TRUE, model=model, outlist=outlist)
+         res <- pbapply::pbapply(incl, 1, .profile.rma.uni, obj=x, parallel=parallel, subset=TRUE, model=model, outlist=outlist, code2=ddd$code2, cl=ncpus)
+         #res <- parallel::mclapply(asplit(incl, 1), .profile.rma.uni, obj=x, mc.cores=ncpus, parallel=parallel, subset=TRUE, model=model, outlist=outlist, code2=ddd$code2)
 
       if (inherits(x, "rma.mh"))
-         res <- pbapply::pbapply(incl, 1, .profile.rma.mh, obj=x, parallel=parallel, subset=TRUE, outlist=outlist, cl=ncpus)
-         #res <- parallel::mclapply(asplit(incl, 1), .profile.rma.mh, obj=x, mc.cores=ncpus, parallel=parallel, subset=TRUE, outlist=outlist)
+         res <- pbapply::pbapply(incl, 1, .profile.rma.mh, obj=x, parallel=parallel, subset=TRUE, outlist=outlist, code2=ddd$code2, cl=ncpus)
+         #res <- parallel::mclapply(asplit(incl, 1), .profile.rma.mh, obj=x, mc.cores=ncpus, parallel=parallel, subset=TRUE, outlist=outlist, code2=ddd$code2)
 
       if (inherits(x, "rma.peto"))
-         res <- pbapply::pbapply(incl, 1, .profile.rma.peto, obj=x, parallel=parallel, subset=TRUE, outlist=outlist, cl=ncpus)
-         #res <- parallel::mclapply(asplit(incl, 1), .profile.rma.peto, obj=x, mc.cores=ncpus, parallel=parallel, subset=TRUE, outlist=outlist)
+         res <- pbapply::pbapply(incl, 1, .profile.rma.peto, obj=x, parallel=parallel, subset=TRUE, outlist=outlist, code2=ddd$code2, cl=ncpus)
+         #res <- parallel::mclapply(asplit(incl, 1), .profile.rma.peto, obj=x, mc.cores=ncpus, parallel=parallel, subset=TRUE, outlist=outlist, code2=ddd$code2)
 
    }
 
@@ -160,28 +166,28 @@ gosh.rma <- function(x, subsets, progbar=TRUE, parallel="no", ncpus=1, cl, ...) 
 
       if (inherits(x, "rma.uni")) {
          if (.isTRUE(ddd$LB)) {
-            res <- parallel::parLapplyLB(cl, asplit(incl, 1), .profile.rma.uni, obj=x, parallel=parallel, subset=TRUE, model=model, outlist=outlist)
+            res <- parallel::parLapplyLB(cl, asplit(incl, 1), .profile.rma.uni, obj=x, parallel=parallel, subset=TRUE, model=model, outlist=outlist, code2=ddd$code2)
          } else {
-            res <- pbapply::pbapply(incl, 1, .profile.rma.uni, obj=x, parallel=parallel, subset=TRUE, model=model, outlist=outlist, cl=cl)
-            #res <- parallel::parLapply(cl, asplit(incl, 1), .profile.rma.uni, obj=x, parallel=parallel, subset=TRUE, model=model, outlist=outlist)
+            res <- pbapply::pbapply(incl, 1, .profile.rma.uni, obj=x, parallel=parallel, subset=TRUE, model=model, outlist=outlist, code2=ddd$code2, cl=cl)
+            #res <- parallel::parLapply(cl, asplit(incl, 1), .profile.rma.uni, obj=x, parallel=parallel, subset=TRUE, model=model, outlist=outlist, code2=ddd$code2)
          }
       }
 
       if (inherits(x, "rma.mh")) {
          if (.isTRUE(ddd$LB)) {
-            res <- parallel::parLapplyLB(cl, asplit(incl, 1), .profile.rma.mh, obj=x, parallel=parallel, subset=TRUE, outlist=outlist)
+            res <- parallel::parLapplyLB(cl, asplit(incl, 1), .profile.rma.mh, obj=x, parallel=parallel, subset=TRUE, outlist=outlist, code2=ddd$code2)
          } else {
-            res <- pbapply::pbapply(incl, 1, .profile.rma.mh, obj=x, parallel=parallel, subset=TRUE, outlist=outlist, cl=cl)
-            #res <- parallel::parLapply(cl, asplit(incl, 1), .profile.rma.mh, obj=x, parallel=parallel, subset=TRUE, outlist=outlist)
+            res <- pbapply::pbapply(incl, 1, .profile.rma.mh, obj=x, parallel=parallel, subset=TRUE, outlist=outlist, code2=ddd$code2, cl=cl)
+            #res <- parallel::parLapply(cl, asplit(incl, 1), .profile.rma.mh, obj=x, parallel=parallel, subset=TRUE, outlist=outlist, code2=ddd$code2)
          }
       }
 
       if (inherits(x, "rma.peto")) {
          if (.isTRUE(ddd$LB)) {
-            res <- parallel::parLapplyLB(cl, asplit(incl, 1), .profile.rma.peto, obj=x, parallel=parallel, subset=TRUE, outlist=outlist)
+            res <- parallel::parLapplyLB(cl, asplit(incl, 1), .profile.rma.peto, obj=x, parallel=parallel, subset=TRUE, outlist=outlist, code2=ddd$code2)
          } else {
-            res <- pbapply::pbapply(incl, 1, .profile.rma.peto, obj=x, parallel=parallel, subset=TRUE, outlist=outlist, cl=cl)
-            #res <- parallel::parLapply(cl, asplit(incl, 1), .profile.rma.peto, obj=x, parallel=parallel, subset=TRUE, outlist=outlist)
+            res <- pbapply::pbapply(incl, 1, .profile.rma.peto, obj=x, parallel=parallel, subset=TRUE, outlist=outlist, code2=ddd$code2, cl=cl)
+            #res <- parallel::parLapply(cl, asplit(incl, 1), .profile.rma.peto, obj=x, parallel=parallel, subset=TRUE, outlist=outlist, code2=ddd$code2)
          }
       }
 

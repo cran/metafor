@@ -58,8 +58,8 @@ digits, cols, grid=TRUE, pch=19, cex=1, lwd=2, ...) {
 
    par.mar <- par("mar")
    par.mar.adj <- par.mar + c(0,0.5,0,0) # need a bit more space on the right for the y-axis label
-   par(mar = par.mar.adj)
-   on.exit(par(mar = par.mar), add=TRUE)
+   par(mar=par.mar.adj)
+   on.exit(par(mar=par.mar), add=TRUE)
 
    if (missing(at))
       at <- NULL
@@ -130,6 +130,8 @@ digits, cols, grid=TRUE, pch=19, cex=1, lwd=2, ...) {
       if (is.null(targs)) {
          dat$estim <- sapply(dat$estim, transf)
       } else {
+         if (!is.primitive(transf) && !is.null(targs) && length(formals(transf)) == 1L)
+            stop(mstyle$stop("Function specified via 'transf' does not appear to have an argument for 'targs'."))
          dat$estim <- sapply(dat$estim, transf, targs)
       }
    }

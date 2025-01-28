@@ -1,4 +1,4 @@
-### library(metafor); library(testthat); Sys.setenv(NOT_CRAN="true")
+### library(metafor); library(testthat); Sys.setenv(NOT_CRAN="true"); Sys.setenv(RUN_VIS_TESTS="true")
 
 context("Checking misc: rma.mv() function")
 
@@ -115,6 +115,10 @@ test_that("rma.mv() works correctly with different optimizers", {
    expect_equivalent(res$sigma2, 0.3131, tolerance=.tol[["var"]])
    res <- rma.mv(yi, vi, random = ~ 1 | trial, data=dat, control=list(optimizer="ucminf"), sparse=.sparse)
    expect_equivalent(res$sigma2, 0.3132, tolerance=.tol[["var"]])
+   res <- rma.mv(yi, vi, random = ~ 1 | trial, data=dat, control=list(optimizer="Rcgmin"), sparse=.sparse)
+   expect_equivalent(res$sigma2, 0.3132, tolerance=.tol[["var"]])
+   res <- rma.mv(yi, vi, random = ~ 1 | trial, data=dat, control=list(optimizer="Rvmmin"), sparse=.sparse)
+   expect_equivalent(res$sigma2, 0.3132, tolerance=.tol[["var"]])
 
 })
 
@@ -122,21 +126,24 @@ test_that("rma.mv() correctly handles 'beta' argument", {
 
    dat <- dat.berkey1998
    V <- vcalc(vi=1, cluster=author, rvars=c(v1i, v2i), data=dat)
-   res.unc <- rma.mv(yi, V, mods = ~ outcome - 1, random = ~ outcome | trial, struct="UN", data=dat, method="ML")
-   res.01 <- rma.mv(yi, V, mods = ~ outcome - 1, random = ~ outcome | trial, struct="UN", data=dat, method="ML", beta=c(0,0))
-   res.02 <- rma.mv(yi, V, mods = ~ outcome - 1, random = ~ outcome | trial, struct="UN", data=dat, method="ML", beta=c(NA,0))
-   res.03 <- rma.mv(yi, V, mods = ~ outcome - 1, random = ~ outcome | trial, struct="UN", data=dat, method="ML", beta=c(0,NA))
+   res.un <- rma.mv(yi, V, mods = ~ 0 + outcome, random = ~ outcome | trial, struct="UN", data=dat, method="ML")
+   res.01 <- rma.mv(yi, V, mods = ~ 0 + outcome, random = ~ outcome | trial, struct="UN", data=dat, method="ML", beta=c(0,0))
+   res.02 <- rma.mv(yi, V, mods = ~ 0 + outcome, random = ~ outcome | trial, struct="UN", data=dat, method="ML", beta=c(NA,0))
+   res.03 <- rma.mv(yi, V, mods = ~ 0 + outcome, random = ~ outcome | trial, struct="UN", data=dat, method="ML", beta=c(0,NA))
 
-   fstats <- fitstats(res.01, res.02, res.03, res.unc)
+   fstats <- fitstats(res.01, res.02, res.03, res.un)
    expect_equivalent(unlist(fstats[1,]), c(-2.464111, -0.691524, 1.010033, 5.840657), tolerance=.tol[["fit"]])
 
    dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
    res <- rma(yi, vi, scale = ~ 1, data=dat, optbeta=TRUE, beta=0)
    ll1 <- logLik(res)
-   res <- rma.mv(yi, vi, random = ~ 1 | trial, data=dat, beta=0)
+   res <- rma(yi, vi, scale = ~ 1, data=dat, optbeta=TRUE, beta=0, link="identity")
    ll2 <- logLik(res)
+   res <- rma.mv(yi, vi, random = ~ 1 | trial, data=dat, beta=0)
+   ll3 <- logLik(res)
 
    expect_equivalent(ll1, ll2, tolerance=.tol[["fit"]])
+   expect_equivalent(ll1, ll3, tolerance=.tol[["fit"]])
 
 })
 

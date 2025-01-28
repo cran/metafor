@@ -1,4 +1,4 @@
-permutest.rma.ls <- function(x, exact=FALSE, iter=1000, progbar=TRUE, digits, control, ...) {
+permutest.rma.ls <- function(x, exact=FALSE, iter=1000, btt=x$btt, att=x$att, progbar=TRUE, digits, control, ...) {
 
    mstyle <- .get.mstyle()
 
@@ -10,12 +10,17 @@ permutest.rma.ls <- function(x, exact=FALSE, iter=1000, progbar=TRUE, digits, co
       digits <- .get.digits(digits=digits, xdigits=x$digits, dmiss=FALSE)
    }
 
+   if (is.null(x$yi) || is.null(x$vi))
+      stop(mstyle$stop("Information needed to carry out permutation test is not available in the model object."))
+
    ddd <- list(...)
 
-   .chkdots(ddd, c("tol", "time", "seed", "verbose", "permci", "skip.beta", "skip.alpha"))
+   .chkdots(ddd, c("tol", "time", "seed", "verbose", "permci", "skip.beta", "skip.alpha", "fixed", "code1", "code2", "code3", "code4"))
 
-   if (!is.null(ddd$tol)) # in case user specifies comptol in the old manner
+   if (!is.null(ddd$tol)) # in case user specified comptol in the old manner
       comptol <- ddd$tol
+
+   fixed <- .chkddd(ddd$fixed, FALSE, .isTRUE(ddd$fixed))
 
    if (.isTRUE(ddd$permci))
       warning(mstyle$warning("Permutation-based CIs for location-scale models not currently available."), call.=FALSE)
@@ -50,7 +55,7 @@ permutest.rma.ls <- function(x, exact=FALSE, iter=1000, progbar=TRUE, digits, co
    if (skip.beta && skip.alpha)
       stop(mstyle$stop("Must run permutation test for at least one part of the model."))
 
-   ### set control parameters and possibly replace with user-defined values
+   ### set defaults for control parameters and replace with any user-defined values
 
    if (missing(control))
       control <- list()
@@ -69,6 +74,18 @@ permutest.rma.ls <- function(x, exact=FALSE, iter=1000, progbar=TRUE, digits, co
    if (is.character(exact) && exact == "i") {
       skip.beta  <- TRUE
       skip.alpha <- TRUE
+   }
+
+   if (!missing(btt) || !missing(att)) {
+
+      btt <- .set.btt(btt, x$p, x$int.incl, colnames(x$X), fixed=fixed)
+      att <- .set.btt(att, x$q, x$Z.int.incl, colnames(x$Z), fixed=fixed)
+
+      args <- list(yi=x$yi, vi=x$vi, weights=x$weights, mods=X, intercept=FALSE, scale=x$Z, link=x$link, method=x$method,
+                   weighted=x$weighted, test=x$test, level=x$level, btt=btt, att=att, alpha=ifelse(x$alpha.fix, x$alpha, NA),
+                   optbeta=x$optbeta, beta=ifelse(x$beta.fix, x$beta, NA), control=x$control)
+      x <- try(suppressWarnings(.do.call(rma.uni, args)), silent=!isTRUE(ddd$verbose))
+
    }
 
    #########################################################################
@@ -160,6 +177,9 @@ permutest.rma.ls <- function(x, exact=FALSE, iter=1000, progbar=TRUE, digits, co
       if (progbar)
          cat(mstyle$verbose(paste0("Running ", X.iter, " iterations for an ", ifelse(X.exact, "exact", "approximate"), " permutation test of the location model.\n")))
 
+      if (!is.null(ddd[["code1"]]))
+         eval(expr = parse(text = ddd[["code1"]]))
+
       if (x$int.only) {
 
          ### permutation test for intercept-only model
@@ -188,6 +208,9 @@ permutest.rma.ls <- function(x, exact=FALSE, iter=1000, progbar=TRUE, digits, co
 
             for (i in seq_len(X.iter)) {
 
+               if (!is.null(ddd[["code2"]]))
+                  eval(expr = parse(text = ddd[["code2"]]))
+
                args <- list(yi=signmat[i,]*x$yi, vi=x$vi, weights=x$weights, intercept=TRUE, scale=x$Z, link=x$link, method=x$method, weighted=x$weighted,
                             test=x$test, level=x$level, btt=1, alpha=ifelse(x$alpha.fix, x$alpha, NA), optbeta=x$optbeta, beta=ifelse(x$beta.fix, x$beta, NA),
                             control=x$control, skiphes=TRUE, outlist=outlist)
@@ -211,8 +234,11 @@ permutest.rma.ls <- function(x, exact=FALSE, iter=1000, progbar=TRUE, digits, co
 
             while (i <= X.iter) {
 
+               if (!is.null(ddd[["code2"]]))
+                  eval(expr = parse(text = ddd[["code2"]]))
+
                signs <- sample(c(-1,1), x$k, replace=TRUE) # easier to understand (a tad slower for small k, but faster for larger k)
-               #signs <- 2*rbinom(x$k,1,.5)-1
+               #signs <- 2*rbinom(x$k,1,0.5)-1
 
                args <- list(yi=signs*x$yi, vi=x$vi, weights=x$weights, intercept=TRUE, scale=x$Z, link=x$link, method=x$method, weighted=x$weighted,
                             test=x$test, level=x$level, btt=1, alpha=ifelse(x$alpha.fix, x$alpha, NA), optbeta=x$optbeta, beta=ifelse(x$beta.fix, x$beta, NA),
@@ -328,6 +354,9 @@ permutest.rma.ls <- function(x, exact=FALSE, iter=1000, progbar=TRUE, digits, co
 
             for (i in seq_len(X.iter)) {
 
+               if (!is.null(ddd[["code2"]]))
+                  eval(expr = parse(text = ddd[["code2"]]))
+
                args <- list(yi=x$yi, vi=x$vi, weights=x$weights, mods=cbind(X[permmat[i,],]), intercept=FALSE, scale=x$Z, link=x$link, method=x$method,
                             weighted=x$weighted, test=x$test, level=x$level, btt=x$btt, alpha=ifelse(x$alpha.fix, x$alpha, NA),
                             optbeta=x$optbeta, beta=ifelse(x$beta.fix, x$beta, NA), control=x$control, skiphes=FALSE, outlist=outlist)
@@ -350,6 +379,9 @@ permutest.rma.ls <- function(x, exact=FALSE, iter=1000, progbar=TRUE, digits, co
             i <- 1
 
             while (i <= X.iter) {
+
+               if (!is.null(ddd[["code2"]]))
+                  eval(expr = parse(text = ddd[["code2"]]))
 
                args <- list(yi=x$yi, vi=x$vi, weights=x$weights, mods=cbind(X[sample(x$k),]), intercept=FALSE, scale=x$Z, link=x$link, method=x$method,
                             weighted=x$weighted, test=x$test, level=x$level, btt=x$btt, alpha=ifelse(x$alpha.fix, x$alpha, NA),
@@ -514,6 +546,9 @@ permutest.rma.ls <- function(x, exact=FALSE, iter=1000, progbar=TRUE, digits, co
       if (progbar)
          cat(mstyle$verbose(paste0("Running ", Z.iter, " iterations for an ", ifelse(Z.exact, "exact", "approximate"), " permutation test of the scale model.\n")))
 
+      if (!is.null(ddd[["code3"]]))
+         eval(expr = parse(text = ddd[["code3"]]))
+
       ### permutation test for the scale model
 
       zval.alpha.perm <- try(suppressWarnings(matrix(NA_real_, nrow=Z.iter, ncol=x$q)), silent=TRUE)
@@ -541,6 +576,9 @@ permutest.rma.ls <- function(x, exact=FALSE, iter=1000, progbar=TRUE, digits, co
 
          for (i in seq_len(Z.iter)) {
 
+            if (!is.null(ddd[["code4"]]))
+               eval(expr = parse(text = ddd[["code4"]]))
+
             args <- list(yi=x$yi, vi=x$vi, weights=x$weights, mods=x$X, intercept=FALSE, scale=cbind(Z[permmat[i,],]), link=x$link, method=x$method,
                          weighted=x$weighted, test=x$test, level=x$level, att=x$att, alpha=ifelse(x$alpha.fix, x$alpha, NA),
                          optbeta=x$optbeta, beta=ifelse(x$beta.fix, x$beta, NA), control=x$control, skiphes=FALSE, outlist=outlist)
@@ -563,6 +601,9 @@ permutest.rma.ls <- function(x, exact=FALSE, iter=1000, progbar=TRUE, digits, co
          i <- 1
 
          while (i <= Z.iter) {
+
+            if (!is.null(ddd[["code4"]]))
+               eval(expr = parse(text = ddd[["code4"]]))
 
             args <- list(yi=x$yi, vi=x$vi, weights=x$weights, mods=x$X, intercept=FALSE, scale=cbind(Z[sample(x$k),]), link=x$link, method=x$method,
                          weighted=x$weighted, test=x$test, level=x$level, att=x$att, alpha=ifelse(x$alpha.fix, x$alpha, NA),

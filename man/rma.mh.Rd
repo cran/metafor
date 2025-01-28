@@ -11,6 +11,8 @@ rma.mh(ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
        correct=TRUE, level=95, verbose=FALSE, digits, \dots)
 }
 \arguments{
+   \emph{These arguments pertain to data input:}
+
    \item{ai}{vector with the \mjeqn{2 \times 2}{2x2} table frequencies (upper left cell). See below and the documentation of the \code{\link{escalc}} function for more details.}
    \item{bi}{vector with the \mjeqn{2 \times 2}{2x2} table frequencies (upper right cell). See below and the documentation of the \code{\link{escalc}} function for more details.}
    \item{ci}{vector with the \mjeqn{2 \times 2}{2x2} table frequencies (lower left cell). See below and the documentation of the \code{\link{escalc}} function for more details.}
@@ -25,9 +27,15 @@ rma.mh(ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
    \item{data}{optional data frame containing the data supplied to the function.}
    \item{slab}{optional vector with labels for the \mjseqn{k} studies.}
    \item{subset}{optional (logical or numeric) vector to specify the subset of studies that should be used for the analysis.}
+
+   \emph{These arguments pertain to handling of zero cells/counts/frequencies:}
+
    \item{add}{non-negative number to specify the amount to add to zero cells or even counts when calculating the observed effect sizes of the individual studies. Can also be a vector of two numbers, where the first number is used in the calculation of the observed effect sizes and the second number is used when applying the Mantel-Haenszel method. See below and the documentation of the \code{\link{escalc}} function for more details.}
    \item{to}{character string to specify when the values under \code{add} should be added (either \code{"only0"}, \code{"all"}, \code{"if0all"}, or \code{"none"}). Can also be a character vector, where the first string again applies when calculating the observed effect sizes or outcomes and the second string when applying the Mantel-Haenszel method. See below and the documentation of the \code{\link{escalc}} function for more details.}
    \item{drop00}{logical to specify whether studies with no cases/events (or only cases) in both groups should be dropped when calculating the observed effect sizes or outcomes (the outcomes for such studies are set to \code{NA}). Can also be a vector of two logicals, where the first applies to the calculation of the observed effect sizes or outcomes and the second when applying the Mantel-Haenszel method. See below and the documentation of the \code{\link{escalc}} function for more details.}
+
+   \emph{These arguments pertain to the model / computations and output:}
+
    \item{correct}{logical to specify whether to apply a continuity correction when computing the Cochran-Mantel-Haenszel test statistic.}
    \item{level}{numeric value between 0 and 100 to specify the confidence interval level (the default is 95; see \link[=misc-options]{here} for details).}
    \item{verbose}{logical to specify whether output should be generated on the progress of the model fitting (the default is \code{FALSE}).}
@@ -97,14 +105,14 @@ rma.mh(ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
 
    The \code{\link[=residuals.rma]{residuals}}, \code{\link[=rstandard.rma.mh]{rstandard}}, and \code{\link[=rstudent.rma.mh]{rstudent}} functions extract raw and standardized residuals. Leave-one-out diagnostics can be obtained with \code{\link[=leave1out.rma.mh]{leave1out}}.
 
-   Forest, funnel, radial, \enc{L'Abbé}{L'Abbe}, and Baujat plots can be obtained with \code{\link[=forest.rma]{forest}}, \code{\link[=funnel.rma]{funnel}}, \code{\link[=radial.rma]{radial}}, \code{\link[=labbe.rma]{labbe}}, and \code{\link[=baujat.rma]{baujat}}. The \code{\link[=qqnorm.rma.mh]{qqnorm}} function provides normal QQ plots of the standardized residuals. One can also just call \code{\link[=plot.rma.mh]{plot}} on the fitted model object to obtain various plots at once.
+   Forest, funnel, radial, \enc{L'Abbé}{L'Abbe}, and Baujat plots can be obtained with \code{\link[=forest.rma]{forest}}, \code{\link[=funnel.rma]{funnel}}, \code{\link[=radial.rma]{radial}}, \code{\link[=labbe.rma]{labbe}}, and \code{\link[=baujat.rma]{baujat}}. The \code{\link[=qqnorm.rma.mh]{qqnorm}} function provides normal QQ plots of the standardized residuals. One can also call \code{\link[=plot.rma.mh]{plot}} on the fitted model object to obtain various plots at once.
 
    A cumulative meta-analysis (i.e., adding one observation at a time) can be obtained with \code{\link[=cumul.rma.mh]{cumul}}.
 
    Other extractor functions include \code{\link[=coef.rma]{coef}}, \code{\link[=vcov.rma]{vcov}}, \code{\link[=logLik.rma]{logLik}}, \code{\link[=deviance.rma]{deviance}}, \code{\link[=AIC.rma]{AIC}}, and \code{\link[=BIC.rma]{BIC}}.
 }
 \author{
-   Wolfgang Viechtbauer \email{wvb@metafor-project.org} \url{https://www.metafor-project.org}
+   Wolfgang Viechtbauer (\email{wvb@metafor-project.org}, \url{https://www.metafor-project.org}).
 }
 \references{
    Cochran, W. G. (1954). Some methods for strengthening the common \mjseqn{\chi^2} tests. \emph{Biometrics}, \bold{10}(4), 417--451. \verb{https://doi.org/10.2307/3001616}

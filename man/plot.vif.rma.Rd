@@ -6,12 +6,12 @@
 }
 \usage{
 \method{plot}{vif.rma}(x, breaks="Scott", freq=FALSE, col, border, col.out, col.density,
-     trim=0, adjust=1, lwd=c(2,0), layout, \dots)
+     trim=0, adjust=1, lwd=c(2,0), \dots)
 }
 \arguments{
    \item{x}{an object of class \code{"vif.rma"} obtained with \code{\link[=vif.rma]{vif}}.}
    \item{breaks}{argument to be passed on to the corresponding argument of \code{\link{hist}} to set (the method for determining) the (number of) breakpoints.}
-   \item{freq}{logical to indicate whether frequencies or probability densities should be plotted (the default is \code{FALSE} to plot densities).}
+   \item{freq}{logical to specify whether frequencies (if \code{TRUE}) or probability densities should be plotted (the default is \code{FALSE}).}
    \item{col}{optional character string to specify the color of the histogram bars.}
    \item{border}{optional character string to specify the color of the borders around the bars.}
    \item{col.out}{optional character string to specify the color of the bars that are more extreme than the observed (G)VIF value (the default is a semi-transparent shade of red).}
@@ -19,7 +19,6 @@
    \item{trim}{the fraction (up to 0.5) of observations to be trimmed from the upper tail of each distribution before its histogram is plotted.}
    \item{adjust}{numeric value to be passed on to the corresponding argument of \code{\link{density}} (for adjusting the bandwidth of the kernel density estimate).}
    \item{lwd}{numeric vector to specify the width of the vertical lines corresponding to the value of the observed (G)VIFs and of the density estimate (note: by default, the density estimate has a line width of 0 and is therefore not plotted).}
-   \item{layout}{optional vector of two numbers to specify the number of rows and columns for the layout of the figure.}
    \item{\dots}{other arguments.}
 }
 \details{
@@ -36,7 +35,7 @@
    A kernel density estimate of the distribution can be superimposed on top of the histogram (as a smoothed representation of the distribution). Note that the kernel density estimate of the distribution is only shown when setting the line width for this element greater than 0 via the \code{lwd} argument (e.g., \code{lwd=c(2,2)}).
 }
 \author{
-   Wolfgang Viechtbauer \email{wvb@metafor-project.org} \url{https://www.metafor-project.org}
+   Wolfgang Viechtbauer (\email{wvb@metafor-project.org}, \url{https://www.metafor-project.org}).
 }
 \references{
    Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \verb{https://doi.org/10.18637/jss.v036.i03}

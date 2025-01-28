@@ -34,8 +34,12 @@ label=FALSE, offset=0.4, legend=FALSE, ...) {
    if (missing(shade))
       shade <- .coladj(par("bg","fg"), dark=c(0.2,-0.8), light=c(0,1))
 
-   if (length(level) > 1L && length(shade) == 1L)
-      shade <- rep(shade, length(level))
+   if (length(level) > 1L && length(shade) == 1L) {
+      #shade <- rep(shade, length(level))
+      shade2 <- .coladj(par("bg","fg"), dark=c(0.5,-0.3), light=c(-0.5,0.3))
+      shade <- colorRampPalette(c(shade,shade2))(length(level))
+      shade[-1] <- rev(shade[-1])
+   }
 
    if (missing(hlines))
       hlines <- .coladj(par("bg","fg"), dark=c(0,-0.9), light=c(0,1))
@@ -70,7 +74,7 @@ label=FALSE, offset=0.4, legend=FALSE, ...) {
       vi <- NULL
 
    if (is.function(vi)) # if vi is utils::vi()
-      stop(mstyle$stop("Cannot find variable specified for 'vi' argument."))
+      stop(mstyle$stop("Cannot find variable specified for the 'vi' argument."))
 
    if (missing(sei))
       sei <- NULL
@@ -86,9 +90,9 @@ label=FALSE, offset=0.4, legend=FALSE, ...) {
 
    if (is.element(yaxis, c("sei", "vi", "seinv", "vinv", "wi"))) {
       if (is.null(vi))
-         stop(mstyle$stop("Must specify 'vi' or 'sei' argument."))
+         stop(mstyle$stop("Must specify the 'vi' or 'sei' argument."))
       if (length(vi) != k)
-         stop(mstyle$stop("Length of 'yi' and 'vi' (or 'sei') is not the same."))
+         stop(mstyle$stop("Length of 'yi' and 'vi' (or 'sei') are not the same."))
    }
 
    ### set negative variances and/or standard errors to 0
@@ -170,8 +174,7 @@ label=FALSE, offset=0.4, legend=FALSE, ...) {
 
    ### note: digits can also be a list (e.g., digits=list(2L,3)); trailing 0's are dropped for integers
 
-   if (length(lty) == 1L)
-      lty <- rep(lty, 2L) # 1st value = funnel lines, 2nd value = reference line
+   lty <- .expand1(lty, 2L) # 1st value = funnel lines, 2nd value = reference line
 
    if (length(pch) == 1L) {
       pch.vec <- FALSE
@@ -464,13 +467,13 @@ label=FALSE, offset=0.4, legend=FALSE, ...) {
 
       if (yaxis == "seinv") {
          rylim   <- ylim[2] - ylim[1]
-         #ylim[1] <- max(.0001, ylim[1] - (rylim * 0.10)) # not clear how much to add to bottom
+         #ylim[1] <- max(0.0001, ylim[1] - (rylim * 0.10)) # not clear how much to add to bottom
          ylim[2] <- ylim[2] + (rylim * 0.10)
       }
 
       if (yaxis == "vinv") {
          rylim   <- ylim[2] - ylim[1]
-         #ylim[1] <- max(.0001, ylim[1] - (rylim * 0.10)) # not clear how much to add to bottom
+         #ylim[1] <- max(0.0001, ylim[1] - (rylim * 0.10)) # not clear how much to add to bottom
          ylim[2] <- ylim[2] + (rylim * 0.10)
       }
 
@@ -578,6 +581,8 @@ label=FALSE, offset=0.4, legend=FALSE, ...) {
          if (is.null(targs)) {
             at.lab <- fmtx(sapply(at.lab, atransf), digits[[1]], drop0ifint=TRUE)
          } else {
+            if (!is.primitive(atransf) && !is.null(targs) && length(formals(atransf)) == 1L)
+               stop(mstyle$stop("Function specified via 'atransf' does not appear to have an argument for 'targs'."))
             at.lab <- fmtx(sapply(at.lab, atransf, targs), digits[[1]], drop0ifint=TRUE)
          }
       } else {

@@ -17,7 +17,7 @@ galbraith(x, \dots)
 }
 \arguments{
    \item{x}{an object of class \code{"rma"}.}
-   \item{center}{logical to indicate whether the plot should be centered horizontally at the model estimate (the default is \code{FALSE}).}
+   \item{center}{logical to specify whether the plot should be centered horizontally at the model estimate (the default is \code{FALSE}).}
    \item{xlim}{x-axis limits. If unspecified, the function sets the x-axis limits to some sensible values.}
    \item{zlim}{z-axis limits. If unspecified, the function sets the z-axis limits to some sensible values (note that the z-axis limits are the actual vertical limit of the plotting region).}
    \item{xlab}{title for the x-axis. If unspecified, the function sets an appropriate axis title.}
@@ -46,7 +46,7 @@ galbraith(x, \dots)
 
    The second (inner/smaller) arc that is drawn on the right hand side indicates the model estimate (in the middle of the arc) and the corresponding confidence interval (at the ends of the arc).
 
-   The shaded region in the plot is the z-axis error region. For \code{level=95} (or if this was the \code{level} value when the model was fitted), this corresponds to z-axis values equal to \mjeqn{\pm 1.96}{+-1.96}. Under the assumptions of the equal/random-effects models, approximately 95\% of the points should fall within this region.
+   The shaded region in the plot is the z-axis error region. For \code{level=95} (or if this was the \code{level} value when the model was fitted), this corresponds to z-axis values equal to \mjeqn{\pm 1.96}{±1.96}. Under the assumptions of the equal/random-effects models, approximately 95\% of the points should fall within this region.
 
    When \code{center=TRUE}, the values on the y-axis are centered around the model estimate. As a result, the plot is centered horizontally at the model estimate.
 
@@ -63,7 +63,7 @@ galbraith(x, \dots)
    Note that the data frame is returned invisibly.
 }
 \author{
-   Wolfgang Viechtbauer \email{wvb@metafor-project.org} \url{https://www.metafor-project.org}
+   Wolfgang Viechtbauer (\email{wvb@metafor-project.org}, \url{https://www.metafor-project.org}).
 }
 \references{
    Galbraith, R. F. (1988). Graphical display of estimates having differing standard errors. \emph{Technometrics}, \bold{30}(3), 271--281. \verb{https://doi.org/10.1080/00401706.1988.10488400}

@@ -10,6 +10,9 @@ rstandard.rma.mv <- function(model, digits, cluster, ...) {
    if (!is.element(na.act, c("na.omit", "na.exclude", "na.fail", "na.pass")))
       stop(mstyle$stop("Unknown 'na.action' specified under options()."))
 
+   if (is.null(model$yi) || is.null(model$X))
+      stop(mstyle$stop("Information needed to compute the residuals is not available in the model object."))
+
    x <- model
 
    if (missing(digits)) {
@@ -36,7 +39,7 @@ rstandard.rma.mv <- function(model, digits, cluster, ...) {
    ###       of NAs as was done during model fitting
 
    if (length(cluster) != x$k.all)
-      stop(mstyle$stop(paste0("Length of variable specified via 'cluster' (", length(cluster), ") does not match length of data (", x$k.all, ").")))
+      stop(mstyle$stop(paste0("Length of the variable specified via 'cluster' (", length(cluster), ") does not match the length of the data (", x$k.all, ").")))
 
    cluster <- .getsubset(cluster, x$subset)
 

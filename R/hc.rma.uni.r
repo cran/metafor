@@ -9,6 +9,9 @@ hc.rma.uni <- function(object, digits, transf, targs, control, ...) {
    if (!x$int.only)
       stop(mstyle$stop("Method only applicable to models without moderators."))
 
+   if (is.null(x$yi) || is.null(x$vi))
+      stop(mstyle$stop("Information needed is not available in the model object."))
+
    if (missing(digits)) {
       digits <- .get.digits(xdigits=x$digits, dmiss=TRUE)
    } else {
@@ -21,11 +24,16 @@ hc.rma.uni <- function(object, digits, transf, targs, control, ...) {
    if (missing(targs))
       targs <- NULL
 
+   funlist <- lapply(list(transf.exp.int, transf.ilogit.int, transf.ztor.int, transf.exp.mode, transf.ilogit.mode, transf.ztor.mode), deparse)
+
+   if (is.null(targs) && any(sapply(funlist, identical, deparse(transf))) && inherits(x, c("rma.uni","rma.glmm")) && length(x$tau2 == 1L))
+      targs <- c(tau2=x$tau2)
+
    yi <- x$yi
    vi <- x$vi
    k  <- length(yi)
 
-   if (k == 1)
+   if (k == 1L)
       stop(mstyle$stop("Stopped because k = 1."))
 
    if (!x$allvipos)
@@ -38,7 +46,8 @@ hc.rma.uni <- function(object, digits, transf, targs, control, ...) {
 
    #########################################################################
 
-   ### set control parameters for uniroot() and possibly replace with user-defined values
+   ### set defaults for control parameters for uniroot() and replace with any user-defined values
+
    con <- list(tol=.Machine$double.eps^0.25, maxiter=1000, verbose=FALSE)
    con.pos <- pmatch(names(control), names(con))
    con[c(na.omit(con.pos))] <- control[!is.na(con.pos)]
@@ -95,6 +104,7 @@ hc.rma.uni <- function(object, digits, transf, targs, control, ...) {
          pgamma(finv(r/x), scale=scale(SDR*r), shape=shape(SDR*r))*dnorm(r)
       }
       integral <- integrate(integrand, lower=x, upper=Inf)$value
+      #integral <- cubintegrate(integrand, lower=x, upper=Inf)$integral
       val <- integral - level / 2
       #cat(val, "\n")
       val
@@ -131,6 +141,8 @@ hc.rma.uni <- function(object, digits, transf, targs, control, ...) {
          ci.lb.rma <- sapply(ci.lb.rma, transf)
          ci.ub.rma <- sapply(ci.ub.rma, transf)
       } else {
+         if (!is.primitive(transf) && !is.null(targs) && length(formals(transf)) == 1L)
+            stop(mstyle$stop("Function specified via 'transf' does not appear to have an argument for 'targs'."))
          beta      <- sapply(beta, transf, targs)
          beta.rma  <- sapply(beta.rma, transf, targs)
          se        <- NA_real_

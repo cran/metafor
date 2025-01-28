@@ -1,4 +1,4 @@
-anova.rma <- function(object, object2, btt, X, att, Z, rhs, digits, refit=FALSE, ...) {
+anova.rma <- function(object, object2, btt, X, att, Z, rhs, adjust, digits, refit=FALSE, ...) {
 
    mstyle <- .get.mstyle()
 
@@ -12,7 +12,7 @@ anova.rma <- function(object, object2, btt, X, att, Z, rhs, digits, refit=FALSE,
 
    ddd <- list(...)
 
-   .chkdots(ddd, c("test", "L", "verbose", "fixed"))
+   .chkdots(ddd, c("test", "L", "verbose", "fixed", "df", "abbrev"))
 
    if (!is.null(ddd$L))
       X <- ddd$L
@@ -25,9 +25,27 @@ anova.rma <- function(object, object2, btt, X, att, Z, rhs, digits, refit=FALSE,
    if (!missing(Z) && !inherits(object, "rma.ls"))
       stop(mstyle$stop("Can only specify 'Z' for location-scale models."))
 
-   #mf <- match.call()
-   #if (any(grepl("pairwise(", as.character(mf), fixed=TRUE)))
-   #   try(assign("pairwise", object, envir=.metafor), silent=TRUE)
+   if (missing(adjust)) {
+      adjust <- NULL
+   } else {
+      if (is.logical(adjust)) {
+         if (isTRUE(adjust)) {
+            adjust <- "bonferroni"
+         } else {
+            adjust <- "none"
+         }
+      }
+      adjust <- try(match.arg(adjust, choices=p.adjust.methods), silent=TRUE)
+      if (inherits(adjust, "try-error"))
+         stop(mstyle$stop("Unknown 'adjust' method specified (see help(p.adjust) for options)."))
+   }
+
+   mf <- match.call()
+
+   if (any(grepl("pairmat(", as.character(mf), fixed=TRUE))) {
+      try(assign("pairmat", object, envir=.metafor), silent=TRUE)
+      on.exit(suppressWarnings(rm("pairmat", envir=.metafor)))
+   }
 
    if (missing(object2)) {
 
@@ -57,6 +75,11 @@ anova.rma <- function(object, object2, btt, X, att, Z, rhs, digits, refit=FALSE,
                   if (!missing(rhs))
                      stop(mstyle$stop("Cannot use 'rhs' argument when specifying a list for 'att'."))
                   sav <- lapply(att, function(attj) anova(x, att=attj, digits=digits, fixed=fixed))
+                  if (!is.null(adjust)) {
+                     QSp <- sapply(sav, function(x) x$QSp)
+                     QSp <- p.adjust(QSp, method=adjust)
+                     sav <- mapply(function(x,y) {x$QSp <- y; return(x)}, sav, QSp, SIMPLIFY=FALSE)
+                  }
                   names(sav) <- sapply(att, .format.btt)
                   class(sav) <- "list.anova.rma"
                   return(sav)
@@ -69,8 +92,7 @@ anova.rma <- function(object, object2, btt, X, att, Z, rhs, digits, refit=FALSE,
             if (missing(rhs)) {
                rhs <- rep(0, m)
             } else {
-               if (length(rhs) == 1L)
-                  rhs <- rep(rhs, m)
+               rhs <- .expand1(rhs, m)
                if (length(rhs) != m)
                   stop(mstyle$stop(paste0("Length of 'rhs' (", length(rhs), ") does not match the number of coefficients tested (", m, ").")))
             }
@@ -91,6 +113,9 @@ anova.rma <- function(object, object2, btt, X, att, Z, rhs, digits, refit=FALSE,
                QSp  <- pchisq(QS, df=QSdf[1], lower.tail=FALSE)
             }
 
+            if (!is.null(adjust))
+               QSp <- p.adjust(QSp, method=adjust)
+
             res <- list(QS=QS, QSdf=QSdf, QSp=QSp, att=att, k=x$k, q=x$q, m=m, test=x$test, digits=digits, type="Wald.att")
 
          } else {
@@ -106,6 +131,11 @@ anova.rma <- function(object, object2, btt, X, att, Z, rhs, digits, refit=FALSE,
                   if (!missing(rhs))
                      stop(mstyle$stop("Cannot use 'rhs' argument when specifying a list for 'btt'."))
                   sav <- lapply(btt, function(bttj) anova(x, btt=bttj, digits=digits, fixed=fixed))
+                  if (!is.null(adjust)) {
+                     QMp <- sapply(sav, function(x) x$QMp)
+                     QMp <- p.adjust(QMp, method=adjust)
+                     sav <- mapply(function(x,y) {x$QMp <- y; return(x)}, sav, QMp, SIMPLIFY=FALSE)
+                  }
                   names(sav) <- sapply(btt, .format.btt)
                   class(sav) <- "list.anova.rma"
                   return(sav)
@@ -118,8 +148,7 @@ anova.rma <- function(object, object2, btt, X, att, Z, rhs, digits, refit=FALSE,
             if (missing(rhs)) {
                rhs <- rep(0, m)
             } else {
-               if (length(rhs) == 1L)
-                  rhs <- rep(rhs, m)
+               rhs <- .expand1(rhs, m)
                if (length(rhs) != m)
                   stop(mstyle$stop(paste0("Length of 'rhs' (", length(rhs), ") does not match the number of coefficients tested (", m, ").")))
             }
@@ -155,6 +184,9 @@ anova.rma <- function(object, object2, btt, X, att, Z, rhs, digits, refit=FALSE,
                }
 
             }
+
+            if (!is.null(adjust))
+               QMp <- p.adjust(QMp, method=adjust)
 
             res <- list(QM=QM, QMdf=QMdf, QMp=QMp, btt=btt, k=x$k, p=x$p, m=m, test=x$test, digits=digits, type="Wald.btt", class=class(x))
 
@@ -193,8 +225,7 @@ anova.rma <- function(object, object2, btt, X, att, Z, rhs, digits, refit=FALSE,
             if (missing(rhs)) {
                rhs <- rep(0, m)
             } else {
-               if (length(rhs) == 1L)
-                  rhs <- rep(rhs, m)
+               rhs <- .expand1(rhs, m)
                if (length(rhs) != m)
                   stop(mstyle$stop(paste0("Length of 'rhs' (", length(rhs), ") does not match the number of linear combinations (", m, ").")))
             }
@@ -258,6 +289,16 @@ anova.rma <- function(object, object2, btt, X, att, Z, rhs, digits, refit=FALSE,
             hyp <- data.frame(hyp, stringsAsFactors=FALSE)
             colnames(hyp) <- ""
             rownames(hyp) <- paste0(seq_len(m), ":") # add '1:', '2:', ... as row names
+
+            ### abbreviate some hyp elements
+
+            if (.isTRUE(ddd$abbrev)) {
+               hyp[,1] <- gsub("factor(", "", hyp[,1], fixed=TRUE)
+               hyp[,1] <- gsub(")", "", hyp[,1], fixed=TRUE)
+            }
+
+            if (!is.null(adjust))
+               pval <- p.adjust(pval, method=adjust)
 
             res <- list(QS=QS, QSdf=QSdf, QSp=QSp, hyp=hyp, Za=Za, se=se, zval=zval, pval=pval, k=x$k, q=x$q, m=m, test=x$test, ddf=x$ddf.alpha, digits=digits, type="Wald.Za")
 
@@ -345,8 +386,7 @@ anova.rma <- function(object, object2, btt, X, att, Z, rhs, digits, refit=FALSE,
                if (missing(rhs)) {
                   rhs <- rep(0, m)
                } else {
-                  if (length(rhs) == 1L)
-                     rhs <- rep(rhs, m)
+                  rhs <- .expand1(rhs, m)
                   if (length(rhs) != m)
                      stop(mstyle$stop(paste0("Length of 'rhs' (", length(rhs), ") does not match the number of linear combinations (", m, ").")))
                }
@@ -419,6 +459,16 @@ anova.rma <- function(object, object2, btt, X, att, Z, rhs, digits, refit=FALSE,
             colnames(hyp) <- ""
             rownames(hyp) <- paste0(seq_len(m), ":") # add '1:', '2:', ... as row names
 
+            ### abbreviate some hyp elements
+
+            if (.isTRUE(ddd$abbrev)) {
+               hyp[,1] <- gsub("factor(", "", hyp[,1], fixed=TRUE)
+               hyp[,1] <- gsub(")", "", hyp[,1], fixed=TRUE)
+            }
+
+            if (!is.null(adjust))
+               pval <- p.adjust(pval, method=adjust)
+
             res <- list(QM=QM, QMdf=QMdf, QMp=QMp, hyp=hyp, Xb=Xb, se=se, zval=zval, pval=pval, k=x$k, p=x$p, m=m, test=x$test, ddf=ddf, digits=digits, type="Wald.Xb")
 
          }
@@ -444,6 +494,10 @@ anova.rma <- function(object, object2, btt, X, att, Z, rhs, digits, refit=FALSE,
 
       test <- .chkddd(ddd$test, "LRT", match.arg(ddd$test, c("LRT", "Wald")))
 
+      ### get df value (NULL if not specified)
+
+      df <- ddd$df
+
       ### assume 'object' is the full model and 'object2' the reduced model
 
       model.f <- object
@@ -456,12 +510,12 @@ anova.rma <- function(object, object2, btt, X, att, Z, rhs, digits, refit=FALSE,
 
       ### check if they have the same number of parameters
 
-      if (parms.f == parms.r)
+      if (is.null(df) && parms.f == parms.r)
          stop(mstyle$stop("Models have the same number of parameters. LRT not meaningful."))
 
-      ### if parms.f < parms.r, then let 'object' be the reduced model and 'object2' the full model
+      ### if parms.f < parms.r, then let 'object' be the reduced model and 'object2' the full model (only do this if 'df' is not specified)
 
-      if (parms.f < parms.r) {
+      if (is.null(df) && parms.f < parms.r) {
          model.f <- object2
          model.r <- object
          parms.f <- model.f$parms
@@ -473,13 +527,24 @@ anova.rma <- function(object, object2, btt, X, att, Z, rhs, digits, refit=FALSE,
       ###       isTRUE(all.equal()) because conversion to non-sparse can introduce some negligible discrepancies
 
       if (inherits(object, "rma.uni")) {
-         if (!(identical(as.vector(model.f$yi), as.vector(model.r$yi)) && isTRUE(all.equal(as.vector(model.f$vi), as.vector(model.r$vi)))))
-            stop(mstyle$stop("Observed outcomes and/or sampling variances not equal in the full and reduced model."))
+         if (!identical(model.f$chksumyi, model.r$chksumyi) || !identical(model.f$chksumvi, model.r$chksumvi))
+            stop(mstyle$stop("The observed outcomes and/or sampling variances are not equal in the full and reduced model."))
       }
 
-      if (inherits(object, "rma.mv")) {
-         if (!(identical(as.vector(model.f$yi), as.vector(model.r$yi)) && isTRUE(all.equal(as.matrix(model.f$V), as.matrix(model.r$V)))))
-            stop(mstyle$stop("Observed outcomes and/or sampling variances/covariances not equal in the full and reduced model."))
+      if (is.null(df)) {
+
+         if (inherits(object, "rma.mv")) {
+            if (!identical(model.f$chksumyi, model.r$chksumyi) || !identical(model.f$chksumV, model.r$chksumV))
+               stop(mstyle$stop("The observed outcomes and/or sampling variances/covariances are not equal in the full and reduced model."))
+         }
+
+      } else {
+
+         if (inherits(object, "rma.mv")) {
+            if (!(identical(model.f$chksumyi, model.r$chksumyi)))
+               stop(mstyle$stop("The observed outcomes are not equal in the full and reduced model."))
+         }
+
       }
 
       ### for Wald-type test, both models should be fitted using the same method
@@ -487,7 +552,7 @@ anova.rma <- function(object, object2, btt, X, att, Z, rhs, digits, refit=FALSE,
       if (test == "Wald" && (model.f$method != model.r$method))
          stop(mstyle$stop("Full and reduced model must use the same 'method' for the model fitting."))
 
-      ### for LRTs, reduced model may use method="FE/EE/CE" and full model method="(RE)ML" but the other way around doesn't really make sense
+      ### for LRTs, reduced model may use method="FE/EE/CE" and full model method="(RE)ML" but the other way around is not allowed
 
       if (is.element(model.f$method, c("FE","EE","CE")) && !is.element(model.r$method, c("FE","EE","CE")))
          stop(mstyle$stop("Full model uses a fixed- and reduced model uses a random/mixed-effects model."))
@@ -503,9 +568,10 @@ anova.rma <- function(object, object2, btt, X, att, Z, rhs, digits, refit=FALSE,
          warning(mstyle$warning("LRTs should be based on ML/REML estimation."), call.=FALSE)
 
       ### for LRTs based on REML estimation, check if fixed effects differ
-      if (test == "LRT" && model.f$method == "REML" && (!identical(model.f$X, model.r$X))) {
+
+      if (test == "LRT" && model.f$method == "REML" && !identical(model.f$chksumX, model.r$chksumX)) {
          if (refit) {
-            #message(mstyle$message("Refitting models with ML (instead of REML) estimation ..."))
+            #message(mstyle$message("Refitting the models with ML (instead of REML) estimation ..."))
             if (inherits(model.f, "rma.uni") && model.f$model == "rma.uni") {
                #model.f <- try(update(model.f, method="ML", data=model.f$data), silent=TRUE)
                args <- list(yi=model.f$yi, vi=model.f$vi, weights=model.f$weights, mods=model.f$X, intercept=FALSE, method="ML", weighted=model.f$weighted,
@@ -590,7 +656,12 @@ anova.rma <- function(object, object2, btt, X, att, Z, rhs, digits, refit=FALSE,
 
       if (test == "LRT") {
 
-         parms.diff <- parms.f - parms.r
+         if (is.null(df)) {
+            parms.diff <- parms.f - parms.r
+         } else {
+            parms.f <- parms.f + df
+            parms.diff <- df
+         }
 
          if (model.f$method == "REML") {
 

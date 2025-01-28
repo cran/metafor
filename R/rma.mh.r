@@ -77,7 +77,7 @@ correct=TRUE, level=95, verbose=FALSE, digits, ...) {
    if (verbose) .space()
 
    if (verbose)
-      message(mstyle$message("Extracting data and computing yi/vi values ..."))
+      message(mstyle$message("Extracting the data and computing yi/vi values ..."))
 
    ### check if data argument has been specified
 
@@ -128,7 +128,7 @@ correct=TRUE, level=95, verbose=FALSE, digits, ...) {
       ### generate study labels if none are specified
 
       if (verbose)
-         message(mstyle$message("Generating/extracting study labels ..."))
+         message(mstyle$message("Generating/extracting the study labels ..."))
 
       if (is.null(slab)) {
 
@@ -141,7 +141,7 @@ correct=TRUE, level=95, verbose=FALSE, digits, ...) {
             stop(mstyle$stop("NAs in study labels."))
 
          if (length(slab) != k)
-            stop(mstyle$stop("Study labels not of same length as data."))
+            stop(mstyle$stop(paste0("Length of the 'slab' argument (", length(slab), ") does not correspond to the size of the dataset (", k, ").")))
 
          if (is.factor(slab))
             slab <- as.character(slab)
@@ -211,7 +211,7 @@ correct=TRUE, level=95, verbose=FALSE, digits, ...) {
       if (any(has.na)) {
 
          if (verbose)
-            message(mstyle$message("Handling NAs in table data ..."))
+            message(mstyle$message("Handling NAs in the table data ..."))
 
          if (na.act == "na.omit" || na.act == "na.exclude" || na.act == "na.pass") {
             ai <- ai[not.na]
@@ -229,7 +229,7 @@ correct=TRUE, level=95, verbose=FALSE, digits, ...) {
 
       ### at least one study left?
 
-      if (k < 1)
+      if (k < 1L)
          stop(mstyle$stop("Processing terminated since k = 0."))
 
       ### check for NAs in yi/vi and act accordingly
@@ -337,7 +337,7 @@ correct=TRUE, level=95, verbose=FALSE, digits, ...) {
       ### generate study labels if none are specified
 
       if (verbose)
-         message(mstyle$message("Generating/extracting study labels ..."))
+         message(mstyle$message("Generating/extracting the study labels ..."))
 
       if (is.null(slab)) {
 
@@ -350,7 +350,7 @@ correct=TRUE, level=95, verbose=FALSE, digits, ...) {
             stop(mstyle$stop("NAs in study labels."))
 
          if (length(slab) != k)
-            stop(mstyle$stop("Study labels not of same length as data."))
+            stop(mstyle$stop(paste0("Length of the 'slab' argument (", length(slab), ") does not correspond to the size of the dataset (", k, ").")))
 
          slab.null <- FALSE
 
@@ -415,7 +415,7 @@ correct=TRUE, level=95, verbose=FALSE, digits, ...) {
       if (any(has.na)) {
 
          if (verbose)
-            message(mstyle$message("Handling NAs in table data ..."))
+            message(mstyle$message("Handling NAs in the table data ..."))
 
          if (na.act == "na.omit" || na.act == "na.exclude" || na.act == "na.pass") {
             x1i  <- x1i[not.na]
@@ -433,7 +433,7 @@ correct=TRUE, level=95, verbose=FALSE, digits, ...) {
 
       ### at least one study left?
 
-      if (k < 1)
+      if (k < 1L)
          stop(mstyle$stop("Processing terminated since k = 0."))
 
       ### check for NAs in yi/vi and act accordingly
@@ -723,7 +723,7 @@ correct=TRUE, level=95, verbose=FALSE, digits, ...) {
    ###### fit statistics
 
    if (verbose)
-      message(mstyle$message("Computing fit statistics and log-likelihood ..."))
+      message(mstyle$message("Computing the fit statistics and log-likelihood ..."))
 
    if (k.yi >= 1) {
 
@@ -756,7 +756,7 @@ correct=TRUE, level=95, verbose=FALSE, digits, ...) {
    ###### prepare output
 
    if (verbose)
-      message(mstyle$message("Preparing output ..."))
+      message(mstyle$message("Preparing the output ..."))
 
    parms     <- 1
    p         <- 1
@@ -786,6 +786,7 @@ correct=TRUE, level=95, verbose=FALSE, digits, ...) {
                   k=k, k.f=k.f, k.yi=k.yi, k.pos=k.pos, k.eff=k.eff, k.all=k.all, p=p, p.eff=p.eff, parms=parms,
                   int.only=int.only, intercept=intercept, coef.na=coef.na,
                   yi=yi, vi=vi, yi.f=yi.f, vi.f=vi.f, X.f=X.f,
+                  chksumyi=digest::digest(as.vector(yi)), chksumvi=digest::digest(as.vector(vi)),
                   outdat.f=outdat.f, outdat=outdat, ni=ni, ni.f=ni.f,
                   ids=ids, not.na=not.na, subset=subset, not.na.yivi=not.na.yivi, slab=slab, slab.null=slab.null,
                   measure=measure, method=method, weighted=weighted,
@@ -805,11 +806,12 @@ correct=TRUE, level=95, verbose=FALSE, digits, ...) {
                      tau2=tau2,
                      I2=I2, H2=H2,
                      QE=QE, QEp=QEp, CO=CO, COp=COp, MH=MH, MHp=MHp, BD=BD, BDp=BDp, TA=TA, TAp=TAp,
-                     k=k, k.yi=k.yi, k.pos=k.pos, k.eff=k.eff, p=p, p.eff=p.eff, parms=parms,
-                     int.only=int.only,
+                     k=k, k.f=k.f, k.yi=k.yi, k.pos=k.pos, k.eff=k.eff, p=p, p.eff=p.eff, parms=parms,
+                     int.only=int.only, intercept=intercept,
+                     chksumyi=digest::digest(as.vector(yi)), chksumvi=digest::digest(as.vector(vi)),
                      measure=measure, method=method,
                      test=test, ddf=ddf, dfs=ddf, btt=btt, m=m,
-                     digits=digits,
+                     digits=digits, level=level,
                      fit.stats=fit.stats)
       } else {
          res <- eval(str2lang(paste0("list(", ddd$outlist, ")")))

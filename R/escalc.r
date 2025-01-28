@@ -1,5 +1,5 @@
 escalc <- function(measure, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, m1i, m2i, sd1i, sd2i, xi, mi, ri, ti, fi, pi, sdi, r2i, ni, yi, vi, sei,
-data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.names=c("yi","vi"), add.measure=FALSE, append=TRUE, replace=TRUE, digits, ...) {
+data, slab, flip, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", correct=TRUE, var.names=c("yi","vi"), add.measure=FALSE, append=TRUE, replace=TRUE, digits, ...) {
 
    ### check argument specifications
 
@@ -14,32 +14,32 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
    if (!is.character(measure))
       stop(mstyle$stop("The 'measure' argument must be a character string."))
 
-   if (!is.element(measure, c("RR","OR","PETO","RD","AS","PHI","ZPHI","YUQ","YUY","RTET","ZTET", # 2x2 table measures
-                              "PBIT","OR2D","OR2DN","OR2DL",                                     # 2x2 table transformations to SMDs
-                              "MPRD","MPRR","MPOR","MPORC","MPPETO","MPORM",                     # 2x2 table measures for matched pairs / pre-post data
-                              "IRR","IRD","IRSD",                                                # two-group person-time data (incidence) measures
-                              "MD","SMD","SMDH","SMD1","SMD1H","ROM",                            # two-group mean/SD measures
-                              "CVR","VR",                                                        # coefficient of variation ratio, variability ratio
-                              "RPB","ZPB","RBIS","ZBIS","D2OR","D2ORN","D2ORL",                  # two-group mean/SD transformations to r_pb, r_bis, and log(OR)
-                              "COR","UCOR","ZCOR",                                               # correlations (raw and r-to-z transformed)
-                              "PCOR","ZPCOR","SPCOR","ZSPCOR",                                   # partial and semi-partial correlations
-                              "R2","ZR2",                                                        # coefficient of determination / R^2 (raw and r-to-z transformed)
-                              "PR","PLN","PLO","PAS","PFT",                                      # single proportions (and transformations thereof)
-                              "IR","IRLN","IRS","IRFT",                                          # single-group person-time (incidence) data (and transformations thereof)
-                              "MN","SMN","MNLN","CVLN","SDLN",                                   # mean, single-group standardized mean, log(mean), log(CV), log(SD),
-                              "MC","SMCC","SMCR","SMCRH","SMCRP","SMCRPH","ROMC","CVRC","VRC",   # raw/standardized mean change, log(ROM), CVR, and VR for dependent samples
-                              "ARAW","AHW","ABT",                                                # alpha (and transformations thereof)
-                              "REH",                                                             # relative excess heterozygosity
-                              "HR","HD",                                                         # hazard (rate) ratios and differences
+   if (!is.element(measure, c("RR","OR","PETO","RD","AS","PHI","ZPHI","YUQ","YUY","RTET","ZTET",                # 2x2 table measures
+                              "PBIT","OR2D","OR2DN","OR2DL",                                                    # 2x2 table transformations to SMDs
+                              "MPRD","MPRR","MPOR","MPORC","MPPETO","MPORM",                                    # 2x2 table measures for matched pairs / pre-post data
+                              "IRR","IRD","IRSD",                                                               # two-group person-time data (incidence) measures
+                              "MD","SMD","SMDH","SMD1","SMD1H","ROM",                                           # two-group mean/SD measures
+                              "CVR","VR",                                                                       # coefficient of variation ratio, variability ratio
+                              "RPB","ZPB","RBIS","ZBIS","D2OR","D2ORN","D2ORL",                                 # two-group mean/SD transformations to r_pb, r_bis, and log(OR)
+                              "COR","UCOR","ZCOR",                                                              # correlations (raw and r-to-z transformed)
+                              "PCOR","ZPCOR","SPCOR","ZSPCOR",                                                  # partial and semi-partial correlations
+                              "R2","ZR2","R2F","ZR2F",                                                          # coefficient of determination / R^2 (raw and r-to-z transformed)
+                              "PR","PLN","PLO","PRZ","PAS","PFT",                                               # single proportions (and transformations thereof)
+                              "IR","IRLN","IRS","IRFT",                                                         # single-group person-time (incidence) data (and transformations thereof)
+                              "MN","SMN","MNLN","CVLN","SDLN",                                                  # mean, single-group standardized mean, log(mean), log(CV), log(SD),
+                              "MC","SMCC","SMCR","SMCRH","SMCRP","SMCRPH","CLESCN","AUCCN","ROMC","CVRC","VRC", # raw/standardized mean change, CLES/AUC, log(ROM), CVR, and VR for dependent samples
+                              "ARAW","AHW","ABT",                                                               # alpha (and transformations thereof)
+                              "REH","CLES","CLESN","AUC","AUCN",                                                # relative excess heterozygosity, common language effect size / area under the curve
+                              "HR","HD",                                                                        # hazard (rate) ratios and differences
                               "GEN")))
       stop(mstyle$stop("Unknown 'measure' specified."))
 
-   # when adding measures, remember to add measure to .setlab()
+   # when adding measures, remember to add measures to .setlab()
 
    if (!is.element(to, c("all","only0","if0all","none")))
       stop(mstyle$stop("Unknown 'to' argument specified."))
 
-   if (any(!is.element(vtype, c("UB","LS","LS2","HO","ST","CS","AV","AV2","AVHO")), na.rm=TRUE)) # vtype can be an entire vector, so use any() and na.rm=TRUE
+   if (any(!is.element(vtype, c("UB","LS","LS2","LS3","HO","ST","CS","AV","AV2","AVHO","H0","H0a","H0b","MAX")), na.rm=TRUE)) # vtype can be an entire vector, so use any() and na.rm=TRUE
       stop(mstyle$stop("Unknown 'vtype' argument specified."))
 
    if (add.measure) {
@@ -80,14 +80,13 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
 
    ddd <- list(...)
 
-   .chkdots(ddd, c("onlyo1", "addyi", "addvi", "correct"))
+   .chkdots(ddd, c("onlyo1", "addyi", "addvi"))
 
-   ### set defaults or get onlyo1, addyi, addvi, and correct arguments
+   ### set defaults or get onlyo1, addyi, and addvi arguments
 
    onlyo1  <- .chkddd(ddd$onlyo1,  FALSE, .isTRUE(ddd$onlyo1))
    addyi   <- .chkddd(ddd$addyi,   TRUE,  .isTRUE(ddd$addyi))
    addvi   <- .chkddd(ddd$addvi,   TRUE,  .isTRUE(ddd$addvi))
-   correct <- .chkddd(ddd$correct, TRUE,  .isTRUE(ddd$correct))
 
    ### set defaults for digits
 
@@ -127,7 +126,11 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
 
    yi <- .getx("yi", mf=mf, data=data)
 
-   ### for certain measures, set add=0 by default unless user explicitly sets the add argument
+   ### get flip (NULL if not specified)
+
+   flip <- .getx("flip", mf=mf, data=data)
+
+   ### for certain measures, set add=0 by default unless user explicitly set the add argument
 
    addval <- mf[[match("add", names(mf))]]
 
@@ -302,34 +305,122 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
          p1i <- ai / n1i
          p2i <- ci / n2i
 
+         ### compute sample size weighted averages of the proportions within groups (for vtype="AV")
+
+         if (addvi) {
+            mnwp1i <- .wmean(p1i, n1i, na.rm=TRUE)
+            mnwp2i <- .wmean(p2i, n2i, na.rm=TRUE)
+         } else {
+            mnwp1i.u <- .wmean(p1i.u, n1i.u, na.rm=TRUE)
+            mnwp2i.u <- .wmean(p2i.u, n2i.u, na.rm=TRUE)
+         }
+
+         if (addvi) {
+            ppi <- (ai + ci) / (n1i + n2i)
+         } else {
+            ppi.u <- (ai.u + ci.u) / (n1i.u + n2i.u)
+         }
+
          ### log risk ratios
 
          if (measure == "RR") {
+
             if (addyi) {
                yi <- log(p1i) - log(p2i)
             } else {
                yi <- log(p1i.u) - log(p2i.u)
             }
-            if (addvi) {
-               vi <- 1/ai - 1/n1i + 1/ci - 1/n2i
-            } else {
-               vi <- 1/ai.u - 1/n1i.u + 1/ci.u - 1/n2i.u
+
+            vtype <- .expand1(vtype, k)
+
+            vi <- rep(NA_real_, k)
+
+            if (!all(is.element(vtype, c("LS","AV","H0"))))
+               stop(mstyle$stop("For this outcome measure, 'vtype' must be either 'LS' or 'AV'."))
+
+            for (i in seq_len(k)) {
+
+               ### large sample approximation to the sampling variance
+               if (vtype[i] == "LS") {
+                  if (addvi) {
+                     vi[i] <- 1/ai[i] - 1/n1i[i] + 1/ci[i] - 1/n2i[i]
+                     #vi[i] <- (1-p1i[i])/(p1i[i]*n1i[i]) + (1-p2i[i])/(p2i[i]*n2i[i]) # same
+                  } else {
+                     vi[i] <- 1/ai.u[i] - 1/n1i.u[i] + 1/ci.u[i] - 1/n2i.u[i]
+                  }
+               }
+
+               ### estimate assuming homogeneity (using the average proportions)
+               if (vtype[i] == "AV") {
+                  if (addvi) {
+                     vi[i] <- (1-mnwp1i)/(mnwp1i*n1i[i]) + (1-mnwp2i)/(mnwp2i*n2i[i])
+                  } else {
+                     vi[i] <- (1-mnwp1i.u)/(mnwp1i.u*n1i.u[i]) + (1-mnwp2i.u)/(mnwp2i.u*n2i.u[i])
+                  }
+               }
+
+               ### estimate assuming H0: RR=1
+               if (vtype[i] == "H0") {
+                  if (addvi) {
+                     vi[i] <- (1-ppi[i]) / ppi[i] * (1/n1i[i] + 1/n2i[i])
+                  } else {
+                     vi[i] <- (1-ppi.u[i]) / ppi.u[i] * (1/n1i.u[i] + 1/n2i.u[i])
+                  }
+               }
+
             }
+
          }
 
          ### log odds ratio
 
          if (is.element(measure, c("OR","OR2D","OR2DN","OR2DL","MPORM"))) {
+
             if (addyi) {
                yi <- log(p1i/(1-p1i)) - log(p2i/(1-p2i))
             } else {
                yi <- log(p1i.u/(1-p1i.u)) - log(p2i.u/(1-p2i.u))
             }
-            if (addvi) {
-               vi <- 1/ai + 1/bi + 1/ci + 1/di
-            } else {
-               vi <- 1/ai.u + 1/bi.u + 1/ci.u + 1/di.u
+
+            vtype <- .expand1(vtype, k)
+
+            vi <- rep(NA_real_, k)
+
+            if (!all(is.element(vtype, c("LS","AV","H0"))))
+               stop(mstyle$stop("For this outcome measure, 'vtype' must be either 'LS' or 'AV'."))
+
+            for (i in seq_len(k)) {
+
+               ### large sample approximation to the sampling variance
+               if (vtype[i] == "LS") {
+                  if (addvi) {
+                     vi[i] <- 1/ai[i] + 1/bi[i] + 1/ci[i] + 1/di[i]
+                     #vi[i] <- 1/(p1i[i]*(1-p1i[i])*n1i[i]) + 1/(p2i[i]*(1-p2i[i])*n2i[i]) # same
+                  } else {
+                     vi[i] <- 1/ai.u[i] + 1/bi.u[i] + 1/ci.u[i] + 1/di.u[i]
+                  }
+               }
+
+               ### estimate assuming homogeneity (using the average proportions)
+               if (vtype[i] == "AV") {
+                  if (addvi) {
+                     vi[i] <- 1/(mnwp1i*(1-mnwp1i)*n1i[i]) + 1/(mnwp2i*(1-mnwp2i)*n2i[i])
+                  } else {
+                     vi[i] <- 1/(mnwp1i.u*(1-mnwp1i.u)*n1i[i]) + 1/(mnwp2i.u*(1-mnwp2i.u)*n2i[i])
+                  }
+               }
+
+               ### estimate assuming H0: OR=1
+               if (vtype[i] == "H0") {
+                  if (addvi) {
+                     vi[i] <- 1 / (ppi[i]*(1-ppi[i])) * (1/n1i[i] + 1/n2i[i])
+                  } else {
+                     vi[i] <- 1 / (ppi.u[i]*(1-ppi.u[i])) * (1/n1i.u[i] + 1/n2i.u[i])
+                  }
+               }
+
             }
+
          }
 
          ### risk difference
@@ -341,20 +432,12 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
             } else {
                yi <- p1i.u - p2i.u
             }
-            if (length(vtype) == 1L)
-               vtype <- rep(vtype, k)
+
+            vtype <- .expand1(vtype, k)
 
             vi <- rep(NA_real_, k)
 
-            if (addvi) {
-               mnwp1i <- .wmean(p1i, n1i, na.rm=TRUE) # sample size weighted average of proportions
-               mnwp2i <- .wmean(p2i, n2i, na.rm=TRUE) # sample size weighted average of proportions
-            } else {
-               mnwp1i.u <- .wmean(p1i.u, n1i.u, na.rm=TRUE) # sample size weighted average of proportions
-               mnwp2i.u <- .wmean(p2i.u, n2i.u, na.rm=TRUE) # sample size weighted average of proportions
-            }
-
-            if (!all(is.element(vtype, c("UB","LS","AV"))))
+            if (!all(is.element(vtype, c("UB","LS","AV","H0"))))
                stop(mstyle$stop("For this outcome measure, 'vtype' must be either 'UB', 'LS', or 'AV'."))
 
             for (i in seq_len(k)) {
@@ -383,6 +466,15 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
                      vi[i] <- mnwp1i*(1-mnwp1i)/n1i[i] + mnwp2i*(1-mnwp2i)/n2i[i]
                   } else {
                      vi[i] <- mnwp1i.u*(1-mnwp1i.u)/n1i.u[i] + mnwp2i.u*(1-mnwp2i.u)/n2i.u[i]
+                  }
+               }
+
+               ### estimate assuming H0: RD=0
+               if (vtype[i] == "H0") {
+                  if (addvi) {
+                     vi[i] <- (1/n1i[i] + 1/n2i[i]) * ppi[i] * (1-ppi[i])
+                  } else {
+                     vi[i] <- (1/n1i.u[i] + 1/n2i.u[i]) * ppi.u[i] * (1-ppi.u[i])
                   }
                }
 
@@ -416,8 +508,7 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
 
             yi <- (ai*di - bi*ci)/sqrt((ai+bi)*(ci+di)*(ai+ci)*(bi+di))
 
-            if (length(vtype) == 1L)
-               vtype <- rep(vtype, k)
+            vtype <- .expand1(vtype, k)
 
             vi <- rep(NA_real_, k)
 
@@ -760,12 +851,13 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
          di   <- .getx("di",   mf=mf, data=data, checknumeric=TRUE)
          ti   <- .getx("ti",   mf=mf, data=data, checknumeric=TRUE)
          pi   <- .getx("pi",   mf=mf, data=data, checknumeric=TRUE)
+         ri   <- .getx("ri",   mf=mf, data=data, checknumeric=TRUE) # point-biserial correlation
 
-         ### for these measures, need m1i, m2i, sd1i, sd2i, n1i, and n2i (and can also specify di/ti/pi)
+         ### for these measures, need m1i, m2i, sd1i, sd2i, n1i, and n2i (and can also specify di/ti/pi/ri)
 
          if (is.element(measure, c("SMD","RPB","ZPB","RBIS","ZBIS","D2OR","D2ORN","D2ORL"))) {
 
-            if (!.equal.length(m1i, m2i, sd1i, sd2i, n1i, n2i, di, ti, pi))
+            if (!.equal.length(m1i, m2i, sd1i, sd2i, n1i, n2i, di, ti, pi, ri))
                stop(mstyle$stop("Supplied data vectors are not all of the same length."))
 
             ### convert pi to ti values
@@ -775,6 +867,12 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
             ### convert ti to di values
 
             di <- replmiss(di, ti * sqrt(1/n1i + 1/n2i))
+
+            ### convert ri (point-biserial correlations) to di values
+
+            mi <- n1i + n2i - 2
+            hi <- mi / n1i + mi / n2i
+            di <- replmiss(di, sqrt(hi) * ri / sqrt(1 - ri^2))
 
             ### when di is available, set m1i, m2i, sd1i, and sd2i values accordingly
 
@@ -866,8 +964,7 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
 
             yi <- m1i - m2i
 
-            if (length(vtype) == 1L)
-               vtype <- rep(vtype, k)
+            vtype <- .expand1(vtype, k)
 
             vi <- rep(NA_real_, k)
 
@@ -897,15 +994,14 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
             cmi <- .cmicalc(mi, correct=correct)
             yi <- cmi * di
 
-            if (length(vtype) == 1L)
-               vtype <- rep(vtype, k)
+            vtype <- .expand1(vtype, k)
 
             vi <- rep(NA_real_, k)
 
             mnwyi <- .wmean(yi, ni, na.rm=TRUE) # sample size weighted average of yi's
 
-            if (!all(is.element(vtype, c("LS","LS2","UB","AV"))))
-               stop(mstyle$stop("For this outcome measure, 'vtype' must be either 'LS', 'LS2', 'UB', or 'AV'."))
+            if (!all(is.element(vtype, c("LS","LS2","UB","AV","H0"))))
+               stop(mstyle$stop("For this outcome measure, 'vtype' must be either 'LS', 'LS2', 'UB', or 'H0'."))
 
             for (i in seq_len(k)) {
 
@@ -925,6 +1021,10 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
                if (vtype[i] == "AV")
                   vi[i] <- 1/n1i[i] + 1/n2i[i] + mnwyi^2/(2*npi[i])
 
+               ### estimate assuming H0: theta=0
+               if (vtype[i] == "H0")
+                  vi[i] <- ifelse(mi[i] > 2, cmi[i]^2 * (1/n1i[i] + 1/n2i[i]) * mi[i] / (mi[i] - 2), NA_real_)
+
             }
 
          }
@@ -938,12 +1038,11 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
             di   <- (m1i - m2i) / sdpi
             yi   <- cmi * di
 
-            if (length(vtype) == 1L)
-               vtype <- rep(vtype, k)
+            vtype <- .expand1(vtype, k)
 
             vi <- rep(NA_real_, k)
 
-            if (!all(is.element(vtype, c("LS","LS2"))))
+            if (!all(is.element(vtype, c("LS","LS2","LS3"))))
                stop(mstyle$stop("For this outcome measure, 'vtype' must be either 'LS' or 'LS2'."))
 
             for (i in seq_len(k)) {
@@ -960,8 +1059,12 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
                if (vtype[i] == "LS2") {
                   #vi[i] <- sd1i[i]^2 / (n1i[i]     * sdpi[i]^2) + sd2i[i]^2 / (n2i[i]     * sdpi[i]^2) + yi[i]^2 / (8 * sdpi[i]^4) * (sd1i[i]^4 / (n1i[i]-1) + sd2i[i]^4 / (n2i[i]-1)) # based on standard application of the delta method
                   #vi[i] <- sd1i[i]^2 / ((n1i[i]-1) * sdpi[i]^2) + sd2i[i]^2 / ((n2i[i]-1) * sdpi[i]^2) + yi[i]^2 / (8 * sdpi[i]^4) * (sd1i[i]^4 / (n1i[i]-1) + sd2i[i]^4 / (n2i[i]-1)) # same as Bonett
-                  vi[i] <- sd1i[i]^2 / (n1i[i] * sdpi[i]^2) + sd2i[i]^2 / (n2i[i] * sdpi[i]^2) + yi[i]^2 / (8 * sdpi[i]^4) * (sd1i[i]^4 / n1i[i] + sd2i[i]^4 / n2i[i])
+                  vi[i] <-  sd1i[i]^2 / (n1i[i]     * sdpi[i]^2) + sd2i[i]^2 / (n2i[i]     * sdpi[i]^2) + yi[i]^2 / (8 * sdpi[i]^4) * (sd1i[i]^4 / n1i[i]     + sd2i[i]^4 / n2i[i])
                }
+
+               ### alternative large sample approximation
+               if (vtype[i] == "LS3")
+                  vi[i] <- sd1i[i]^2 / (n1i[i]     * sdpi[i]^2) + sd2i[i]^2 / (n2i[i]     * sdpi[i]^2) + yi[i]^2 / (8 * sdpi[i]^4) * (sd1i[i]^4 / (n1i[i]-1) + sd2i[i]^4 / (n2i[i]-1)) # based on standard application of the delta method
 
             }
 
@@ -983,8 +1086,7 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
 
             yi <- log(m1i/m2i)
 
-            if (length(vtype) == 1L)
-               vtype <- rep(vtype, k)
+            vtype <- .expand1(vtype, k)
 
             vi <- rep(NA_real_, k)
 
@@ -1023,32 +1125,31 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
          ### Das Gupta (1960) describes the case where Y itself is normal, but the variance expressions therein can
          ### really only be used in some special cases (not useful in practice)
 
-         if (is.element(measure, c("RPB","RBIS","ZPB","ZBIS"))) {
+         if (is.element(measure, c("RPB","ZPB"))) {
 
             hi <- mi/n1i + mi/n2i
-            yi <- di / sqrt(di^2 + hi) # need this also when measure="RBIS/ZBIS"
+            yi <- di / sqrt(di^2 + hi)
 
-            if (is.element(measure, c("RPB","ZPB"))) { # this only applies when measure="RPB/ZPB"
+            vtype <- .expand1(vtype, k)
 
-               if (length(vtype) == 1L)
-                  vtype <- rep(vtype, k)
+            vi <- rep(NA_real_, k)
 
-               vi <- rep(NA_real_, k)
+            if (!all(is.element(vtype, c("LS","ST","CS"))))
+               stop(mstyle$stop("For this outcome measure, 'vtype' must be either 'LS', 'ST', or 'CS'."))
 
-               if (!all(is.element(vtype, c("LS","ST","CS"))))
-                  stop(mstyle$stop("For this outcome measure, 'vtype' must be either 'LS', 'ST', or 'CS'."))
+            for (i in seq_len(k)) {
 
-               for (i in seq_len(k)) {
-
-                  ### estimate of the sampling variance for fixed n1i and n2i (i.e., stratified sampling)
-                  if (vtype[i] == "ST" || vtype[i] == "LS")
-                     vi[i] <- hi[i]^2 / (hi[i] + di[i]^2)^3 * (1/n1i[i] + 1/n2i[i] + di[i]^2/(2*ni[i]))
-
-                  ### estimate of the sampling variance for fixed ni but random n1i and n2i (i.e., cross-sectional/multinomial sampling)
-                  if (vtype[i] == "CS")
-                     vi[i] <- (1-yi[i]^2)^2 * (ni[i]*yi[i]^2 / (4*n1i[i]*n2i[i]) + (2-3*yi[i]^2)/(2*ni[i])) # Tate, 1954; Tate, 1955b
-
+               ### estimate of the sampling variance for fixed n1i and n2i (i.e., stratified sampling)
+               if (vtype[i] == "ST" || vtype[i] == "LS") {
+                  vi[i] <- hi[i]^2 / (hi[i] + di[i]^2)^3 * (1/n1i[i] + 1/n2i[i] + di[i]^2/(2*ni[i]))
+                  # this is consistent with escalc(measure="SMD", correct=FALSE) -> conv.delta(transf=transf.dtorpb)
+                  #tmp <- escalc(measure="SMD", m1i=m1i[i], sd1i=sd1i[i], n1i=n1i[i], m2i=m2i[i], sd2i=sd2i[i], n2i=n2i[i], correct=FALSE)
+                  #vi[i] <- conv.delta(yi, vi, data=tmp, transf=transf.dtorpb, replace=TRUE, n1i=n1i[i], n2i=n2i[i])$vi
                }
+
+               ### estimate of the sampling variance for fixed ni but random n1i and n2i (i.e., cross-sectional/multinomial sampling)
+               if (vtype[i] == "CS")
+                  vi[i] <- (1-yi[i]^2)^2 * (ni[i]*yi[i]^2 / (4*n1i[i]*n2i[i]) + (2-3*yi[i]^2)/(2*ni[i])) # Tate, 1954; Tate, 1955b
 
             }
 
@@ -1057,16 +1158,22 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
          ### biserial correlation obtained from the standardized mean difference (continued from above)
 
          if (is.element(measure, c("RBIS","ZBIS"))) {
+            hi  <- mi/n1i + mi/n2i
+            yi  <- di / sqrt(di^2 + hi) # point-biserial correlation
             p1i <- n1i / ni
             p2i <- n2i / ni
             zi  <- qnorm(p1i, lower.tail=FALSE)
             fzi <- dnorm(zi)
             yi  <- sqrt(p1i*p2i) / fzi * yi # yi on the right-hand side is the point-biserial correlation from above
-            #vi <- (p1i*p2i) / fzi^2 * vi   # not correct (p1i, p2i, and fzi are random variables and vi from RBP is not correct for the bivariate normal case on which RBIS is based)
+            #vi <- (p1i*p2i) / fzi^2 * vi   # vi is from RPB, but this is not correct (p1i, p2i, and fzi are random variables and vi from RBP is not correct for the bivariate normal case on which RBIS is based)
             yi.t <- ifelse(abs(yi) > 1, sign(yi), yi)
-            vi  <- 1/(ni-1) * (p1i*p2i/fzi^2 - (3/2 + (1 - p1i*zi/fzi)*(1 + p2i*zi/fzi)) * yi.t^2 + yi.t^4)     # Soper, 1914
+            vi  <- 1/(ni-1) * (p1i*p2i/fzi^2 - (3/2 + (1 - p1i*zi/fzi)*(1 + p2i*zi/fzi)) * yi.t^2 + yi.t^4) # Soper, 1914
             #vi <- 1/(ni-1) * (yi.t^4 + yi.t^2 * (p1i*p2i*zi^2/fzi^2 + (2*p1i-1)*zi/fzi - 5/2) + p1i*p2i/fzi^2) # Tate, 1955; equivalent to equation from Soper, 1914
             # equation appears to work even if dichotomization is done based on a sample quantile value (so that p1i, p2i, and fzi are fixed by design)
+            # this is asymptotically consistent with escalc(measure="SMD", correct=FALSE) -> conv.delta(transf=transf.dtorbis)
+            #tmp <- escalc(measure="SMD", m1i=m1i, sd1i=sd1i, n1i=n1i, m2i=m2i, sd2i=sd2i, n2i=n2i, correct=FALSE)
+            #yi <- conv.delta(yi, vi, data=tmp, transf=transf.dtorbis, replace=TRUE, n1i=n1i, n2i=n2i)$yi
+            #vi <- conv.delta(yi, vi, data=tmp, transf=transf.dtorbis, replace=TRUE, n1i=n1i, n2i=n2i)$vi
          }
 
          ### r-to-z transformation for RPB and RBIS (note: NOT a variance-stabilizing transformation for these measures)
@@ -1093,15 +1200,243 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
          ### coefficient of variation ratio
 
          if (measure == "CVR") {
-            yi <- log(sd1i/m1i) + 1/(2*(n1i-1)) - log(sd2i/m2i) - 1/(2*(n2i-1))
+            if (correct) {
+               yi <- log(sd1i/m1i) + 1/(2*(n1i-1)) - log(sd2i/m2i) - 1/(2*(n2i-1))
+            } else {
+               yi <- log(sd1i/m1i) - log(sd2i/m2i)
+            }
             vi <- 1/(2*(n1i-1)) + sd1i^2/(n1i*m1i^2) + 1/(2*(n2i-1)) + sd2i^2/(n2i*m2i^2) # Nakagawa et al., 2015, equation 12, but without the '-2 rho ...' terms
          }
 
          ### variability ratio
 
          if (measure == "VR") {
-            yi <- log(sd1i/sd2i) + 1/(2*(n1i-1)) - 1/(2*(n2i-1))
+            if (correct) {
+               yi <- log(sd1i/sd2i) + 1/(2*(n1i-1)) - 1/(2*(n2i-1))
+            } else {
+               yi <- log(sd1i/sd2i)
+            }
             vi <- 1/(2*(n1i-1)) + 1/(2*(n2i-1))
+         }
+
+      }
+
+      ######################################################################
+
+      if (is.element(measure, c("CLES","AUC"))) {
+
+         ai  <- .getx("ai",  mf=mf, data=data, checknumeric=TRUE)
+         n1i <- .getx("n1i", mf=mf, data=data, checknumeric=TRUE)
+         n2i <- .getx("n2i", mf=mf, data=data, checknumeric=TRUE)
+         mi  <- .getx("mi",  mf=mf, data=data, checknumeric=TRUE)
+
+         if (!.all.specified(ai, n1i, n2i))
+            stop(mstyle$stop("Cannot compute outcomes. Check that all of the required information is specified\n  via the appropriate arguments (i.e., ai, n1i, n2i)."))
+
+         if (!.equal.length(ai, n1i, n2i, mi))
+            stop(mstyle$stop("Supplied data vectors are not all of the same length."))
+
+         if (is.null(mi))
+            mi <- rep(0, length(ai))
+
+         mi[is.na(mi)] <- 0
+
+         k.all <- length(ai)
+
+         if (!is.null(subset)) {
+            subset <- .chksubset(subset, k.all)
+            ai  <- .getsubset(ai,  subset)
+            n1i <- .getsubset(n1i, subset)
+            n2i <- .getsubset(n2i, subset)
+            mi  <- .getsubset(mi,  subset)
+         }
+
+         if (any(c(n1i, n2i) <= 0, na.rm=TRUE))
+            stop(mstyle$stop("One or more group sizes are <= 0."))
+
+         if (any(ai < 0, na.rm=TRUE) || any(ai > 1, na.rm=TRUE))
+            stop(mstyle$stop("One or more AUC values are < 0 or > 1."))
+
+         if (any(mi < 0, na.rm=TRUE) || any(mi > 1, na.rm=TRUE))
+            stop(mstyle$stop("One or more 'mi' values are < 0 or > 1."))
+
+         ni <- n1i + n2i
+
+         ni.u <- ni # unadjusted total sample sizes
+
+         k <- length(ai)
+
+         yi <- ai
+
+         vtype <- .expand1(vtype, k)
+
+         vi <- rep(NA_real_, k)
+
+         navgi <- (n1i+n2i)/2
+         q0 <- ai*(1-ai)
+         q1 <- ai/(2-ai)
+         q2 <- 2*ai^2/(1+ai)
+
+         if (!all(is.element(vtype, c("LS","LS2","H0","MAX"))))
+            stop(mstyle$stop("For this outcome measure, 'vtype' must be 'LS' or 'LS2'."))
+
+         for (i in seq_len(k)) {
+
+            ### based on Newcombe (2006b) but using (n1i-1)*(n2i-1) in the denominator as given in Cho et al. (2019), section 2.4
+            if (vtype[i] == "LS")
+               vi[i] <- q0[i] / ((n1i[i]-1)*(n2i[i]-1)) * (2*navgi[i] - 1 - (3*navgi[i]-3) / ((2-ai[i])*(1+ai[i])))
+
+            ### based on Hanley and McNeil (1982) but using (n1i-1)*(n2i-1) in the denominator and subtracting mi/4 as given in Cho et al. (2019)
+            if (vtype[i] == "LS2")
+               vi[i] <- (q0[i] - mi[i]/4 + (n1i[i]-1)*(q1[i]-ai[i]^2) + (n2i[i]-1)*(q2[i]-ai[i]^2)) / ((n1i[i]-1)*(n2i[i]-1))
+
+            ### estimate under H0: CLES=AUC=0.5 and equal variances (conservative if there are ties)
+            if (vtype[i] == "H0")
+               vi[i] <- (n1i[i]+n2i[i]+1)/(12*n1i[i]*n2i[i])
+
+            ### based on sigma^2_max (eq. 7 in Bamber, 1975)
+            if (vtype[i] == "MAX")
+               vi[i] <- q0[i] / (min(n1i[i],n2i[i])-1)
+
+         }
+
+      }
+
+      if (is.element(measure, c("CLESN","AUCN"))) {
+
+         m1i  <- .getx("m1i",  mf=mf, data=data, checknumeric=TRUE)
+         m2i  <- .getx("m2i",  mf=mf, data=data, checknumeric=TRUE)
+         sd1i <- .getx("sd1i", mf=mf, data=data, checknumeric=TRUE)
+         sd2i <- .getx("sd2i", mf=mf, data=data, checknumeric=TRUE)
+         n1i  <- .getx("n1i",  mf=mf, data=data, checknumeric=TRUE)
+         n2i  <- .getx("n2i",  mf=mf, data=data, checknumeric=TRUE)
+         di   <- .getx("di",   mf=mf, data=data, checknumeric=TRUE)
+         ti   <- .getx("ti",   mf=mf, data=data, checknumeric=TRUE)
+         pi   <- .getx("pi",   mf=mf, data=data, checknumeric=TRUE)
+         ai   <- .getx("ai",   mf=mf, data=data, checknumeric=TRUE)
+
+         if (!.equal.length(m1i, m2i, sd1i, sd2i, n1i, n2i, di, ti, pi, ai))
+            stop(mstyle$stop("Supplied data vectors are not all of the same length."))
+
+         if (!.all.specified(n1i, n2i))
+            stop(mstyle$stop("Cannot compute outcomes. Check that all of the required information is specified\n  via the appropriate arguments."))
+
+         k.all <- max(sapply(list(m1i, m2i, sd1i, sd2i, n1i, n2i, di, ti, pi, ai), length))
+
+         vtype <- .expand1(vtype, k.all)
+
+         ### if sd1i and/or sd2i have not been specified at all, set sd1i and sd2i to NA for all studies
+
+         if (is.null(sd1i) || is.null(sd2i)) {
+            sd1i <- .expand1(NA_real_, k.all)
+            sd2i <- .expand1(NA_real_, k.all)
+         }
+
+         ### convert pi to ti values
+
+         ti <- replmiss(ti, .convp2t(pi, df=n1i+n2i-2))
+
+         ### convert ti to di values
+
+         di <- replmiss(di, ti * sqrt(1/n1i + 1/n2i))
+
+         ### for specified pi/ti/di values, assume homoscedasticity
+
+         if (!is.null(di))
+            vtype[!is.na(di)] <- "HO"
+
+         ### compute di values from means and SDs (for these, do not assume homoscedasticity, unless vtype="HO")
+
+         sdpi <- ifelse(vtype=="HO", sqrt(((n1i-1)*sd1i^2 + (n2i-1)*sd2i^2)/(n1i+n2i-2)), sqrt((sd1i^2 + sd2i^2)/2))
+         di   <- replmiss(di, (m1i - m2i) / sdpi)
+
+         ### convert di values to ai values and back (in case only ai is known, so we have di for computing vi)
+
+         ai <- replmiss(ai, pnorm(di/sqrt(2)))
+         di <- replmiss(di, qnorm(ai)*sqrt(2))
+
+         k.all <- length(ai)
+
+         ### if sd1i and/or sd2i is missing for a particular study, assume sd1i=sd2i=1 for that study and homoscedasticity
+
+         sdsmiss <- is.na(sd1i) | is.na(sd2i)
+         sd1i <- ifelse(sdsmiss, 1, sd1i)
+         sd2i <- ifelse(sdsmiss, 1, sd2i)
+         vtype[sdsmiss] <- "HO"
+
+         if (!is.null(subset)) {
+            subset <- .chksubset(subset, k.all)
+            vtype  <- .getsubset(vtype,  subset)
+            ai   <- .getsubset(ai,   subset)
+            di   <- .getsubset(di,   subset)
+            sd1i <- .getsubset(sd1i, subset)
+            sd2i <- .getsubset(sd2i, subset)
+            n1i  <- .getsubset(n1i,  subset)
+            n2i  <- .getsubset(n2i,  subset)
+         }
+
+         if (any(c(sd1i, sd2i) < 0, na.rm=TRUE))
+            stop(mstyle$stop("One or more standard deviations are negative."))
+
+         if (any(c(n1i, n2i) <= 0, na.rm=TRUE))
+            stop(mstyle$stop("One or more group sizes are <= 0."))
+
+         if (any(ai < 0, na.rm=TRUE) || any(ai > 1, na.rm=TRUE))
+            stop(mstyle$stop("One or more AUC values are < 0 or > 1."))
+
+         ni.u <- n1i + n2i # unadjusted total sample sizes
+
+         k <- length(ai)
+
+         ni <- ni.u
+
+         yi <- ai
+
+         vi <- rep(NA_real_, k)
+
+         if (!all(is.element(vtype, c("LS","LS2","LS3","HO","H0"))))
+            stop(mstyle$stop("For this outcome measure, 'vtype' must be 'LS' or 'HO'."))
+
+         vri <- sd1i^2 / (sd1i^2 + sd2i^2)
+
+         for (i in seq_len(k)) {
+
+            ### large sample approximation to the sampling variance based on the binormal model
+            if (vtype[i] == "LS") {
+               vi[i] <- exp(-di[i]^2 / 2) / (8*base::pi) * (di[i]^2 * vri[i]^2 / (n1i[i]-1) + di[i]^2 * (1-vri[i])^2 / (n2i[i]-1) + 4*vri[i]/(n1i[i]-1) + 4*(1-vri[i])/(n2i[i]-1))
+               # this is consistent with escalc(measure="SMDH", correct=FALSE) -> conv.delta(transf=transf.dtocles)
+               #tmp <- escalc(measure="SMDH", m1i=m1i[i], sd1i=sd1i[i], n1i=n1i[i], m2i=m2i[i], sd2i=sd2i[i], n2i=n2i[i], correct=FALSE)
+               #vi[i] <- conv.delta(yi, vi, data=tmp, transf=transf.dtocles, replace=TRUE)$vi
+            }
+
+            ### large sample approximation to the sampling variance based on the binormal model
+            if (vtype[i] == "LS2") {
+               vi[i] <- exp(-di[i]^2 / 2) / (8*base::pi) * (di[i]^2 * vri[i]^2 / (n1i[i]-0) + di[i]^2 * (1-vri[i])^2 / (n2i[i]-0) + 4*vri[i]/(n1i[i]-0) + 4*(1-vri[i])/(n2i[i]-0))
+               # this is consistent with escalc(measure="SMDH", correct=FALSE, vtype="LS2") -> conv.delta(transf=transf.dtocles)
+               #tmp <- escalc(measure="SMDH", m1i=m1i[i], sd1i=sd1i[i], n1i=n1i[i], m2i=m2i[i], sd2i=sd2i[i], n2i=n2i[i], correct=FALSE, vtype="LS2")
+               #vi[i] <- conv.delta(yi, vi, data=tmp, transf=transf.dtocles, replace=TRUE)$vi
+            }
+
+            ### large sample approximation to the sampling variance based on the binormal model (based on standard application of the delta method)
+            if (vtype[i] == "LS3") {
+               vi[i] <- exp(-di[i]^2 / 2) / (8*base::pi) * (di[i]^2 * vri[i]^2 / (n1i[i]-1) + di[i]^2 * (1-vri[i])^2 / (n2i[i]-1) + 4*vri[i]/(n1i[i]-0) + 4*(1-vri[i])/(n2i[i]-0))
+               # this is consistent with escalc(measure="SMDH", correct=FALSE, vtype="LS3") -> conv.delta(transf=transf.dtocles)
+               #tmp <- escalc(measure="SMDH", m1i=m1i[i], sd1i=sd1i[i], n1i=n1i[i], m2i=m2i[i], sd2i=sd2i[i], n2i=n2i[i], correct=FALSE, vtype="LS3")
+               #vi[i] <- conv.delta(yi, vi, data=tmp, transf=transf.dtocles, replace=TRUE)$vi
+            }
+
+            ### estimate assuming homoscedasticity of the variances within studies
+            if (vtype[i] == "HO") {
+               vi[i] <- exp(-di[i]^2 / 2) / (4*base::pi) * (1/n1i[i] + 1/n2i[i] + di[i]^2 / (2*(n1i[i]+n2i[i])))
+               # this is consistent with escalc(measure="SMD", correct=FALSE) -> conv.delta(transf=transf.dtocles)
+               #tmp <- escalc(measure="SMD", m1i=m1i[i], sd1i=sd1i[i], n1i=n1i[i], m2i=m2i[i], sd2i=sd2i[i], n2i=n2i[i], correct=FALSE)
+               #vi[i] <- conv.delta(yi, vi, data=tmp, transf=transf.dtocles, replace=TRUE)$vi
+            }
+
+            ### estimate under H0: CLES=AUC=0.5
+            if (vtype[i] == "H0")
+               vi[i] <- 1 / (8*base::pi) * (4*vri[i]/(n1i[i]-1) + 4*(1-vri[i])/(n2i[i]-1))
+
          }
 
       }
@@ -1173,14 +1508,16 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
 
          if (is.element(measure, c("COR","UCOR"))) {
 
-            if (length(vtype) == 1L)
-               vtype <- rep(vtype, k)
+            vtype <- .expand1(vtype, k)
 
             vi <- rep(NA_real_, k)
 
             mnwyi <- .wmean(yi, ni, na.rm=TRUE) # sample size weighted average of yi's
 
-            if (!all(is.element(vtype, c("LS","UB","AV"))))
+            if (measure=="COR" && !all(is.element(vtype, c("LS","UB","AV","H0","H0a","H0b"))))
+               stop(mstyle$stop("For this outcome measure, 'vtype' must be either 'LS', 'UB', 'AV', or 'H0'."))
+
+            if (measure=="UCOR" && !all(is.element(vtype, c("LS","UB","AV"))))
                stop(mstyle$stop("For this outcome measure, 'vtype' must be either 'LS', 'UB', or 'AV'."))
 
             for (i in seq_len(k)) {
@@ -1198,6 +1535,18 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
                ### estimate assuming homogeneity (using sample size weighted average of the yi's)
                if (vtype[i] == "AV")
                   vi[i] <- (1-mnwyi^2)^2 / (ni[i]-1)
+
+               ### large sample approximation to the sampling variance
+               if (vtype[i] == "LS")
+                  vi[i] <- (1-yi[i]^2)^2 / (ni[i]-1)
+
+               ### estimate assuming H0: rho=0 (technically correct)
+               if (is.element(vtype[i], c("H0","H0a")))
+                  vi[i] <- (1-yi[i]^2) / (ni[i]-2)
+
+               ### estimate assuming H0: rho=0 (alternative formula that works better for the z-test)
+               if (vtype[i] == "H0b")
+                  vi[i] <- 1 / ni[i]
 
             }
 
@@ -1283,8 +1632,7 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
 
             yi <- ri
 
-            if (length(vtype) == 1L)
-               vtype <- rep(vtype, k)
+            vtype <- .expand1(vtype, k)
 
             vi <- rep(NA_real_, k)
 
@@ -1320,8 +1668,7 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
 
             yi <- ri
 
-            if (length(vtype) == 1L)
-               vtype <- rep(vtype, k)
+            vtype <- .expand1(vtype, k)
 
             vi <- rep(NA_real_, k)
 
@@ -1355,7 +1702,7 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
 
       ######################################################################
 
-      if (is.element(measure, c("R2","ZR2"))) {
+      if (is.element(measure, c("R2","ZR2","R2F","ZR2F"))) {
 
          r2i <- .getx("r2i", mf=mf, data=data, checknumeric=TRUE)
          mi  <- .getx("mi",  mf=mf, data=data, checknumeric=TRUE)
@@ -1395,7 +1742,7 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
          if (any(mi <= 0, na.rm=TRUE))
             stop(mstyle$stop("One or more mi values are <= 0."))
 
-         if (any(ni-mi- 1 <= 0, na.rm=TRUE))
+         if (any(ni-mi-1 <= 0, na.rm=TRUE))
             stop(mstyle$stop("One or more dfs are <= 0."))
 
          ni.u <- ni # unadjusted total sample sizes
@@ -1408,14 +1755,13 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
 
             yi <- r2i
 
-            if (length(vtype) == 1L)
-               vtype <- rep(vtype, k)
+            vtype <- .expand1(vtype, k)
 
             vi <- rep(NA_real_, k)
 
             mnwyi <- .wmean(yi, ni, na.rm=TRUE) # sample size weighted average of yi's
 
-            if (!all(is.element(vtype, c("LS","LS2","AV"))))
+            if (!all(is.element(vtype, c("LS","AV","LS2","AV2"))))
                stop(mstyle$stop("For this outcome measure, 'vtype' must be either 'LS' or 'AV'."))
 
             for (i in seq_len(k)) {
@@ -1443,15 +1789,55 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
          ### r-to-z transformed coefficients of determination
 
          if (measure == "ZR2") {
+
+            if (!all(is.element(vtype, "LS")))
+               stop(mstyle$stop("For this outcome measure, 'vtype' must be 'LS'."))
+
             yi <- transf.rtoz(sqrt(r2i))
             vi <- 1 / ni # Olkin & Finn, 1995, p.162, but var(z*) is 4/n, not 16/n and here we use the 1/2 factor, so 1/n is correct
+
+         }
+
+         if (is.element(measure, c("R2F","ZR2F"))) {
+
+            yi <- r2i
+
+            vtype <- .expand1(vtype, k)
+
+            vi <- rep(NA_real_, k)
+
+            if (!all(is.element(vtype, "LS")))
+               stop(mstyle$stop("For this outcome measure, 'vtype' must be 'LS'."))
+
+            R2s <- seq(0.0001, 0.9999, length=10^5)
+
+            trapezoid <- function(x,y) sum(diff(x)*(y[-1]+y[-length(y)]))/2
+
+            for (i in seq_len(k)) {
+
+               Fval <- (ni[i] - mi[i] - 1) / mi[i] * r2i[i] / (1 - r2i[i])
+               ncps <- (mi[i] + ni[i]-mi[i]) * R2s / (1 - R2s)
+               denFval <- sapply(ncps, function(ncp) df(Fval, df1=mi[i], df2=ni[i]-mi[i]-1, ncp=ncp))
+               denFval <- denFval / trapezoid(R2s, denFval)
+               vi[i] <- sum((R2s[2]-R2s[1])*R2s^2*denFval) - sum((R2s[2]-R2s[1])*R2s*denFval)^2
+               #plot(R2s[denFval > sqrt(.Machine$double.eps)], denFval[denFval > sqrt(.Machine$double.eps)], type="l", lwd=5, bty="l", xlab="R^2", ylab="Density")
+
+            }
+
+         }
+
+         if (measure == "ZR2F") {
+
+            vi <- vi / (1 - yi^2)^2
+            yi <- transf.rtoz(sqrt(r2i))
+
          }
 
       }
 
       ######################################################################
 
-      if (is.element(measure, c("PR","PLN","PLO","PAS","PFT"))) {
+      if (is.element(measure, c("PR","PLN","PLO","PRZ","PAS","PFT"))) {
 
          xi <- .getx("xi", mf=mf, data=data, checknumeric=TRUE)
          mi <- .getx("mi", mf=mf, data=data, checknumeric=TRUE)
@@ -1557,8 +1943,7 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
                yi <- pri.u
             }
 
-            if (length(vtype) == 1L)
-               vtype <- rep(vtype, k)
+            vtype <- .expand1(vtype, k)
 
             vi <- rep(NA_real_, k)
 
@@ -1614,8 +1999,7 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
                yi <- log(pri.u)
             }
 
-            if (length(vtype) == 1L)
-               vtype <- rep(vtype, k)
+            vtype <- .expand1(vtype, k)
 
             vi <- rep(NA_real_, k)
 
@@ -1663,8 +2047,7 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
                yi <- log(pri.u/(1-pri.u))
             }
 
-            if (length(vtype) == 1L)
-               vtype <- rep(vtype, k)
+            vtype <- .expand1(vtype, k)
 
             vi <- rep(NA_real_, k)
 
@@ -1704,18 +2087,34 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
 
          ### note: addyi and addvi only implemented for measures above
 
+         ### proportion with probit transformation
+
+         if (measure == "PRZ") {
+            yi <- qnorm(pri)
+            vi <- 2*base::pi*pri*(1-pri)*exp(yi^2)/ni
+            # this is consistent with escalc(measure="PR") -> conv.delta(transf=qnorm)
+            #tmp <- escalc(measure="PR", xi=xi, ni=ni)
+            #vi <- conv.delta(yi, vi, data=tmp, transf=qnorm, replace=TRUE)$vi
+         }
+
          ### proportion with arcsine square root (angular) transformation
 
          if (measure == "PAS") {
             yi <- asin(sqrt(pri))
             vi <- 1/(4*ni)
+            # this is consistent with escalc(measure="PR") -> conv.delta(transf=transf.arcsin)
+            #tmp <- escalc(measure="PR", xi=xi, ni=ni)
+            #vi <- conv.delta(yi, vi, data=tmp, transf=transf.arcsin, replace=TRUE)$vi
          }
 
          ### proportion with Freeman-Tukey double arcsine transformation
 
          if (measure == "PFT") {
             yi <- 1/2*(asin(sqrt(xi/(ni+1))) + asin(sqrt((xi+1)/(ni+1))))
-            vi <- 1/(4*ni + 2)
+            vi <- 1/(4*ni+2)
+            # this is asymptotically consistent with escalc(measure="PR") -> conv.delta(transf=transf.pft)
+            #tmp <- escalc(measure="PR", xi=xi, ni=ni)
+            #vi <- conv.delta(yi, vi, data=tmp, transf=transf.pft, ni=ni, replace=TRUE)$vi
          }
 
       }
@@ -1834,6 +2233,9 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
                yi <- sqrt(iri.u)
             }
             vi <- 1 / (4*ti)
+            # this is consistent with escalc(measure="IR") -> conv.delta(transf=sqrt)
+            #tmp <- escalc(measure="IR", xi=xi, ti=ti)
+            #vi <- conv.delta(yi, vi, data=tmp, transf=sqrt, replace=TRUE)$vi
          }
 
          ### note: addyi and addvi only implemented for measures above
@@ -1843,6 +2245,9 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
          if (measure == "IRFT") {
             yi <- 1/2 * (sqrt(iri) + sqrt(iri+1/ti))
             vi <- 1 / (4*ti)
+            # this is asymptotically consistent with escalc(measure="IR") -> conv.delta(transf=transf.irft)
+            #tmp <- escalc(measure="IR", xi=xi, ti=ti)
+            #vi <- conv.delta(yi, vi, data=tmp, transf=transf.irft, ti=ti, replace=TRUE)$vi
          }
 
       }
@@ -1908,8 +2313,7 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
             yi <- mi
             sdpi <- sqrt(.wmean(sdi^2, ni-1, na.rm=TRUE))
 
-            if (length(vtype) == 1L)
-               vtype <- rep(vtype, k)
+            vtype <- .expand1(vtype, k)
 
             vi <- rep(NA_real_, k)
 
@@ -1933,7 +2337,7 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
          ### single-group standardized mean
 
          if (measure == "SMN") {
-            cmi <- .cmicalc(ni-1)
+            cmi <- .cmicalc(ni-1, correct=correct)
             yi <- cmi * mi / sdi
             vi <- 1 / ni + yi^2 / (2*ni)
          }
@@ -1971,7 +2375,7 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
 
       ######################################################################
 
-      if (is.element(measure, c("MC","SMCC","SMCR","SMCRH","SMCRP","SMCRPH","ROMC","CVRC","VRC"))) {
+      if (is.element(measure, c("MC","SMCC","SMCR","SMCRH","SMCRP","SMCRPH","CLESCN","AUCCN","ROMC","CVRC","VRC"))) {
 
          m1i  <- .getx("m1i",  mf=mf, data=data, checknumeric=TRUE) # for VRC, do not need to supply this
          m2i  <- .getx("m2i",  mf=mf, data=data, checknumeric=TRUE) # for VRC, do not need to supply this
@@ -1983,7 +2387,9 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
          ti   <- .getx("ti",   mf=mf, data=data, checknumeric=TRUE)
          pi   <- .getx("pi",   mf=mf, data=data, checknumeric=TRUE)
 
-         if (is.element(measure, c("MC","SMCRH","SMCRP","SMCRPH","ROMC","CVRC"))) {
+         ri <- .expand1(ri, list(m1i, m2i, sd1i, sd2i, ni, di, ti, pi))
+
+         if (is.element(measure, c("MC","SMCRH","SMCRP","SMCRPH","CLESCN","AUCCN","ROMC","CVRC"))) {
 
             ### for these measures, need m1i, m2i, sd1i, sd2i, ni, and ri
 
@@ -2059,7 +2465,7 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
             ri   <- .getsubset(ri,   subset)
          }
 
-         if (is.element(measure, c("MC","SMCC","SMCRH","SMCRP","SMCRPH","ROMC","CVRC","VRC"))) {
+         if (is.element(measure, c("MC","SMCC","SMCRH","SMCRP","SMCRPH","CLESCN","AUCCN","ROMC","CVRC","VRC"))) {
             if (any(c(sd1i, sd2i) < 0, na.rm=TRUE))
                stop(mstyle$stop("One or more standard deviations are negative."))
          }
@@ -2101,13 +2507,12 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
             di <- (m1i - m2i) / sddiffi
             yi <- cmi * di
 
-            if (length(vtype) == 1L)
-               vtype <- rep(vtype, k)
+            vtype <- .expand1(vtype, k)
 
             vi <- rep(NA_real_, k)
 
-            if (!all(is.element(vtype, c("LS","LS2","UB"))))
-               stop(mstyle$stop("For this outcome measure, 'vtype' must be either 'LS', 'LS2', or 'UB'."))
+            if (!all(is.element(vtype, c("LS","LS2","UB","H0"))))
+               stop(mstyle$stop("For this outcome measure, 'vtype' must be either 'LS', 'LS2', 'UB', or 'H0'."))
 
             for (i in seq_len(k)) {
 
@@ -2123,6 +2528,10 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
                if (vtype[i] == "UB")
                   vi[i] <- 1/ni[i] + (1 - (mi[i]-2)/(mi[i]*cmi[i]^2)) * yi[i]^2 # Viechtbauer, 2007d, equation 26; see [c]
 
+               ### estimate assuming theta=0
+               if (vtype[i] == "H0")
+                  vi[i] <- ifelse(mi[i] > 2, cmi[i]^2 / ni[i] * mi[i] / (mi[i] - 2), NA_real_)
+
             }
 
          }
@@ -2135,13 +2544,12 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
             di <- (m1i - m2i) / sd1i
             yi <- cmi * di
 
-            if (length(vtype) == 1L)
-               vtype <- rep(vtype, k)
+            vtype <- .expand1(vtype, k)
 
             vi <- rep(NA_real_, k)
 
-            if (!all(is.element(vtype, c("LS","LS2"))))
-               stop(mstyle$stop("For this outcome measure, 'vtype' must be either 'LS' or 'LS2'."))
+            if (!all(is.element(vtype, c("LS","LS2","UB","H0"))))
+               stop(mstyle$stop("For this outcome measure, 'vtype' must be either 'LS', 'LS2', 'UB', or 'H0'."))
 
             for (i in seq_len(k)) {
 
@@ -2156,8 +2564,14 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
 
                ### unbiased estimate of the sampling variance
                if (vtype[i] == "UB") {
-                  rui[i] <- ri[i] * .Fcalc(1/2, 1/2, (ni[i]-2)/2, 1-ri[i]^2) # NA when ni <= 4
-                  vi[i] <- 2*(1-rui[i])/ni[i] + (1 - (mi[i]-2)/(mi[i]*cmi[i]^2)) * yi[i]^2 # Viechtbauer, 2007d, equation 37; see [c]
+                  rui <- ri[i] * .Fcalc(1/2, 1/2, (ni[i]-2)/2, 1-ri[i]^2) # NA when ni <= 4
+                  vi[i] <- 2*(1-rui)/ni[i] + (1 - (mi[i]-2)/(mi[i]*cmi[i]^2)) * yi[i]^2 # Viechtbauer, 2007d, equation 37; see [c]
+               }
+
+               ### estimate assuming theta=0
+               if (vtype[i] == "H0") {
+                  rui <- ri[i] * .Fcalc(1/2, 1/2, (ni[i]-2)/2, 1-ri[i]^2) # NA when ni <= 4
+                  vi[i] <- ifelse(mi[i] > 2, cmi[i]^2 * 2*(1-rui) / ni[i] * mi[i] / (mi[i] - 2), NA_real_)
                }
 
             }
@@ -2172,8 +2586,7 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
             di <- (m1i - m2i) / sd1i
             yi <- cmi * di
 
-            if (length(vtype) == 1L)
-               vtype <- rep(vtype, k)
+            vtype <- .expand1(vtype, k)
 
             vi <- rep(NA_real_, k)
 
@@ -2206,12 +2619,11 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
             di <- (m1i - m2i) / sdpi
             yi <- cmi * di
 
-            if (length(vtype) == 1L)
-               vtype <- rep(vtype, k)
+            vtype <- .expand1(vtype, k)
 
             vi <- rep(NA_real_, k)
 
-            if (!all(is.element(vtype, c("LS"))))
+            if (!all(is.element(vtype, "LS")))
                stop(mstyle$stop("For this outcome measure, 'vtype' must be 'LS'."))
 
             for (i in seq_len(k)) {
@@ -2233,8 +2645,7 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
             di <- (m1i - m2i) / sdpi
             yi <- cmi * di
 
-            if (length(vtype) == 1L)
-               vtype <- rep(vtype, k)
+            vtype <- .expand1(vtype, k)
 
             vi <- rep(NA_real_, k)
 
@@ -2252,6 +2663,16 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
                   vi[i] <- sddiffi[i]^2 / (sdpi[i]^2 * ni[i]) + yi[i]^2 * (sd1i[i]^4 + sd2i[i]^4 + 2*ri[i]^2*sd1i[i]^2*sd2i[i]^2) / (8 * sdpi[i]^4 * ni[i])
 
             }
+
+         }
+
+         ### common language effect size / area under the curve allowing for heteroscedasticity
+
+         if (is.element(measure, c("CLESCN","AUCCN"))) {
+
+            di <- (m1i - m2i) / sdpi
+            yi <- pnorm(di/sqrt(2))
+            vi <- exp(-di^2 / 2) / (4*base::pi) * (sddiffi^2 / (sdpi^2 * (ni-1)) + di^2 * (sd1i^4 + sd2i^4 + 2*ri^2*sd1i^2*sd2i^2) / (8 * sdpi^4 * (ni-1)))
 
          }
 
@@ -2328,6 +2749,10 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
             #yi <- (1-ai)^(1/3)    # technically this is the Hakstian & Whalen (1976) transformation
             yi <- 1 - (1-ai)^(1/3) # but with this, yi remains a monotonically increasing function of ai
             vi <- 18*mi*(ni-1)*(1-ai)^(2/3) / ((mi-1)*(9*ni-11)^2)
+            #vi <- 2*mi*(1-ai)^(2/3) / (9*(mi-1)*(ni-2)) # this follows from the delta method
+            # this is asymptotically consistent with escalc(measure="ARAW") -> conv.delta(transf=transf.ahw)
+            #tmp <- escalc(measure="ARAW", ai=ai, mi=mi, ni=ni)
+            #vi <- conv.delta(yi, vi, data=tmp, transf=transf.ahw, replace=TRUE)$vi
          }
 
          ### alphas transformed with Bonett (2002) transformation (without bias correction)
@@ -2337,6 +2762,9 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
             #yi <- log(1-ai) # technically this is the Bonett (2002) transformation
             yi <- -log(1-ai) # but with this, yi remains a monotonically increasing function of ai
             vi <- 2*mi / ((mi-1)*(ni-2))
+            # this is consistent with escalc(measure="ARAW") -> conv.delta(transf=transf.abt)
+            #tmp <- escalc(measure="ARAW", ai=ai, mi=mi, ni=ni)
+            #vi <- conv.delta(yi, vi, data=tmp, transf=transf.abt, replace=TRUE)$vi
          }
 
       }
@@ -2405,7 +2833,7 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
 
       if (is.null(vi)) {
          if (is.null(sei)) {
-            stop(mstyle$stop("Must specify 'vi' or 'sei' argument."))
+            stop(mstyle$stop("Must specify the 'vi' or 'sei' argument."))
          } else {
             vi <- sei^2
          }
@@ -2474,7 +2902,7 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
    if (!is.null(slab)) {
 
       if (length(slab) != k.all)
-         stop(mstyle$stop("Study labels not of same length as data."))
+         stop(mstyle$stop(paste0("Length of the 'slab' argument (", length(slab), ") does not correspond to the size of the dataset (", k.all, ").")))
 
       if (is.factor(slab))
          slab <- as.character(slab)
@@ -2499,7 +2927,7 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
    if (is.null(subset))
       subset <- rep(TRUE, k.all)
 
-   ### turn numeric include vector into logical vector (already done for subset)
+   ### turn numeric include vector into a logical vector (already done for subset)
 
    if (!is.null(include))
       include <- .chksubset(include, k.all, stoponk0=FALSE)
@@ -2507,6 +2935,26 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
    ### apply subset to include
 
    include <- .getsubset(include, subset)
+
+   ### process flip argument
+
+   if (is.null(flip)) {
+      flip <- rep(1, k.all)
+   } else {
+      if (is.logical(flip)) {
+         flip <- .expand1(flip, k.all)
+         flip <- flip %in% TRUE # so NAs are treated as FALSE
+         flip <- ifelse(flip, -1, 1)
+      }
+   }
+
+   if (length(flip) != k.all)
+      stop(mstyle$stop(paste0("Length of the 'flip' argument (", length(flip), ") does not correspond to the size of the dataset (", k.all, ").")))
+
+   flip <- .getsubset(flip, subset)
+
+   yi[include] <- flip[include] * yi[include]
+   vi[include] <- flip[include]^2 * vi[include]
 
    ### subset data frame (note: subsetting of other parts already done above, so yi/vi/ni.u/slab are already subsetted)
 
@@ -2582,6 +3030,9 @@ data, slab, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", var.
 
    ### add digits attribute
    attr(dat, "digits") <- digits
+
+   ### add vtype attribute
+   #attr(dat, "vtype") <- vtype
 
    ### add 'yi.names' and 'vi.names' to the first position of the corresponding attributes (so the first is always the last one calculated/added)
    attr(dat, "yi.names") <- union(var.names[1], attr(data, "yi.names")) # if 'yi.names' is not an attribute, attr() returns NULL, so this works fine

@@ -15,7 +15,7 @@ conv.2x2(ori, ri, x2i, ni, n1i, n2i, correct=TRUE, data, include,
    \item{ni}{vector with the total sample sizes.}
    \item{n1i}{vector with the marginal counts for the outcome of interest on the first variable.}
    \item{n2i}{vector with the marginal counts for the outcome of interest on the second variable.}
-   \item{correct}{optional logical (or vector thereof) to indicate whether chi-square statistics were computed using Yates's correction for continuity (the default is \code{TRUE}).}
+   \item{correct}{optional logical (or vector thereof) to specify whether chi-square statistics were computed using Yates's correction for continuity (the default is \code{TRUE}).}
    \item{data}{optional data frame containing the variables given to the arguments above.}
    \item{include}{optional (logical or numeric) vector to specify the subset of studies for which the cell frequencies should be reconstructed.}
    \item{var.names}{character vector with four elements to specify the names of the variables for the reconstructed cell frequencies (the default is \code{c("ai","bi","ci","di")}).}
@@ -54,12 +54,12 @@ conv.2x2(ori, ri, x2i, ni, n1i, n2i, correct=TRUE, data, include,
 \value{
    If the \code{data} argument was not specified or \code{append=FALSE}, a data frame with four variables called \code{var.names} with the reconstructed cell frequencies.
 
-   If \code{data} was specified and \code{append=TRUE}, then the original data frame is returned. If \code{var.names[j]} (for \mjeqn{\textrm{j} \in \\\\{1, \ldots, 4\\\\}}{for j in \{1, ..., 4\}}) is a variable in \code{data} and \code{replace="ifna"} (or \code{replace=FALSE}), then only missing values in this variable are replaced with the estimated frequencies (where possible) and otherwise a new variable called \code{var.names[j]} is added to the data frame.
+   If \code{data} was specified and \code{append=TRUE}, then the original data frame is returned. If \code{var.names[j]} (for \mjeqn{\text{j} \in \\\\{1, \ldots, 4\\\\}}{for j in \{1, ..., 4\}}) is a variable in \code{data} and \code{replace="ifna"} (or \code{replace=FALSE}), then only missing values in this variable are replaced with the estimated frequencies (where possible) and otherwise a new variable called \code{var.names[j]} is added to the data frame.
 
    If \code{replace="all"} (or \code{replace=TRUE}), then all values in \code{var.names[j]} where a reconstructed cell frequency can be computed are replaced, even for cases where the value in \code{var.names[j]} is not missing.
 }
 \author{
-   Wolfgang Viechtbauer \email{wvb@metafor-project.org} \url{https://www.metafor-project.org}
+   Wolfgang Viechtbauer (\email{wvb@metafor-project.org}, \url{https://www.metafor-project.org}).
 }
 \references{
    Bonett, D. G. (2007). Transforming odds ratios into correlations for meta-analytic research. \emph{American Psychologist}, \bold{62}(3), 254--255. \verb{https://doi.org/10.1037/0003-066x.62.3.254}

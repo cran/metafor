@@ -12,17 +12,14 @@ dfround <- function(x, digits, drop0=TRUE) {
    if (missing(digits))
       digits <- 0
 
-   if (length(digits) == 1L)
-      digits <- rep(digits, p)
-
-   if (length(drop0) == 1L)
-      drop0 <- rep(drop0, p)
+   digits <- .expand1(digits, p)
+   drop0  <- .expand1(drop0, p)
 
    if (p != length(digits))
-      stop(mstyle$stop(paste0("Number of columns in 'x' (", p, ") does not match length of 'digits' (", length(digits), ").")))
+      stop(mstyle$stop(paste0("Number of columns in 'x' (", p, ") do not match the length of 'digits' (", length(digits), ").")))
 
    if (p != length(drop0))
-      stop(mstyle$stop(paste0("Number of columns in 'x' (", p, ") does not match length of 'drop0' (", length(drop0), ").")))
+      stop(mstyle$stop(paste0("Number of columns in 'x' (", p, ") do not match the length of 'drop0' (", length(drop0), ").")))
 
    if (!is.numeric(digits))
       stop(mstyle$stop("Argument 'digits' must be a numeric vector."))

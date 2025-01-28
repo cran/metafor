@@ -6,7 +6,7 @@
 }
 \usage{
 \method{plot}{infl.rma.uni}(x, plotinf=TRUE, plotdfbs=FALSE, dfbsnew=FALSE, logcov=TRUE,
-     layout, slab.style=1, las=0, pch=21, bg, bg.infl, col.na, \dots)
+     slab.style=1, las=0, pch=21, bg, bg.infl, col.na, \dots)
 }
 \arguments{
    \item{x}{an object of class \code{"infl.rma.uni"} obtained with \code{\link[=influence.rma.uni]{influence}}.}
@@ -14,8 +14,7 @@
    \item{plotdfbs}{logical to specify whether the DFBETAS values should be plotted (the default is \code{FALSE}). Can also be a vector of integers to specify for which coefficient(s) to plot the DFBETAS values.}
    \item{dfbsnew}{logical to specify whether a new device should be opened for plotting the DFBETAS values (the default is \code{FALSE}).}
    \item{logcov}{logical to specify whether the covariance ratios should be plotted on a log scale (the default is \code{TRUE}).}
-   \item{layout}{optional vector of two numbers to specify the number of rows and columns for the layout of the figure.}
-   \item{slab.style}{integer to indicate the style of the x-axis labels: 1 = study number, 2 = study label, 3 = abbreviated study label. Note that study labels, even when abbreviated, may be too long to fit in the margins.)}
+   \item{slab.style}{integer to specify the style of the x-axis labels: 1 = study number, 2 = study label, 3 = abbreviated study label. Note that study labels, even when abbreviated, may be too long to fit in the margins (see argument \code{mar} for \code{\link{par}} to adjust the margin sizes).}
    \item{las}{integer between 0 and 3 to specify the alignment of the axis labels (see \code{\link{par}}). The most useful alternative to 0 is 3, so that the x-axis labels are drawn vertical to the axis.}
    \item{pch}{plotting symbol to use. By default, an open circle is used. See \code{\link{points}} for other options.}
    \item{bg}{optional character string to specify the background color of open plotting symbols. If unspecified, gray is used by default.}
@@ -42,7 +41,7 @@
    The chosen cut-offs are (somewhat) arbitrary. Substantively informed judgment should always be used when examining the influence of each case on the results.
 }
 \author{
-   Wolfgang Viechtbauer \email{wvb@metafor-project.org} \url{https://www.metafor-project.org}
+   Wolfgang Viechtbauer (\email{wvb@metafor-project.org}, \url{https://www.metafor-project.org}).
 }
 \references{
    Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \verb{https://doi.org/10.18637/jss.v036.i03}
@@ -54,7 +53,8 @@
 }
 \examples{
 ### calculate log risk ratios and corresponding sampling variances
-dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
+dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg,
+              data=dat.bcg, slab=paste(author, year, sep=", "))
 
 ### fit mixed-effects model with absolute latitude and publication year as moderators
 res <- rma(yi, vi, mods = ~ ablat + year, data=dat)
@@ -65,9 +65,13 @@ inf <- influence(res)
 ### plot the values
 plot(inf)
 
+### show the abbreviated study labels on the x-axis
+op <- par(mar=c(8,4,4,2))
+plot(inf, slab.style=3, las=3)
+par(op)
+
 ### select which plots to show
 plot(inf, plotinf=1:4)
-plot(inf, plotinf=1:4, layout=c(4,1))
 
 ### plot the DFBETAS values
 plot(inf, plotinf=FALSE, plotdfbs=TRUE)

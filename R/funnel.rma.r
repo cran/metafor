@@ -13,6 +13,9 @@ label=FALSE, offset=0.4, legend=FALSE, ...) {
    na.act <- getOption("na.action")
    on.exit(options(na.action=na.act), add=TRUE)
 
+   if (is.null(x$yi) || is.null(x$vi))
+      stop(mstyle$stop("Information needed to construct the plot is not available in the model object."))
+
    yaxis <- match.arg(yaxis, c("sei", "vi", "seinv", "vinv", "ni", "ninv", "sqrtni", "sqrtninv", "lni", "wi"))
    type  <- match.arg(type,  c("rstandard", "rstudent"))
 
@@ -34,8 +37,12 @@ label=FALSE, offset=0.4, legend=FALSE, ...) {
    if (missing(shade))
       shade <- .coladj(par("bg","fg"), dark=c(0.2,-0.8), light=c(0,1))
 
-   if (length(level) > 1L && length(shade) == 1L)
-      shade <- rep(shade, length(level))
+   if (length(level) > 1L && length(shade) == 1L) {
+      #shade <- rep(shade, length(level))
+      shade2 <- .coladj(par("bg","fg"), dark=c(0.5,-0.3), light=c(-0.5,0.3))
+      shade <- colorRampPalette(c(shade,shade2))(length(level))
+      shade[-1] <- rev(shade[-1])
+   }
 
    if (missing(hlines))
       hlines <- .coladj(par("bg","fg"), dark=c(0,-0.8), light=c(0,1))
@@ -124,8 +131,7 @@ label=FALSE, offset=0.4, legend=FALSE, ...) {
 
    ### note: digits can also be a list (e.g., digits=list(2L,3)); trailing 0's are dropped for integers
 
-   if (length(lty) == 1L)
-      lty <- rep(lty, 2L) # 1st value = funnel lines, 2nd value = reference line
+   lty <- .expand1(lty, 2L) # 1st value = funnel lines, 2nd value = reference line
 
    ### note: slab, pch, col, and bg (if vectors) must be of the same length as the original dataset
    ###       so we have to apply the same subsetting (if necessary) and removing of NAs as was
@@ -492,13 +498,13 @@ label=FALSE, offset=0.4, legend=FALSE, ...) {
 
       if (yaxis == "seinv") {
          rylim   <- ylim[2] - ylim[1]
-         #ylim[1] <- max(.0001, ylim[1] - (rylim * 0.10)) # not clear how much to add to bottom
+         #ylim[1] <- max(0.0001, ylim[1] - (rylim * 0.10)) # not clear how much to add to bottom
          ylim[2] <- ylim[2] + (rylim * 0.10)
       }
 
       if (yaxis == "vinv") {
          rylim   <- ylim[2] - ylim[1]
-         #ylim[1] <- max(.0001, ylim[1] - (rylim * 0.10)) # not clear how much to add to bottom
+         #ylim[1] <- max(0.0001, ylim[1] - (rylim * 0.10)) # not clear how much to add to bottom
          ylim[2] <- ylim[2] + (rylim * 0.10)
       }
 
@@ -625,6 +631,8 @@ label=FALSE, offset=0.4, legend=FALSE, ...) {
          if (is.null(targs)) {
             at.lab <- fmtx(sapply(at.lab, atransf), digits[[1]], drop0ifint=TRUE)
          } else {
+            if (!is.primitive(atransf) && !is.null(targs) && length(formals(atransf)) == 1L)
+               stop(mstyle$stop("Function specified via 'transf' does not appear to have an argument for 'targs'."))
             at.lab <- fmtx(sapply(at.lab, atransf, targs), digits[[1]], drop0ifint=TRUE)
          }
       } else {

@@ -1,4 +1,4 @@
-permutest.rma.uni <- function(x, exact=FALSE, iter=1000, permci=FALSE, progbar=TRUE, digits, control, ...) {
+permutest.rma.uni <- function(x, exact=FALSE, iter=1000, btt=x$btt, permci=FALSE, progbar=TRUE, digits, control, ...) {
 
    mstyle <- .get.mstyle()
 
@@ -10,12 +10,17 @@ permutest.rma.uni <- function(x, exact=FALSE, iter=1000, permci=FALSE, progbar=T
       digits <- .get.digits(digits=digits, xdigits=x$digits, dmiss=FALSE)
    }
 
+   if (is.null(x$yi) || is.null(x$vi))
+      stop(mstyle$stop("Information needed to carry out permutation test is not available in the model object."))
+
    ddd <- list(...)
 
-   .chkdots(ddd, c("tol", "time", "seed", "verbose"))
+   .chkdots(ddd, c("tol", "time", "seed", "verbose", "fixed", "code1", "code2"))
 
-   if (!is.null(ddd$tol)) # in case user specifies comptol in the old manner
+   if (!is.null(ddd$tol)) # in case user specified comptol in the old manner
       comptol <- ddd$tol
+
+   fixed <- .chkddd(ddd$fixed, FALSE, .isTRUE(ddd$fixed))
 
    iter <- round(iter)
 
@@ -24,6 +29,16 @@ permutest.rma.uni <- function(x, exact=FALSE, iter=1000, permci=FALSE, progbar=T
 
    if (.isTRUE(ddd$time))
       time.start <- proc.time()
+
+   if (!missing(btt)) {
+
+      btt <- .set.btt(btt, x$p, x$int.incl, colnames(x$X), fixed=fixed)
+
+      args <- list(yi=x$yi, vi=x$vi, weights=x$weights, mods=x$X, intercept=FALSE, method=x$method, weighted=x$weighted,
+                   test=x$test, level=x$level, btt=btt, tau2=ifelse(x$tau2.fix, x$tau2, NA), control=x$control, skipr2=TRUE)
+      x <- try(suppressWarnings(.do.call(rma.uni, args)), silent=!isTRUE(ddd$verbose))
+
+   }
 
    #########################################################################
    #########################################################################
@@ -95,7 +110,7 @@ permutest.rma.uni <- function(x, exact=FALSE, iter=1000, permci=FALSE, progbar=T
    if (!X.exact)
       seed <- as.integer(runif(1)*2e9)
 
-   ### set control parameters and possibly replace with user-defined values
+   ### set defaults for control parameters and replace with any user-defined values
 
    if (missing(control))
       control <- list()
@@ -130,6 +145,9 @@ permutest.rma.uni <- function(x, exact=FALSE, iter=1000, permci=FALSE, progbar=T
    if (progbar)
       cat(mstyle$verbose(paste0("Running ", X.iter, " iterations for an ", ifelse(X.exact, "exact", "approximate"), " permutation test.\n")))
 
+   if (!is.null(ddd[["code1"]]))
+      eval(expr = parse(text = ddd[["code1"]]))
+
    if (x$int.only) {
 
       ### permutation test for intercept-only model
@@ -158,6 +176,9 @@ permutest.rma.uni <- function(x, exact=FALSE, iter=1000, permci=FALSE, progbar=T
 
          for (i in seq_len(X.iter)) {
 
+            if (!is.null(ddd[["code2"]]))
+               eval(expr = parse(text = ddd[["code2"]]))
+
             args <- list(yi=signmat[i,]*x$yi, vi=x$vi, weights=x$weights, intercept=TRUE, method=x$method, weighted=x$weighted,
                          test=x$test, level=x$level, btt=1, tau2=ifelse(x$tau2.fix, x$tau2, NA), control=x$control, skipr2=TRUE, outlist=outlist)
             res <- try(suppressWarnings(.do.call(rma.uni, args)), silent=!isTRUE(ddd$verbose))
@@ -180,8 +201,11 @@ permutest.rma.uni <- function(x, exact=FALSE, iter=1000, permci=FALSE, progbar=T
 
          while (i <= X.iter) {
 
+            if (!is.null(ddd[["code2"]]))
+               eval(expr = parse(text = ddd[["code2"]]))
+
             signs <- sample(c(-1,1), x$k, replace=TRUE) # easier to understand (a tad slower for small k, but faster for larger k)
-            #signs <- 2*rbinom(x$k,1,.5)-1
+            #signs <- 2*rbinom(x$k,1,0.5)-1
 
             args <- list(yi=signs*x$yi, vi=x$vi, weights=x$weights, intercept=TRUE, method=x$method, weighted=x$weighted,
                          test=x$test, level=x$level, btt=1, tau2=ifelse(x$tau2.fix, x$tau2, NA), control=x$control, skipr2=TRUE, outlist=outlist)

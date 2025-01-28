@@ -44,7 +44,7 @@
 
          ### make sure that at least one valid value is left
          if (length(btt) == 0L)
-            stop(mstyle$stop("Non-existent coefficients specified via 'btt'."), call.=FALSE)
+            stop(mstyle$stop("Non-existent coefficient(s) specified via 'btt'."), call.=FALSE)
 
       }
 
@@ -160,7 +160,7 @@
    if (as.list) {
       return(list(x=x.flip, y=y.flip))
    } else {
-      return(cbind(x.flip, y.flip))
+      return(unname(cbind(x.flip, y.flip)))
    }
 
 }
@@ -266,11 +266,43 @@
 
 }
 
+### function that expands a scalar to length k; can also expand a scalar to
+### the maximum length of the list elements given to k
+
+.expand1 <- function(x, k) {
+
+   if (is.list(k))
+      k <- max(lengths(k, use.names=FALSE))
+
+   if (length(x) == 1L)
+      x <- rep(x, k)
+
+   return(x)
+
+}
+
+### function that takes a vector as input and creates an expanded vector of
+### the length of 'fill' of all NAs but where the fill values are given by x
+### (can also take an entire list as input)
+
+.expandna <- function(x, fill) {
+   if (is.list(x)) {
+      return(lapply(x, function(xi) .expandna(xi, fill)))
+   } else {
+      if (!is.logical(fill))
+         stop("Argument 'fill' is not a logical vector.")
+      k <- length(fill)
+      out <- rep(NA_real_, k)
+      out[fill] <- x
+      return(out)
+   }
+}
+
 ############################################################################
 
 ### function to format p-values (no longer used; use fmtp() instead)
-### if showeq=FALSE, c(.001, .00001) becomes c("0.0010", "<.0001")
-### if showeq=TRUE,  c(.001, .00001) becomes c("=0.0010", "<.0001")
+### if showeq=FALSE, c(0.001, 0.00001) becomes c("0.0010", "<.0001")
+### if showeq=TRUE,  c(0.001, 0.00001) becomes c("=0.0010", "<.0001")
 ### if add0=FALSE, "<.0001"; if add0=TRUE, "<0.0001"
 
 .pval <- function(p, digits=4, showeq=FALSE, sep="", add0=FALSE) {
@@ -301,6 +333,9 @@
 
 .level <- function(level, allow.vector=FALSE, argname="level", stopon100=FALSE) {
 
+   if (is.null(level))
+      return(NULL)
+
    mstyle <- .get.mstyle()
 
    if (any(level > 100) || any(level < 0))
@@ -315,7 +350,7 @@
    if (!is.numeric(level))
       stop(mstyle$stop(paste0("The '", argname, "' argument must be numeric.")), call.=FALSE)
 
-   ifelse(level == 0, 1, ifelse(level >= 1, (100-level)/100, ifelse(level > .5, 1-level, level)))
+   ifelse(level == 0, 1, ifelse(level >= 1, (100-level)/100, ifelse(level > 0.5, 1-level, level)))
 
 }
 
@@ -438,7 +473,8 @@
    ux <- unique(x)
 
    for (i in seq_along(ux)) {
-      xiTF <- x == ux[i]
+      #xiTF <- x == ux[i]
+      xiTF <- x %in% ux[i] # works also with NAs in vector (multiple NAs are then NA.1, NA.2, ...)
       xi <- x[xiTF]
       if (length(xi) == 1L)
          next
@@ -894,14 +930,14 @@
          }
       }
       ######################################################################
-      if (measure == "R2") {
+      if (is.element(measure, c("R2","R2F"))) {
          if (identical(transf.char, "FALSE") && identical(atransf.char, "FALSE")) {
             lab <- ifelse(short, expression(R^2), "Coefficient of Determination")
          } else {
             lab <- ifelse(short, lab, "Transformed Coefficient of Determination")
          }
       }
-      if (measure == "ZR2") {
+      if (is.element(measure, c("ZR2","ZR2F"))) {
          if (identical(transf.char, "FALSE") && identical(atransf.char, "FALSE")) {
             lab <- ifelse(short, expression(z[R^2]), "z Transformed Coefficient of Determination")
          } else {
@@ -948,6 +984,18 @@
                lab <- ifelse(short, "Odds", "Odds (log scale)")
             if (any(sapply(funlist, identical, transf.char)))
                lab <- ifelse(short, "Odds", "Odds")
+         }
+      }
+      if (measure == "PRZ") {
+         if (identical(transf.char, "FALSE") && identical(atransf.char, "FALSE")) {
+            lab <- ifelse(short, expression(Phi^{-1}*(p)), "Probit Transformed Proportion") # expression(z[p])
+         } else {
+            lab <- ifelse(short, lab, "Transformed Probit Transformed Proportion")
+            funlist <- lapply(list(pnorm), deparse)
+            if (any(sapply(funlist, identical, atransf.char)))
+               lab <- ifelse(short, "Proportion", "Proportion (probit scale)")
+            if (any(sapply(funlist, identical, transf.char)))
+               lab <- ifelse(short, "Proportion", "Proportion")
          }
       }
       if (measure == "PAS") {
@@ -1158,6 +1206,22 @@
                lab <- ifelse(short, "REH", "Relative Excess Heterozygosity (log scale)")
             if (any(sapply(funlist, identical, transf.char)))
                lab <- ifelse(short, "REH", "Relative Excess Heterozygosity")
+         }
+      }
+      ######################################################################
+      if (is.element(measure, c("CLES","CLESN","CLESCN"))) {
+         if (identical(transf.char, "FALSE") && identical(atransf.char, "FALSE")) {
+            lab <- ifelse(short, "CLES", "Common Language Effect Size")
+         } else {
+            lab <- ifelse(short, lab, "Transformed Common Language Effect Size")
+         }
+      }
+      ######################################################################
+      if (is.element(measure, c("AUC","AUCN","AUCCN"))) {
+         if (identical(transf.char, "FALSE") && identical(atransf.char, "FALSE")) {
+            lab <- ifelse(short, "AUC", "Area under the Curve")
+         } else {
+            lab <- ifelse(short, lab, "Transformed Area under the Curve")
          }
       }
       ######################################################################
@@ -1504,6 +1568,9 @@
    if (length(x) == 0L)
       stop(mstyle$stop(paste0("Argument '", argname, "' is of length 0.")), call.=FALSE)
 
+   if (is.character(x))
+      stop(mstyle$stop(paste0("Argument '", argname, "' is not a logical or numeric vector.")), call.=FALSE)
+
    if (is.logical(x)) {
       if (length(x) != k)
          stop(mstyle$stop(paste0("Length of the '", argname, "' argument (", length(x), ") is not of length k = ", k, ".")), call.=FALSE)
@@ -1659,14 +1726,9 @@
          stop(mstyle$stop("Please install the 'alabama' package to use this optimizer."), call.=FALSE)
    }
 
-   if (optimizer == "Rcgmin") {
-      if (!requireNamespace(optimizer, quietly=TRUE))
-         stop(mstyle$stop(paste0("Please install the '", optimizer, "' package to use this optimizer.")), call.=FALSE)
-   }
-
-   if (optimizer == "Rvmmin") {
-      if (!requireNamespace(optimizer, quietly=TRUE))
-         stop(mstyle$stop(paste0("Please install the '", optimizer, "' package to use this optimizer.")), call.=FALSE)
+   if (is.element(optimizer, c("Rcgmin","Rvmmin"))) {
+      if (!requireNamespace("optimx", quietly=TRUE))
+         stop(mstyle$stop(paste0("Please install the 'optimx' package to use this optimizer.")), call.=FALSE)
    }
 
    #########################################################################
@@ -1741,16 +1803,16 @@
 
    if (optimizer == "Rcgmin") {
       par.arg <- "par"
-      optimizer <- "Rcgmin::Rcgmin"
-      #ctrl.arg <- ", gr='grnd', control=optcontrol"
-      ctrl.arg <- ", control=optcontrol"
+      optimizer <- "optimx::Rcgmin"
+      ctrl.arg <- ", gr='grnd', control=optcontrol"
+      #ctrl.arg <- ", control=optcontrol"
    }
 
    if (optimizer == "Rvmmin") {
       par.arg <- "par"
-      optimizer <- "Rvmmin::Rvmmin"
-      #ctrl.arg <- ", gr='grnd', control=optcontrol"
-      ctrl.arg <- ", control=optcontrol"
+      optimizer <- "optimx::Rvmmin"
+      ctrl.arg <- ", gr='grnd', control=optcontrol"
+      #ctrl.arg <- ", control=optcontrol"
    }
 
    if (optimizer == "optimParallel") {
@@ -1780,7 +1842,7 @@
    if (optimizer == "lbfgsb3c::lbfgsb3c" && is.null(opt.res$convergence)) # special provision for lbfgsb3c in case 'convergence' is missing
       opt.res$convergence <- -99
 
-   if (is.element(optimizer, c("optim","constrOptim","nlminb","dfoptim::hjk","dfoptim::nmk","lbfgsb3c::lbfgsb3c","subplex::subplex","BB::BBoptim","Rsolnp::solnp","alabama::constrOptim.nl","Rcgmin::Rcgmin","Rvmmin:Rvmmin","optimParallel::optimParallel")) && opt.res$convergence != 0)
+   if (is.element(optimizer, c("optim","constrOptim","nlminb","dfoptim::hjk","dfoptim::nmk","lbfgsb3c::lbfgsb3c","subplex::subplex","BB::BBoptim","Rsolnp::solnp","alabama::constrOptim.nl","optimx::Rcgmin","optimx:Rvmmin","optimParallel::optimParallel")) && opt.res$convergence != 0)
       stop(mstyle$stop(paste0("Optimizer (", optimizer, ") did not achieve convergence (convergence = ", opt.res$convergence, ").")), call.=FALSE)
 
    if (is.element(optimizer, c("dfoptim::mads")) && opt.res$convergence > optcontrol$tol)
@@ -1919,7 +1981,7 @@
 
    }
 
-   if (themeopt != "default")
+   if (themeopt != "default" && isFALSE(par("new")))
       par(fg=fg, bg=bg, col=fg, col.axis=fg, col.lab=fg, col.main=fg, col.sub=fg)
 
    invisible()

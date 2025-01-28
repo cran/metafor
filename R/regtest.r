@@ -40,6 +40,9 @@ regtest <- function(x, vi, sei, ni, subset, data, model="rma", predictor="sei", 
 
       .chkclass(class(x), must="rma", notav=c("robust.rma", "rma.glmm", "rma.mv", "rma.ls", "rma.gen", "rma.uni.selmodel"))
 
+      if (is.null(x$yi) || is.null(x$vi))
+         stop(mstyle$stop("Information needed to carry out the test is not available in the model object."))
+
       if (!missing(vi) || !missing(sei) || !missing(subset))
          warning(mstyle$warning("Arguments 'vi', 'sei', and 'subset' ignored when 'x' is a model object."), call.=FALSE)
 
@@ -57,7 +60,7 @@ regtest <- function(x, vi, sei, ni, subset, data, model="rma", predictor="sei", 
          if (!is.null(ni)) {
 
             if (length(ni) != x$k.all)
-               stop(mstyle$stop(paste0("Length of variable specified via 'ni' (", length(ni), ") does not correspond to the size of the original dataset (", x$k.all, ").")))
+               stop(mstyle$stop(paste0("Length of the variable specified via 'ni' (", length(ni), ") does not correspond to the size of the original dataset (", x$k.all, ").")))
 
             ni <- .getsubset(ni, x$subset)
 
@@ -132,17 +135,17 @@ regtest <- function(x, vi, sei, ni, subset, data, model="rma", predictor="sei", 
       }
 
       if (is.null(vi))
-         stop(mstyle$stop("Must specify 'vi' or 'sei' argument."))
+         stop(mstyle$stop("Must specify the 'vi' or 'sei' argument."))
 
       ### check length of yi and vi
 
       if (length(vi) != k)
-         stop(mstyle$stop("Length of 'yi' and 'vi' (or 'sei') is not the same."))
+         stop(mstyle$stop("Length of 'yi' and 'vi' (or 'sei') are not the same."))
 
       ### check length of yi and ni
 
       if (!is.null(ni) && length(ni) != k)
-         stop(mstyle$stop("Length of 'yi' and 'ni' is not the same."))
+         stop(mstyle$stop("Length of 'yi' and 'ni' are not the same."))
 
       ### check 'vi' argument for potential misuse
 

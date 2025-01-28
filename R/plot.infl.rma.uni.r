@@ -1,5 +1,5 @@
 plot.infl.rma.uni <- function(x, plotinf=TRUE, plotdfbs=FALSE, dfbsnew=FALSE, logcov=TRUE,
-layout, slab.style=1, las=0, pch=21, bg, bg.infl, col.na, ...) {
+slab.style=1, las=0, pch=21, bg, bg.infl, col.na, ...) {
 
    mstyle <- .get.mstyle()
 
@@ -9,6 +9,11 @@ layout, slab.style=1, las=0, pch=21, bg, bg.infl, col.na, ...) {
 
    if (!is.element(na.act, c("na.omit", "na.exclude", "na.fail", "na.pass")))
       stop(mstyle$stop("Unknown 'na.action' specified under options()."))
+
+   ddd <- list(...)
+
+   if (!is.null(ddd$layout))
+      warning(mstyle$warning("Argument 'layout' has been deprecated."), call.=FALSE)
 
    .start.plot()
 
@@ -35,57 +40,54 @@ layout, slab.style=1, las=0, pch=21, bg, bg.infl, col.na, ...) {
    ### process plotinf argument
 
    if (is.logical(plotinf)) {
-      if (plotinf) {
+      if (plotinf)
          which.inf <- seq_len(8)
-      }
    } else {
       which.inf <- plotinf
       which.inf <- which.inf[(which.inf >= 1) & (which.inf <= 8)]
       which.inf <- unique(round(which.inf))
       if (length(which.inf) == 0L)
-         stop(mstyle$stop("Incorrect specification of 'plotinf' argument."))
+         stop(mstyle$stop("Incorrect specification of the 'plotinf' argument."))
       plotinf <- TRUE
    }
 
    ### process plotdfbs argument
 
    if (is.logical(plotdfbs)) {
-      if (plotdfbs) {
+      if (plotdfbs)
          which.dfbs <- seq_len(x$p)
-      }
    } else {
       which.dfbs <- plotdfbs
       which.dfbs <- which.dfbs[(which.dfbs >= 1) & (which.dfbs <= x$p)]
       which.dfbs <- unique(round(which.dfbs))
       if (length(which.dfbs) == 0L)
-         stop(mstyle$stop("Incorrect specification of 'plotdfbs' argument."))
+         stop(mstyle$stop("Incorrect specification of the 'plotdfbs' argument."))
       plotdfbs <- TRUE
    }
 
    #########################################################################
 
    if (!plotinf & !plotdfbs)
-      stop(mstyle$stop("At least one of the arguments 'plotinf' or 'plotdfbs' argument must be TRUE."))
+      stop(mstyle$stop("At least one of the arguments 'plotinf' or 'plotdfbs' must be TRUE."))
 
    if (!plotinf & dfbsnew)
       dfbsnew <- FALSE
 
    par.mar <- par("mar")
-   par.mar.adj <- par.mar - c(2,2,2,1)
+   par.mar.adj <- par.mar - c(2,1,2,0)
    par.mar.adj[par.mar.adj < 1] <- 1
-   par(mar = par.mar.adj)
-   par.mfrow <- par("mfrow")
-   on.exit(par(mar = par.mar, mfrow = par.mfrow), add=TRUE)
+   par(mar=par.mar.adj)
+   on.exit(par(mar=par.mar), add=TRUE)
 
    #########################################################################
 
    ### filter out potential arguments to abbreviate() (which cause problems with the various plot functions)
 
-   lplot   <- function(..., minlength, strict) plot(...)
-   lpoints <- function(..., minlength, strict) points(...)
-   llines  <- function(..., minlength, strict) lines(...)
-   laxis   <- function(..., minlength, strict) axis(...)
-   labline <- function(..., minlength, strict) abline(...)
+   lplot   <- function(..., minlength, strict, layout) plot(...)
+   lpoints <- function(..., minlength, strict, layout) points(...)
+   llines  <- function(..., minlength, strict, layout) lines(...)
+   laxis   <- function(..., minlength, strict, layout) axis(...)
+   labline <- function(..., minlength, strict, layout) abline(...)
 
    #########################################################################
 
@@ -98,38 +100,35 @@ layout, slab.style=1, las=0, pch=21, bg, bg.infl, col.na, ...) {
 
    if (plotinf) {
 
-      ### set layout (either defaults or user-specified)
-      ### note: could also use n2mfrow() here, but this behaves slightly differently
+      np.inf <- length(which.inf)
 
-      if (missing(layout)) {
+      if (np.inf > 1L) {
 
-         if (length(which.inf) == 2L)
-            par(mfrow=c(2,1))
+         # if no plotting device is open or mfrow is too small, set mfrow appropriately
 
-         if (length(which.inf) == 3L)
-            par(mfrow=c(3,1))
+         if (dev.cur() == 1L || prod(par("mfrow")) < np.inf) {
 
-         if (length(which.inf) == 4L)
-            par(mfrow=c(2,2))
+            #par(mfrow=n2mfrow(np.inf)) # this behaves slightly differently (see below)
 
-         if (length(which.inf) == 5L)
-            par(mfrow=c(5,1))
+            if (np.inf == 2L)
+               par(mfrow=c(2,1))
+            if (np.inf == 3L)
+               par(mfrow=c(3,1))
+            if (np.inf == 4L)
+               par(mfrow=c(2,2))
+            if (np.inf == 5L)
+               par(mfrow=c(5,1)) # n2mfrow(5) yields c(3,2)
+            if (np.inf == 6L)
+               par(mfrow=c(3,2))
+            if (np.inf == 7L)
+               par(mfrow=c(7,1)) # n2mfrow(7) yields c(3,3)
+            if (np.inf == 8L)
+               par(mfrow=c(4,2)) # n2mfrow(8) yields c(3,3)
 
-         if (length(which.inf) == 6L)
-            par(mfrow=c(3,2))
+         }
 
-         if (length(which.inf) == 7L)
-            par(mfrow=c(7,1))
+         on.exit(par(mfrow=c(1L,1L)), add=TRUE)
 
-         if (length(which.inf) == 8L)
-            par(mfrow=c(4,2))
-
-      } else {
-         layout <- layout[layout >= 1]
-         layout <- round(layout)
-         if (length(layout) != 2L)
-            stop(mstyle$stop("Incorrect specification of 'layout' argument."))
-         par(mfrow=layout)
       }
 
       ######################################################################
@@ -153,12 +152,12 @@ layout, slab.style=1, las=0, pch=21, bg, bg.infl, col.na, ...) {
                lab.ids  <- ids
             }
             if (any(!is.na(zi))) {
-               zi.min <- min(min(zi,-2,na.rm=TRUE), qnorm(.025))*1.05
-               zi.max <- max(max(zi, 2,na.rm=TRUE), qnorm(.975))*1.05
+               zi.min <- min(min(zi,-2,na.rm=TRUE), qnorm(0.025))*1.05
+               zi.max <- max(max(zi, 2,na.rm=TRUE), qnorm(0.975))*1.05
                lplot(NA, NA, xlim=c(1,len.ids), ylim=c(zi.min,zi.max), xaxt="n", main="rstudent", xlab="", ylab="", las=las, ...)
                laxis(side=1, at=seq_len(len.ids), labels=lab.ids, xlab="", las=las, ...)
                labline(h=0, lty="dashed", ...)
-               labline(h=c(qnorm(.025),qnorm(.975)), lty="dotted", ...)
+               labline(h=c(qnorm(0.025),qnorm(0.975)), lty="dotted", ...)
                if (na.act == "na.exclude" || na.act == "na.pass")
                   llines(seq_len(len.ids)[not.na], zi[not.na], col=col.na, ...)
                llines(seq_len(len.ids), zi, ...)
@@ -340,7 +339,7 @@ layout, slab.style=1, las=0, pch=21, bg, bg.infl, col.na, ...) {
                lplot(NA, NA, xlim=c(1,len.ids), ylim=c(zi.min,zi.max), xaxt="n", main="QE.del", xlab="", ylab="", las=las, ...)
                laxis(side=1, at=seq_len(len.ids), labels=lab.ids, xlab="", las=las, ...)
                labline(h=x$QE, lty="dashed", ...)
-               #labline(h=qchisq(.95, df=x$k-x$p), lty="dotted", ...)
+               #labline(h=qchisq(0.95, df=x$k-x$p), lty="dotted", ...)
                labline(h=x$k-x$p, lty="dotted", ...)
                if (na.act == "na.exclude" || na.act == "na.pass")
                   llines(seq_len(len.ids)[not.na], zi[not.na], col=col.na, ...)
@@ -430,22 +429,41 @@ layout, slab.style=1, las=0, pch=21, bg, bg.infl, col.na, ...) {
 
    if (plotdfbs) {
 
-      if (dfbsnew) {
-         dev.new()
-         par.mar <- par("mar")
-         par.mar.adj <- par.mar - c(2,2,2,1)
-         par.mar.adj[par.mar.adj < 1] <- 1
-         par(mar = par.mar.adj)
-         on.exit(par(mar = par.mar), add=TRUE)
-      } else {
-         if (plotinf) {
-            par.ask <- par("ask")
-            par(ask=TRUE)
-            on.exit(par(ask = par.ask), add=TRUE)
-         }
-      }
+      np.dfbs <- length(which.dfbs)
 
-      par(mfrow=n2mfrow(length(which.dfbs)))
+      if (plotinf && (np.inf + np.dfbs <= prod(par("mfrow")))) {
+
+         # if np.inf + np.dfbs is small enough to fit on the same multi-panel
+         # plot, then do so, but reset mfrow to c(1L,1L) for consistency
+
+         on.exit(par(mfrow=c(1L,1L)), add=TRUE)
+
+      } else {
+
+         if (dfbsnew) { # this is always FALSE when plotinf=FALSE
+            dev.new()
+            .start.plot()
+            par(mar=par.mar.adj)
+         } else {
+            if (plotinf) {
+               caps <- dev.capabilities()$events
+               if (any(is.element(c("MouseDown","Keybd"), caps))) {
+                  message(mstyle$message("Press any key or click on the plot to show the DFBETAS values ...."), appendLF=FALSE)
+                  getGraphicsEvent(prompt="", onMouseDown=function(button,x,y) return(1), onKeybd=function(key) return(1))
+               } else {
+                  par.ask <- par("ask")
+                  par(ask=TRUE)
+                  on.exit(par(ask=par.ask), add=TRUE)
+               }
+            }
+         }
+
+         # if no plotting device is open or mfrow is too small, set mfrow appropriately
+         if (plotinf || dev.cur() == 1L || prod(par("mfrow")) < np.dfbs)
+            par(mfrow=n2mfrow(np.dfbs))
+         on.exit(par(mfrow=c(1L,1L)), add=TRUE)
+
+      }
 
       for (i in seq_along(which.dfbs)) {
 

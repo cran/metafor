@@ -6,14 +6,19 @@
 }
 \usage{
 escalc(measure, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
-       m1i, m2i, sd1i, sd2i, xi, mi, ri, ti, fi, pi, sdi, r2i, ni, yi, vi, sei,
-       data, slab, subset, include,
-       add=1/2, to="only0", drop00=FALSE, vtype="LS",
+                m1i, m2i, sd1i, sd2i, xi, mi, ri, ti, fi, pi,
+                sdi, r2i, ni, yi, vi, sei,
+       data, slab, flip, subset, include,
+       add=1/2, to="only0", drop00=FALSE,
+       vtype="LS", correct=TRUE,
        var.names=c("yi","vi"), add.measure=FALSE,
        append=TRUE, replace=TRUE, digits, \dots)
 }
 \arguments{
-   \item{measure}{a character string to specify which effect size or outcome measure should be calculated. See \sQuote{Details} for possible options and how the data needed to compute the selected effect size or outcome measure should then be specified (i.e., which of the following arguments need to be used).}
+   \item{measure}{a character string to specify which effect size or outcome measure should be calculated (e.g., \code{"SMD"}, \code{"ZCOR"}, \code{"OR"}). See \sQuote{Details} for possible options and how the data needed to compute the selected effect size or outcome measure should then be specified (i.e., which of the following arguments need to be used).}
+
+   \emph{These arguments pertain to data input:}
+
    \item{ai}{vector with the \mjeqn{2 \times 2}{2x2} table frequencies (upper left cell).}
    \item{bi}{vector with the \mjeqn{2 \times 2}{2x2} table frequencies (upper right cell).}
    \item{ci}{vector with the \mjeqn{2 \times 2}{2x2} table frequencies (lower left cell).}
@@ -42,12 +47,23 @@ escalc(measure, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
    \item{sei}{vector with the corresponding standard errors.}
    \item{data}{optional data frame containing the variables given to the arguments above.}
    \item{slab}{optional vector with labels for the studies.}
+   \item{flip}{optional logical to indicate whether to flip the sign of the effect sizes or outcomes. Can also be a vector. Can also be a numeric vector to specify a multiplier.}
    \item{subset}{optional (logical or numeric) vector to specify the subset of studies that will be included in the data frame returned by the function.}
    \item{include}{optional (logical or numeric) vector to specify the subset of studies for which the measure should be calculated. See the \sQuote{Value} section for more details.}
+
+   \emph{These arguments pertain to handling of zero cells/counts/frequencies:}
+
    \item{add}{a non-negative number to specify the amount to add to zero cells, counts, or frequencies. See \sQuote{Details}.}
    \item{to}{a character string to specify when the values under \code{add} should be added (either \code{"all"}, \code{"only0"}, \code{"if0all"}, or \code{"none"}). See \sQuote{Details}.}
    \item{drop00}{logical to specify whether studies with no cases/events (or only cases) in both groups should be dropped when calculating the observed effect sizes or outcomes. See \sQuote{Details}.}
-   \item{vtype}{a character string to specify the type of sampling variances to calculate. See \sQuote{Details}.}
+
+   \emph{These arguments pertain to the computations:}
+
+   \item{vtype}{a character string to specify the type of sampling variances to calculate. Can also be a vector. See \sQuote{Details}.}
+   \item{correct}{logical to specify whether a bias correction should be applied to the effect sizes or outcomes (the default is \code{TRUE}).}
+
+   \emph{These arguments pertain to the formatting of the returned data frame:}
+
    \item{var.names}{character vector with two elements to specify the name of the variable for the observed effect sizes or outcomes and the name of the variable for the corresponding sampling variances (the defaults are \code{"yi"} and \code{"vi"}).}
    \item{add.measure}{logical to specify whether a variable should be added to the data frame (with default name \code{"measure"}) that indicates the type of outcome measure computed. When using this option, \code{var.names} can have a third element to change this variable name.}
    \item{append}{logical to specify whether the data frame provided via the \code{data} argument should be returned together with the observed effect sizes or outcomes and corresponding sampling variances (the default is \code{TRUE}).}
@@ -58,7 +74,7 @@ escalc(measure, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
 \details{
    Before a meta-analysis can be conducted, the relevant results from each study must be quantified in such a way that the resulting values can be further aggregated and compared. Depending on (a) the goals of the meta-analysis, (b) the design and types of studies included, and (c) the information provided therein, one of the various effect sizes or outcome measures described below may be appropriate for the meta-analysis and can be computed with the \code{escalc} function.
 
-   The \code{measure} argument is a character string to specify the outcome measure that should be calculated (see below for the various options), arguments \code{ai} through \code{ni} are then used to specify the information needed to calculate the various measures (depending on the chosen outcome measure, different arguments need to be specified), and \code{data} can be used to specify a data frame containing the variables given to the previous arguments. The \code{add}, \code{to}, and \code{drop00} arguments may be needed when dealing with frequency or count data that may need special handling when some of the frequencies or counts are equal to zero (see below for details). Finally, the \code{vtype} argument is used to specify how the sampling variances should be estimated (again, see below for details).
+   The \code{measure} argument is a character string to specify the outcome measure that should be calculated (see below for the various options), arguments \code{ai} through \code{ni} are then used to specify the information needed to calculate the various measures (depending on the chosen outcome measure, different arguments need to be specified), and \code{data} can be used to specify a data frame containing the variables given to the previous arguments. The \code{add}, \code{to}, and \code{drop00} arguments may be needed when dealing with frequency or count data that needs special handling when some of the frequencies or counts are equal to zero (see below for details). Finally, the \code{vtype} argument is used to specify how the sampling variances should be computed (again, see below for details).
 
    To provide a structure to the various effect sizes or outcome measures that can be calculated with the \code{escalc} function, we can distinguish between measures that are used to:
 
@@ -80,7 +96,7 @@ escalc(measure, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
 
    \subsection{(1) Outcome Measures for Two-Group Comparisons}{
 
-      In many meta-analyses, the goal is to synthesize the results from studies that compare or contrast two groups. The groups may be experimentally defined (e.g., a treatment and a control group created via random assignment) or may occur naturally (e.g., men and women, employees working under high- versus low-stress conditions, people/animals/plants exposed to some environmental risk factor versus those not exposed).
+      In many meta-analyses, the goal is to synthesize the results from studies that compare or contrast two groups. The groups may be experimentally defined (e.g., a treatment and a control group created via random assignment) or may occur naturally (e.g., men and women, employees working under high- versus low-stress conditions, people/animals/plants exposed to some environmental risk factor versus those not exposed, patients versus controls).
 
       \subsection{(1a) Measures for Quantitative Variables}{
 
@@ -89,7 +105,11 @@ escalc(measure, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
                  \tab \ics \tab mean       \tab \ics \tab standard deviation \tab \ics \tab group size \cr
          group 1 \tab \ics \tab \code{m1i} \tab \ics \tab \code{sd1i}        \tab \ics \tab \code{n1i} \cr
          group 2 \tab \ics \tab \code{m2i} \tab \ics \tab \code{sd2i}        \tab \ics \tab \code{n2i}}
-         where \code{m1i} and \code{m2i} are the observed means of the two groups, \code{sd1i} and \code{sd2i} are the observed standard deviations, and \code{n1i} and \code{n2i} denote the number of individuals in each group. The raw mean difference, the standardized mean difference, and the (log transformed) ratio of means (also called the log \sQuote{response ratio}) are useful outcome measures when meta-analyzing studies of this type.
+         where \code{m1i} and \code{m2i} are the observed means of the two groups, \code{sd1i} and \code{sd2i} are the observed standard deviations, and \code{n1i} and \code{n2i} denote the number of individuals in each group.
+
+         \bold{Measures for Differences in Central Tendency}
+
+         Often, interest is focused on differences between the two groups with respect to their central tendency. The raw mean difference, the standardized mean difference, and the (log transformed) ratio of means (also called the log \sQuote{response ratio}) are useful outcome measures when meta-analyzing studies of this type.
 
          The options for the \code{measure} argument are then:
 
@@ -101,17 +121,19 @@ escalc(measure, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
          \item \code{"ROM"} for the \emph{log transformed ratio of means} (Hedges et al., 1999; Lajeunesse, 2011).
          }
 
-         The raw mean difference is simply \mjeqn{(\textrm{m1i}-\textrm{m2i})}{(m1i-m2i)}, while the standardized mean difference is given by \mjeqn{(\textrm{m1i}-\textrm{m2i})/\textrm{sdi}}{(m1i-m2i)/sdi}. For \code{measure="SMD"}, \mjeqn{\textrm{sdi} = \sqrt{\frac{(\textrm{n1i}-1)\textrm{sd1i}^2 + (\textrm{n2i}-1)\textrm{sd2i}^2}{\textrm{n1i}+\textrm{n2i}-2}}}{sdi = sqrt(((n1i-1)*sd1i^2 + (n2i-1)*sd2i^2) / (n1i+n2i-2))} is the pooled standard deviation of the two groups (assuming homoscedasticity of the population variances). For \code{measure="SMDH"}, \mjeqn{\textrm{sdi} = \sqrt{\frac{\textrm{sd1i}^2 + \textrm{sd2i}^2}{2}}}{sdi = sqrt((sd1i^2 + sd2i^2) / 2)} is the square root of the average variance (allowing for heteroscedastic population variances). Finally, for \code{measure="SMD1"} and \code{measure="SMD1H"}, \mjeqn{\textrm{sdi} = \textrm{sd2i}}{sdi = sd2i} (note: for \code{measure="SMD1"}, only \code{sd2i} needs to be specified and \code{sd1i} is ignored).
+         The raw mean difference is simply \mjeqn{(\text{m1i}-\text{m2i})}{(m1i-m2i)}, while the standardized mean difference is given by \mjeqn{(\text{m1i}-\text{m2i})/\text{sdi}}{(m1i-m2i)/sdi}. For \code{measure="SMD"}, \mjeqn{\text{sdi} = \sqrt{\frac{(\text{n1i}-1)\text{sd1i}^2 + (\text{n2i}-1)\text{sd2i}^2}{\text{n1i}+\text{n2i}-2}}}{sdi = sqrt(((n1i-1)*sd1i^2 + (n2i-1)*sd2i^2) / (n1i+n2i-2))} is the pooled standard deviation of the two groups (assuming homoscedasticity of the population variances). For \code{measure="SMDH"}, \mjeqn{\text{sdi} = \sqrt{\frac{\text{sd1i}^2 + \text{sd2i}^2}{2}}}{sdi = sqrt((sd1i^2 + sd2i^2) / 2)} is the square root of the average variance (allowing for heteroscedastic population variances). Finally, for \code{measure="SMD1"} and \code{measure="SMD1H"}, \mjeqn{\text{sdi} = \text{sd2i}}{sdi = sd2i} (note: for \code{measure="SMD1"}, only \code{sd2i} needs to be specified and \code{sd1i} is ignored).
 
-         For \code{measure="SMD"}, the positive bias in the standardized mean difference (i.e., in a Cohen's d value) is automatically corrected for within the function, yielding Hedges' g (Hedges, 1981). Similarly, the analogous bias correction is applied for \code{measure="SMDH"} (Bonett, 2009), \code{measure="SMD1"} (Hedges, 1981), and \code{measure="SMD1H"}.
+         For \code{measure="SMD"}, the positive bias in the standardized mean difference (i.e., in a Cohen's d value) is automatically corrected for within the function, yielding Hedges' g (Hedges, 1981). Similarly, the analogous bias correction is applied for \code{measure="SMDH"} (Bonett, 2009), \code{measure="SMD1"} (Hedges, 1981), and \code{measure="SMD1H"}. With \code{correct=FALSE}, these bias corrections can be switched off.
 
-         For \code{measure="ROM"}, the log is taken of the ratio of means (i.e., \mjeqn{\log(\textrm{m1i}/\textrm{m2i})}{log(m1i/m2i)}), which makes this outcome measure symmetric around 0 and results in a sampling distribution that is closer to normality. Hence, this measure cannot be computed when \code{m1i} and \code{m2i} have opposite signs (in fact, this measure is only meant to be used for ratio scale measurements, where both means should be positive anyway).
+         For \code{measure="ROM"}, the log is taken of the ratio of means (i.e., \mjeqn{\log(\text{m1i}/\text{m2i})}{log(m1i/m2i)}), which makes this outcome measure symmetric around 0 and results in a sampling distribution that is closer to normality. Hence, this measure cannot be computed when \code{m1i} and \code{m2i} have opposite signs (in fact, this measure is only meant to be used for ratio scale measurements, where both means should be positive anyway).
 
-         For \code{measure="SMD"}, if the means and standard deviations are unknown for some studies, but the standardized mean differences (Cohen's d values) are directly available (e.g., if they are reported in those studies), then these can be specified via argument \code{di}. Also, if the t-statistics from an independent samples (Student's) t-test are available for some studies, one can specify those values via argument \code{ti}, which are then transformed into the corresponding standardized mean differences within the function (the sign of the t-statistics is then taken to be the sign of the standardized mean differences). If only the (two-sided) p-values corresponding to the t-tests are known, one can specify those values via argument \code{pi} (which are then transformed into the t-statistics and then further into the standardized mean differences). However, since a two-sided p-value does not carry information about the sign of the test statistic (and hence neither about the standardized mean difference), the sign of the p-values (which can be negative) is used as the sign of the standardized mean differences (e.g., \code{escalc(measure="SMD", pi=-0.018, n1i=20, n2i=20)} yields a negative standardized mean difference of \code{-0.7664}). See \href{https://www.metafor-project.org/doku.php/tips:assembling_data_smd}{here} for a more detailed illustration of using the \code{ti} and \code{pi} arguments.
+         For \code{measure="SMD"}, if the means and standard deviations are unknown for some studies, various other inputs can be used to recover the standardized mean differences. In the case that the standardized mean differences (Cohen's d values) are directly available (e.g., they are reported in some studies), then these can be specified via argument \code{di}. If the point-biserial correlations (between the group dummy variable and the quantitative response/dependent variable) are known, these can be specified via argument \code{ri}. If the t-statistics from an independent samples (Student's) t-test are available, these can be specified via argument \code{ti}. Note that the sign of these inputs is then taken to be the sign of the standardized mean differences. If only the two-sided p-values corresponding to the t-tests are known, one can specify those values via argument \code{pi} (which are then transformed into the t-statistics and then further into the standardized mean differences). However, since a two-sided p-value does not carry information about the sign of the test statistic (and hence neither about the standardized mean difference), the sign of the p-values (which can be negative) is used as the sign of the standardized mean differences (e.g., \code{escalc(measure="SMD", pi=-0.018, n1i=20, n2i=20)} yields a negative standardized mean difference of \code{-0.7664}). See \href{https://www.metafor-project.org/doku.php/tips:assembling_data_smd}{here} for a more detailed illustration of using the \code{ti} and \code{pi} arguments.
 
-         For \code{measure="MD"}, one can choose between \code{vtype="LS"} (the default) and \code{vtype="HO"}. The former computes the sampling variances without assuming homoscedasticity (i.e., that the true variances of the measurements are the same in group 1 and group 2 within each study), while the latter assumes homoscedasticity (equations 12.5 and 12.3 in Borenstein, 2009, respectively). For \code{measure="SMD"}, one can choose between \code{vtype="LS"} (the default) for the usual large-sample approximation to compute the sampling variances (equation 8 in Hedges, 1982), \code{vtype="LS2"} to compute the sampling variances as described in Borenstein (2009; equation 12.17), \code{vtype="UB"} to compute unbiased estimates of the sampling variances (equation 9 in Hedges, 1983), and \code{vtype="AV"} to compute the sampling variances with the usual large-sample approximation but plugging the sample-size weighted average of the Hedges' g values into the equation. The same choices also apply to \code{measure="SMD1"}. For \code{measure="ROM"}, one can choose between \code{vtype="LS"} (the default) for the usual large-sample approximation to compute the sampling variances (equation 1 in Hedges et al., 1999), \code{vtype="HO"} to compute the sampling variances assuming homoscedasticity (the unnumbered equation after equation 1 in Hedges et al., 1999), \code{vtype="AV"} to compute the sampling variances assuming homoscedasticity of the coefficient of variation within each group across studies, and \code{vtype="AVHO"} to compute the sampling variances assuming homoscedasticity of the coefficient of variation for both groups across studies (see Nakagawa et al., 2023, for details on the latter two options and why they are interesting).
+         For \code{measure="MD"}, one can choose between \code{vtype="LS"} (the default) and \code{vtype="HO"}. The former computes the sampling variances without assuming homoscedasticity (i.e., that the true variances of the measurements are the same in group 1 and group 2 within each study), while the latter assumes homoscedasticity (equations 12.5 and 12.3 in Borenstein, 2009, respectively). For \code{measure="SMD"}, one can choose between \code{vtype="LS"} (the default) for the usual large-sample approximation to compute the sampling variances (equation 8 in Hedges, 1982), \code{vtype="LS2"} to compute the sampling variances as described in Borenstein (2009; equation 12.17), \code{vtype="UB"} to compute unbiased estimates of the sampling variances (equation 9 in Hedges, 1983), \code{vtype="AV"} to compute the sampling variances with the usual large-sample approximation but plugging the sample-size weighted average of the Hedges' g values into the equation, and \code{vtype="H0"} to compute the sampling variances under the null hypothesis (that the true standardized mean differences are equal to zero). The same choices also apply to \code{measure="SMD1"}. For \code{measure="ROM"}, one can choose between \code{vtype="LS"} (the default) for the usual large-sample approximation to compute the sampling variances (equation 1 in Hedges et al., 1999), \code{vtype="HO"} to compute the sampling variances assuming homoscedasticity (the unnumbered equation after equation 1 in Hedges et al., 1999), \code{vtype="AV"} to compute the sampling variances assuming homoscedasticity of the coefficient of variation within each group across studies, and \code{vtype="AVHO"} to compute the sampling variances assuming homoscedasticity of the coefficient of variation for both groups across studies (see Nakagawa et al., 2023, for details on the latter two options and why they can be advantageous).
 
          Datasets corresponding to data of this type are provided in \code{\link[metadat]{dat.normand1999}}, \code{\link[metadat]{dat.curtis1998}}, and \code{\link[metadat]{dat.gibson2002}}.
+
+         \bold{Measures for Variability Differences}
 
          Interest may also be focused on differences between the two groups with respect to their variability. Here, the (log transformed) ratio of the coefficient of variation of the two groups (also called the coefficient of variation ratio) can be a useful measure (Nakagawa et al., 2015). If focus is solely on the variability of the measurements within the two groups, then the (log transformed) ratio of the standard deviations (also called the variability ratio) can be used (Nakagawa et al., 2015). For the latter, one only needs to specify \code{sd1i}, \code{sd2i}, \code{n1i}, and \code{n2i}. The options for the \code{measure} argument are:
 
@@ -120,7 +142,15 @@ escalc(measure, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
          \item \code{"VR"} for the \emph{log transformed variability ratio}.
          }
 
-         Measure \code{"CVR"} is computed with \mjeqn{\log\mathopen{}\left(\left(\textrm{sd1i}/\textrm{m1i}\right) \middle/ \left(\textrm{sd2i}/\textrm{m2i}\right) \right)\mathclose{}}{log((sd1i/m1i)/(sd2i/m2i))}, while \code{"VR"} is simply \mjeqn{\log(\textrm{sd1i}/\textrm{sd2i})}{log(sd1i/sd2i)}, but note that a slight bias correction is applied for both of these measures (Nakagawa et al., 2015). Also, the sampling variance for \code{measure="CVR"} is computed as given by equation 12 in Nakagawa et al. (2015), but without the \sQuote{\mjseqn{-2 \rho \ldots}} terms, since for normally distributed data (which we assume here) the mean and variance (and transformations thereof) are independent.
+         Measure \code{"CVR"} is computed with \mjeqn{\log\mathopen{}\left(\left(\text{sd1i}/\text{m1i}\right) \middle/ \left(\text{sd2i}/\text{m2i}\right) \right)\mathclose{}}{log((sd1i/m1i)/(sd2i/m2i))}, while \code{"VR"} is simply \mjeqn{\log(\text{sd1i}/\text{sd2i})}{log(sd1i/sd2i)}, but note that a slight bias correction is applied for both of these measures (Nakagawa et al., 2015) unless \code{correct=FALSE}. Also, the sampling variances for \code{measure="CVR"} are computed as given by equation 12 in Nakagawa et al. (2015), but without the \sQuote{\mjseqn{-2 \rho \ldots}} terms, since for normally distributed data (which we assume here) the mean and variance (and transformations thereof) are independent.
+
+         \bold{Measures for Stochastic Superiority}
+
+         Another way to quantify the difference between two groups is in terms of the \sQuote{common language effect size} (CLES) (McGraw & Wong, 1992). This measure provides an estimate of \mjseqn{P(X > Y)}, that is, the probability that a randomly chosen person from the first group has a larger value on the response variable than a randomly chosen person from the second group (or in case \mjseqn{X} and \mjseqn{Y} values can be tied, we define the measure as \mjeqn{P(X > Y) + \frac{1}{2} P(X = Y)}{P(X > Y) + 1/2 P(X = Y)}). This measure is identical to the area under the curve (AUC) under the receiver operating characteristic (ROC) curve (e.g., for a diagnostic test or more broadly for a binary classifier) and the \sQuote{concordance probability} (or c-statistic) and is directly related to the \mjseqn{U} statistic from the Mann-Whitney U test (i.e., \mjeqn{\text{CLES} = U / (n_1 \times n_2)}{CLES = U / (n_1 x n_2)}).
+
+         If the CLES/AUC values with corresponding sampling variances (or standard errors) are known, they can be directly meta-analyzed for example using the \code{\link{rma.uni}} function. However, in practice, one is likely to encounter studies that only report CLES/AUC values and the group sizes. In this case, one can specify these values via the \code{ai}, \code{n1i}, and \code{n2i} arguments and set \code{measure="CLES"} (or equivalently \code{measure="AUC"}). If \code{vtype="LS"} (the default), the sampling variances are then computed based on Newcombe (2006) (method 4), but using \code{(n1i-1)(n2i-1)} in the denominator as suggested by Cho et al. (2019). If \code{vtype="LS2"}, the sampling variances are computed based on Hanley and McNeil (1982; equations 1 and 2), again using \code{(n1i-1)(n2i-1)} in the denominator (and in the unlikely case that the proportion of tied values is known, this can be specified via argument \code{mi}, in which case the adjustment as described by Cho et al. (2019) is also applied).
+
+         Under the assumption that the data within the two groups are normally distributed (the so-called binormal model), one can also estimate the CLES/AUC values from the means and standard deviations of the two groups. For this, one sets \code{measure="CLESN"} (or equivalently \code{measure="AUCN"}) and specifies the means via arguments \code{m1i} and \code{m2i}, the standard deviations via arguments \code{sd1i} and \code{sd2i}, and the group sizes via arguments \code{n1i} and \code{n2i}. If \code{vtype="LS"} (the default), the sampling variances are then computed based on the large-sample approximation derived via the delta method (equation 3 (with a correction, since the plus sign in front of the last term in braces should be a multiplication sign) and equation 4 in Goddard & Hinberg, 1990, but using \code{n1i-1} and \code{n2i-1} in the denominators). Computing the CLES/AUC values and corresponding sampling variances does not assume homoscedasticity of the variances in the two groups. However, when \code{vtype="HO"}, then homoscedasticity is assumed (this will also affect the calculation of the CLES/AUC values themselves). As for \code{measure="SMD"}, one can also specify standardized mean differences via argument \code{di}, t-statistics from an independent samples t-test via argument \code{ti}, and/or signed two-sided p-values corresponding to the t-tests via argument \code{pi}, which all can be converted into CLES/AUC values (note that this automatically assumes homoscedasticity). One can also directly specify binormal model CLES/AUC values via argument \code{ai} (but unless the corresponding \code{sd1i} and \code{sd2i} values are also specified, the sampling variances are then computed under the assumption of homoscedasticity).
 
       }
 
@@ -147,7 +177,7 @@ escalc(measure, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
          \item \code{"PETO"} for the \emph{log odds ratio} estimated with Peto's method (Yusuf et al., 1985).
          }
 
-         Let \mjeqn{\textrm{p1i} = \textrm{ai}/\textrm{n1i}}{p1i = ai/n1i} and \mjeqn{\textrm{p2i} = \textrm{ci}/\textrm{n2i}}{p2i = ci/n2i} denote the proportion of individuals with outcome 1 in group 1 and group 2, respectively. Then the log risk ratio is computed with \mjeqn{\log(\textrm{p1i}/\textrm{p2i})}{log(p1i/p2i)}, the log odds ratio with \mjeqn{\log\mathopen{}\left(\left(\frac{\textrm{p1i}}{1-\textrm{p1i}}\right) \middle/ \left(\frac{\textrm{p2i}}{1-\textrm{p2i}}\right) \right)\mathclose{}}{log((p1i/(1-p1i))/(p2i/(1-p2i)))}, the risk difference with \mjeqn{\textrm{p1i}-\textrm{p2i}}{p1i-p2i}, and the arcsine square root transformed risk difference with \mjeqn{\textrm{asin}(\sqrt{\textrm{p1i}})-\textrm{asin}(\sqrt{\textrm{p2i}})}{asin(sqrt(p1i))-asin(sqrt(p2i))}. See Yusuf et al. (1985) for the computation of the log odds ratio when \code{measure="PETO"}. Note that the log is taken of the risk ratio and the odds ratio, which makes these outcome measures symmetric around 0 and results in corresponding sampling distributions that are closer to normality. Also, when multiplied by 2, the arcsine square root transformed risk difference is identical to Cohen's h (Cohen, 1988). For all of these measures, a positive value indicates that the proportion of individuals with outcome 1 is larger in group 1 compared to group 2.
+         Let \mjeqn{\text{p1i} = \text{ai}/\text{n1i}}{p1i = ai/n1i} and \mjeqn{\text{p2i} = \text{ci}/\text{n2i}}{p2i = ci/n2i} denote the proportion of individuals with outcome 1 in group 1 and group 2, respectively. Then the log risk ratio is computed with \mjeqn{\log(\text{p1i}/\text{p2i})}{log(p1i/p2i)}, the log odds ratio with \mjeqn{\log\mathopen{}\left(\left(\frac{\text{p1i}}{1-\text{p1i}}\right) \middle/ \left(\frac{\text{p2i}}{1-\text{p2i}}\right) \right)\mathclose{}}{log((p1i/(1-p1i))/(p2i/(1-p2i)))}, the risk difference with \mjeqn{\text{p1i}-\text{p2i}}{p1i-p2i}, and the arcsine square root transformed risk difference with \mjeqn{\text{asin}(\sqrt{\text{p1i}})-\text{asin}(\sqrt{\text{p2i}})}{asin(sqrt(p1i))-asin(sqrt(p2i))}. See Yusuf et al. (1985) for the computation of the log odds ratio when \code{measure="PETO"}. Note that the log is taken of the risk ratio and the odds ratio, which makes these outcome measures symmetric around 0 and results in corresponding sampling distributions that are closer to normality. Also, when multiplied by 2, the arcsine square root transformed risk difference is identical to Cohen's h (Cohen, 1988). For all of these measures, a positive value indicates that the proportion of individuals with outcome 1 is larger in group 1 compared to group 2.
 
          Cell entries with a zero count can be problematic, especially for the risk ratio and the odds ratio. Adding a small constant to the cells of the \mjeqn{2 \times 2}{2x2} tables is a common solution to this problem. When \code{to="only0"} (the default), the value of \code{add} (the default is \code{1/2}; but see \sQuote{Note}) is added to each cell of those \mjeqn{2 \times 2}{2x2} tables with at least one cell equal to 0. When \code{to="all"}, the value of \code{add} is added to each cell of all \mjeqn{2 \times 2}{2x2} tables. When \code{to="if0all"}, the value of \code{add} is added to each cell of all \mjeqn{2 \times 2}{2x2} tables, but only when there is at least one \mjeqn{2 \times 2}{2x2} table with a zero cell. Setting \code{to="none"} or \code{add=0} has the same effect: No adjustment to the observed table frequencies is made. Depending on the outcome measure and the data, this may lead to division by zero (when this occurs, the resulting value is recoded to \code{NA}). Also, studies where \code{ai=ci=0} or \code{bi=di=0} may be considered to be uninformative about the size of the effect and dropping such studies has sometimes been recommended (Higgins et al., 2019). This can be done by setting \code{drop00=TRUE}. The values for such studies will then be set to \code{NA} (i.e., missing).
 
@@ -176,7 +206,7 @@ escalc(measure, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
          \item \code{"IRSD"} for the \emph{square root transformed incidence rate difference}.
          }
 
-         Let \mjeqn{\textrm{ir1i} = \textrm{x1i}/\textrm{t1i}}{ir1i = x1i/t1i} and \mjeqn{\textrm{ir2i} = \textrm{x2i}/\textrm{t2i}}{ir2i = x2i/t2i} denote the observed incidence rates in each group. Then the log incidence rate ratio is computed with \mjeqn{\log(\textrm{ir1i}/\textrm{ir2i})}{log(ir1i/ir2i)}, the incidence rate difference with \mjeqn{\textrm{ir1i}-\textrm{ir2i}}{ir1i-ir2i}, and the square root transformed incidence rate difference with \mjeqn{\sqrt{\textrm{ir1i}}-\sqrt{\textrm{ir2i}}}{sqrt(ir1i)-sqrt(ir2i)}. Note that the log is taken of the incidence rate ratio, which makes this outcome measure symmetric around 0 and results in a sampling distribution that is closer to normality.
+         Let \mjeqn{\text{ir1i} = \text{x1i}/\text{t1i}}{ir1i = x1i/t1i} and \mjeqn{\text{ir2i} = \text{x2i}/\text{t2i}}{ir2i = x2i/t2i} denote the observed incidence rates in each group. Then the log incidence rate ratio is computed with \mjeqn{\log(\text{ir1i}/\text{ir2i})}{log(ir1i/ir2i)}, the incidence rate difference with \mjeqn{\text{ir1i}-\text{ir2i}}{ir1i-ir2i}, and the square root transformed incidence rate difference with \mjeqn{\sqrt{\text{ir1i}}-\sqrt{\text{ir2i}}}{sqrt(ir1i)-sqrt(ir2i)}. Note that the log is taken of the incidence rate ratio, which makes this outcome measure symmetric around 0 and results in a sampling distribution that is closer to normality.
 
          Studies with zero events in one or both groups can be problematic, especially for the incidence rate ratio. Adding a small constant to the number of events is a common solution to this problem. When \code{to="only0"} (the default), the value of \code{add} (the default is \code{1/2}; but see \sQuote{Note}) is added to \code{x1i} and \code{x2i} only in the studies that have zero events in one or both groups. When \code{to="all"}, the value of \code{add} is added to \code{x1i} and \code{x2i} in all studies. When \code{to="if0all"}, the value of \code{add} is added to \code{x1i} and \code{x2i} in all studies, but only when there is at least one study with zero events in one or both groups. Setting \code{to="none"} or \code{add=0} has the same effect: No adjustment to the observed number of events is made. Depending on the outcome measure and the data, this may lead to division by zero (when this occurs, the resulting value is recoded to \code{NA}). Like for \mjeqn{2 \times 2}{2x2} table data, studies where \code{x1i=x2i=0} may be considered to be uninformative about the size of the effect and dropping such studies has sometimes been recommended. This can be done by setting \code{drop00=TRUE}. The values for such studies will then be set to \code{NA}.
 
@@ -229,9 +259,9 @@ escalc(measure, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
          \item \code{"ZCOR"} for \emph{Fisher's r-to-z transformed correlation coefficient} (Fisher, 1921).
          }
 
-         If the correlation coefficient is unknown for some studies, but the t-statistics (i.e., \mjseqn{t_i = r_i \sqrt{n_i - 2} / \sqrt{1 - r_i^2}}) are available for those studies (for the standard test of \mjeqn{\mbox{H}_0{:}\; \rho_i = 0}{H_0: \rho_i = 0}), one can specify those values via argument \code{ti}, which are then transformed into the corresponding correlation coefficients within the function (the sign of the t-statistics is then taken to be the sign of the correlations). If only the (two-sided) p-values corresponding to the t-tests are known, one can specify those values via argument \code{pi}. However, since a two-sided p-value does not carry information about the sign of the test statistic (and hence neither about the correlation), the sign of the p-values (which can be negative) is used as the sign of the correlation coefficients (e.g., \code{escalc(measure="COR", pi=-0.07, ni=30)} yields a negative correlation of \code{-0.3354}).
+         If the correlation coefficient is unknown for some studies, but the t-statistics (i.e., \mjseqn{t_i = r_i \sqrt{n_i - 2} / \sqrt{1 - r_i^2}}) are available for those studies (for the standard test of \mjeqn{\text{H}_0{:}\; \rho_i = 0}{H_0: \rho_i = 0}), one can specify those values via argument \code{ti}, which are then transformed into the corresponding correlation coefficients within the function (the sign of the t-statistics is then taken to be the sign of the correlations). If only the two-sided p-values corresponding to the t-tests are known, one can specify those values via argument \code{pi}. However, since a two-sided p-value does not carry information about the sign of the test statistic (and hence neither about the correlation), the sign of the p-values (which can be negative) is used as the sign of the correlation coefficients (e.g., \code{escalc(measure="COR", pi=-0.07, ni=30)} yields a negative correlation of \code{-0.3354}).
 
-         For \code{measure="COR"} and \code{measure="UCOR"}, one can choose between \code{vtype="LS"} (the default) for the usual large-sample approximation to compute the sampling variances (i.e., plugging the (biased-corrected) correlation coefficients into equation 12.27 in Borenstein, 2009) and \code{vtype="AV"} to compute the sampling variances with the usual large-sample approximation but plugging the sample-size weighted average of the (bias-corrected) correlation coefficients into the equation. For \code{measure="UCOR"}, one can also choose \code{vtype="UB"} to compute unbiased estimates of the sampling variances (see Hedges, 1989, but using the exact equation instead of the approximation).
+         For \code{measure="COR"} and \code{measure="UCOR"}, one can choose between \code{vtype="LS"} (the default) for the usual large-sample approximation to compute the sampling variances (i.e., plugging the (biased-corrected) correlation coefficients into equation 12.27 in Borenstein, 2009) and \code{vtype="AV"} to compute the sampling variances with the usual large-sample approximation but plugging the sample-size weighted average of the (bias-corrected) correlation coefficients into the equation. For \code{measure="COR"}, one can also choose \code{vtype="H0"} to compute the sampling variances under the null hypothesis (that the true correlations are equal to zero). For \code{measure="UCOR"}, one can also choose \code{vtype="UB"} to compute unbiased estimates of the sampling variances (see Hedges, 1989, but using the exact equation instead of the approximation).
 
          Datasets corresponding to data of this type are provided in \code{\link[metadat]{dat.mcdaniel1994}} and \code{\link[metadat]{dat.molloy2014}}.
 
@@ -283,7 +313,7 @@ escalc(measure, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
 
          There are also measures \code{"ZPB"} and \code{"ZBIS"} for applying Fisher's r-to-z transformation to these measures. This may be useful when combining these with other types of correlation coefficients that were r-to-z transformed. However, note that the r-to-z transformation is \emph{not} a variance-stabilizing transformation for these measures.
 
-         If the means and standard deviations are unknown for some studies, one can also use arguments \code{di}, \code{ti}, or \code{pi} to specify standardized mean differences (Cohen's d values), t-statistics from an independent samples t-test, or (signed) p-values for the t-test, respectively, as described earlier under (1a) (together with the group sizes, these are sufficient statistics for computing the (point-)biserial correlation coefficients).
+         If the means and standard deviations are unknown for some studies, one can also use arguments \code{di}, \code{ri}, \code{ti}, or \code{pi} to specify standardized mean differences (Cohen's d values), point-biserial correlations, t-statistics from an independent samples t-test, or signed p-values for the t-test, respectively, as described earlier under (1a) (together with the group sizes, these are sufficient statistics for computing the (point-)biserial correlation coefficients).
 
          For \code{measure="RPB"}, one must indicate via \code{vtype="ST"} or \code{vtype="CS"} whether the data for the studies were obtained using stratified or cross-sectional (i.e., multinomial) sampling, respectively (it is also possible to specify an entire vector for the \code{vtype} argument in case the sampling scheme differed for the various studies).
 
@@ -303,13 +333,13 @@ escalc(measure, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
 
          \itemize{
          \item \code{"MN"} for the \emph{raw mean},
-         \item \code{"SMN"} for the \emph{single-group standardized mean},
+         \item \code{"SMN"} for the \emph{single-group standardized mean (difference)},
          \item \code{"MNLN"} for the \emph{log transformed mean},
          \item \code{"CVLN"} for the \emph{log transformed coefficient of variation},
          \item \code{"SDLN"} for the \emph{log transformed standard deviation}.
          }
 
-         Note that \code{sdi} is used to specify the standard deviations of the observed values of the response, characteristic, or dependent variable and not the standard errors of the means. Also, the sampling variance for \code{measure="CVLN"} is computed as given by equation 27 in Nakagawa et al. (2015), but without the \sQuote{\mjseqn{-2 \rho \ldots}} term, since for normally distributed data (which we assume here) the mean and variance (and transformations thereof) are independent.
+         Note that \code{sdi} is used to specify the standard deviations of the observed values of the response, characteristic, or dependent variable and not the standard errors of the means. Also, the sampling variances for \code{measure="CVLN"} are computed as given by equation 27 in Nakagawa et al. (2015), but without the \sQuote{\mjseqn{-2 \rho \ldots}} term, since for normally distributed data (which we assume here) the mean and variance (and transformations thereof) are independent.
 
       }
 
@@ -321,13 +351,16 @@ escalc(measure, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
          \item \code{"PR"} for the \emph{raw proportion},
          \item \code{"PLN"} for the \emph{log transformed proportion},
          \item \code{"PLO"} for the \emph{logit transformed proportion} (i.e., log odds),
+         \item \code{"PRZ"} for the \emph{probit transformed proportion},
          \item \code{"PAS"} for the \emph{arcsine square root transformed proportion} (i.e., the angular transformation),
          \item \code{"PFT"} for the \emph{Freeman-Tukey double arcsine transformed proportion} (Freeman & Tukey, 1950).
          }
 
+         However, for reasons discussed in Schwarzer et al. (2019) and \enc{Röver}{Roever} and Friede (2022), the use of double arcsine transformed proportions for a meta-analysis is not recommended.
+
          Zero cell entries can be problematic for certain outcome measures. When \code{to="only0"} (the default), the value of \code{add} (the default is \code{1/2}; but see \sQuote{Note}) is added to \code{xi} and \code{mi} only for studies where \code{xi} or \code{mi} is equal to 0. When \code{to="all"}, the value of \code{add} is added to \code{xi} and \code{mi} in all studies. When \code{to="if0all"}, the value of \code{add} is added in all studies, but only when there is at least one study with a zero value for \code{xi} or \code{mi}. Setting \code{to="none"} or \code{add=0} has the same effect: No adjustment to the observed values is made. Depending on the outcome measure and the data, this may lead to division by zero (when this occurs, the resulting value is recoded to \code{NA}).
 
-         Datasets corresponding to data of this type are provided in \code{\link[metadat]{dat.pritz1997}} and \code{\link[metadat]{dat.debruin2009}}.
+         Datasets corresponding to data of this type are provided in \code{\link[metadat]{dat.pritz1997}}, \code{\link[metadat]{dat.debruin2009}}, and \code{\link[metadat]{dat.hannum2020}}.
 
       }
 
@@ -356,7 +389,7 @@ escalc(measure, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
 
       \subsection{(4a) Measures for Quantitative Variables}{
 
-         When the response or dependent variable assessed in the individual studies is measured on some quantitative scale, the raw mean change, standardized versions thereof, or the (log transformed) ratio of means (log response ratio) can be used as outcome measures (Becker, 1988; Gibbons et al., 1993; Lajeunesse, 2011; Morris, 2000). Here, one needs to specify \code{m1i} and \code{m2i}, the observed means at the two measurement occasions, \code{sd1i} and \code{sd2i} for the corresponding observed standard deviations, \code{ri} for the correlation between the measurements at the two measurement occasions, and \code{ni} for the sample size. The options for the \code{measure} argument are then:
+         When the response or dependent variable assessed in the individual studies is measured on some quantitative scale, the raw mean change, standardized versions thereof, the common language effect size (area under the curve), or the (log transformed) ratio of means (log response ratio) can be used as outcome measures (Becker, 1988; Gibbons et al., 1993; Lajeunesse, 2011; Morris, 2000). Here, one needs to specify \code{m1i} and \code{m2i}, the observed means at the two measurement occasions, \code{sd1i} and \code{sd2i} for the corresponding observed standard deviations, \code{ri} for the correlation between the measurements at the two measurement occasions, and \code{ni} for the sample size. The options for the \code{measure} argument are then:
 
          \itemize{
          \item \code{"MC"} for the \emph{raw mean change},
@@ -365,12 +398,13 @@ escalc(measure, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
          \item \code{"SMCRH"} for the \emph{standardized mean change} using raw score standardization with heteroscedastic population variances at the two measurement occasions (Bonett, 2008),
          \item \code{"SMCRP"} for the \emph{standardized mean change} using raw score standardization with pooled standard deviations (Cousineau, 2020),
          \item \code{"SMCRPH"} for the \emph{standardized mean change} using raw score standardization with pooled standard deviations and heteroscedastic population variances at the two measurement occasions (Bonett, 2008),
+         \item \code{"CLESCN"} (or \code{"AUCCN"}) for the \emph{common language effect size} (area under the curve) based on a bivariate normal model for dependent samples,
          \item \code{"ROMC"} for the \emph{log transformed ratio of means} (Lajeunesse, 2011).
          }
 
-         The raw mean change is simply \mjeqn{\textrm{m1i}-\textrm{m2i}}{m1i-m2i}, while the standardized mean change is given by \mjeqn{(\textrm{m1i}-\textrm{m2i})/\textrm{sdi}}{(m1i-m2i)/sdi}. For \code{measure="SMCC"}, \mjeqn{\textrm{sdi} = \sqrt{\textrm{sd1i}^2 + \textrm{sd2i}^2 - 2\times\textrm{ri}\times\textrm{sd1i}\times\textrm{sd2i}}}{sdi = sqrt(sd1i^2 + sd2i^2 - 2*ri*sd1i*sd2i)} is the standard deviation of the change scores, for \code{measure="SMCR"} and \code{measure="SMCRH"}, \mjeqn{\textrm{sdi} = \textrm{sd1i}}{sdi = sd1i}, and for \code{measure="SMCRP"} and \code{measure="SMCRPH"}, \mjeqn{\textrm{sdi} = \sqrt{\frac{\textrm{sd1i}^2 + \textrm{sd2i}^2}{2}}}{sdi = sqrt((sd1i^2 + sd2i^2) / 2)} is the square root of the average variance. See also Morris and DeShon (2002) for a thorough discussion of the difference between the \code{"SMCC"} and \code{"SMCR"} change score measures. All of these measures are also applicable for matched pairs designs (subscripts 1 and 2 then simply denote the first and second group that are formed by the matching).
+         The raw mean change is simply \mjeqn{\text{m1i}-\text{m2i}}{m1i-m2i}, while the standardized mean change is given by \mjeqn{(\text{m1i}-\text{m2i})/\text{sdi}}{(m1i-m2i)/sdi}. For \code{measure="SMCC"}, \mjeqn{\text{sdi} = \sqrt{\text{sd1i}^2 + \text{sd2i}^2 - 2\times\text{ri}\times\text{sd1i}\times\text{sd2i}}}{sdi = sqrt(sd1i^2 + sd2i^2 - 2*ri*sd1i*sd2i)} is the standard deviation of the change scores, for \code{measure="SMCR"} and \code{measure="SMCRH"}, \mjeqn{\text{sdi} = \text{sd1i}}{sdi = sd1i}, and for \code{measure="SMCRP"} and \code{measure="SMCRPH"}, \mjeqn{\text{sdi} = \sqrt{\frac{\text{sd1i}^2 + \text{sd2i}^2}{2}}}{sdi = sqrt((sd1i^2 + sd2i^2) / 2)} is the square root of the average variance. See also Morris and DeShon (2002) for a thorough discussion of the difference between the \code{"SMCC"} and \code{"SMCR"} change score measures. All of these measures are also applicable for matched pairs designs (subscripts 1 and 2 then simply denote the first and second group that are formed by the matching).
 
-         In practice, one often has a mix of information available from the individual studies to compute these measures. In particular, if \code{m1i} and \code{m2i} are unknown, but the raw mean change is directly reported in a particular study, then one can set \code{m1i} to that value and \code{m2i} to 0 (making sure that the raw mean change was computed as \code{m1i-m2i} within that study and not the other way around). Also, for measures \code{"MC"} and \code{"SMCC"}, if \code{sd1i}, \code{sd2i}, and \code{ri} are unknown, but the standard deviation of the change scores is directly reported, then one can set \code{sd1i} to that value and both \code{sd2i} and \code{ri} to 0. For measure \code{"SMCR"}, argument \code{sd2i} is actually not needed, as the standardization is only based on \code{sd1i} (Becker, 1988; Morris, 2000), which is usually the pre-test standard deviation (if the post-test standard deviation should be used, then set \code{sd1i} to that). Finally, for \code{measure="SMCC"}, one can also directly specify standardized mean change values via argument \code{di} or the t-statistics from a paired samples t-test or the corresponding (two-sided) p-values via argument \code{ti} or \code{pi}, respectively (which are then transformed into the corresponding standardized mean change values within the function). The sign of the p-values (which can be negative) is used as the sign of the standardized mean change values (e.g., \code{escalc(measure="SMCC", pi=-0.018, ni=50)} yields a negative standardized mean change value of \code{-0.3408}).
+         In practice, one often has a mix of information available from the individual studies to compute these measures. In particular, if \code{m1i} and \code{m2i} are unknown, but the raw mean change is directly reported in a particular study, then one can set \code{m1i} to that value and \code{m2i} to 0 (making sure that the raw mean change was computed as \code{m1i-m2i} within that study and not the other way around). Also, for measures \code{"MC"} and \code{"SMCC"}, if \code{sd1i}, \code{sd2i}, and \code{ri} are unknown, but the standard deviation of the change scores is directly reported, then one can set \code{sd1i} to that value and both \code{sd2i} and \code{ri} to 0. For measure \code{"SMCR"}, argument \code{sd2i} is actually not needed, as the standardization is only based on \code{sd1i} (Becker, 1988; Morris, 2000), which is usually the pre-test standard deviation (if the post-test standard deviation should be used, then set \code{sd1i} to that). Finally, for \code{measure="SMCC"}, one can also directly specify standardized mean change values via argument \code{di} or the t-statistics from a paired samples t-test or the corresponding two-sided p-values via argument \code{ti} or \code{pi}, respectively (which are then transformed into the corresponding standardized mean change values within the function). The sign of the p-values (which can be negative) is used as the sign of the standardized mean change values (e.g., \code{escalc(measure="SMCC", pi=-0.018, ni=50)} yields a negative standardized mean change value of \code{-0.3408}).
 
          Finally, interest may also be focused on differences in the variability of the measurements at the two measurement occasions (or between the two matched groups). Here, the (log transformed) ratio of the coefficient of variation (also called the coefficient of variation ratio) can be a useful measure (Nakagawa et al., 2015). If focus is solely on the variability of the measurements, then the (log transformed) ratio of the standard deviations (also called the variability ratio) can be used (Nakagawa et al., 2015). For the latter, one only needs to specify \code{sd1i}, \code{sd2i}, \code{ni}, and \code{ri}. The options for the \code{measure} argument are:
 
@@ -416,7 +450,7 @@ escalc(measure, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
 
          See Curtin et al. (2002) and Zou (2007) for discussions of these measures.
 
-         If only marginal tables are available, then another possibility is to compute the marginal log odds ratios based on these table directly. However, for the correct computation of the sampling variances, the correlations (phi coefficients) from the paired tables must be known (or \sQuote{guestimated}). To use this approach, set \code{measure="MPORM"} and use argument \code{ri} to specify the correlation coefficients. Instead of specifying \code{ri}, one can use argument \code{pi} to specify the proportions (or \sQuote{guestimates} thereof) of individuals (or pairs) that experienced the outcome of interest (i.e., \sQuote{outcome1} in the paired \mjeqn{2 \times 2}{2x2} table) under both treatments (i.e., \code{pi=ai/(ai+bi+ci+di)}). Based on these proportions, the correlation coefficients are then back-calculated and used to calculate the correct sampling variances. Note that the values in the marginal tables put constraints on the possible values for \code{ri} and \code{pi}. If a specified value for \code{ri} or \code{pi} is not feasible under a given table, the corresponding sampling variance will be \code{NA}.
+         If only marginal tables are available, then another possibility is to compute the marginal log odds ratios based on these table directly. However, for the correct computation of the sampling variances, the correlations (phi coefficients) from the paired tables must be known (or \sQuote{guestimated}). To use this approach, set \code{measure="MPORM"} and use argument \code{ri} to specify the correlation coefficients. Instead of specifying \code{ri}, one can use argument \code{pi} to specify the proportions (or \sQuote{guestimates} thereof) of individuals (or pairs) that experienced the outcome of interest (i.e., \sQuote{outcome1} in the paired \mjeqn{2 \times 2}{2x2} table) under both treatments (i.e., \code{pi=ai/(ai+bi+ci+di)}). Based on these proportions, the correlation coefficients are then back-calculated and used to compute the correct sampling variances. Note that the values in the marginal tables put constraints on the possible values for \code{ri} and \code{pi}. If a specified value for \code{ri} or \code{pi} is not feasible under a given table, the corresponding sampling variance will be \code{NA}.
 
       }
 
@@ -436,7 +470,7 @@ escalc(measure, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
          \item \code{"ABT"} for \emph{transformed alpha values} (Bonett, 2002).
          }
 
-         Note that the transformations implemented here are slightly different from the ones described by Hakstian and Whalen (1976) and Bonett (2002). In particular, for \code{"AHW"}, the transformation \mjeqn{1-(1-\textrm{ai})^{1/3}}{1-(1-ai)^(1/3)} is used, while for \code{"ABT"}, the transformation \mjeqn{-\log(1-\textrm{ai})}{-log(1-ai)} is used. This ensures that the transformed values are monotonically increasing functions of \mjeqn{\textrm{ai}}{ai}.
+         Note that the transformations implemented here are slightly different from the ones described by Hakstian and Whalen (1976) and Bonett (2002). In particular, for \code{"AHW"}, the transformation \mjeqn{1-(1-\text{ai})^{1/3}}{1-(1-ai)^(1/3)} is used, while for \code{"ABT"}, the transformation \mjeqn{-\log(1-\text{ai})}{-log(1-ai)} is used. This ensures that the transformed values are monotonically increasing functions of \mjeqn{\text{ai}}{ai}.
 
          A dataset corresponding to data of this type is provided in \code{\link[metadat]{dat.bonett2010}}.
 
@@ -444,7 +478,7 @@ escalc(measure, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
 
       \subsection{Partial and Semi-Partial Correlations}{
 
-         Aloe and Becker (2012), Aloe and Thompson (2013), and Aloe (2014) describe the use of partial and semi-partial correlation coefficients for meta-analyzing the results from regression models (when the focus is on a common regression coefficient of interest across studies). To compute these measures, one needs to specify \code{ti} for the test statistics (i.e., t-tests) of the \sQuote{focal} regression coefficient of interest, \code{ni} for the sample sizes of the studies, \code{mi} for the total number of predictors in the regression models (counting the focal predictor of interest), and \code{r2i} for the \mjseqn{R^2} values of the regression models (the latter is only needed when \code{measure="SPCOR"} or \code{measure="ZSPCOR"}). The options for the \code{measure} argument are then:
+         Aloe and Becker (2012), Aloe and Thompson (2013), and Aloe (2014) describe the use of partial and semi-partial correlation coefficients for meta-analyzing the results from regression models (when the focus is on a common regression coefficient of interest across studies). To compute these measures, one needs to specify \code{ti} for the test statistics (i.e., t-tests) of the \sQuote{focal} regression coefficient of interest, \code{ni} for the sample sizes of the studies, \code{mi} for the total number of predictors in the regression models (counting the focal predictor of interest, but not the intercept term), and \code{r2i} for the \mjseqn{R^2} values of the regression models (the latter is only needed when \code{measure="SPCOR"} or \code{measure="ZSPCOR"}). The options for the \code{measure} argument are then:
 
          \itemize{
          \item \code{"PCOR"} for the \emph{partial correlation coefficient},
@@ -455,7 +489,7 @@ escalc(measure, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
 
          Note that the signs of the (semi-)partial correlation coefficients is determined based on the signs of the values specified via the \code{ti} argument. Also, while the Fisher transformation can be applied to both measures, it is only a variance-stabilizing transformation for partial correlation coefficients.
 
-         If the test statistic (i.e., t-test) of the regression coefficient of interest is unknown for some studies, but the (two-sided) p-values corresponding to the t-tests are known, one can specify those values via argument \code{pi}. However, since a two-sided p-value does not carry information about the sign of the test statistic (and hence neither about the correlation), the sign of the p-values (which can be negative) is used as the sign of the correlation coefficients (e.g., \code{escalc(measure="PCOR", pi=-0.07, mi=5, ni=30)} yields a negative partial correlation of \code{-0.3610}).
+         If the test statistic (i.e., t-test) of the regression coefficient of interest is unknown for some studies, but the two-sided p-values corresponding to the t-tests are known, one can specify those values via argument \code{pi}. However, since a two-sided p-value does not carry information about the sign of the test statistic (and hence neither about the correlation), the sign of the p-values (which can be negative) is used as the sign of the correlation coefficients (e.g., \code{escalc(measure="PCOR", pi=-0.07, mi=5, ni=30)} yields a negative partial correlation of \code{-0.3610}).
 
          In the rare case that the (semi-)partial correlations are known for some of the studies, then these can be directly specified via the \code{ri} argument. This can be useful, for example, when \mjseqn{\eta^2_p} (i.e., partial eta squared) is known for the regression coefficient of interest, since the square root thereof is identical to the absolute value of the partial correlation (although the correct sign then still needs to be reconstructed based on other information).
 
@@ -465,18 +499,22 @@ escalc(measure, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
 
       \subsection{Coefficients of Determination}{
 
-         One can in principle also meta-analyze coefficients of determination (i.e., \mjseqn{R^2} values / R-squared values) obtained from a series of linear regression models (however, see the caveats mentioned below). For this, one needs to specify \code{r2i} for the \mjseqn{R^2} values of the regression models, \code{ni} for the sample sizes of the studies, and \code{mi} for the number of predictors in the regression models. The options for the \code{measure} argument are then:
+         One can in principle also meta-analyze coefficients of determination (i.e., \mjseqn{R^2} values / R-squared values) obtained from a series of linear regression models (however, see the caveat mentioned below). For this, one needs to specify \code{r2i} for the \mjseqn{R^2} values of the regression models, \code{ni} for the sample sizes of the studies, and \code{mi} for the number of predictors in the regression models (not counting the intercept term). The options for the \code{measure} argument are then:
 
          \itemize{
-         \item \code{"R2"} for the \emph{raw coefficient of determination},
-         \item \code{"ZR2"} for the \emph{r-to-z transformed coefficient of determination}.
+         \item \code{"R2"} for the \emph{raw coefficient of determination} with predictor values treated as random,
+         \item \code{"ZR2"} for the corresponding \emph{r-to-z transformed coefficient of determination},
+         \item \code{"R2F"} for the \emph{raw coefficient of determination} with predictor values treated as fixed,
+         \item \code{"ZR2F"} for the corresponding \emph{r-to-z transformed coefficient of determination}.
          }
 
          If the \mjseqn{R^2} values are unknown for some studies, but the F-statistics (for the omnibus test of the regression coefficients) are available, one can specify those values via argument \code{fi}, which are then transformed into the corresponding \mjseqn{R^2} values within the function. If only the p-values corresponding to the F-tests are known, one can specify those values via argument \code{pi} (which are then transformed into the F-statistics and then further into the \mjseqn{R^2} values).
 
-         For \code{measure="R2"}, one can choose to compute the sampling variances with \code{vtype="LS"} (the default) for the large-sample approximation given by equation 27.88 in Kendall and Stuart (1979), \code{vtype="LS2"} for the large-sample approximation given by equation 27.87, or \code{vtype="AV"} and \code{vtype="AV2"} which use the same approximations but plugging the sample-size weighted average of the \mjseqn{R^2} values into the equations. For \code{measure="ZR2"}, the variance-stabilizing transformation \mjeqn{\frac{1}{2} \log\mathopen{}\left(\frac{1+\sqrt{\textrm{r2i}}}{1-\sqrt{\textrm{r2i}}}\right)\mathclose{}}{1/2 log((1+\sqrt(R_i^2))/(1-\sqrt(R_i^2)))} is used (see Olkin & Finn, 1995, but with the additional \mjeqn{\frac{1}{2}}{1/2} factor), which uses \mjeqn{1/\textrm{ni}}{1/ni} as the large-sample approximation to the sampling variances.
+         For \code{measure="R2"}, one can choose to compute the sampling variances with \code{vtype="LS"} (the default) for the large-sample approximation given by equation 27.88 in Kendall and Stuart (1979), \code{vtype="LS2"} for the large-sample approximation given by equation 27.87, or \code{vtype="AV"} and \code{vtype="AV2"} which use the same approximations but plugging the sample-size weighted average of the \mjseqn{R^2} values into the equations. For \code{measure="ZR2"}, the variance-stabilizing transformation \mjeqn{\frac{1}{2} \log\mathopen{}\left(\frac{1+\sqrt{\text{r2i}}}{1-\sqrt{\text{r2i}}}\right)\mathclose{}}{1/2 log((1+\sqrt(R_i^2))/(1-\sqrt(R_i^2)))} is used (see Olkin & Finn, 1995, but with the additional \mjeqn{\frac{1}{2}}{1/2} factor), which uses \mjeqn{1/\text{ni}}{1/ni} as the large-sample approximation to the sampling variances. The equations used for these measures were derived under the assumption that the values of the outcome variable and the predictors were sampled from a multivariate normal distribution within each study (sometimes called \sQuote{random-X regression}) and that the sample sizes of the studies are large. Moreover, the equations assume that the true \mjseqn{R^2} values are non-zero.
 
-         The equations used for these measures were derived under the assumption that the values of the outcome variable and the predictors were sampled from a multivariate normal distribution within each study and that the sample sizes of the studies are large. Moreover, the equations assume that the true \mjseqn{R^2} values are all non-zero. Similarly, given that observed \mjseqn{R^2} values cannot be negative, there is no possibility for values to cancel each other out and hence it is guaranteed that the pooled estimate is positive. Hence, a meta-analysis of \mjseqn{R^2} values cannot be used to test if the pooled estimate is different from zero (it is by construction as long as the number of studies is sufficiently large).
+         For the case where the predictor values are treated as fixed (sometimes called \sQuote{fixed-X regression}), one can use measures \code{"R2F"} and \code{"ZR2F"}. Here, the sampling variances of the \mjseqn{R^2} values are computed based on the known relationship between the non-central F-distribution and its non-centrality parameter (which in turn is a function of the true \mjseqn{R^2}). However, note that the r-to-z transformation is \emph{not} a variance-stabilizing transformation for this case.
+
+         Given that observed \mjseqn{R^2} values cannot be negative, there is no possibility for values to cancel each other out and hence it is guaranteed that the pooled estimate is positive. Hence, a meta-analysis of \mjseqn{R^2} values cannot be used to test if the pooled estimate is different from zero (it is by construction as long as the number of studies is sufficiently large).
 
       }
 
@@ -498,6 +536,16 @@ escalc(measure, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
 
    }
 
+   \subsection{Other Arguments}{
+
+      Argument \code{slab} can be used to specify (study) labels for the effect sizes or outcomes. These labels are passed on to other functions and used as needed (e.g., for labeling the studies in a forest plot). Note that missing values in the study labels are not allowed.
+
+      The \code{flip} argument, when set to \code{TRUE}, can be used to flip the sign of the effect sizes or outcomes. This can also be a logical vector to indicate for which studies the sign should be flipped. The argument can also be a numeric vector to specify a multiplier for the effect sizes or outcomes (the corresponding sampling variances are adjusted accordingly).
+
+      The \code{subset} argument can be used to select the studies that will be included in the data frame returned by the function. On the other hand, the \code{include} argument simply selects for which studies the measure will be computed (if it shouldn't be computed for all of them).
+
+   }
+
 }
 \value{
    An object of class \code{c("escalc","data.frame")}. The object is a data frame containing the following components:
@@ -507,8 +555,6 @@ escalc(measure, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
    If a data frame was specified via the \code{data} argument and \code{append=TRUE}, then variables \code{yi} and \code{vi} are appended to this data frame. Note that the \code{var.names} argument actually specifies the names of these two variables (\code{"yi"} and \code{"vi"} are the defaults).
 
    If the data frame already contains two variables with names as specified by the \code{var.names} argument, the values for these two variables will be overwritten when \code{replace=TRUE} (which is the default). By setting \code{replace=FALSE}, only values that are \code{NA} will be replaced.
-
-   The \code{subset} argument can be used to select the studies that will be included in the data frame returned by the function. On the other hand, the \code{include} argument simply selects for which studies the measure will be computed (if it shouldn't be computed for all of them).
 
    The object is formatted and printed with the \code{\link[=print.escalc]{print}} function. The \code{\link[=summary.escalc]{summary}} function can be used to obtain confidence intervals for the individual outcomes. See \code{\link{methods.escalc}} for some additional method functions for \code{"escalc"} objects.
 
@@ -520,7 +566,7 @@ escalc(measure, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
    Although the default value for \code{add} is \code{1/2}, for certain measures the use of such a bias correction makes little sense and for these measures, the function internally sets \code{add=0}. This applies to the following measures: \code{"AS"}, \code{"PHI"}, \code{"ZPHI"}, \code{"RTET"}, \code{"ZTET"}, \code{"IRSD"}, \code{"PAS"}, \code{"PFT"}, \code{"IRS"}, and \code{"IRFT"}. One can still force the use of the bias correction by explicitly setting the \code{add} argument to some non-zero value when calling the function.
 }
 \author{
-   Wolfgang Viechtbauer \email{wvb@metafor-project.org} \url{https://www.metafor-project.org}
+   Wolfgang Viechtbauer (\email{wvb@metafor-project.org}, \url{https://www.metafor-project.org}).
 }
 \references{
    Aloe, A. M. (2014). An empirical investigation of partial effect sizes in meta-analysis of correlational data. \emph{Journal of General Psychology}, \bold{141}(1), 47--64. \verb{https://doi.org/10.1080/00221309.2013.853021}
@@ -547,6 +593,8 @@ escalc(measure, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
 
    Chinn, S. (2000). A simple method for converting an odds ratio to effect size for use in meta-analysis. \emph{Statistics in Medicine}, \bold{19}(22), 3127--3131. \verb{https://doi.org/10.1002/1097-0258(20001130)19:22<3127::aid-sim784>3.0.co;2-m}
 
+   Cho, H., Matthews, G. J., & Harel, O. (2019). Confidence intervals for the area under the receiver operating characteristic curve in the presence of ignorable missing data. \emph{International Statistical Review}, \bold{87}(1), 152--177. \verb{https://doi.org/10.1111/insr.12277}
+
    Cohen, J. (1988). \emph{Statistical power analysis for the behavioral sciences} (2nd ed.). Hillsdale, NJ: Lawrence Erlbaum Associates.
 
    Cousineau, D. (2020). Approximating the distribution of Cohen's d_p in within-subject designs. \emph{The Quantitative Methods for Psychology}, \bold{16}(4), 418--421. \verb{https://doi.org/10.20982/tqmp.16.4.p418}
@@ -567,9 +615,13 @@ escalc(measure, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
 
    Gibbons, R. D., Hedeker, D. R., & Davis, J. M. (1993). Estimation of effect size from a series of experiments involving paired comparisons. \emph{Journal of Educational Statistics}, \bold{18}(3), 271--279. \verb{https://doi.org/10.3102/10769986018003271}
 
+   Goddard, M. J., & Hinberg, I. (1990). Receiver operator characteristic (ROC) curves and non‐normal data: An empirical study. \emph{Statistics in Medicine}, \bold{9}(3), 325--337. \verb{https://doi.org/10.1002/sim.4780090315}
+
    Hakstian, A. R., & Whalen, T. E. (1976). A k-sample significance test for independent alpha coefficients. \emph{Psychometrika}, \bold{41}(2), 219--231. \verb{https://doi.org/10.1007/BF02291840}
 
-   Hasselblad, V., & Hedges, L. V. (1995). Meta-analysis of screening and diagnostic tests. Psychological Bulletin, 117(1), 167-178. \verb{https://doi.org/10.1037/0033-2909.117.1.167}
+   Hanley, J. A., & McNeil, B. J. (1982). The meaning and use of the area under a receiver operating characteristic (ROC) curve. \emph{Radiology}, \bold{143}(1), 29--36. \verb{https://doi.org/10.1148/radiology.143.1.7063747}
+
+   Hasselblad, V., & Hedges, L. V. (1995). Meta-analysis of screening and diagnostic tests. Psychological Bulletin, 117(1), 167--178. \verb{https://doi.org/10.1037/0033-2909.117.1.167}
 
    Hedges, L. V. (1981). Distribution theory for Glass's estimator of effect size and related estimators. \emph{Journal of Educational Statistics}, \bold{6}(2), 107--128. \verb{https://doi.org/10.3102/10769986006002107}
 
@@ -593,6 +645,8 @@ escalc(measure, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
 
    May, W. L., & Johnson, W. D. (1997). Confidence intervals for differences in correlated binary proportions. \emph{Statistics in Medicine}, \bold{16}(18), 2127--2136. \verb{https://doi.org/10.1002/(SICI)1097-0258(19970930)16:18<2127::AID-SIM633>3.0.CO;2-W}
 
+   McGraw, K. O., & Wong, S. P. (1992). A common language effect size statistic. \emph{Psychological Bulletin}, \bold{111}(2), 361--365. \verb{https://doi.org/10.1037/0033-2909.111.2.361}
+
    Morris, S. B. (2000). Distribution of the standardized mean change effect size for meta-analysis on repeated measures. \emph{British Journal of Mathematical and Statistical Psychology}, \bold{53}(1), 17--29. \verb{https://doi.org/10.1348/000711000159150}
 
    Morris, S. B., & DeShon, R. P. (2002). Combining effect size estimates in meta-analysis with repeated measures and independent-groups designs. \emph{Psychological Methods}, \bold{7}(1), 105--125. \verb{https://doi.org/10.1037/1082-989x.7.1.105}
@@ -602,6 +656,8 @@ escalc(measure, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
    Nakagawa, S., Noble, D. W. A., Lagisz, M., Spake, R., Viechtbauer, W., & Senior, A. M. (2023). A robust and readily implementable method for the meta-analysis of response ratios with and without missing standard deviations. \emph{Ecology Letters}, \bold{26}(2), 232--244. \verb{https://doi.org/10.1111/ele.14144}
 
    Newcombe, R. G. (1998). Improved confidence intervals for the difference between binomial proportions based on paired data. \emph{Statistics in Medicine}, \bold{17}(22), 2635--2650. \verb{https://doi.org/10.1002/(SICI)1097-0258(19981130)17:22<2635::AID-SIM954>3.0.CO;2-C}
+
+   Newcombe, R. G. (2006). Confidence intervals for an effect size measure based on the Mann-Whitney statistic. Part 2: Asymptotic methods and evaluation. \emph{Statistics in Medicine}, \bold{25}(4), 559--573. \verb{https://doi.org/10.1002/sim.2324}
 
    Olkin, I., & Finn, J. D. (1995). Correlations redux. \emph{Psychological Bulletin}, \bold{118}(1), 155--164. \verb{https://doi.org/10.1037/0033-2909.118.1.155}
 
@@ -615,9 +671,13 @@ escalc(measure, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i,
 
    Rothman, K. J., Greenland, S., & Lash, T. L. (2008). \emph{Modern epidemiology} (3rd ed.). Philadelphia: Lippincott Williams & Wilkins.
 
+   \enc{Röver}{Roever}, C., & Friede, T. (2022). Double arcsine transform not appropriate for meta‐analysis. \emph{Research Synthesis Methods}, \bold{13}(5), 645--648. \verb{https://doi.org/10.1002/jrsm.1591}
+
    \enc{Rücker}{Ruecker}, G., Schwarzer, G., Carpenter, J., & Olkin, I. (2009). Why add anything to nothing? The arcsine difference as a measure of treatment effect in meta-analysis with zero cells. \emph{Statistics in Medicine}, \bold{28}(5), 721--738. \verb{https://doi.org/10.1002/sim.3511}
 
    \enc{Sánchez-Meca}{Sanchez-Meca}, J., \enc{Marín-Martínez}{Marin-Martinez}, F., & \enc{Chacón-Moscoso}{Chacon-Moscoso}, S. (2003). Effect-size indices for dichotomized outcomes in meta-analysis. \emph{Psychological Methods}, \bold{8}(4), 448--467. \verb{https://doi.org/10.1037/1082-989X.8.4.448}
+
+   Schwarzer, G., Chemaitelly, H., Abu-Raddad, L. J., & \enc{Rücker}{Ruecker}, G. (2019). Seriously misleading results using inverse of Freeman-Tukey double arcsine transformation in meta-analysis of single proportions. \emph{Research Synthesis Methods}, \bold{10}(3), 476--483. \verb{https://doi.org/10.1002/jrsm.1348}
 
    Soper, H. E. (1914). On the probable error of the bi-serial expression for the correlation coefficient. \emph{Biometrika}, \bold{10}(2/3), 384--390. \verb{https://doi.org/10.1093/biomet/10.2-3.384}
 
@@ -694,7 +754,7 @@ dat
 dat$yi
 
 ### this information can then be used by other functions; for example in a forest plot
-forest(dat$yi, dat$vi, header=TRUE, top=2)
+forest(dat$yi, dat$vi)
 
 ############################################################################
 

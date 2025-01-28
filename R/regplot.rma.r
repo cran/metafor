@@ -111,7 +111,7 @@ lcol, lwd, lty, legend=FALSE, xvals, ...) {
    if (inherits(pred, "list.rma")) {
       addpred <- TRUE
       if (missing(xvals))
-         stop(mstyle$stop("Must specify 'xvals' argument when passing an object from predict() to 'pred'."))
+         stop(mstyle$stop("Must specify the 'xvals' argument when passing an object from predict() to 'pred'."))
       if (length(xvals) != length(pred$pred))
          stop(mstyle$stop(paste0("Length of the 'xvals' argument (", length(xvals), ") does not correspond to the number of predicted values (", length(pred$pred), ").")))
    } else {
@@ -128,8 +128,7 @@ lcol, lwd, lty, legend=FALSE, xvals, ...) {
    if (missing(lcol)) {
       lcol <- c(rep(par("fg"), 3), .coladj(par("bg","fg"), dark=0.5, light=-0.5))
    } else {
-      if (length(lcol) == 1L)
-         lcol <- rep(lcol, 4L)
+      lcol <- .expand1(lcol, 4L)
       if (length(lcol) == 2L)
          lcol <- c(lcol[c(1,2,2)], .coladj(par("bg","fg"), dark=0.5, light=-0.5))
       if (length(lcol) == 3L)
@@ -139,8 +138,7 @@ lcol, lwd, lty, legend=FALSE, xvals, ...) {
    if (missing(lty)) {
       lty <- c("solid", "dashed", "dotted", "solid")
    } else {
-      if (length(lty) == 1L)
-         lty <- rep(lty, 4L)
+      lty <- .expand1(lty, 4L)
       if (length(lty) == 2L)
          lty <- c(lty[c(1,2,2)], "solid")
       if (length(lty) == 3L)
@@ -150,8 +148,7 @@ lcol, lwd, lty, legend=FALSE, xvals, ...) {
    if (missing(lwd)) {
       lwd <- c(3,1,1,2)
    } else {
-      if (length(lwd) == 1L)
-         lwd <- rep(lwd, 4L)
+      lwd <- .expand1(lwd, 4L)
       if (length(lwd) == 2L)
          lwd <- c(lwd[c(1,2,2)], 2)
       if (length(lwd) == 3L)
@@ -186,7 +183,7 @@ lcol, lwd, lty, legend=FALSE, xvals, ...) {
          if (x$p == 1L) {
             mod <- 1
          } else {
-            stop(mstyle$stop("Must specify 'mod' argument for models with multiple predictors."))
+            stop(mstyle$stop("Must specify the 'mod' argument for models with multiple predictors."))
          }
       }
    }
@@ -246,8 +243,7 @@ lcol, lwd, lty, legend=FALSE, xvals, ...) {
    ###       so we have to apply the same subsetting (if necessary) and removing of NAs as was
    ###       done during the model fitting (note: NAs are removed further below)
 
-   if (length(pch) == 1L)
-      pch <- rep(pch, x$k.all)
+   pch <- .expand1(pch, x$k.all)
 
    if (length(pch) != x$k.all)
       stop(mstyle$stop(paste0("Length of the 'pch' argument (", length(pch), ") does not correspond to the size of the original dataset (", x$k.all, ").")))
@@ -272,8 +268,7 @@ lcol, lwd, lty, legend=FALSE, xvals, ...) {
 
       } else {
 
-         if (length(psize) == 1L)
-            psize <- rep(psize, x$k.all)
+         psize <- .expand1(psize, x$k.all)
 
          if (length(psize) != x$k.all)
             stop(mstyle$stop(paste0("Length of the 'psize' argument (", length(psize), ") does not correspond to the size of the original dataset (", x$k.all, ").")))
@@ -284,16 +279,14 @@ lcol, lwd, lty, legend=FALSE, xvals, ...) {
 
    }
 
-   if (length(col) == 1L)
-      col <- rep(col, x$k.all)
+   col <- .expand1(col, x$k.all)
 
    if (length(col) != x$k.all)
       stop(mstyle$stop(paste0("Length of the 'col' argument (", length(col), ") does not correspond to the size of the original dataset (", x$k.all, ").")))
 
    col <- .getsubset(col, x$subset)
 
-   if (length(bg) == 1L)
-      bg <- rep(bg, x$k.all)
+   bg <- .expand1(bg, x$k.all)
 
    if (length(bg) != x$k.all)
       stop(mstyle$stop(paste0("Length of the 'bg' argument (", length(bg), ") does not correspond to the size of the original dataset (", x$k.all, ").")))
@@ -319,8 +312,7 @@ lcol, lwd, lty, legend=FALSE, xvals, ...) {
          #if (!is.logical(label))
          #   stop(mstyle$stop("Argument 'label' must be a logical vector (or a single character string)."))
 
-         if (length(label) == 1L)
-            label <- rep(label, x$k.all)
+         label <- .expand1(label, x$k.all)
 
          if (length(label) != x$k.all)
             stop(mstyle$stop(paste0("Length of the 'label' argument (", length(label), ") does not correspond to the size of the original dataset (", x$k.all, ").")))
@@ -410,12 +402,12 @@ lcol, lwd, lty, legend=FALSE, xvals, ...) {
          len <- 1000
          if (missing(predlim)) {
             range.xi <- max(xi) - min(xi)
-            predlim  <- c(min(xi) - .04*range.xi, max(xi) + .04*range.xi)
-            xs <- seq(predlim[1], predlim[2], length=len)
+            predlim  <- c(min(xi) - 0.04*range.xi, max(xi) + 0.04*range.xi)
+            xs <- seq(predlim[1], predlim[2], length.out=len)
          } else {
             if (length(predlim) != 2L)
                stop(mstyle$stop("Argument 'predlim' must be of length 2."))
-            xs <- seq(predlim[1], predlim[2], length=len)
+            xs <- seq(predlim[1], predlim[2], length.out=len)
          }
       }
 
@@ -425,20 +417,20 @@ lcol, lwd, lty, legend=FALSE, xvals, ...) {
       if (x$int.incl)
          Xnew <- Xnew[,-1,drop=FALSE]
 
-      tmp <- predict(x, newmods=Xnew, level=level)
+      predres <- predict(x, newmods=Xnew, level=level)
 
-      pred  <- tmp$pred
-      ci.lb <- tmp$ci.lb
-      ci.ub <- tmp$ci.ub
-      if (is.null(tmp$pi.lb) || anyNA(tmp$pi.lb)) {
+      pred  <- predres$pred
+      ci.lb <- predres$ci.lb
+      ci.ub <- predres$ci.ub
+      if (is.null(predres$pi.lb) || anyNA(predres$pi.lb)) {
          pi.lb <- ci.lb
          pi.ub <- ci.ub
          if (pi)
             warning(mstyle$warning("Cannot draw prediction interval for the given model."), call.=FALSE)
          pi <- FALSE
       } else {
-         pi.lb <- tmp$pi.lb
-         pi.ub <- tmp$pi.ub
+         pi.lb <- predres$pi.lb
+         pi.ub <- predres$pi.ub
       }
 
       Xnew <- rbind(colMeans(X))[rep(1,k),,drop=FALSE]
@@ -447,12 +439,12 @@ lcol, lwd, lty, legend=FALSE, xvals, ...) {
       if (x$int.incl)
          Xnew <- Xnew[,-1,drop=FALSE]
 
-      tmp <- predict(x, newmods=Xnew, level=level)
+      predres <- predict(x, newmods=Xnew, level=level)
 
-      yi.pred  <- tmp$pred
-      yi.ci.lb <- tmp$ci.lb
-      yi.ci.ub <- tmp$ci.ub
-      if (is.null(tmp$pi.lb) || anyNA(tmp$pi.lb)) {
+      yi.pred  <- predres$pred
+      yi.ci.lb <- predres$ci.lb
+      yi.ci.ub <- predres$ci.ub
+      if (is.null(predres$pi.lb) || anyNA(predres$pi.lb)) {
          yi.pi.lb <- yi.ci.lb
          yi.pi.ub <- yi.ci.ub
          if (!is.null(label) && is.character(label) && label == "piout") {
@@ -460,8 +452,8 @@ lcol, lwd, lty, legend=FALSE, xvals, ...) {
             label <- NULL
          }
       } else {
-         yi.pi.lb <- tmp$pi.lb
-         yi.pi.ub <- tmp$pi.ub
+         yi.pi.lb <- predres$pi.lb
+         yi.pi.ub <- predres$pi.ub
       }
 
    }
@@ -484,6 +476,8 @@ lcol, lwd, lty, legend=FALSE, xvals, ...) {
          yi.pi.lb <- sapply(yi.pi.lb, transf)
          yi.pi.ub <- sapply(yi.pi.ub, transf)
       } else {
+         if (!is.primitive(transf) && !is.null(targs) && length(formals(transf)) == 1L)
+            stop(mstyle$stop("Function specified via 'transf' does not appear to have an argument for 'targs'."))
          yi       <- sapply(yi, transf, targs)
          pred     <- sapply(pred, transf, targs)
          ci.lb    <- sapply(ci.lb, transf, targs)
@@ -666,6 +660,8 @@ lcol, lwd, lty, legend=FALSE, xvals, ...) {
    ### add refline
 
    labline(h=refline, col=lcol[4], lty=lty[4], lwd=lwd[4], ...)
+
+   ### add predicted line
 
    if (addpred)
       llines(xs, pred, col=lcol[1], lty=lty[1], lwd=lwd[1], ...)

@@ -32,7 +32,7 @@ confint.rma.ls <- function(object, parm, level, fixed=FALSE, alpha, digits, tran
 
    ddd <- list(...)
 
-   .chkdots(ddd, c("time", "xlim", "extint"))
+   .chkdots(ddd, c("time", "xlim", "extint", "code1", "code2"))
 
    level <- .level(level, stopon100=.isTRUE(ddd$extint))
 
@@ -66,16 +66,22 @@ confint.rma.ls <- function(object, parm, level, fixed=FALSE, alpha, digits, tran
       if (comps == 0)
          stop(mstyle$stop("No components for which a CI can be obtained."))
 
+      if (!is.null(ddd[["code1"]]))
+         eval(expr = parse(text = ddd[["code1"]]))
+
       res.all <- list()
       j <- 0
 
       if (any(!x$alpha.fix)) {
          for (pos in seq_len(x$alphas)[!x$alpha.fix]) {
             j <- j + 1
+            if (!is.null(ddd[["code2"]]))
+               eval(expr = parse(text = ddd[["code2"]]))
             cl.vc <- cl
             cl.vc$alpha <- pos
             cl.vc$time <- FALSE
             #cl.vc$object <- quote(x)
+            cl.vc[[1]] <- str2lang("metafor::confint.rma.ls")
             if (verbose)
                cat(mstyle$verbose(paste("\nObtaining CI for alpha =", pos, "\n")))
             res.all[[j]] <- eval(cl.vc, envir=parent.frame())
@@ -146,8 +152,8 @@ confint.rma.ls <- function(object, parm, level, fixed=FALSE, alpha, digits, tran
 
       ######################################################################
 
-      ### set control parameters for uniroot() and possibly replace with user-defined values
-      ### set vc.min and vc.max and possibly replace with user-defined values
+      ### set defaults for control parameters for uniroot() and replace with any user-defined values
+      ### set vc.min and vc.max and possibly replace with any user-defined values
 
       con <- list(tol=.Machine$double.eps^0.25, maxiter=1000, verbose=FALSE, eptries=10)
 
@@ -165,13 +171,11 @@ confint.rma.ls <- function(object, parm, level, fixed=FALSE, alpha, digits, tran
       }
 
       if (!is.null(x$control$alpha.min)) {
-         if (length(x$control$alpha.min) == 1L)
-            x$control$alpha.min <- rep(x$control$alpha.min, x$q)
+         x$control$alpha.min <- .expand1(x$control$alpha.min, x$q)
          con$vc.min <- max(con$vc.min, x$control$alpha.min[alpha])
       }
       if (!is.null(x$control$alpha.max)) {
-         if (length(x$control$alpha.max) == 1L)
-            x$control$alpha.max <- rep(x$control$alpha.max, x$q)
+         x$control$alpha.max <- .expand1(x$control$alpha.max, x$q)
          con$vc.max <- min(con$vc.max, x$control$alpha.max[alpha])
       }
 
@@ -356,6 +360,8 @@ confint.rma.ls <- function(object, parm, level, fixed=FALSE, alpha, digits, tran
             ci.lb <- sapply(ci.lb, transf)
             ci.ub <- sapply(ci.ub, transf)
          } else {
+            if (!is.primitive(transf) && !is.null(targs) && length(formals(transf)) == 1L)
+               stop(mstyle$stop("Function specified via 'transf' does not appear to have an argument for 'targs'."))
             beta  <- sapply(beta, transf, targs)
             ci.lb <- sapply(ci.lb, transf, targs)
             ci.ub <- sapply(ci.ub, transf, targs)

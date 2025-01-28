@@ -1,9 +1,9 @@
 forest.cumul.rma <- function(x,
-annotate=TRUE,                                                header=FALSE,
-xlim, alim, olim, ylim, at, steps=5, level=x$level, refline=0, digits=2L, width,
-xlab,             ilab, ilab.xpos, ilab.pos,
+annotate=TRUE,                                                               header=TRUE,
+xlim, alim, olim, ylim, at, steps=5,                refline=0, digits=2L, width,
+xlab,             ilab, ilab.lab, ilab.xpos, ilab.pos,
 transf, atransf, targs, rows,
-efac=1, pch, psize,                           col,         shade, colshade,
+efac=1, pch, psize,                          col,         shade, colshade,
 lty, fonts, cex, cex.lab, cex.axis, ...) {
 
    #########################################################################
@@ -16,6 +16,9 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
 
    if (!is.element(na.act, c("na.omit", "na.exclude", "na.fail", "na.pass")))
       stop(mstyle$stop("Unknown 'na.action' specified under options()."))
+
+   if (x$transf) # if results were transformed, need x$se not be missing below (not really used anyway)
+      x$se <- rep(0, length(x$estimate))
 
    if (missing(transf))
       transf <- FALSE
@@ -46,6 +49,9 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
    } else {
       ilab <- .getx("ilab", mf=mf, data=x$data)
    }
+
+   if (missing(ilab.lab))
+      ilab.lab <- NULL
 
    if (missing(ilab.xpos))
       ilab.xpos <- NULL
@@ -89,7 +95,7 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
    if (missing(cex.axis))
       cex.axis <- NULL
 
-   level <- .level(level)
+   level <- .level(x$level)
 
    ### digits[1] for annotations, digits[2] for x-axis labels
    ### note: digits can also be a list (e.g., digits=list(2,3L)); trailing 0's on the x-axis labels
@@ -113,8 +119,7 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
 
    ### vertical expansion factor: 1st = CI end lines, 2nd = arrows
 
-   if (length(efac) == 1L)
-      efac <- rep(efac, 2L)
+   efac <- .expand1(efac, 2L)
 
    efac[efac == 0] <- NA
 
@@ -148,10 +153,11 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
    ### column header
 
    estlab <- .setlab(measure, transf.char, atransf.char, gentype=3, short=TRUE)
+
    if (is.expression(estlab)) {
-      header.right <- str2lang(paste0("bold(", estlab, " * '", annosym[1], "' * '", 100*(1-level), "% CI'", " * '", annosym[3], "')"))
+      header.right <- str2lang(paste0("bold(", estlab, " * '", annosym[1], "' * '", round(100*(1-level),digits[[1]]), "% CI'", " * '", annosym[3], "')"))
    } else {
-      header.right <- paste0(estlab, annosym[1], 100*(1-level), "% CI", annosym[3])
+      header.right <- paste0(estlab, annosym[1], round(100*(1-level),digits[[1]]), "% CI", annosym[3])
    }
 
    if (is.logical(header)) {
@@ -224,11 +230,11 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
    k <- length(yi) # either of length k when na.action="na.omit" or k.f otherwise
 
    if (length(vi) != k)
-      stop(mstyle$stop("Length of 'yi' and 'vi' (or 'sei') is not the same."))
+      stop(mstyle$stop("Length of 'yi' and 'vi' (or 'sei') are not the same."))
 
    ### note: ilab, pch, psize, col must be of the same length as yi (which may
    ###       or may not contain NAs; this is different than the other forest()
-   ###       functions but it would be tricky to make this fully consistent now
+   ###       functions but it would be tricky to make this fully consistent now)
 
    if (x$slab.null) {
       slab    <- paste("+ Study", x$ids)  # cumul() removes the studies with NAs when na.action="na.omit"
@@ -250,20 +256,17 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
 
    }
 
-   if (length(pch) == 1L)
-      pch <- rep(pch, k)
+   pch <- .expand1(pch, k)
 
    if (length(pch) != k)
       stop(mstyle$stop(paste0("Length of the 'pch' argument (", length(pch), ") does not correspond to the number of outcomes (", k, ").")))
 
-   if (length(psize) == 1L)
-      psize <- rep(psize, k)
+   psize <- .expand1(psize, k)
 
    if (length(psize) != k)
       stop(mstyle$stop(paste0("Length of the 'psize' argument (", length(psize), ") does not correspond to the number of outcomes (", k, ").")))
 
-   if (length(col) == 1L)
-      col <- rep(col, k)
+   col <- .expand1(col, k)
 
    if (length(col) != k)
       stop(mstyle$stop(paste0("Length of the 'col' argument (", length(col), ") does not correspond to the number of outcomes (", k, ").")))
@@ -367,6 +370,8 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
          ci.lb <- sapply(ci.lb, transf)
          ci.ub <- sapply(ci.ub, transf)
       } else {
+         if (!is.primitive(transf) && !is.null(targs) && length(formals(transf)) == 1L)
+            stop(mstyle$stop("Function specified via 'transf' does not appear to have an argument for 'targs'."))
          yi    <- sapply(yi, transf, targs)
          ci.lb <- sapply(ci.lb, transf, targs)
          ci.ub <- sapply(ci.ub, transf, targs)
@@ -498,6 +503,9 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
       xlim <- round(xlim, digits[[2]])
       #xlim[1] <- xlim[1]*max(1, digits[[2]]/2)
       #xlim[2] <- xlim[2]*max(1, digits[[2]]/2)
+   } else {
+      if (length(xlim) != 2L)
+         stop(mstyle$stop("Argument 'xlim' must be of length 2."))
    }
 
    xlim <- sort(xlim)
@@ -533,7 +541,7 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
    ### set y-axis limits
 
    if (missing(ylim)) {
-      ylim <- c(0.5, max(rows, na.rm=TRUE)+top)
+      ylim <- c(0, max(rows, na.rm=TRUE)+top)
    } else {
       if (length(ylim) == 1L) {
          ylim <- c(ylim, max(rows, na.rm=TRUE)+top)
@@ -566,12 +574,12 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
    par.mar <- par("mar")
    par.mar.adj <- par.mar - c(0,3,1,1)
    par.mar.adj[par.mar.adj < 0] <- 0
-   par(mar = par.mar.adj)
-   on.exit(par(mar = par.mar), add=TRUE)
+   par(mar=par.mar.adj)
+   on.exit(par(mar=par.mar), add=TRUE)
 
    ### start plot
 
-   lplot(NA, NA, xlim=xlim, ylim=ylim, xlab="", ylab="", yaxt="n", xaxt="n", xaxs="i", bty="n", ...)
+   lplot(NA, NA, xlim=xlim, ylim=ylim, xlab="", ylab="", yaxt="n", xaxt="n", xaxs="i", yaxs="i", bty="n", ...)
 
    if (shade.type == "character") {
       if (shade == "zebra" || shade == "zebra1")
@@ -622,7 +630,7 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
       cex <- par("cex") * cex.adj
    } else {
       if (is.null(cex.lab))
-         cex.lab <- cex
+         cex.lab <- par("cex") * cex
       if (is.null(cex.axis))
          cex.axis <- cex
    }
@@ -657,6 +665,10 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
 
    ### add CI ends (either | or <> if outside of axis limits)
 
+   ciendheight <- height / 150 * cex * efac[1]
+   arrowwidth  <- 1.4    / 100 * cex * (xlim[2]-xlim[1])
+   arrowheight <- height / 150 * cex * efac[2]
+
    for (i in seq_len(k)) {
 
       ### need to skip missings (if check below will otherwise throw an error)
@@ -665,28 +677,32 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
 
       ### if the lower bound is actually larger than upper x-axis limit, then everything is to the right and just draw a polygon pointing in that direction
       if (ci.lb[i] >= alim[2]) {
-         lpolygon(x=c(alim[2], alim[2]-(1.4/100)*cex*(xlim[2]-xlim[1]), alim[2]-(1.4/100)*cex*(xlim[2]-xlim[1]), alim[2]), y=c(rows[i], rows[i]+(height/150)*cex*efac[2], rows[i]-(height/150)*cex*efac[2], rows[i]), col=col[i], border=col[i], ...)
+         lpolygon(x=c(alim[2], alim[2]-arrowwidth, alim[2]-arrowwidth, alim[2]),
+                  y=c(rows[i], rows[i]+arrowheight, rows[i]-arrowheight, rows[i]), col=col[i], border=col[i], ...)
          next
       }
 
       ### if the upper bound is actually lower than lower x-axis limit, then everything is to the left and just draw a polygon pointing in that direction
       if (ci.ub[i] <= alim[1]) {
-         lpolygon(x=c(alim[1], alim[1]+(1.4/100)*cex*(xlim[2]-xlim[1]), alim[1]+(1.4/100)*cex*(xlim[2]-xlim[1]), alim[1]), y=c(rows[i], rows[i]+(height/150)*cex*efac[2], rows[i]-(height/150)*cex*efac[2], rows[i]), col=col[i], border=col[i], ...)
+         lpolygon(x=c(alim[1], alim[1]+arrowwidth, alim[1]+arrowwidth, alim[1]),
+                  y=c(rows[i], rows[i]+arrowheight, rows[i]-arrowheight, rows[i]), col=col[i], border=col[i], ...)
          next
       }
 
       lsegments(max(ci.lb[i], alim[1]), rows[i], min(ci.ub[i], alim[2]), rows[i], lty=lty[1], col=col[i], ...)
 
       if (ci.lb[i] >= alim[1]) {
-         lsegments(ci.lb[i], rows[i]-(height/150)*cex*efac[1], ci.lb[i], rows[i]+(height/150)*cex*efac[1], col=col[i], ...)
+         lsegments(ci.lb[i], rows[i]-ciendheight, ci.lb[i], rows[i]+ciendheight, col=col[i], ...)
       } else {
-         lpolygon(x=c(alim[1], alim[1]+(1.4/100)*cex*(xlim[2]-xlim[1]), alim[1]+(1.4/100)*cex*(xlim[2]-xlim[1]), alim[1]), y=c(rows[i], rows[i]+(height/150)*cex*efac[2], rows[i]-(height/150)*cex*efac[2], rows[i]), col=col[i], border=col[i], ...)
+         lpolygon(x=c(alim[1], alim[1]+arrowwidth, alim[1]+arrowwidth, alim[1]),
+                  y=c(rows[i], rows[i]+arrowheight, rows[i]-arrowheight, rows[i]), col=col[i], border=col[i], ...)
       }
 
       if (ci.ub[i] <= alim[2]) {
-         lsegments(ci.ub[i], rows[i]-(height/150)*cex*efac[1], ci.ub[i], rows[i]+(height/150)*cex*efac[1], col=col[i], ...)
+         lsegments(ci.ub[i], rows[i]-ciendheight, ci.ub[i], rows[i]+ciendheight, col=col[i], ...)
       } else {
-         lpolygon(x=c(alim[2], alim[2]-(1.4/100)*cex*(xlim[2]-xlim[1]), alim[2]-(1.4/100)*cex*(xlim[2]-xlim[1]), alim[2]), y=c(rows[i], rows[i]+(height/150)*cex*efac[2], rows[i]-(height/150)*cex*efac[2], rows[i]), col=col[i], border=col[i], ...)
+         lpolygon(x=c(alim[2], alim[2]-arrowwidth, alim[2]-arrowwidth, alim[2]),
+                  y=c(rows[i], rows[i]+arrowheight, rows[i]-arrowheight, rows[i]), col=col[i], border=col[i], ...)
       }
 
    }
@@ -699,7 +715,7 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
 
    if (!is.null(ilab)) {
       if (is.null(ilab.xpos)) {
-         #stop(mstyle$stop("Must specify 'ilab.xpos' argument when adding information with 'ilab'."))
+         #stop(mstyle$stop("Must specify the 'ilab.xpos' argument when adding information with 'ilab'."))
          dist <- min(ci.lb, na.rm=TRUE) - xlim[1]
          if (ncol.ilab == 1L)
             ilab.xpos <- xlim[1] + dist*0.75
@@ -710,13 +726,17 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
          if (ncol.ilab >= 4L)
             ilab.xpos <- seq(xlim[1] + dist*0.5, xlim[1] + dist*0.9, length.out=ncol.ilab)
       }
-      if (length(ilab.xpos) != ncol(ilab))
-         stop(mstyle$stop(paste0("Number of 'ilab' columns (", ncol(ilab), ") does not match length of 'ilab.xpos' argument (", length(ilab.xpos), ").")))
+      if (length(ilab.xpos) != ncol.ilab)
+         stop(mstyle$stop(paste0("Number of 'ilab' columns (", ncol.ilab, ") do not match the length of the 'ilab.xpos' argument (", length(ilab.xpos), ").")))
       if (!is.null(ilab.pos) && length(ilab.pos) == 1L)
-         ilab.pos <- rep(ilab.pos, ncol(ilab))
+         ilab.pos <- rep(ilab.pos, ncol.ilab)
+      if (!is.null(ilab.lab) && length(ilab.lab) != ncol.ilab)
+         stop(mstyle$stop(paste0("Number of 'ilab' columns (", ncol.ilab, ") do not match the length of the 'ilab.lab' argument (", length(ilab.lab), ").")))
       par(family=names(fonts)[3], font=fonts[3])
-      for (l in seq_len(ncol(ilab))) {
+      for (l in seq_len(ncol.ilab)) {
          ltext(ilab.xpos[l], rows+rowadj[3], ilab[,l], pos=ilab.pos[l], cex=cex, ...)
+         if (!is.null(ilab.lab))
+            ltext(ilab.xpos[l], ylim[2]-(top-1)+1+rowadj[3], ilab.lab[l], pos=ilab.pos[l], font=2, cex=cex, ...)
       }
       par(family=names(fonts)[1], font=fonts[1])
    }
@@ -748,10 +768,9 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
       if (missing(width)) {
          width <- apply(annotext, 2, function(x) max(nchar(x)))
       } else {
-         if (length(width) == 1L)
-            width <- rep(width, ncol(annotext))
+         width <- .expand1(width, ncol(annotext))
          if (length(width) != ncol(annotext))
-            stop(mstyle$stop(paste0("Length of 'width' argument (", length(width), ") does not the match number of annotation columns (", ncol(annotext), ").")))
+            stop(mstyle$stop(paste0("Length of the 'width' argument (", length(width), ") does not the match number of annotation columns (", ncol(annotext), ").")))
       }
 
       for (j in seq_len(ncol(annotext))) {
@@ -786,22 +805,24 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
 
    }
 
-   #lpoints(x=yi, y=rows, pch=pch, cex=cex*psize, ...)
-
    ### add header
 
-   ltext(textpos[1], ylim[2]-(top-1)+1, header.left,  pos=4, font=2, cex=cex, ...)
-   ltext(textpos[2], ylim[2]-(top-1)+1, header.right, pos=2, font=2, cex=cex, ...)
+   ltext(textpos[1], ylim[2]-(top-1)+1+rowadj[1], header.left,  pos=4, font=2, cex=cex, ...)
+   ltext(textpos[2], ylim[2]-(top-1)+1+rowadj[2], header.right, pos=2, font=2, cex=cex, ...)
 
    #########################################################################
 
    ### return some information about plot invisibly
 
-   res <- list(xlim=par("usr")[1:2], alim=alim, at=at, ylim=ylim, rows=rows, cex=cex, cex.lab=cex.lab, cex.axis=cex.axis, ilab.xpos=ilab.xpos, ilab.pos=ilab.pos, textpos=textpos)
+   res <- list(xlim=par("usr")[1:2], alim=alim, at=at, ylim=ylim, rows=rows,
+               cex=cex, cex.lab=cex.lab, cex.axis=cex.axis,
+               ilab.xpos=ilab.xpos, ilab.pos=ilab.pos, textpos=textpos)
 
-   ### add some additional stuff to be put into .metafor environment, so that it can be used by addpoly()
+   ### put some additional stuff into .metafor, so that it can be used by addpoly()
 
-   sav <- c(res, list(level=level, annotate=annotate, digits=digits[[1]], width=width, transf=transf, atransf=atransf, targs=targs, fonts=fonts[1:2], annosym=annosym))
+   sav <- c(res, list(level=level, annotate=annotate, digits=digits[[1]], width=width,
+                      transf=transf, atransf=atransf, targs=targs,
+                      fonts=fonts[1:2], annosym=annosym))
    try(assign("forest", sav, envir=.metafor), silent=TRUE)
 
    invisible(res)

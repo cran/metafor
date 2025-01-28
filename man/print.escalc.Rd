@@ -21,8 +21,8 @@
    \item{append}{logical to specify whether the data frame specified via the \code{object} argument should be returned together with the additional variables that are calculated by the \code{summary} function (the default is \code{TRUE}).}
    \item{replace}{logical to specify whether existing values for \code{sei}, \code{zi}, \code{ci.lb}, and \code{ci.ub} in the data frame should be replaced. Only relevant when the data frame already contains these variables. If \code{replace=TRUE} (the default), all of the existing values will be overwritten. If \code{replace=FALSE}, only \code{NA} values will be replaced.}
    \item{level}{numeric value between 0 and 100 to specify the confidence interval level (the default is 95; see \link[=misc-options]{here} for details).}
-   \item{olim}{optional argument to specify observation/outcome limits. If unspecified, no limits are used.}
-   \item{transf}{optional argument to specify a function to transform the observed effect sizes or outcomes and interval bounds (e.g., \code{transf=exp}; see also \link{transf}). If unspecified, no transformation is used. Any additional arguments needed for the function specified here can be passed via \code{\dots}.}
+   \item{olim}{argument to specify observation/outcome limits. If unspecified, no limits are used.}
+   \item{transf}{argument to specify a function to transform the observed effect sizes or outcomes and interval bounds (e.g., \code{transf=exp}; see also \link{transf}). If unspecified, no transformation is used. Any additional arguments needed for the function specified here can be passed via \code{\dots}.}
    \item{\dots}{other arguments.}
 }
 \value{
@@ -32,7 +32,7 @@
    \item{yi}{observed effect sizes or outcomes (transformed if \code{transf} is specified).}
    \item{vi}{corresponding sampling variances.}
    \item{sei}{corresponding standard errors.}
-   \item{zi}{test statistics for testing \mjeqn{\mbox{H}_0{:}\; \theta_i = \mbox{H0}}{H_0: \theta_i = H0} (i.e., \code{(yi-H0)/sei}).}
+   \item{zi}{test statistics for testing \mjeqn{\text{H}_0{:}\; \theta_i = \text{H0}}{H_0: \theta_i = H0} (i.e., \code{(yi-H0)/sei}).}
    \item{pval}{corresponding p-values.}
    \item{ci.lb}{lower confidence interval bounds (transformed if \code{transf} is specified).}
    \item{ci.ub}{upper confidence interval bounds (transformed if \code{transf} is specified).}
@@ -51,7 +51,7 @@
    If the outcome measure used is bounded (e.g., correlations are bounded between -1 and +1, proportions are bounded between 0 and 1), one can use the \code{olim} argument to enforce those observation/outcome limits (the observed outcomes and confidence intervals cannot exceed those bounds then).
 }
 \author{
-   Wolfgang Viechtbauer \email{wvb@metafor-project.org} \url{https://www.metafor-project.org}
+   Wolfgang Viechtbauer (\email{wvb@metafor-project.org}, \url{https://www.metafor-project.org}).
 }
 \references{
    Viechtbauer, W. (2010). Conducting meta-analyses in R with the metafor package. \emph{Journal of Statistical Software}, \bold{36}(3), 1--48. \verb{https://doi.org/10.18637/jss.v036.i03}

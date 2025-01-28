@@ -1,5 +1,5 @@
 predict.rma <- function(object, newmods, intercept, tau2.levels, gamma2.levels, addx=FALSE,
-level, digits, transf, targs, vcov=FALSE, ...) {
+level, adjust=FALSE, digits, transf, targs, vcov=FALSE, ...) {
 
    #########################################################################
 
@@ -14,11 +14,22 @@ level, digits, transf, targs, vcov=FALSE, ...) {
 
    x <- object
 
+   mf <- match.call()
+
+   if (any(grepl("pairmat(", as.character(mf), fixed=TRUE))) {
+      try(assign("pairmat", object, envir=.metafor), silent=TRUE)
+      on.exit(suppressWarnings(rm("pairmat", envir=.metafor)))
+   }
+
    if (missing(newmods))
       newmods <- NULL
 
-   if (missing(intercept))
+   if (missing(intercept)) {
       intercept <- x$intercept
+      int.spec <- FALSE
+   } else {
+      int.spec <- TRUE
+   }
 
    if (missing(tau2.levels))
       tau2.levels <- NULL
@@ -41,7 +52,15 @@ level, digits, transf, targs, vcov=FALSE, ...) {
    if (missing(targs))
       targs <- NULL
 
+   funlist <- lapply(list(transf.exp.int, transf.ilogit.int, transf.ztor.int, transf.exp.mode, transf.ilogit.mode, transf.ztor.mode), deparse)
+
+   if (is.null(targs) && any(sapply(funlist, identical, deparse(transf))) && inherits(x, c("rma.uni","rma.glmm")) && length(x$tau2 == 1L))
+      targs <- c(tau2=x$tau2)
+
    level <- .level(level)
+
+   if (!is.logical(adjust))
+      stop(mstyle$stop("Argument 'adjust' must be a logical."))
 
    ddd <- list(...)
 
@@ -98,12 +117,12 @@ level, digits, transf, targs, vcov=FALSE, ...) {
                      gamma2.levels <- rep(levels(x$mf.h.f$inner), times=x$tau2s) #       # otherwise repeat actual levels tau2s times
                   }                                                              #
                }                                                                 #
-               if ((!is.null(tau2.levels) && is.null(gamma2.levels)) ||          #   # if user specifies only one of tau2.levels and gamma2.levels, throw an error
+               if ((!is.null(tau2.levels) && is.null(gamma2.levels)) ||          #   # if user specified only one of tau2.levels and gamma2.levels, throw an error
                    (is.null(tau2.levels) && !is.null(gamma2.levels)))            #
                   stop(mstyle$stop("Either specify both of 'tau2.levels' and 'gamma2.levels' or neither."))
                if (!is.null(tau2.levels) && !is.null(gamma2.levels)) {           #   # if user has specified both tau2s.levels and gamma2.levels
                   if (length(tau2.levels) != length(gamma2.levels))              #
-                     stop(mstyle$stop("Length of 'tau2.levels' and 'gamma2.levels' is not the same."))
+                     stop(mstyle$stop("Length of 'tau2.levels' and 'gamma2.levels' are not the same."))
                   k.new <- length(tau2.levels)                                   #      # then we need to predict intercepts for those level combinations
                   X.new <- cbind(rep(1,k.new))                                   #
                }                                                                 #
@@ -141,25 +160,27 @@ level, digits, transf, targs, vcov=FALSE, ...) {
       if (!(.is.vector(newmods) || inherits(newmods, "matrix")))
          stop(mstyle$stop(paste0("Argument 'newmods' should be a vector or matrix, but is of class '", class(newmods)[1], "'.")))
 
-      if ((!x$int.incl && x$p == 1L) || (x$int.incl && x$p == 2L)) { # if single moderator (multiple k.new possible) (either without or with intercept in the model)
-         k.new <- length(newmods)                                    #
-         X.new <- cbind(c(newmods))                                  #
-         if (.is.vector(newmods)) {                                  #
-            rnames <- names(newmods)                                 #
-         } else {                                                    #
-            rnames <- rownames(newmods)                              #
-         }                                                           #
-      } else {                                                       # in case the model has more than one predictor:
-         if (.is.vector(newmods) || nrow(newmods) == 1L) {           #   # if user gives one vector or one row matrix (only one k.new):
-            k.new <- 1L                                              #
-            X.new <- rbind(newmods)                                  #
-            if (inherits(newmods, "matrix"))                         #
-               rnames <- rownames(newmods)                           #
-         } else {                                                    #   # if user gives multiple rows and columns (multiple k.new):
-            k.new <- nrow(newmods)                                   #
-            X.new <- cbind(newmods)                                  #
-            rnames <- rownames(newmods)                              #
-         }                                                           #
+      singlemod <- (NCOL(newmods) == 1L) && ((!x$int.incl && x$p == 1L) || (x$int.incl && x$p == 2L))
+
+      if (singlemod) {                                                           # if single moderator (multiple k.new possible) (either without or with intercept in the model)
+         k.new <- length(newmods)                                                # (but when specifying a matrix, it must be a column vector for this work)
+         X.new <- cbind(c(newmods))                                              #
+         if (.is.vector(newmods)) {                                              #
+            rnames <- names(newmods)                                             #
+         } else {                                                                #
+            rnames <- rownames(newmods)                                          #
+         }                                                                       #
+      } else {                                                                   # in case the model has more than one predictor:
+         if (.is.vector(newmods) || nrow(newmods) == 1L) {                       #   # if user gives one vector or one row matrix (only one k.new):
+            k.new <- 1L                                                          #
+            X.new <- rbind(newmods)                                              #
+            if (inherits(newmods, "matrix"))                                     #
+               rnames <- rownames(newmods)                                       #
+         } else {                                                                #   # if user gives multiple rows and columns (multiple k.new):
+            k.new <- nrow(newmods)                                               #
+            X.new <- cbind(newmods)                                              #
+            rnames <- rownames(newmods)                                          #
+         }                                                                       #
          ### allow matching of terms by names (note: only possible if all columns in X.new and x$X have colnames)
          if (!is.null(colnames(X.new)) && all(colnames(X.new) != "") && !is.null(colnames(x$X)) && all(colnames(x$X) != "")) {
             colnames.mod <- colnames(x$X)
@@ -196,20 +217,35 @@ level, digits, transf, targs, vcov=FALSE, ...) {
          stop(mstyle$stop("Argument 'newmods' should only contain numeric variables."))
 
       ### if the user has specified newmods and an intercept was included in the original model, add the intercept to X.new
-      ### but user can also decide to remove the intercept from the predictions with intercept=FALSE
+      ### but user can also decide to remove the intercept from the predictions with intercept=FALSE (but only do this when
+      ### newmods was not a matrix with p columns)
 
-      if (x$int.incl) {
-         if (intercept) {
-            X.new <- cbind(intrcpt=1, X.new)
-         } else {
-            X.new <- cbind(intrcpt=0, X.new)
+      if (!singlemod && ncol(X.new) == x$p) {
+
+         if (int.spec)
+            warning(mstyle$warning("Arguments 'intercept' ignored when 'newmods' includes 'p' columns."), call.=FALSE)
+
+      } else {
+
+         if (x$int.incl) {
+
+            if (intercept) {
+               X.new <- cbind(intrcpt=1, X.new)
+            } else {
+               X.new <- cbind(intrcpt=0, X.new)
+            }
+
          }
+
       }
 
       if (ncol(X.new) != x$p)
          stop(mstyle$stop(paste0("Dimensions of 'newmods' (", ncol(X.new), ") do not the match dimensions of the model (", x$p, ").")))
 
    }
+
+   if (is.null(X.new))
+      stop(mstyle$stop("Matrix 'X.new' is NULL."))
 
    #return(list(k.new=k.new, tau2=x$tau2, gamma2=x$gamma2, tau2.levels=tau2.levels, gamma2.levels=gamma2.levels))
 
@@ -223,7 +259,7 @@ level, digits, transf, targs, vcov=FALSE, ...) {
 
          if (is.null(tau2.levels)) {
 
-            #warning(mstyle$warning("Must specify 'tau2.levels' argument to obtain prediction interval."), call.=FALSE)
+            #warning(mstyle$warning("Must specify the 'tau2.levels' argument to obtain prediction intervals."), call.=FALSE)
 
          } else {
 
@@ -239,12 +275,11 @@ level, digits, transf, targs, vcov=FALSE, ...) {
             }
 
             ### allow quick setting of all levels
-            if (length(tau2.levels) == 1L)
-               tau2.levels <- rep(tau2.levels, k.new)
+            tau2.levels <- .expand1(tau2.levels, k.new)
 
             ### check length of tau2.levels argument
             if (length(tau2.levels) != k.new)
-               stop(mstyle$stop(paste0("Length of 'tau2.levels' argument (", length(tau2.levels), ") does not match the number of predicted values (", k.new, ").")))
+               stop(mstyle$stop(paste0("Length of the 'tau2.levels' argument (", length(tau2.levels), ") does not match the number of predicted values (", k.new, ").")))
 
          }
 
@@ -264,7 +299,7 @@ level, digits, transf, targs, vcov=FALSE, ...) {
 
          if (is.null(gamma2.levels)) {
 
-            #warning(mstyle$warning("Must specify 'gamma2.levels' argument to obtain prediction interval."), call.=FALSE)
+            #warning(mstyle$warning("Must specify the 'gamma2.levels' argument to obtain prediction intervals."), call.=FALSE)
 
          } else {
 
@@ -280,12 +315,11 @@ level, digits, transf, targs, vcov=FALSE, ...) {
             }
 
             ### allow quick setting of all levels
-            if (length(gamma2.levels) == 1L)
-               gamma2.levels <- rep(gamma2.levels, k.new)
+            gamma2.levels <- .expand1(gamma2.levels, k.new)
 
             ### check length of gamma2.levels argument
             if (length(gamma2.levels) != k.new)
-               stop(mstyle$stop(paste0("Length of 'gamma2.levels' argument (", length(gamma2.levels), ") does not match the number of predicted values (", k.new, ").")))
+               stop(mstyle$stop(paste0("Length of the 'gamma2.levels' argument (", length(gamma2.levels), ") does not match the number of predicted values (", k.new, ").")))
 
          }
 
@@ -304,21 +338,22 @@ level, digits, transf, targs, vcov=FALSE, ...) {
       if (x$coef_test == "saddlepoint")
          stop(mstyle$stop("Cannot use method when saddlepoint correction was used."))
 
-      cs.lc <- try(clubSandwich::linear_contrast(x, cluster=x$cluster, vcov=x$vb, test=x$coef_test, contrasts=X.new, p_values=FALSE), silent=!isTRUE(ddd$verbose))
+      cs.lc <- try(clubSandwich::linear_contrast(x, cluster=x$cluster, vcov=x$vb, test=x$coef_test, contrasts=X.new, p_values=FALSE, level=1-level), silent=!isTRUE(ddd$verbose))
 
       if (inherits(cs.lc, "try-error"))
          stop(mstyle$stop("Could not obtain the linear contrast(s) (use verbose=TRUE for more details)."))
 
-      ddf  <- cs.lc$df
-      crit <- sapply(seq_along(ddf), function(j) if (ddf[j] > 0) qt(level/2, df=ddf[j], lower.tail=FALSE) else NA_real_)
-
       pred  <- cs.lc$Est
       se    <- cs.lc$SE
       vpred <- se^2
-      #ci.lb <- pred - crit * se
-      #ci.ub <- pred + crit * se
-      ci.lb <- cs.lc$CI_L
-      ci.ub <- cs.lc$CI_U
+      ddf   <- cs.lc$df
+
+      crit <- sapply(seq_along(ddf), function(j) if (ddf[j] > 0) qt(level/ifelse(adjust, 2*k.new, 2), df=ddf[j], lower.tail=FALSE) else NA_real_)
+
+      #ci.lb <- cs.lc$CI_L
+      #ci.ub <- cs.lc$CI_U
+      ci.lb <- pred - crit * se
+      ci.ub <- pred + crit * se
 
       x$test <- switch(x$coef_test, "z"="z", "naive-t"="t", "naive-tp"="t", "Satterthwaite"="t")
 
@@ -350,9 +385,9 @@ level, digits, transf, targs, vcov=FALSE, ...) {
       }
 
       if (is.element(x$test, c("knha","adhoc","t"))) {
-         crit <- sapply(seq_along(ddf), function(j) if (ddf[j] > 0) qt(level/2, df=ddf[j], lower.tail=FALSE) else NA_real_)
+         crit <- sapply(seq_along(ddf), function(j) if (ddf[j] > 0) qt(level/ifelse(adjust, 2*k.new, 2), df=ddf[j], lower.tail=FALSE) else NA_real_)
       } else {
-         crit <- qnorm(level/2, lower.tail=FALSE)
+         crit <- qnorm(level/ifelse(adjust, 2*k.new, 2), lower.tail=FALSE)
       }
 
       vpred[vpred < 0] <- NA_real_
@@ -365,10 +400,10 @@ level, digits, transf, targs, vcov=FALSE, ...) {
    #########################################################################
 
    if (vcov)
-      vcovpred <- X.new %*% x$vb %*% t(X.new)
+      vcovpred <- symmpart(X.new %*% x$vb %*% t(X.new))
 
    if (pi.type == "simple") {
-      crit <- qnorm(level/2, lower.tail=FALSE)
+      crit <- qnorm(level/ifelse(adjust, 2*k.new, 2), lower.tail=FALSE)
       vpred <- 0
    }
 
@@ -380,29 +415,31 @@ level, digits, transf, targs, vcov=FALSE, ...) {
       if (pi.type == "t")
          pi.ddf <- ddf
       pi.ddf[pi.ddf < 1] <- 1
-      crit <- sapply(seq_along(pi.ddf), function(j) if (pi.ddf[j] > 0) qt(level/2, df=pi.ddf[j], lower.tail=FALSE) else NA_real_)
+      crit <- sapply(seq_along(pi.ddf), function(j) if (pi.ddf[j] > 0) qt(level/ifelse(adjust, 2*k.new, 2), df=pi.ddf[j], lower.tail=FALSE) else NA_real_)
    }
 
    if (is.null(ddd$newvi)) {
       newvi <- 0
    } else {
       newvi <- ddd$newvi
-      if (length(newvi) == 1L)
-         newvi <- rep(newvi, k.new)
+      newvi <- .expand1(newvi, k.new)
       if (length(newvi) != k.new)
-         stop(mstyle$stop(paste0("Length of 'newvi' argument (", length(newvi), ") does not match the number of predicted values (", k.new, ").")))
+         stop(mstyle$stop(paste0("Length of the 'newvi' argument (", length(newvi), ") does not match the number of predicted values (", k.new, ").")))
    }
 
    #########################################################################
 
    ### prediction intervals
 
+   pi.se <- NULL
+
    if (!inherits(object, "rma.mv")) {
 
       ### for rma.uni, rma.mh, rma.peto, and rma.glmm objects (in rma.mh and rma.peto, tau2 = 0 by default and stored as such)
 
-      pi.lb <- pred - crit * sqrt(vpred + x$tau2 + newvi)
-      pi.ub <- pred + crit * sqrt(vpred + x$tau2 + newvi)
+      pi.se <- sqrt(vpred + x$tau2 + newvi)
+      pi.lb <- pred - crit * pi.se
+      pi.ub <- pred + crit * pi.se
 
    } else {
 
@@ -412,8 +449,9 @@ level, digits, transf, targs, vcov=FALSE, ...) {
 
          ### if there is no G structure (and hence no H structure), there are no tau2 and gamma2 values, so just add the sum of all of the sigma2 values
 
-         pi.lb <- pred - crit * sqrt(vpred + sum(x$sigma2) + newvi)
-         pi.ub <- pred + crit * sqrt(vpred + sum(x$sigma2) + newvi)
+         pi.se <- sqrt(vpred + sum(x$sigma2) + newvi)
+         pi.lb <- pred - crit * pi.se
+         pi.ub <- pred + crit * pi.se
 
       }
 
@@ -425,8 +463,9 @@ level, digits, transf, targs, vcov=FALSE, ...) {
 
             ### if there is only a single tau^2 value, always add that (in addition to the sum of all of the sigma^2 values)
 
-            pi.lb <- pred - crit * sqrt(vpred + sum(x$sigma2) + x$tau2 + newvi)
-            pi.ub <- pred + crit * sqrt(vpred + sum(x$sigma2) + x$tau2 + newvi)
+            pi.se <- sqrt(vpred + sum(x$sigma2) + x$tau2 + newvi)
+            pi.lb <- pred - crit * pi.se
+            pi.ub <- pred + crit * pi.se
 
          } else {
 
@@ -446,8 +485,9 @@ level, digits, transf, targs, vcov=FALSE, ...) {
                if (!is.numeric(tau2.levels))
                   tau2.levels <- pmatch(tau2.levels, x$g.levels.f[[1]], duplicates.ok=TRUE)
 
-               pi.lb <- pred - crit * sqrt(vpred + sum(x$sigma2) + x$tau2[tau2.levels] + newvi)
-               pi.ub <- pred + crit * sqrt(vpred + sum(x$sigma2) + x$tau2[tau2.levels] + newvi)
+               pi.se <- sqrt(vpred + sum(x$sigma2) + x$tau2[tau2.levels] + newvi)
+               pi.lb <- pred - crit * pi.se
+               pi.ub <- pred + crit * pi.se
                tau2.levels <- x$g.levels.f[[1]][tau2.levels]
 
             }
@@ -464,8 +504,9 @@ level, digits, transf, targs, vcov=FALSE, ...) {
 
             ### if there is only a single tau^2 and gamma^2 value, always add that (in addition to the sum of all of the sigma^2 values)
 
-            pi.lb <- pred - crit * sqrt(vpred + sum(x$sigma2) + x$tau2 + x$gamma2 + newvi)
-            pi.ub <- pred + crit * sqrt(vpred + sum(x$sigma2) + x$tau2 + x$gamma2 + newvi)
+            pi.se <- sqrt(vpred + sum(x$sigma2) + x$tau2 + x$gamma2 + newvi)
+            pi.lb <- pred - crit * pi.se
+            pi.ub <- pred + crit * pi.se
 
          } else {
 
@@ -488,8 +529,9 @@ level, digits, transf, targs, vcov=FALSE, ...) {
                if (!is.numeric(gamma2.levels))
                   gamma2.levels <- pmatch(gamma2.levels, x$h.levels.f[[1]], duplicates.ok=TRUE)
 
-               pi.lb <- pred - crit * sqrt(vpred + sum(x$sigma2) + x$tau2[tau2.levels] + x$gamma2[gamma2.levels] + newvi)
-               pi.ub <- pred + crit * sqrt(vpred + sum(x$sigma2) + x$tau2[tau2.levels] + x$gamma2[gamma2.levels] + newvi)
+               pi.se <- sqrt(vpred + sum(x$sigma2) + x$tau2[tau2.levels] + x$gamma2[gamma2.levels] + newvi)
+               pi.lb <- pred - crit * pi.se
+               pi.ub <- pred + crit * pi.se
                tau2.levels <- x$g.levels.f[[1]][tau2.levels]
                gamma2.levels <- x$h.levels.f[[1]][gamma2.levels]
 
@@ -506,8 +548,6 @@ level, digits, transf, targs, vcov=FALSE, ...) {
    ### apply transformation function if one has been specified
 
    if (is.function(transf)) {
-      #if (is.null(targs) && grepl("transf\\.[a-z]*\\.int$", deparse(substitute(transf))) && inherits(x, c("rma.uni","rma.glmm")) && length(x$tau2 == 1L))
-      #   targs <- c(tau2=x$tau2)
       if (is.null(targs)) {
          pred  <- sapply(pred, transf)
          se    <- rep(NA_real_, k.new)
@@ -516,6 +556,8 @@ level, digits, transf, targs, vcov=FALSE, ...) {
          pi.lb <- sapply(pi.lb, transf)
          pi.ub <- sapply(pi.ub, transf)
       } else {
+         if (!is.primitive(transf) && !is.null(targs) && length(formals(transf)) == 1L)
+            stop(mstyle$stop("Function specified via 'transf' does not appear to have an argument for 'targs'."))
          pred  <- sapply(pred, transf, targs)
          se    <- rep(NA_real_, k.new)
          ci.lb <- sapply(ci.lb, transf, targs)
@@ -606,16 +648,6 @@ level, digits, transf, targs, vcov=FALSE, ...) {
    if (inherits(object, "rma.mv") && x$withH && x$gamma2s > 1L)
       out$gamma2.level <- gamma2.levels
 
-   ### remove cr part for models with a GEN structure
-   if (inherits(object, "rma.mv") && any(is.element(object$struct, c("GEN","GDIAG")))) {
-      out$cr.lb <- NULL
-      out$cr.ub <- NULL
-      out$pi.lb <- NULL
-      out$pi.ub <- NULL
-      out$tau2.level <- NULL
-      out$gamma2.level <- NULL
-   }
-
    ### add X matrix to list
 
    if (addx) {
@@ -627,14 +659,7 @@ level, digits, transf, targs, vcov=FALSE, ...) {
 
    out$slab <- slab[not.na]
 
-   ### for FE/EE/CE models, remove the columns corresponding to the prediction interval bounds
-
-   if (is.element(x$method, c("FE","EE","CE"))) {
-      out$cr.lb <- NULL
-      out$cr.ub <- NULL
-      out$pi.lb <- NULL
-      out$pi.ub <- NULL
-   }
+   ### add some additional info
 
    out$digits <- digits
    out$method <- x$method
@@ -644,8 +669,53 @@ level, digits, transf, targs, vcov=FALSE, ...) {
    if (x$test != "z")
       out$ddf <- ddf
 
-   if ((x$test != "z" || is.element(pi.type, c("riley","t"))) && pi.type != "simple")
+   if ((x$test != "z" || is.element(pi.type, c("riley","t"))) && pi.type != "simple") {
+      out$pi.dist <- "t"
       out$pi.ddf <- pi.ddf
+   } else {
+      out$pi.dist <- "norm"
+   }
+
+   out$pi.se <- pi.se
+
+   ### add some info to pi.lb
+
+   attr(out$pi.lb, "level") <- level
+   attr(out$pi.lb, "dist") <- out$pi.dist
+   if (out$pi.dist == "t") {
+      attr(out$pi.lb, "ddf") <- out$pi.ddf
+   }
+   attr(out$pi.lb, "se") <- pi.se
+
+   ### for rma.mv models with a GEN structure, remove PI bounds
+
+   if (inherits(object, "rma.mv") && any(is.element(object$struct, c("GEN","GDIAG")))) {
+      out$cr.lb <- NULL
+      out$cr.ub <- NULL
+      out$pi.lb <- NULL
+      out$pi.ub <- NULL
+      out$tau2.level <- NULL
+      out$gamma2.level <- NULL
+   }
+
+   ### for FE/EE/CE models, remove the PI bounds
+
+   if (is.element(x$method, c("FE","EE","CE"))) {
+      out$cr.lb <- NULL
+      out$cr.ub <- NULL
+      out$pi.lb <- NULL
+      out$pi.ub <- NULL
+   }
+
+   ### for certain transformations, remove the PI bounds
+
+   funlist <- lapply(list(transf.exp.mode, transf.ilogit.mode, transf.ztor.mode), deparse)
+   if (do.transf && any(sapply(funlist, identical, deparse(transf)))) {
+      out$cr.lb <- NULL
+      out$cr.ub <- NULL
+      out$pi.lb <- NULL
+      out$pi.ub <- NULL
+   }
 
    class(out) <- c("predict.rma", "list.rma")
 
