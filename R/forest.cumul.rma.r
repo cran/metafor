@@ -1,6 +1,6 @@
 forest.cumul.rma <- function(x,
-annotate=TRUE,                                                               header=TRUE,
-xlim, alim, olim, ylim, at, steps=5,                refline=0, digits=2L, width,
+annotate=TRUE,                                                                  header=TRUE,
+xlim, alim, olim, ylim,          at, steps=5,                refline=0, digits=2L, width,
 xlab,             ilab, ilab.lab, ilab.xpos, ilab.pos,
 transf, atransf, targs, rows,
 efac=1, pch, psize,                          col,         shade, colshade,
@@ -117,9 +117,15 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
          lty <- c(lty, "solid")
    }
 
-   ### vertical expansion factor: 1st = CI end lines, 2nd = arrows
+   ### vertical expansion factors: 1st = CI/PI end lines, 2nd = arrows, 3rd = summary polygon, 4th = PI polygon/bar/shade/dist height (note: 3rd and 4th not used, but passed on to .metafor)
 
-   efac <- .expand1(efac, 2L)
+   efac <- .expand1(efac, 4L)
+
+   if (length(efac) == 2L)
+      efac <- c(efac,1,1) # if 2 values specified (note: this one is different in forest.rma())
+
+   if (length(efac) == 3L)
+      efac <- efac[c(1:3,3)] # if 3 values specified
 
    efac[efac == 0] <- NA
 
@@ -181,8 +187,20 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
    if (!annotate)
       header.right <- NULL
 
-   if (!is.null(ddd$clim))
+   if (is.null(ddd$clim)) {
+      if (missing(olim))
+         olim <- NULL
+   } else {
       olim <- ddd$clim
+   }
+
+   if (!is.null(olim)) {
+      if (length(olim) != 2L)
+         stop(mstyle$stop("Argument 'olim' must be of length 2."))
+      if (anyNA(olim))
+         stop(mstyle$stop("Argument 'olim' cannot contain NAs."))
+      olim <- sort(olim)
+   }
 
    ### row adjustments for 1) study labels, 2) annotations, and 3) ilab elements
 
@@ -208,14 +226,35 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
 
    xlabfont <- .chkddd(ddd$xlabfont, 1)
 
-   lplot     <- function(..., textpos, clim, rowadj, annosym, tabfig, top, xlabadj, xlabfont, at.lab) plot(...)
-   labline   <- function(..., textpos, clim, rowadj, annosym, tabfig, top, xlabadj, xlabfont, at.lab) abline(...)
-   lsegments <- function(..., textpos, clim, rowadj, annosym, tabfig, top, xlabadj, xlabfont, at.lab) segments(...)
-   laxis     <- function(..., textpos, clim, rowadj, annosym, tabfig, top, xlabadj, xlabfont, at.lab) axis(...)
-   lmtext    <- function(..., textpos, clim, rowadj, annosym, tabfig, top, xlabadj, xlabfont, at.lab) mtext(...)
-   lpolygon  <- function(..., textpos, clim, rowadj, annosym, tabfig, top, xlabadj, xlabfont, at.lab) polygon(...)
-   ltext     <- function(..., textpos, clim, rowadj, annosym, tabfig, top, xlabadj, xlabfont, at.lab) text(...)
-   lpoints   <- function(..., textpos, clim, rowadj, annosym, tabfig, top, xlabadj, xlabfont, at.lab) points(...)
+   if (!is.null(ddd$slab))
+      warning("The forest.cumul.rma() function does not have an 'slab' argument.", call.=FALSE, immediate.=TRUE)
+   if (!is.null(ddd$mlab))
+      warning("The forest.cumul.rma() function does not have an 'mlab' argument.", call.=FALSE, immediate.=TRUE)
+   if (!is.null(ddd$order))
+      warning("The forest.cumul.rma() function does not have an 'order' argument.", call.=FALSE, immediate.=TRUE)
+   if (!is.null(ddd$addfit))
+      warning("The forest.cumul.rma() function does not have an 'addfit' argument.", call.=FALSE, immediate.=TRUE)
+   if (!is.null(ddd$addpred))
+      warning("The forest.cumul.rma() function does not have an 'addpred' argument.", call.=FALSE, immediate.=TRUE)
+   if (!is.null(ddd$predstyle))
+      warning("The forest.cumul.rma() function does not have a 'predstyle' argument.", call.=FALSE, immediate.=TRUE)
+   if (!is.null(ddd$showweights))
+      warning("The forest.cumul.rma() function does not have a 'showweights' argument.", call.=FALSE, immediate.=TRUE)
+   if (!is.null(ddd$predlim))
+      warning("The forest.cumul.rma() function does not have a 'predlim' argument.", call.=FALSE, immediate.=TRUE)
+   if (!is.null(ddd$colout))
+      warning("The forest.cumul.rma() function does not have a 'colout' argument.", call.=FALSE, immediate.=TRUE)
+   if (!is.null(ddd$border))
+      warning("The forest.cumul.rma() function does not have a 'border' argument.", call.=FALSE, immediate.=TRUE)
+
+   lplot     <- function(..., textpos, clim, rowadj, annosym, tabfig, top, xlabadj, xlabfont, at.lab, slab, mlab, order, addfit, addpred, predstyle, showweights, predlim, colout, border) plot(...)
+   labline   <- function(..., textpos, clim, rowadj, annosym, tabfig, top, xlabadj, xlabfont, at.lab, slab, mlab, order, addfit, addpred, predstyle, showweights, predlim, colout, border) abline(...)
+   lsegments <- function(..., textpos, clim, rowadj, annosym, tabfig, top, xlabadj, xlabfont, at.lab, slab, mlab, order, addfit, addpred, predstyle, showweights, predlim, colout, border) segments(...)
+   laxis     <- function(..., textpos, clim, rowadj, annosym, tabfig, top, xlabadj, xlabfont, at.lab, slab, mlab, order, addfit, addpred, predstyle, showweights, predlim, colout, border) axis(...)
+   lmtext    <- function(..., textpos, clim, rowadj, annosym, tabfig, top, xlabadj, xlabfont, at.lab, slab, mlab, order, addfit, addpred, predstyle, showweights, predlim, colout, border) mtext(...)
+   lpolygon  <- function(..., textpos, clim, rowadj, annosym, tabfig, top, xlabadj, xlabfont, at.lab, slab, mlab, order, addfit, addpred, predstyle, showweights, predlim, colout, border) polygon(...)
+   ltext     <- function(..., textpos, clim, rowadj, annosym, tabfig, top, xlabadj, xlabfont, at.lab, slab, mlab, order, addfit, addpred, predstyle, showweights, predlim, colout, border) text(...)
+   lpoints   <- function(..., textpos, clim, rowadj, annosym, tabfig, top, xlabadj, xlabfont, at.lab, slab, mlab, order, addfit, addpred, predstyle, showweights, predlim, colout, border) points(...)
 
    #########################################################################
 
@@ -386,10 +425,7 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
 
    ### apply observation/outcome limits if specified
 
-   if (!missing(olim)) {
-      if (length(olim) != 2L)
-         stop(mstyle$stop("Argument 'olim' must be of length 2."))
-      olim <- sort(olim)
+   if (!is.null(olim)) {
       yi    <- .applyolim(yi, olim)
       ci.lb <- .applyolim(ci.lb, olim)
       ci.ub <- .applyolim(ci.ub, olim)
@@ -727,11 +763,11 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
             ilab.xpos <- seq(xlim[1] + dist*0.5, xlim[1] + dist*0.9, length.out=ncol.ilab)
       }
       if (length(ilab.xpos) != ncol.ilab)
-         stop(mstyle$stop(paste0("Number of 'ilab' columns (", ncol.ilab, ") do not match the length of the 'ilab.xpos' argument (", length(ilab.xpos), ").")))
+         stop(mstyle$stop(paste0("Number of 'ilab' columns (", ncol.ilab, ") does not match the length of the 'ilab.xpos' argument (", length(ilab.xpos), ").")))
       if (!is.null(ilab.pos) && length(ilab.pos) == 1L)
          ilab.pos <- rep(ilab.pos, ncol.ilab)
       if (!is.null(ilab.lab) && length(ilab.lab) != ncol.ilab)
-         stop(mstyle$stop(paste0("Number of 'ilab' columns (", ncol.ilab, ") do not match the length of the 'ilab.lab' argument (", length(ilab.lab), ").")))
+         stop(mstyle$stop(paste0("Number of 'ilab' columns (", ncol.ilab, ") does not match the length of the 'ilab.lab' argument (", length(ilab.lab), ").")))
       par(family=names(fonts)[3], font=fonts[3])
       for (l in seq_len(ncol.ilab)) {
          ltext(ilab.xpos[l], rows+rowadj[3], ilab[,l], pos=ilab.pos[l], cex=cex, ...)
@@ -821,8 +857,8 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
    ### put some additional stuff into .metafor, so that it can be used by addpoly()
 
    sav <- c(res, list(level=level, annotate=annotate, digits=digits[[1]], width=width,
-                      transf=transf, atransf=atransf, targs=targs,
-                      fonts=fonts[1:2], annosym=annosym))
+                      transf=transf, atransf=atransf, targs=targs, alim=alim, olim=olim,
+                      rowadj=rowadj, fonts=fonts[1:2], annosym=annosym))
    try(assign("forest", sav, envir=.metafor), silent=TRUE)
 
    invisible(res)

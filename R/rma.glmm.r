@@ -25,7 +25,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
    if (!is.element(coding, c(1/2, 1, 0)))
       stop(mstyle$stop("Unknown 'coding' option specified."))
 
-   ### in case user specified more than one add/to value (as one can do with rma.mh() and rma.peto())
+   ### in case the user specified more than one add/to value (as one can do with rma.mh() and rma.peto())
    ### (never apply any kind of continuity correction to the data used in the actual model fitting for models implemented in this function)
 
    if (length(add) > 1L)
@@ -85,25 +85,25 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
 
    ### handle 'tdist' argument from ... (note: overrides test argument)
 
-   if (.isFALSE(ddd$tdist))
+   if (isFALSE(ddd$tdist))
       test <- "z"
-   if (.isTRUE(ddd$tdist))
+   if (isTRUE(ddd$tdist))
       test <- "t"
 
    if (!is.element(test, c("z", "t")))
-      stop(mstyle$stop("Invalid option selected for 'test' argument."))
+      stop(mstyle$stop("Unknown option specified for the 'test' argument."))
 
-   ### set defaults or get onlyo1, addyi, and addvi arguments
+   ### set defaults or get 'onlyo1', 'addyi', and 'addvi' arguments
 
    onlyo1 <- .chkddd(ddd$onlyo1, FALSE)
    addyi  <- .chkddd(ddd$addyi,  TRUE)
    addvi  <- .chkddd(ddd$addvi,  TRUE)
 
-   ### set default for i2def
+   ### set default for 'i2def'
 
    i2def <- .chkddd(ddd$i2def, "1")
 
-   ### set defaults for digits
+   ### set defaults for 'digits'
 
    if (missing(digits)) {
       digits <- .set.digits(dmiss=TRUE)
@@ -142,7 +142,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
    if (verbose > 1)
       message(mstyle$message("Extracting the data and computing yi/vi values ..."))
 
-   ### check if data argument has been specified
+   ### check if the 'data' argument was specified
 
    if (missing(data))
       data <- NULL
@@ -275,15 +275,15 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
 
    if (inherits(mods, "formula")) {
       formula.mods <- mods
-      if (isTRUE(all.equal(formula.mods, ~ 1))) { # needed so 'mods = ~ 1' without 'data' specified works
+      if (.is.tilde1(formula.mods)) { # needed so 'mods = ~ 1' without 'data' specified works
          mods <- matrix(1, nrow=k, ncol=1)
          intercept <- FALSE
       } else {
          options(na.action = "na.pass")        # set na.action to na.pass, so that NAs are not filtered out (we'll do that later)
-         mods <- model.matrix(mods, data=data) # extract model matrix
-         attr(mods, "assign") <- NULL          # strip assign attribute (not needed at the moment)
+         mods <- model.matrix(mods, data=data) # extract the model matrix
+         attr(mods, "assign") <- NULL          # strip the 'assign' attribute (not used at the moment)
          options(na.action = na.act)           # set na.action back to na.act
-         intercept <- FALSE                    # set to FALSE since formula now controls whether the intercept is included or not
+         intercept <- FALSE                    # set 'intercept' to FALSE since the formula now controls whether the intercept is included
       }
    }
 
@@ -297,15 +297,15 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
    if (is.data.frame(mods))
       mods <- as.matrix(mods)
 
-   ### check if model matrix contains character variables
+   ### check if the model matrix contains character variables
 
    if (is.character(mods))
-      stop(mstyle$stop("Model matrix contains character variables."))
+      stop(mstyle$stop("The model matrix contains character variables."))
 
-   ### check if mods matrix has the right number of rows
+   ### check if the 'mods' matrix has the right number of rows
 
    if (!is.null(mods) && nrow(mods) != k)
-      stop(mstyle$stop(paste0("Number of rows in the model matrix (", nrow(mods), ") do not match the length of the the outcome vector (", k, ").")))
+      stop(mstyle$stop(paste0("Number of rows in the model matrix (", nrow(mods), ") does not match the length of the the outcome vector (", k, ").")))
 
    ### generate study labels if none are specified
 
@@ -345,12 +345,12 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
 
    }
 
-   ### check if study labels are unique; if not, make them unique
+   ### check if the study labels are unique; if not, make them unique
 
    if (anyDuplicated(slab))
       slab <- .make.unique(slab)
 
-   ### add slab attribute back
+   ### add the 'slab' attribute back to 'yi'
 
    attr(yi, "slab") <- slab
 
@@ -378,7 +378,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
       }
    }
 
-   ### save full data (including potential NAs in table data, yi/vi/ni/mods) (after subsetting)
+   ### save the full data (including potential NAs in table data, yi/vi/ni/mods) (after subsetting)
 
    outdat.f <- list(ai=ai, bi=bi, ci=ci, di=di, x1i=x1i, x2i=x2i, t1i=t1i, t2i=t2i, xi=xi, mi=mi, ni=ni, ti=ti)
 
@@ -540,12 +540,12 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
    ### make sure that there is at least one column in X
 
    if (is.null(mods) && !intercept) {
-      warning(mstyle$warning("Must either include an intercept and/or moderators in model.\nCoerced intercept into the model."), call.=FALSE)
+      warning(mstyle$warning("Must either include an intercept and/or moderators in the model.\nCoerced an intercept into the model."), call.=FALSE)
       intercept <- TRUE
    }
 
    if (!is.null(mods) && ncol(mods) == 0L) {
-      warning(mstyle$warning("Cannot fit model with an empty model matrix. Coerced intercept into the model."), call.=FALSE)
+      warning(mstyle$warning("Cannot fit model with an empty model matrix. Coerced an intercept into the model."), call.=FALSE)
       intercept <- TRUE
    }
 
@@ -564,7 +564,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
    ### drop redundant predictors
    ### note: yi may have become shorter than X due to the omission of NAs, so just use a fake yi vector here
 
-   tmp <- lm(rep(0,k) ~ X - 1)
+   tmp <- lm(rep(0,k) ~ 0 + X)
    coef.na <- is.na(coef(tmp))
    if (any(coef.na)) {
       warning(mstyle$warning("Redundant predictors dropped from the model."), call.=FALSE)
@@ -574,12 +574,12 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
 
    ### need to do this separately for X.yi, since model matrix may have fewer rows due to removal of NA/NA pairs for yi/vi
 
-   tmp <- lm(yi ~ X.yi - 1)
+   tmp <- lm(yi ~ 0 + X.yi)
    coef.na <- is.na(coef(tmp))
    if (any(coef.na))
       X.yi <- X.yi[,!coef.na,drop=FALSE]
 
-   ### check whether intercept is included and if yes, move it to the first column (NAs already removed, so na.rm=TRUE for any() not necessary)
+   ### check whether the intercept is included and if yes, move it to the first column (NAs already removed, so na.rm=TRUE for any() not necessary)
 
    is.int <- apply(X, 2, .is.intercept)
    if (any(is.int)) {
@@ -640,10 +640,10 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
                cl = NULL,                  # arguments for optimParallel()
                ncpus = 1L,                 # arguments for optimParallel()
                scaleX = TRUE,              # whether non-dummy variables in the X matrix should be rescaled before model fitting
-               evtol = 1e-07,              # lower bound for eigenvalues to determine if model matrix is positive definite
+               evtol = 1e-07,              # lower bound for eigenvalues to determine if the model matrix is positive definite
                dnchgcalc = "dFNCHypergeo", # method for calculating dnchg ("dFNCHypergeo" from BiasedUrn package or "dnoncenhypergeom")
                dnchgprec = 1e-10,          # precision for dFNCHypergeo()
-               hesspack = "numDeriv",      # package for computing the Hessian (numDeriv or pracma)
+               hesspack = "numDeriv",      # package for computing the Hessian (numDeriv, pracma, or calculus)
                tau2tol = 1e-04)            # for "CM.EL" + "ML", threshold for treating tau^2 values as effectively equal to 0
 
    ### replace defaults with any user-defined values
@@ -678,7 +678,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
       nAGQ <- 1
    }
 
-   ### if control argument 'ncpus' is larger than 1, automatically switch to optimParallel optimizer
+   ### if control argument 'ncpus' is larger than 1, automatically switch to the 'optimParallel' optimizer
 
    if (ncpus > 1L)
       optimizer <- "optimParallel"
@@ -793,11 +793,32 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
       intCtrl$rel.tol <- .Machine$double.eps^0.25
    }
 
+   con$hesspack <- match.arg(con$hesspack, c("numDeriv","pracma","calculus"))
+
    pos.hessianCtrl <- pmatch(names(control), "hessianCtrl", nomatch=0)
    if (sum(pos.hessianCtrl) > 0) {
       hessianCtrl <- control[[which(pos.hessianCtrl == 1)]]
    } else {
-      hessianCtrl <- list(r=16)
+      hessianCtrl <- list()
+   }
+
+   if (con$hesspack == "numDeriv") {
+      if (is.null(control$hessianCtrl$r))
+         hessianCtrl$r <- 16
+   }
+   if (con$hesspack == "pracma") {
+      if (is.null(control$hessianCtrl$h)) {
+         hessianCtrl$h <- .Machine$double.eps^(1/4)
+      } else {
+         hessianCtrl$h <- control$hessianCtrl$h
+      }
+   }
+   if (con$hesspack == "calculus") {
+      if (is.null(control$hessianCtrl$accuracy)) {
+         hessianCtrl$accuracy <- 4
+      } else {
+         hessianCtrl$accuracy <- control$hessianCtrl$accuracy
+      }
    }
 
    #return(list(verbose=verbose, optimizer=optimizer, dnchgcalc=con$dnchgcalc, dnchgprec=con$dnchgprec, optCtrl=optCtrl, glmCtrl=glmCtrl, glmerCtrl=glmerCtrl, intCtrl=intCtrl, hessianCtrl=hessianCtrl))
@@ -846,7 +867,6 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
       }
 
       if (is.element(optimizer, c("optim","nlminb","uobyqa","newuoa","bobyqa","nloptr","nlm","hjk","nmk","mads","ucminf","lbfgsb3c","subplex","BBoptim","optimParallel","Rcgmin","Rvmmin"))) {
-         con$hesspack <- match.arg(con$hesspack, c("numDeriv","pracma","calculus"))
          if (!requireNamespace(con$hesspack, quietly=TRUE))
             stop(mstyle$stop(paste0("Please install the '", con$hesspack, "' package to fit this model.")))
          if (con$dnchgcalc == "dFNCHypergeo") {
@@ -871,7 +891,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
 
    }
 
-   ### check whether model matrix is of full rank
+   ### check whether the model matrix is of full rank
 
    if (!.chkpd(crossprod(X), tol=con$evtol))
       stop(mstyle$stop("Model matrix not of full rank. Cannot fit model."))
@@ -964,7 +984,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
 
          rownames(X.fit) <- seq_len(2*k)
 
-         if (.isTRUE(ddd$retdat))
+         if (isTRUE(ddd$retdat))
             return(list(dat.grp=dat.grp, X.fit=X.fit, study=study, dat.off = if (!is.null(dat.off)) dat.off else NULL, const=const, group1=group1, group2=group2, group12=group12, group=group, dat.fam=dat.fam))
 
          ###################################################################
@@ -981,9 +1001,9 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
                message(mstyle$message("Fitting the FE model ..."))
 
             if (k > 1) {
-               res.FE <- try(glm(dat.grp ~ -1 + X.fit + study, offset=dat.off, family=dat.fam, control=glmCtrl), silent=!verbose)
+               res.FE <- try(glm(dat.grp ~ 0 + X.fit + study, offset=dat.off, family=dat.fam, control=glmCtrl), silent=!verbose)
             } else {
-               res.FE <- try(glm(dat.grp ~ -1 + X.fit + const, offset=dat.off, family=dat.fam, control=glmCtrl), silent=!verbose)
+               res.FE <- try(glm(dat.grp ~ 0 + X.fit + const, offset=dat.off, family=dat.fam, control=glmCtrl), silent=!verbose)
             }
 
             if (inherits(res.FE, "try-error"))
@@ -1006,8 +1026,8 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
                   message(mstyle$message("Fitting the saturated model ..."))
 
                if (k > 1) {
-                  X.QE   <- model.matrix(~ -1 + X.fit + study + study:group1)
-                  res.QE <- try(glm(dat.grp ~ -1 + X.QE, offset=dat.off, family=dat.fam, control=glmCtrl), silent=!verbose)
+                  X.QE   <- model.matrix(~ 0 + X.fit + study + study:group1)
+                  res.QE <- try(glm(dat.grp ~ 0 + X.QE, offset=dat.off, family=dat.fam, control=glmCtrl), silent=!verbose)
                } else {
                   res.QE <- res.FE
                }
@@ -1044,27 +1064,27 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
 
                if (package == "lme4") {
                   if (verbose) {
-                     res.ML <- try(lme4::glmer(dat.grp ~ -1 + X.fit + study + (group - 1 | study), offset=dat.off, family=dat.fam, nAGQ=nAGQ, verbose=verbose, control=do.call(lme4::glmerControl, glmerCtrl)), silent=!verbose)
+                     res.ML <- try(lme4::glmer(dat.grp ~ 0 + X.fit + study + (0 + group | study), offset=dat.off, family=dat.fam, nAGQ=nAGQ, verbose=verbose, control=do.call(lme4::glmerControl, glmerCtrl)), silent=!verbose)
                   } else {
-                     res.ML <- suppressMessages(try(lme4::glmer(dat.grp ~ -1 + X.fit + study + (group - 1 | study), offset=dat.off, family=dat.fam, nAGQ=nAGQ, verbose=verbose, control=do.call(lme4::glmerControl, glmerCtrl)), silent=!verbose))
+                     res.ML <- suppressMessages(try(lme4::glmer(dat.grp ~ 0 + X.fit + study + (0 + group | study), offset=dat.off, family=dat.fam, nAGQ=nAGQ, verbose=verbose, control=do.call(lme4::glmerControl, glmerCtrl)), silent=!verbose))
                   }
                }
 
                if (package == "GLMMadaptive") {
                   if (is.element(measure, c("OR","RR","RD"))) {
                      dat.mm <- data.frame(xi=dat.grp[,"xi"], mi=dat.grp[,"mi"], study=study, group=group)
-                     res.ML <- try(GLMMadaptive::mixed_model(cbind(xi,mi) ~ -1 + X.fit + study, random = ~ group - 1 | study, data=dat.mm, family=dat.fam, nAGQ=nAGQ, verbose=verbose, control=glmerCtrl), silent=!verbose)
+                     res.ML <- try(GLMMadaptive::mixed_model(cbind(xi,mi) ~ 0 + X.fit + study, random = ~ 0 + group | study, data=dat.mm, family=dat.fam, nAGQ=nAGQ, verbose=verbose, control=glmerCtrl), silent=!verbose)
                   } else {
                      dat.mm <- data.frame(xi=dat.grp, study=study, group=group)
-                     res.ML <- try(GLMMadaptive::mixed_model(xi ~ -1 + X.fit + study + offset(dat.off), random = ~ group - 1 | study, data=dat.mm, family=dat.fam, nAGQ=nAGQ, verbose=verbose, control=glmerCtrl), silent=!verbose)
+                     res.ML <- try(GLMMadaptive::mixed_model(xi ~ 0 + X.fit + study + offset(dat.off), random = ~ 0 + group | study, data=dat.mm, family=dat.fam, nAGQ=nAGQ, verbose=verbose, control=glmerCtrl), silent=!verbose)
                   }
                }
 
                if (package == "glmmTMB") {
                   if (verbose) {
-                     res.ML <- try(glmmTMB::glmmTMB(dat.grp ~ -1 + X.fit + study + (group - 1 | study), offset=dat.off, family=dat.fam, verbose=verbose, data=NULL, control=do.call(glmmTMB::glmmTMBControl, glmerCtrl)), silent=!verbose)
+                     res.ML <- try(glmmTMB::glmmTMB(dat.grp ~ 0 + X.fit + study + (0 + group | study), offset=dat.off, family=dat.fam, verbose=verbose, data=NULL, control=do.call(glmmTMB::glmmTMBControl, glmerCtrl)), silent=!verbose)
                   } else {
-                     res.ML <- suppressMessages(try(glmmTMB::glmmTMB(dat.grp ~ -1 + X.fit + study + (group - 1 | study), offset=dat.off, family=dat.fam, verbose=verbose, data=NULL, control=do.call(glmmTMB::glmmTMBControl, glmerCtrl)), silent=!verbose))
+                     res.ML <- suppressMessages(try(glmmTMB::glmmTMB(dat.grp ~ 0 + X.fit + study + (0 + group | study), offset=dat.off, family=dat.fam, verbose=verbose, data=NULL, control=do.call(glmmTMB::glmmTMBControl, glmerCtrl)), silent=!verbose))
                   }
                }
 
@@ -1147,27 +1167,27 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
 
             if (package == "lme4") {
                if (verbose) {
-                  res.FE <- try(lme4::glmer(dat.grp ~ -1 + X.fit + const + (1 | study), offset=dat.off, family=dat.fam, nAGQ=nAGQ, verbose=verbose, control=do.call(lme4::glmerControl, glmerCtrl)), silent=!verbose)
+                  res.FE <- try(lme4::glmer(dat.grp ~ 0 + X.fit + const + (1 | study), offset=dat.off, family=dat.fam, nAGQ=nAGQ, verbose=verbose, control=do.call(lme4::glmerControl, glmerCtrl)), silent=!verbose)
                } else {
-                  res.FE <- suppressMessages(try(lme4::glmer(dat.grp ~ -1 + X.fit + const + (1 | study), offset=dat.off, family=dat.fam, nAGQ=nAGQ, verbose=verbose, control=do.call(lme4::glmerControl, glmerCtrl)), silent=!verbose))
+                  res.FE <- suppressMessages(try(lme4::glmer(dat.grp ~ 0 + X.fit + const + (1 | study), offset=dat.off, family=dat.fam, nAGQ=nAGQ, verbose=verbose, control=do.call(lme4::glmerControl, glmerCtrl)), silent=!verbose))
                }
             }
 
             if (package == "GLMMadaptive") {
                if (is.element(measure, c("OR","RR","RD"))) {
                   dat.mm <- data.frame(xi=dat.grp[,"xi"], mi=dat.grp[,"mi"], study=study, const=const)
-                  res.FE <- try(GLMMadaptive::mixed_model(cbind(xi,mi) ~ -1 + X.fit + const, random = ~ 1 | study, data=dat.mm, family=dat.fam, nAGQ=nAGQ, verbose=verbose, control=glmerCtrl), silent=!verbose)
+                  res.FE <- try(GLMMadaptive::mixed_model(cbind(xi,mi) ~ 0 + X.fit + const, random = ~ 1 | study, data=dat.mm, family=dat.fam, nAGQ=nAGQ, verbose=verbose, control=glmerCtrl), silent=!verbose)
                } else {
                   dat.mm <- data.frame(xi=dat.grp, study=study, const=const)
-                  res.FE <- try(GLMMadaptive::mixed_model(xi ~ -1 + X.fit + const + offset(dat.off), random = ~ 1 | study, data=dat.mm, family=dat.fam, nAGQ=nAGQ, verbose=verbose, control=glmerCtrl), silent=!verbose)
+                  res.FE <- try(GLMMadaptive::mixed_model(xi ~ 0 + X.fit + const + offset(dat.off), random = ~ 1 | study, data=dat.mm, family=dat.fam, nAGQ=nAGQ, verbose=verbose, control=glmerCtrl), silent=!verbose)
                }
             }
 
             if (package == "glmmTMB") {
                if (verbose) {
-                  res.FE <- try(glmmTMB::glmmTMB(dat.grp ~ -1 + X.fit + const + (1 | study), offset=dat.off, family=dat.fam, verbose=verbose, data=NULL, control=do.call(glmmTMB::glmmTMBControl, glmerCtrl)), silent=!verbose)
+                  res.FE <- try(glmmTMB::glmmTMB(dat.grp ~ 0 + X.fit + const + (1 | study), offset=dat.off, family=dat.fam, verbose=verbose, data=NULL, control=do.call(glmmTMB::glmmTMBControl, glmerCtrl)), silent=!verbose)
                } else {
-                  res.FE <- suppressMessages(try(glmmTMB::glmmTMB(dat.grp ~ -1 + X.fit + const + (1 | study), offset=dat.off, family=dat.fam, verbose=verbose, data=NULL, control=do.call(glmmTMB::glmmTMBControl, glmerCtrl)), silent=!verbose))
+                  res.FE <- suppressMessages(try(glmmTMB::glmmTMB(dat.grp ~ 0 + X.fit + const + (1 | study), offset=dat.off, family=dat.fam, verbose=verbose, data=NULL, control=do.call(glmmTMB::glmmTMBControl, glmerCtrl)), silent=!verbose))
                }
             }
 
@@ -1192,15 +1212,15 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
 
                if (k > 1) {
 
-                  X.QE   <- model.matrix(~ -1 + X.fit + const + study:group1)
-                  res.QE <- try(glm(dat.grp ~ -1 + X.QE, offset=dat.off, family=dat.fam, control=glmCtrl), silent=TRUE)
+                  X.QE   <- model.matrix(~ 0 + X.fit + const + study:group1)
+                  res.QE <- try(glm(dat.grp ~ 0 + X.QE, offset=dat.off, family=dat.fam, control=glmCtrl), silent=TRUE)
                   X.QE   <- X.QE[,!is.na(coef(res.QE)),drop=FALSE]
 
                   if (package == "lme4") {
                      if (verbose) {
-                        res.QE <- try(lme4::glmer(dat.grp ~ -1 + X.QE + (1 | study), offset=dat.off, family=dat.fam, start=c(sqrt(lme4::VarCorr(res.FE)[[1]][1])), nAGQ=nAGQ, verbose=verbose, control=do.call(lme4::glmerControl, glmerCtrl)), silent=!verbose)
+                        res.QE <- try(lme4::glmer(dat.grp ~ 0 + X.QE + (1 | study), offset=dat.off, family=dat.fam, start=c(sqrt(lme4::VarCorr(res.FE)[[1]][1])), nAGQ=nAGQ, verbose=verbose, control=do.call(lme4::glmerControl, glmerCtrl)), silent=!verbose)
                      } else {
-                        res.QE <- suppressMessages(try(lme4::glmer(dat.grp ~ -1 + X.QE + (1 | study), offset=dat.off, family=dat.fam, start=c(sqrt(lme4::VarCorr(res.FE)[[1]][1])), nAGQ=nAGQ, verbose=verbose, control=do.call(lme4::glmerControl, glmerCtrl)), silent=!verbose))
+                        res.QE <- suppressMessages(try(lme4::glmer(dat.grp ~ 0 + X.QE + (1 | study), offset=dat.off, family=dat.fam, start=c(sqrt(lme4::VarCorr(res.FE)[[1]][1])), nAGQ=nAGQ, verbose=verbose, control=do.call(lme4::glmerControl, glmerCtrl)), silent=!verbose))
                      }
                   }
 
@@ -1208,18 +1228,18 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
                      glmerCtrl$max_coef_value <- 50
                      if (is.element(measure, c("OR","RR","RD"))) {
                         dat.mm <- data.frame(xi=dat.grp[,"xi"], mi=dat.grp[,"mi"], study=study)
-                        res.QE <- try(GLMMadaptive::mixed_model(cbind(xi,mi) ~ -1 + X.QE, random = ~ 1 | study, data=dat.mm, family=dat.fam, nAGQ=nAGQ, verbose=verbose, control=glmerCtrl, initial_values=list(D=matrix(res.FE$D[1,1]))), silent=!verbose)
+                        res.QE <- try(GLMMadaptive::mixed_model(cbind(xi,mi) ~ 0 + X.QE, random = ~ 1 | study, data=dat.mm, family=dat.fam, nAGQ=nAGQ, verbose=verbose, control=glmerCtrl, initial_values=list(D=matrix(res.FE$D[1,1]))), silent=!verbose)
                      } else {
                         dat.mm <- data.frame(xi=dat.grp, study=study)
-                        res.QE <- try(GLMMadaptive::mixed_model(xi ~ -1 + X.QE + offset(dat.off), random = ~ 1 | study, data=dat.mm, family=dat.fam, nAGQ=nAGQ, verbose=verbose, control=glmerCtrl), silent=!verbose)
+                        res.QE <- try(GLMMadaptive::mixed_model(xi ~ 0 + X.QE + offset(dat.off), random = ~ 1 | study, data=dat.mm, family=dat.fam, nAGQ=nAGQ, verbose=verbose, control=glmerCtrl), silent=!verbose)
                      }
                   }
 
                   if (package == "glmmTMB") {
                      if (verbose) {
-                        res.QE <- try(glmmTMB::glmmTMB(dat.grp ~ -1 + X.QE + (1 | study), offset=dat.off, family=dat.fam, start=list(theta=sqrt(glmmTMB::VarCorr(res.FE)[[1]][[1]][[1]])), verbose=verbose, data=NULL, control=do.call(glmmTMB::glmmTMBControl, glmerCtrl)), silent=!verbose)
+                        res.QE <- try(glmmTMB::glmmTMB(dat.grp ~ 0 + X.QE + (1 | study), offset=dat.off, family=dat.fam, start=list(theta=sqrt(glmmTMB::VarCorr(res.FE)[[1]][[1]][[1]])), verbose=verbose, data=NULL, control=do.call(glmmTMB::glmmTMBControl, glmerCtrl)), silent=!verbose)
                      } else {
-                        res.QE <- suppressMessages(try(glmmTMB::glmmTMB(dat.grp ~ -1 + X.QE + (1 | study), offset=dat.off, family=dat.fam, start=list(theta=sqrt(glmmTMB::VarCorr(res.FE)[[1]][[1]][[1]])), verbose=verbose, data=NULL, control=do.call(glmmTMB::glmmTMBControl, glmerCtrl)), silent=!verbose))
+                        res.QE <- suppressMessages(try(glmmTMB::glmmTMB(dat.grp ~ 0 + X.QE + (1 | study), offset=dat.off, family=dat.fam, start=list(theta=sqrt(glmmTMB::VarCorr(res.FE)[[1]][[1]][[1]])), verbose=verbose, data=NULL, control=do.call(glmmTMB::glmmTMBControl, glmerCtrl)), silent=!verbose))
                      }
                   }
 
@@ -1274,15 +1294,15 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
                if (package == "lme4") {
                   if (verbose) {
                      if (cor) {
-                        res.ML <- try(lme4::glmer(dat.grp ~ -1 + X.fit + const + (group | study),  offset=dat.off, family=dat.fam, nAGQ=nAGQ, verbose=verbose, control=do.call(lme4::glmerControl, glmerCtrl)), silent=!verbose)
+                        res.ML <- try(lme4::glmer(dat.grp ~ 0 + X.fit + const + (group | study),  offset=dat.off, family=dat.fam, nAGQ=nAGQ, verbose=verbose, control=do.call(lme4::glmerControl, glmerCtrl)), silent=!verbose)
                      } else {
-                        res.ML <- try(lme4::glmer(dat.grp ~ -1 + X.fit + const + (group || study), offset=dat.off, family=dat.fam, nAGQ=nAGQ, verbose=verbose, control=do.call(lme4::glmerControl, glmerCtrl)), silent=!verbose)
+                        res.ML <- try(lme4::glmer(dat.grp ~ 0 + X.fit + const + (group || study), offset=dat.off, family=dat.fam, nAGQ=nAGQ, verbose=verbose, control=do.call(lme4::glmerControl, glmerCtrl)), silent=!verbose)
                      }
                   } else {
                      if (cor) {
-                        res.ML <- suppressMessages(try(lme4::glmer(dat.grp ~ -1 + X.fit + const + (group | study),  offset=dat.off, family=dat.fam, nAGQ=nAGQ, verbose=verbose, control=do.call(lme4::glmerControl, glmerCtrl)), silent=!verbose))
+                        res.ML <- suppressMessages(try(lme4::glmer(dat.grp ~ 0 + X.fit + const + (group | study),  offset=dat.off, family=dat.fam, nAGQ=nAGQ, verbose=verbose, control=do.call(lme4::glmerControl, glmerCtrl)), silent=!verbose))
                      } else {
-                        res.ML <- suppressMessages(try(lme4::glmer(dat.grp ~ -1 + X.fit + const + (group || study), offset=dat.off, family=dat.fam, nAGQ=nAGQ, verbose=verbose, control=do.call(lme4::glmerControl, glmerCtrl)), silent=!verbose))
+                        res.ML <- suppressMessages(try(lme4::glmer(dat.grp ~ 0 + X.fit + const + (group || study), offset=dat.off, family=dat.fam, nAGQ=nAGQ, verbose=verbose, control=do.call(lme4::glmerControl, glmerCtrl)), silent=!verbose))
                      }
                   }
                }
@@ -1291,16 +1311,16 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
                   if (is.element(measure, c("OR","RR","RD"))) {
                      dat.mm <- data.frame(xi=dat.grp[,"xi"], mi=dat.grp[,"mi"], study=study, const=const, group=group)
                      if (cor) {
-                        res.ML <- try(GLMMadaptive::mixed_model(cbind(xi,mi) ~ -1 + X.fit + const, random = ~ group | study,  data=dat.mm, family=dat.fam, nAGQ=nAGQ, verbose=verbose, control=glmerCtrl), silent=!verbose)
+                        res.ML <- try(GLMMadaptive::mixed_model(cbind(xi,mi) ~ 0 + X.fit + const, random = ~ group | study,  data=dat.mm, family=dat.fam, nAGQ=nAGQ, verbose=verbose, control=glmerCtrl), silent=!verbose)
                      } else {
-                        res.ML <- try(GLMMadaptive::mixed_model(cbind(xi,mi) ~ -1 + X.fit + const, random = ~ group || study, data=dat.mm, family=dat.fam, nAGQ=nAGQ, verbose=verbose, control=glmerCtrl), silent=!verbose)
+                        res.ML <- try(GLMMadaptive::mixed_model(cbind(xi,mi) ~ 0 + X.fit + const, random = ~ group || study, data=dat.mm, family=dat.fam, nAGQ=nAGQ, verbose=verbose, control=glmerCtrl), silent=!verbose)
                      }
                   } else {
                      dat.mm <- data.frame(xi=dat.grp, study=study, const=const, group=group)
                      if (cor) {
-                        res.ML <- try(GLMMadaptive::mixed_model(xi ~ -1 + X.fit + const + offset(dat.off), random = ~ group | study,  data=dat.mm, family=dat.fam, nAGQ=nAGQ, verbose=verbose, control=glmerCtrl), silent=!verbose)
+                        res.ML <- try(GLMMadaptive::mixed_model(xi ~ 0 + X.fit + const + offset(dat.off), random = ~ group | study,  data=dat.mm, family=dat.fam, nAGQ=nAGQ, verbose=verbose, control=glmerCtrl), silent=!verbose)
                      } else {
-                        res.ML <- try(GLMMadaptive::mixed_model(xi ~ -1 + X.fit + const + offset(dat.off), random = ~ group || study, data=dat.mm, family=dat.fam, nAGQ=nAGQ, verbose=verbose, control=glmerCtrl), silent=!verbose)
+                        res.ML <- try(GLMMadaptive::mixed_model(xi ~ 0 + X.fit + const + offset(dat.off), random = ~ group || study, data=dat.mm, family=dat.fam, nAGQ=nAGQ, verbose=verbose, control=glmerCtrl), silent=!verbose)
                      }
                   }
                }
@@ -1308,15 +1328,15 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
                if (package == "glmmTMB") {
                   if (verbose) {
                      if (cor) {
-                        res.ML <- try(glmmTMB::glmmTMB(dat.grp ~ -1 + X.fit + const + (group | study),                   offset=dat.off, family=dat.fam, verbose=verbose, data=NULL, control=do.call(glmmTMB::glmmTMBControl, glmerCtrl)), silent=!verbose)
+                        res.ML <- try(glmmTMB::glmmTMB(dat.grp ~ 0 + X.fit + const + (group | study),                   offset=dat.off, family=dat.fam, verbose=verbose, data=NULL, control=do.call(glmmTMB::glmmTMBControl, glmerCtrl)), silent=!verbose)
                      } else {
-                        res.ML <- try(glmmTMB::glmmTMB(dat.grp ~ -1 + X.fit + const + (1 | study) + (group - 1 | study), offset=dat.off, family=dat.fam, verbose=verbose, data=NULL, control=do.call(glmmTMB::glmmTMBControl, glmerCtrl)), silent=!verbose)
+                        res.ML <- try(glmmTMB::glmmTMB(dat.grp ~ 0 + X.fit + const + (1 | study) + (0 + group | study), offset=dat.off, family=dat.fam, verbose=verbose, data=NULL, control=do.call(glmmTMB::glmmTMBControl, glmerCtrl)), silent=!verbose)
                      }
                   } else {
                      if (cor) {
-                        res.ML <- suppressMessages(try(glmmTMB::glmmTMB(dat.grp ~ -1 + X.fit + const + (group | study),                   offset=dat.off, family=dat.fam, verbose=verbose, data=NULL, control=do.call(glmmTMB::glmmTMBControl, glmerCtrl)), silent=!verbose))
+                        res.ML <- suppressMessages(try(glmmTMB::glmmTMB(dat.grp ~ 0 + X.fit + const + (group | study),                   offset=dat.off, family=dat.fam, verbose=verbose, data=NULL, control=do.call(glmmTMB::glmmTMBControl, glmerCtrl)), silent=!verbose))
                      } else {
-                        res.ML <- suppressMessages(try(glmmTMB::glmmTMB(dat.grp ~ -1 + X.fit + const + (1 | study) + (group - 1 | study), offset=dat.off, family=dat.fam, verbose=verbose, data=NULL, control=do.call(glmmTMB::glmmTMBControl, glmerCtrl)), silent=!verbose))
+                        res.ML <- suppressMessages(try(glmmTMB::glmmTMB(dat.grp ~ 0 + X.fit + const + (1 | study) + (0 + group | study), offset=dat.off, family=dat.fam, verbose=verbose, data=NULL, control=do.call(glmmTMB::glmmTMBControl, glmerCtrl)), silent=!verbose))
                      }
                   }
                }
@@ -1430,7 +1450,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
          study <- factor(seq_len(k))         # study factor
          X.fit <- X
 
-         if (.isTRUE(ddd$retdat))
+         if (isTRUE(ddd$retdat))
             return(list(dat.grp=dat.grp, X.fit=X.fit, study=study, dat.off = if (!is.null(dat.off)) dat.off else NULL))
 
          ###################################################################
@@ -1444,7 +1464,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
          if (verbose)
             message(mstyle$message("Fitting the FE model ..."))
 
-         res.FE <- try(glm(dat.grp ~ -1 + X.fit, offset=dat.off, family=binomial, control=glmCtrl), silent=!verbose)
+         res.FE <- try(glm(dat.grp ~ 0 + X.fit, offset=dat.off, family=binomial, control=glmCtrl), silent=!verbose)
 
          if (inherits(res.FE, "try-error"))
             stop(mstyle$stop(paste0("Cannot fit FE model", ifelse(verbose, ".", " (set 'verbose=TRUE' to obtain further details)."))))
@@ -1466,8 +1486,8 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
                message(mstyle$message("Fitting the saturated model ..."))
 
             if (k > 1) {
-               X.QE   <- model.matrix(~ -1 + X.fit + study)
-               res.QE <- try(glm(dat.grp ~ -1 + X.QE, offset=dat.off, family=binomial, control=glmCtrl), silent=!verbose)
+               X.QE   <- model.matrix(~ 0 + X.fit + study)
+               res.QE <- try(glm(dat.grp ~ 0 + X.QE, offset=dat.off, family=binomial, control=glmCtrl), silent=!verbose)
             } else {
                res.QE <- res.FE
             }
@@ -1509,22 +1529,22 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
 
             if (package == "lme4") {
                if (verbose) {
-                  res.ML <- try(lme4::glmer(dat.grp ~ -1 + X.fit + (1 | study), offset=dat.off, family=binomial, nAGQ=nAGQ, verbose=verbose, control=do.call(lme4::glmerControl, glmerCtrl)), silent=!verbose)
+                  res.ML <- try(lme4::glmer(dat.grp ~ 0 + X.fit + (1 | study), offset=dat.off, family=binomial, nAGQ=nAGQ, verbose=verbose, control=do.call(lme4::glmerControl, glmerCtrl)), silent=!verbose)
                } else {
-                  res.ML <- suppressMessages(try(lme4::glmer(dat.grp ~ -1 + X.fit + (1 | study), offset=dat.off, family=binomial, nAGQ=nAGQ, verbose=verbose, control=do.call(lme4::glmerControl, glmerCtrl)), silent=!verbose))
+                  res.ML <- suppressMessages(try(lme4::glmer(dat.grp ~ 0 + X.fit + (1 | study), offset=dat.off, family=binomial, nAGQ=nAGQ, verbose=verbose, control=do.call(lme4::glmerControl, glmerCtrl)), silent=!verbose))
                }
             }
 
             if (package == "GLMMadaptive") {
                dat.mm <- data.frame(xi=dat.grp[,"xi"], mi=dat.grp[,"mi"], study=study)
-               res.ML <- try(GLMMadaptive::mixed_model(cbind(xi,mi) ~ -1 + X.fit + offset(dat.off), random = ~ 1 | study, data=dat.mm, family=binomial, nAGQ=nAGQ, verbose=verbose, control=glmerCtrl), silent=!verbose)
+               res.ML <- try(GLMMadaptive::mixed_model(cbind(xi,mi) ~ 0 + X.fit + offset(dat.off), random = ~ 1 | study, data=dat.mm, family=binomial, nAGQ=nAGQ, verbose=verbose, control=glmerCtrl), silent=!verbose)
             }
 
             if (package == "glmmTMB") {
                if (verbose) {
-                  res.ML <- try(glmmTMB::glmmTMB(dat.grp ~ -1 + X.fit + (1 | study), offset=dat.off, family=binomial, verbose=verbose, data=NULL, control=do.call(glmmTMB::glmmTMBControl, glmerCtrl)), silent=!verbose)
+                  res.ML <- try(glmmTMB::glmmTMB(dat.grp ~ 0 + X.fit + (1 | study), offset=dat.off, family=binomial, verbose=verbose, data=NULL, control=do.call(glmmTMB::glmmTMBControl, glmerCtrl)), silent=!verbose)
                } else {
-                  res.ML <- suppressMessages(try(glmmTMB::glmmTMB(dat.grp ~ -1 + X.fit + (1 | study), offset=dat.off, family=binomial, verbose=verbose, data=NULL, control=do.call(glmmTMB::glmmTMBControl, glmerCtrl)), silent=!verbose))
+                  res.ML <- suppressMessages(try(glmmTMB::glmmTMB(dat.grp ~ 0 + X.fit + (1 | study), offset=dat.off, family=binomial, verbose=verbose, data=NULL, control=do.call(glmmTMB::glmmTMBControl, glmerCtrl)), silent=!verbose))
                }
             }
 
@@ -1775,9 +1795,9 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
             if (con$hesspack == "numDeriv")
                h.FE <- numDeriv::hessian(.dnchg, x=res.FE$par, method.args=hessianCtrl, ai=ai, bi=bi, ci=ci, di=di, X.fit=X.fit, random=FALSE, verbose=verbose, digits=digits, dnchgcalc=con$dnchgcalc, dnchgprec=con$dnchgprec)
             if (con$hesspack == "pracma")
-               h.FE <- pracma::hessian(.dnchg, x0=res.FE$par, ai=ai, bi=bi, ci=ci, di=di, X.fit=X.fit, random=FALSE, verbose=verbose, digits=digits, dnchgcalc=con$dnchgcalc, dnchgprec=con$dnchgprec)
+               h.FE <- pracma::hessian(.dnchg, x0=res.FE$par, h=hessianCtrl$h, ai=ai, bi=bi, ci=ci, di=di, X.fit=X.fit, random=FALSE, verbose=verbose, digits=digits, dnchgcalc=con$dnchgcalc, dnchgprec=con$dnchgprec)
             if (con$hesspack == "calculus")
-               h.FE <- calculus::hessian(.dnchg, var=res.FE$par, params=list(ai=ai, bi=bi, ci=ci, di=di, X.fit=X.fit, random=FALSE, verbose=verbose, digits=digits, dnchgcalc=con$dnchgcalc, dnchgprec=con$dnchgprec))
+               h.FE <- calculus::hessian(.dnchg, var=res.FE$par, accuracy=hessianCtrl$accuracy, stepsize=hessianCtrl$stepsize, params=list(ai=ai, bi=bi, ci=ci, di=di, X.fit=X.fit, random=FALSE, verbose=verbose, digits=digits, dnchgcalc=con$dnchgcalc, dnchgprec=con$dnchgprec))
             #return(list(res.FE=res.FE, h.FE=h.FE))
 
             ### log-likelihood
@@ -1889,9 +1909,9 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
                      if (con$hesspack == "numDeriv")
                         h.QE <- numDeriv::hessian(.dnchg, x=res.QE$par, method.args=hessianCtrl, ai=ai, bi=bi, ci=ci, di=di, X.fit=X.QE, random=FALSE, verbose=verbose, digits=digits, dnchgcalc=con$dnchgcalc, dnchgprec=con$dnchgprec)
                      if (con$hesspack == "pracma")
-                        h.QE <- pracma::hessian(.dnchg, x0=res.QE$par, ai=ai, bi=bi, ci=ci, di=di, X.fit=X.QE, random=FALSE, verbose=verbose, digits=digits, dnchgcalc=con$dnchgcalc, dnchgprec=con$dnchgprec)
+                        h.QE <- pracma::hessian(.dnchg, x0=res.QE$par, h=hessianCtrl$h, ai=ai, bi=bi, ci=ci, di=di, X.fit=X.QE, random=FALSE, verbose=verbose, digits=digits, dnchgcalc=con$dnchgcalc, dnchgprec=con$dnchgprec)
                      if (con$hesspack == "calculus")
-                        h.QE <- calculus::hessian(.dnchg, var=res.QE$par, params=list(ai=ai, bi=bi, ci=ci, di=di, X.fit=X.QE, random=FALSE, verbose=verbose, digits=digits, dnchgcalc=con$dnchgcalc, dnchgprec=con$dnchgprec))
+                        h.QE <- calculus::hessian(.dnchg, var=res.QE$par, accuracy=hessianCtrl$accuracy, stepsize=hessianCtrl$stepsize, params=list(ai=ai, bi=bi, ci=ci, di=di, X.fit=X.QE, random=FALSE, verbose=verbose, digits=digits, dnchgcalc=con$dnchgcalc, dnchgprec=con$dnchgprec))
                   }
 
                } else {
@@ -1968,7 +1988,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
             X.fit.l <- cbind(group1*X.fit.l)                    # multiply by group1 dummy (including intercept, which becomes the group1 dummy)
             const   <- rep(1,length(event))
 
-            if (.isTRUE(ddd$retdat))
+            if (isTRUE(ddd$retdat))
                return(data.frame(event, group1, study.l, X.fit.l, const))
 
             ### fit FE model
@@ -2007,7 +2027,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
                b.QE <- coef(res.QE, complete=TRUE) # res.QE is from CM.AL model
                is.aliased <- is.na(b.QE)
 
-               X.QE.l <- model.matrix(~ -1 + X.fit.l + study.l:group1)
+               X.QE.l <- model.matrix(~ 0 + X.fit.l + study.l:group1)
                X.QE.l <- X.QE.l[,!is.aliased,drop=FALSE]
                X.QE   <- X.QE[,!is.aliased,drop=FALSE]
 
@@ -2128,9 +2148,9 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
             if (con$hesspack == "numDeriv")
                h.ML <- numDeriv::hessian(.dnchg, x=res.ML$par, method.args=hessianCtrl, ai=ai, bi=bi, ci=ci, di=di, X.fit=X.fit, random=!tau2eff0, verbose=verbose, digits=digits, dnchgcalc=con$dnchgcalc, dnchgprec=con$dnchgprec, intCtrl=intCtrl)
             if (con$hesspack == "pracma")
-               h.ML <- pracma::hessian(.dnchg, x0=res.ML$par, ai=ai, bi=bi, ci=ci, di=di, X.fit=X.fit, random=!tau2eff0, verbose=verbose, digits=digits, dnchgcalc=con$dnchgcalc, dnchgprec=con$dnchgprec, intCtrl=intCtrl)
+               h.ML <- pracma::hessian(.dnchg, x0=res.ML$par, h=hessianCtrl$h, ai=ai, bi=bi, ci=ci, di=di, X.fit=X.fit, random=!tau2eff0, verbose=verbose, digits=digits, dnchgcalc=con$dnchgcalc, dnchgprec=con$dnchgprec, intCtrl=intCtrl)
             if (con$hesspack == "calculus")
-               h.ML <- calculus::hessian(.dnchg, var=res.ML$par, params=list(ai=ai, bi=bi, ci=ci, di=di, X.fit=X.fit, random=!tau2eff0, verbose=verbose, digits=digits, dnchgcalc=con$dnchgcalc, dnchgprec=con$dnchgprec, intCtrl=intCtrl))
+               h.ML <- calculus::hessian(.dnchg, var=res.ML$par, accuracy=hessianCtrl$accuracy, stepsize=hessianCtrl$stepsize, params=list(ai=ai, bi=bi, ci=ci, di=di, X.fit=X.fit, random=!tau2eff0, verbose=verbose, digits=digits, dnchgcalc=con$dnchgcalc, dnchgprec=con$dnchgprec, intCtrl=intCtrl))
             #return(list(res.ML, h.ML))
 
             ### log-likelihood
@@ -2283,7 +2303,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
       study <- factor(seq_len(k)) # study factor
       X.fit <- X
 
-      if (.isTRUE(ddd$retdat))
+      if (isTRUE(ddd$retdat))
          return(list(dat.grp=dat.grp, X.fit=X.fit, study=study, dat.off = if (!is.null(dat.off)) dat.off else NULL, dat.fam=dat.fam))
 
       ### fit FE model
@@ -2291,7 +2311,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
       if (verbose)
          message(mstyle$message("Fitting the FE model ..."))
 
-      res.FE <- try(glm(dat.grp ~ -1 + X.fit, offset=dat.off, family=dat.fam, control=glmCtrl), silent=!verbose)
+      res.FE <- try(glm(dat.grp ~ 0 + X.fit, offset=dat.off, family=dat.fam, control=glmCtrl), silent=!verbose)
 
       if (inherits(res.FE, "try-error"))
          stop(mstyle$stop(paste0("Cannot fit FE model", ifelse(verbose, ".", " (set 'verbose=TRUE' to obtain further details)."))))
@@ -2314,11 +2334,11 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
             message(mstyle$message("Fitting the saturated model ..."))
 
          if (k > 1) {
-            X.QE <- model.matrix(~ -1 + X.fit + study)
+            X.QE <- model.matrix(~ 0 + X.fit + study)
             if (verbose) {
-               res.QE <- try(glm(dat.grp ~ -1 + X.QE, offset=dat.off, family=dat.fam, control=glmCtrl), silent=!verbose)
+               res.QE <- try(glm(dat.grp ~ 0 + X.QE, offset=dat.off, family=dat.fam, control=glmCtrl), silent=!verbose)
             } else {
-               res.QE <- try(suppressWarnings(glm(dat.grp ~ -1 + X.QE, offset=dat.off, family=dat.fam, control=glmCtrl)), silent=!verbose)
+               res.QE <- try(suppressWarnings(glm(dat.grp ~ 0 + X.QE, offset=dat.off, family=dat.fam, control=glmCtrl)), silent=!verbose)
             }
          } else {
             res.QE <- res.FE
@@ -2358,27 +2378,27 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
 
          if (package == "lme4") {
             if (verbose) {
-               res.ML <- try(lme4::glmer(dat.grp ~ -1 + X.fit + (1 | study), offset=dat.off, family=dat.fam, nAGQ=nAGQ, verbose=verbose, control=do.call(lme4::glmerControl, glmerCtrl)), silent=!verbose)
+               res.ML <- try(lme4::glmer(dat.grp ~ 0 + X.fit + (1 | study), offset=dat.off, family=dat.fam, nAGQ=nAGQ, verbose=verbose, control=do.call(lme4::glmerControl, glmerCtrl)), silent=!verbose)
             } else {
-               res.ML <- suppressMessages(try(lme4::glmer(dat.grp ~ -1 + X.fit + (1 | study), offset=dat.off, family=dat.fam, nAGQ=nAGQ, verbose=verbose, control=do.call(lme4::glmerControl, glmerCtrl)), silent=!verbose))
+               res.ML <- suppressMessages(try(lme4::glmer(dat.grp ~ 0 + X.fit + (1 | study), offset=dat.off, family=dat.fam, nAGQ=nAGQ, verbose=verbose, control=do.call(lme4::glmerControl, glmerCtrl)), silent=!verbose))
             }
          }
 
          if (package == "GLMMadaptive") {
             if (is.element(measure, c("PLO","PR","PLN"))) {
                dat.mm <- data.frame(xi=dat.grp[,"xi"], mi=dat.grp[,"mi"], study=study)
-               res.ML <- try(GLMMadaptive::mixed_model(cbind(xi,mi) ~ -1 + X.fit, random = ~ 1 | study, data=dat.mm, family=dat.fam, nAGQ=nAGQ, verbose=verbose, control=glmerCtrl), silent=!verbose)
+               res.ML <- try(GLMMadaptive::mixed_model(cbind(xi,mi) ~ 0 + X.fit, random = ~ 1 | study, data=dat.mm, family=dat.fam, nAGQ=nAGQ, verbose=verbose, control=glmerCtrl), silent=!verbose)
             } else {
                dat.mm <- data.frame(xi=dat.grp, study=study)
-               res.ML <- try(GLMMadaptive::mixed_model(xi ~ -1 + X.fit + offset(dat.off), random = ~ 1 | study, data=dat.mm, family=dat.fam, nAGQ=nAGQ, verbose=verbose, control=glmerCtrl), silent=!verbose)
+               res.ML <- try(GLMMadaptive::mixed_model(xi ~ 0 + X.fit + offset(dat.off), random = ~ 1 | study, data=dat.mm, family=dat.fam, nAGQ=nAGQ, verbose=verbose, control=glmerCtrl), silent=!verbose)
             }
          }
 
          if (package == "glmmTMB") {
             if (verbose) {
-               res.ML <- try(glmmTMB::glmmTMB(dat.grp ~ -1 + X.fit + (1 | study), offset=dat.off, family=dat.fam, verbose=verbose, data=NULL, control=do.call(glmmTMB::glmmTMBControl, glmerCtrl)), silent=!verbose)
+               res.ML <- try(glmmTMB::glmmTMB(dat.grp ~ 0 + X.fit + (1 | study), offset=dat.off, family=dat.fam, verbose=verbose, data=NULL, control=do.call(glmmTMB::glmmTMBControl, glmerCtrl)), silent=!verbose)
             } else {
-               res.ML <- suppressMessages(try(glmmTMB::glmmTMB(dat.grp ~ -1 + X.fit + (1 | study), offset=dat.off, family=dat.fam, verbose=verbose, data=NULL, control=do.call(glmmTMB::glmmTMBControl, glmerCtrl)), silent=!verbose))
+               res.ML <- suppressMessages(try(glmmTMB::glmmTMB(dat.grp ~ 0 + X.fit + (1 | study), offset=dat.off, family=dat.fam, verbose=verbose, data=NULL, control=do.call(glmmTMB::glmmTMBControl, glmerCtrl)), silent=!verbose))
             }
          }
 
@@ -2512,7 +2532,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
    ### calculation of I^2 and H^2
 
    wi    <- 1/vi
-   W     <- diag(wi, nrow=k.yi, ncol=k.yi)
+   W     <- .diag(wi)
    stXWX <- .invcalc(X=X.yi, W=W, k=k.yi)
    P     <- W - W %*% X.yi %*% stXWX %*% crossprod(X.yi,W)
    if (i2def == "1")
@@ -2554,15 +2574,15 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
       ddf <- NA_integer_
    }
 
-   ### abbreviate some types of coefficient names
+   ### abbreviate certain coefficient names
 
-   if (.isTRUE(ddd$abbrev)) {
+   if (isTRUE(ddd$abbrev)) {
       tmp <- colnames(X)
       tmp <- gsub("relevel(factor(", "", tmp, fixed=TRUE)
       tmp <- gsub("\\), ref = \"[[:alnum:]]*\")", "", tmp)
       tmp <- gsub("poly(", "", tmp, fixed=TRUE)
       tmp <- gsub(", degree = [[:digit:]], raw = TRUE)", "^", tmp)
-      tmp <- gsub(", degree = [[:digit:]], raw = T)", "^", tmp)
+      tmp <- gsub(", degree = [[:digit:]], raw = TRUE)", "^", tmp)
       tmp <- gsub(", degree = [[:digit:]])", "^", tmp)
       tmp <- gsub("rcs\\([[:alnum:]]*, [[:digit:]]\\)", "", tmp)
       tmp <- gsub("factor(", "", tmp, fixed=TRUE)
@@ -2601,7 +2621,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
    ###### fit statistics
 
    if (verbose > 1)
-      message(mstyle$message("Computing the fit statistics and log-likelihood ..."))
+      message(mstyle$message("Computing fit statistics and log-likelihood ..."))
 
    ll.ML     <- ifelse(is.element(method, c("FE","EE","CE")), ll.FE, ll.ML)
    ll.REML   <- NA_real_
@@ -2671,7 +2691,7 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
 
    }
 
-   if (.isTRUE(ddd$retfit)) {
+   if (isTRUE(ddd$retfit)) {
       res$res.FE <- res.FE
       if (!isTRUE(ddd$skiphet))
          res$res.QE <- res.QE
@@ -2682,10 +2702,10 @@ test="z", level=95, btt, nAGQ=7, verbose=FALSE, digits, control, ...) {
    time.end <- proc.time()
    res$time <- unname(time.end - time.start)[3]
 
-   if (.isTRUE(ddd$time))
+   if (isTRUE(ddd$time))
       .print.time(res$time)
 
-   if (verbose || .isTRUE(ddd$time))
+   if (verbose || isTRUE(ddd$time))
       cat("\n")
 
    class(res) <- c("rma.glmm", "rma")

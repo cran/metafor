@@ -7,8 +7,8 @@
    The function computes predicted values, corresponding standard errors, confidence intervals, and prediction intervals for objects of class \code{"rma"}. \loadmathjax
 }
 \usage{
-\method{predict}{rma}(object, newmods, intercept, tau2.levels, gamma2.levels, addx=FALSE,
-        level, adjust=FALSE, digits, transf, targs, vcov=FALSE, \dots)
+\method{predict}{rma}(object, newmods, intercept, tau2.levels, gamma2.levels, hetvar,
+        addx=FALSE, level, adjust=FALSE, digits, transf, targs, vcov=FALSE, \dots)
 
 \method{predict}{rma.ls}(object, newmods, intercept, addx=FALSE, newscale, addz=FALSE,
         level, adjust=FALSE, digits, transf, targs, vcov=FALSE, \dots)
@@ -16,9 +16,10 @@
 \arguments{
    \item{object}{an object of class \code{"rma"} or \code{"rma.ls"}.}
    \item{newmods}{optional vector or matrix to specify the values of the moderator values for which the predicted values should be calculated. See \sQuote{Details}.}
-   \item{intercept}{logical to specify whether the intercept should be included when calculating the predicted values for \code{newmods}. If unspecified, the intercept is automatically added when the original model also included an intercept.}
-   \item{tau2.levels}{vector to specify the levels of the inner factor when computing prediction intervals. Only relevant for models of class \code{"rma.mv"} (see \code{\link{rma.mv}}) and when the model includes more than a single \mjseqn{\tau^2} value. See \sQuote{Details}.}
-   \item{gamma2.levels}{vector to specify the levels of the inner factor when computing prediction intervals. Only relevant for models of class \code{"rma.mv"} (see \code{\link{rma.mv}}) and when the model includes more than a single \mjseqn{\gamma^2} value. See \sQuote{Details}.}
+   \item{intercept}{logical to specify whether the intercept should be included when calculating the predicted values for \code{newmods}. If unspecified, the intercept is automatically added when the model also included an intercept.}
+   \item{tau2.levels}{optional vector to specify the levels of the inner factor when computing prediction intervals. Only relevant for models of class \code{"rma.mv"} (see \code{\link{rma.mv}}) and when the model includes more than a single \mjseqn{\tau^2} value. See \sQuote{Details}.}
+   \item{gamma2.levels}{optional vector to specify the levels of the inner factor when computing prediction intervals. Only relevant for models of class \code{"rma.mv"} (see \code{\link{rma.mv}}) and when the model includes more than a single \mjseqn{\gamma^2} value. See \sQuote{Details}.}
+   \item{hetvar}{optional numeric vector with the amount of heterogeneity for computing prediction intervals. See \sQuote{Details}.}
    \item{addx}{logical to specify whether the values of the moderator variables should be added to the returned object. See \sQuote{Examples}.}
    \item{newscale}{optional vector or matrix to specify the values of the scale variables for which the predicted values should be calculated. Only relevant for location-scale models (see \code{\link{rma.uni}}). See \sQuote{Details}.}
    \item{addz}{logical to specify whether the values of the scale variables should be added to the returned object.}
@@ -43,7 +44,7 @@
 
    For random-effects models that were fitted with the \code{\link{rma.mv}} function, the model may actually include multiple \mjseqn{\tau^2} values (i.e., when the \code{random} argument includes an \sQuote{\code{~ inner | outer}} term and \code{struct="HCS"}, \code{struct="DIAG"}, \code{struct="HAR"}, or \code{struct="UN"}). In that case, the function will provide prediction intervals for each level of the inner factor (since the prediction intervals differ depending on the \mjseqn{\tau^2} value). Alternatively, one can use the \code{tau2.levels} argument to specify for which level(s) the prediction interval should be provided. If the model includes a second \sQuote{\code{~ inner | outer}} term with multiple \mjseqn{\gamma^2} values, prediction intervals for each combination of levels of the inner factors will be provided. Alternatively, one can use the \code{tau2.levels} and \code{gamma2.levels} arguments to specify for which level combination(s) the prediction interval should be provided.
 
-   When using the \code{newmods} argument for mixed-effects models that were fitted with the \code{\link{rma.mv}} function, if the model includes multiple \mjseqn{\tau^2} (and multiple \mjseqn{\gamma^2}) values, then one must use the \code{tau2.levels} (and \code{gamma2.levels}) argument to specify the levels of the inner factor(s) (i.e., a vector of length \mjeqn{k_{new}}{k_new}) to obtain the appropriate prediction interval(s).
+   When using the \code{newmods} argument for mixed-effects models that were fitted with the \code{\link{rma.mv}} function, if the model includes multiple \mjseqn{\tau^2} (and multiple \mjseqn{\gamma^2}) values, then one must use the \code{tau2.levels} (and \code{gamma2.levels}) argument to specify the levels of the inner factor(s) (i.e., a vector of length \mjeqn{k_{new}}{k_new}) to obtain the appropriate prediction interval(s). Alternatively, one can use the \code{hetvar} argument to specify a vector with the amount of heterogeneity for the predicted values.
 
    For location-scale models fitted with the \code{\link{rma.uni}} function, one can use \code{newmods} to specify the values of the \mjseqn{p'} moderator variables included in the model and \code{newscale} to specify the values of the \mjseqn{q'} scale variables included in the model. Whenever \code{newmods} is specified, the function computes predicted effects/outcomes for the specified moderators values. To obtain the corresponding prediction intervals, one must also specify the corresponding \code{newscale} values. If only \code{newscale} is specified (and not \code{newmods}), the function computes the predicted log-transformed \mjseqn{\tau^2} values (when using a log link) for the specified scale values. By setting \code{transf=exp}, one can then obtain the predicted \mjseqn{\tau^2} values.
 
@@ -70,7 +71,7 @@
 \note{
    Confidence and prediction intervals are constructed based on the critical values from a standard normal distribution (i.e., \mjeqn{\pm 1.96}{±1.96} for \code{level=95}). When the model was fitted with \code{test="t"}, \code{test="knha"}, \code{test="hksj"}, or \code{test="adhoc"}, then a t-distribution with \mjseqn{k-p} degrees of freedom is used, where \mjseqn{p} denotes the total number of columns of the model matrix (i.e., counting the intercept term if the model includes one).
 
-   For a random-effects model (where \mjseqn{p=1}) fitted with the \code{\link{rma.uni}} function, note that this differs slightly from Riley et al. (2011), who suggest to use a t-distribution with \mjseqn{k-2} degrees of freedom for constructing the prediction interval. Neither a normal, nor a t-distribution with \mjseqn{k-1} or \mjseqn{k-2} degrees of freedom is correct; all of these are approximations. The computations are done in the way described above, so that the prediction interval is identical to the confidence interval when \mjeqn{\hat{\tau}^2 = 0}{hat(\tau)^2 = 0}, which could be argued is the logical thing that should happen. If the prediction interval for a random-effects model should be computed as described by Riley et al. (2011), then one can use argument \code{pi.type="Riley"} (and for mixed-effects meta-regression models, the function then uses \mjseqn{k-p-1} degrees of freedom).
+   For a random-effects model (where \mjseqn{p=1}) fitted with the \code{\link{rma.uni}} function, note that this differs slightly from Riley et al. (2011), who suggest to use a t-distribution with \mjseqn{k-2} degrees of freedom for constructing the prediction interval. Neither a normal, nor a t-distribution with \mjseqn{k-1} or \mjseqn{k-2} degrees of freedom is correct; all of these are approximations. The computations are done in the way described above, so that the prediction interval is identical to the confidence interval when \mjeqn{\hat{\tau}^2 = 0}{hat(\tau)^2 = 0}, which could be argued is the logical thing that should happen. If the prediction interval for a random-effects model should be computed as described by Riley et al. (2011), then one can use argument \code{predtype="Riley"} (and for mixed-effects meta-regression models, the function then uses \mjseqn{k-p-1} degrees of freedom).
 
    The predicted values are based only on the fixed effects of the model. Best linear unbiased predictions (BLUPs) that combine the fitted values based on the fixed effects and the estimated contributions of the random effects can be obtained with \code{\link[=blup.rma.uni]{blup}} (currently only for objects of class \code{"rma.uni"}).
 
@@ -108,6 +109,14 @@ predict(res, transf=exp, digits=2)
 ### because exponentiation is a non-linear transformation; but we can estimate the
 ### average risk ratio by using the integral transformation
 predict(res, transf=transf.exp.int, targs=res$tau2, digits=2)
+
+### predict() can automatically extract the tau^2 value needed for the integral
+### transformation from the model object, so we don't need to specify it
+predict(res, transf=transf.exp.int, digits=2)
+
+### note: the prediction interval is not printed here, because the regular back-
+### transformation gives the correct bounds for the PI (the integral transformation
+### is only needed to obtain the estimated average risk ratio and its CI)
 
 ### fit mixed-effects model with absolute latitude as a moderator
 res <- rma(yi, vi, mods = ~ ablat, data=dat)

@@ -41,10 +41,10 @@ confint.rma.uni <- function(object, parm, level, fixed=FALSE, random=TRUE, type,
    if (missing(targs))
       targs <- NULL
 
-   funlist <- lapply(list(transf.exp.int, transf.ilogit.int, transf.ztor.int, transf.exp.mode, transf.ilogit.mode, transf.ztor.mode), deparse)
+   funlist <- lapply(list(transf.exp.int, transf.ilogit.int, transf.iprobit.int, transf.ztor.int, transf.iarcsin.int, transf.iahw.int, transf.iabt.int, transf.dtocles.int, transf.exp.mode, transf.ilogit.mode, transf.iprobit.mode, transf.ztor.mode, transf.iarcsin.mode, transf.iahw.mode, transf.iabt.mode), deparse)
 
    if (is.null(targs) && any(sapply(funlist, identical, deparse(transf))) && inherits(x, c("rma.uni","rma.glmm")) && length(x$tau2 == 1L))
-      targs <- c(tau2=x$tau2)
+      targs <- list(tau2=x$tau2)
 
    if (missing(control))
       control <- list()
@@ -56,7 +56,7 @@ confint.rma.uni <- function(object, parm, level, fixed=FALSE, random=TRUE, type,
 
    .chkdots(ddd, c("time", "xlim", "extint"))
 
-   if (.isTRUE(ddd$time))
+   if (isTRUE(ddd$time))
       time.start <- proc.time()
 
    if (!is.null(ddd$xlim)) {
@@ -80,7 +80,7 @@ confint.rma.uni <- function(object, parm, level, fixed=FALSE, random=TRUE, type,
          stop(mstyle$stop("Unknown 'type' specified."))
    }
 
-   level <- .level(level, stopon100=(type=="pl" && .isTRUE(ddd$extint)))
+   level <- .level(level, stopon100=(type=="pl" && isTRUE(ddd$extint)))
 
    #########################################################################
    #########################################################################
@@ -266,7 +266,7 @@ confint.rma.uni <- function(object, parm, level, fixed=FALSE, random=TRUE, type,
          if (!requireNamespace("CompQuadForm", quietly=TRUE))
             stop(mstyle$stop("Please install the 'CompQuadForm' package when method='QGEN'."))
 
-         A <- diag(weights, nrow=k, ncol=k)
+         A <- .diag(weights)
          stXAX <- .invcalc(X=X, W=A, k=k)
          P <- A - A %*% X %*% stXAX %*% t(X) %*% A
          Q <- crossprod(Y,P) %*% Y
@@ -412,7 +412,7 @@ confint.rma.uni <- function(object, parm, level, fixed=FALSE, random=TRUE, type,
 
             } else {
 
-               if (.isTRUE(ddd$extint)) {
+               if (isTRUE(ddd$extint)) {
                   res <- try(uniroot(.profile.rma.uni, interval=c(con$tau2.min, x$tau2), tol=con$tol, maxiter=con$maxiter, extendInt="downX", obj=x, confint=TRUE, objective=objective, verbose=verbose, check.conv=TRUE)$root, silent=TRUE)
                } else {
                   res <- try(uniroot(.profile.rma.uni, interval=c(con$tau2.min, x$tau2), tol=con$tol, maxiter=con$maxiter, obj=x, confint=TRUE, objective=objective, verbose=verbose, check.conv=TRUE)$root, silent=TRUE)
@@ -442,7 +442,7 @@ confint.rma.uni <- function(object, parm, level, fixed=FALSE, random=TRUE, type,
 
          if (!inherits(res, "try-error") && !is.na(res)) {
 
-            if (!.isTRUE(ddd$extint) && res < 0) {
+            if (!isTRUE(ddd$extint) && res < 0) {
 
                tau2.ub <- con$tau2.max
                ub.conv <- TRUE
@@ -450,7 +450,7 @@ confint.rma.uni <- function(object, parm, level, fixed=FALSE, random=TRUE, type,
 
             } else {
 
-               if (.isTRUE(ddd$extint)) {
+               if (isTRUE(ddd$extint)) {
                   res <- try(uniroot(.profile.rma.uni, interval=c(x$tau2, con$tau2.max), tol=con$tol, maxiter=con$maxiter, extendInt="upX", obj=x, confint=TRUE, objective=objective, verbose=verbose, check.conv=TRUE)$root, silent=TRUE)
                } else {
                   res <- try(uniroot(.profile.rma.uni, interval=c(x$tau2, con$tau2.max), tol=con$tol, maxiter=con$maxiter, obj=x, confint=TRUE, objective=objective, verbose=verbose, check.conv=TRUE)$root, silent=TRUE)
@@ -648,7 +648,7 @@ confint.rma.uni <- function(object, parm, level, fixed=FALSE, random=TRUE, type,
       res$tau2.min <- con$tau2.min
    }
 
-   if (.isTRUE(ddd$time)) {
+   if (isTRUE(ddd$time)) {
       time.end <- proc.time()
       .print.time(unname(time.end - time.start)[3])
    }

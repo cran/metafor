@@ -1,5 +1,11 @@
 \name{fitstats}
 \alias{fitstats}
+\alias{logLik}
+\alias{deviance}
+\alias{AIC}
+\alias{BIC}
+\alias{nobs}
+\alias{df.residual}
 \alias{fitstats.rma}
 \alias{logLik.rma}
 \alias{deviance.rma}

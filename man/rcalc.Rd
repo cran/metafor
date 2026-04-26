@@ -38,7 +38,7 @@ rcalc(x, ni, data, rtoz=FALSE, nfun="min", sparse=FALSE, \dots)
 \value{
    A list containing the following components:
    \item{dat}{a data frame with the study identifier, the two variable identifiers, a variable pair identifier, the correlation coefficients (possibly transformed with Fisher's r-to-z transformation), and the (common) sample sizes.}
-   \item{V}{corresponding variance-covariance matrix (given as a sparse matrix when \code{sparse=TRUE}).}
+   \item{V}{corresponding variance-covariance matrix (given as a sparse matrix when \code{sparse=TRUE}; otherwise a matrix with class \code{"vcovmat"}).}
 
    Note that a particular covariance can only be computed when all of the correlation coefficients involved in the covariance equation are included in the dataset. If one or more coefficients needed for the computation are missing, then the resulting covariance will also be missing (i.e., \code{NA}).
 }
@@ -51,7 +51,7 @@ rcalc(x, ni, data, rtoz=FALSE, nfun="min", sparse=FALSE, \dots)
    Wolfgang Viechtbauer (\email{wvb@metafor-project.org}, \url{https://www.metafor-project.org}).
 }
 \references{
-   Fisher, R. A. (1921). On the \dQuote{probable error} of a coefficient of correlation deduced from a small sample. \emph{Metron}, \bold{1}, 1--32. \verb{http://hdl.handle.net/2440/15169}
+   Fisher, R. A. (1921). On the \dQuote{probable error} of a coefficient of correlation deduced from a small sample. \emph{Metron}, \bold{1}, 1--32. \verb{https://hdl.handle.net/2440/15169}
 
    Olkin, I., & Finn, J. D. (1990). Testing correlated correlations. \emph{Psychological Bulletin}, \bold{108}(2), 330--333. \verb{https://doi.org/10.1037/0033-2909.108.2.330}
 

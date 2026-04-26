@@ -17,17 +17,17 @@ permutest.rma.uni <- function(x, exact=FALSE, iter=1000, btt=x$btt, permci=FALSE
 
    .chkdots(ddd, c("tol", "time", "seed", "verbose", "fixed", "code1", "code2"))
 
-   if (!is.null(ddd$tol)) # in case user specified comptol in the old manner
+   if (!is.null(ddd$tol)) # in case the user specified comptol in the old manner
       comptol <- ddd$tol
 
-   fixed <- .chkddd(ddd$fixed, FALSE, .isTRUE(ddd$fixed))
+   fixed <- .chkddd(ddd$fixed, FALSE, isTRUE(ddd$fixed))
 
    iter <- round(iter)
 
    if (iter <= 1)
       stop(mstyle$stop("Argument 'iter' must be >= 2."))
 
-   if (.isTRUE(ddd$time))
+   if (isTRUE(ddd$time))
       time.start <- proc.time()
 
    if (!missing(btt)) {
@@ -320,6 +320,9 @@ permutest.rma.uni <- function(x, exact=FALSE, iter=1000, btt=x$btt, permci=FALSE
 
          for (i in seq_len(X.iter)) {
 
+            if (!is.null(ddd[["code2"]]))
+               eval(expr = parse(text = ddd[["code2"]]))
+
             args <- list(yi=x$yi, vi=x$vi, weights=x$weights, mods=cbind(X[permmat[i,],]), intercept=FALSE, method=x$method, weighted=x$weighted,
                          test=x$test, level=x$level, btt=x$btt, tau2=ifelse(x$tau2.fix, x$tau2, NA), control=x$control, skipr2=TRUE, outlist=outlist)
             res <- try(suppressWarnings(.do.call(rma.uni, args)), silent=!isTRUE(ddd$verbose))
@@ -341,6 +344,9 @@ permutest.rma.uni <- function(x, exact=FALSE, iter=1000, btt=x$btt, permci=FALSE
          i <- 1
 
          while (i <= X.iter) {
+
+            if (!is.null(ddd[["code2"]]))
+               eval(expr = parse(text = ddd[["code2"]]))
 
             args <- list(yi=x$yi, vi=x$vi, weights=x$weights, mods=cbind(X[sample(x$k),]), intercept=FALSE, method=x$method, weighted=x$weighted,
                          test=x$test, level=x$level, btt=x$btt, tau2=ifelse(x$tau2.fix, x$tau2, NA), control=x$control, skipr2=TRUE, outlist=outlist)
@@ -444,7 +450,7 @@ permutest.rma.uni <- function(x, exact=FALSE, iter=1000, btt=x$btt, permci=FALSE
    ci.lb <- x$ci.lb
    ci.ub <- x$ci.ub
 
-   if (.isTRUE(permci) || is.numeric(permci)) {
+   if (isTRUE(permci) || is.numeric(permci)) {
 
       level <- .level(x$level)
 
@@ -528,7 +534,7 @@ permutest.rma.uni <- function(x, exact=FALSE, iter=1000, btt=x$btt, permci=FALSE
    out$beta.perm <- data.frame(beta.perm)
    names(out$zval.perm) <- names(out$beta.perm) <- colnames(x$X)
 
-   if (.isTRUE(ddd$time)) {
+   if (isTRUE(ddd$time)) {
       time.end <- proc.time()
       .print.time(unname(time.end - time.start)[3])
    }

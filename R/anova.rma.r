@@ -14,10 +14,10 @@ anova.rma <- function(object, object2, btt, X, att, Z, rhs, adjust, digits, refi
 
    .chkdots(ddd, c("test", "L", "verbose", "fixed", "df", "abbrev"))
 
-   if (!is.null(ddd$L))
+   if (!is.null(ddd$L)) # old 'L' argument overrules 'X' argument
       X <- ddd$L
 
-   fixed <- .chkddd(ddd$fixed, FALSE, .isTRUE(ddd$fixed))
+   fixed <- .chkddd(ddd$fixed, FALSE, isTRUE(ddd$fixed))
 
    if (!missing(att) && !inherits(object, "rma.ls"))
       stop(mstyle$stop("Can only specify 'att' for location-scale models."))
@@ -37,10 +37,12 @@ anova.rma <- function(object, object2, btt, X, att, Z, rhs, adjust, digits, refi
       }
       adjust <- try(match.arg(adjust, choices=p.adjust.methods), silent=TRUE)
       if (inherits(adjust, "try-error"))
-         stop(mstyle$stop("Unknown 'adjust' method specified (see help(p.adjust) for options)."))
+         stop(mstyle$stop("Unknown 'adjust' method specified (see 'help(p.adjust)' for options)."))
    }
 
    mf <- match.call()
+
+   # so that pairmat() works when the model object is not specified
 
    if (any(grepl("pairmat(", as.character(mf), fixed=TRUE))) {
       try(assign("pairmat", object, envir=.metafor), silent=TRUE)
@@ -49,22 +51,21 @@ anova.rma <- function(object, object2, btt, X, att, Z, rhs, adjust, digits, refi
 
    if (missing(object2)) {
 
-      ### if only 'object' has been specified, can use function to test one or multiple coefficients
-      ### via the 'btt' (or 'att') argument or one or more linear contrasts of the coefficients via
-      ### the 'X' (or 'Z') argument
+      # if only 'object' was specified, can test one or multiple coefficients via the 'btt' (or 'att')
+      # argument or one or more linear contrasts of the coefficients via the 'X' (or 'Z') argument
 
       x <- object
 
       if (missing(X) && missing(Z)) {
 
-         ### if 'X' (and 'Z') has not been specified, then do a Wald-test via the 'btt' argument (can also use 'att' for location-scale models)
+         # if 'X' (and 'Z') was not specified, then do a Wald-test via the 'btt' argument (can also use 'att' for location-scale models)
 
          if (inherits(object, "rma.ls") && !missing(att)) {
 
             if (!missing(btt))
                stop(mstyle$stop("Can only specify either 'btt' or 'att', but not both."))
 
-            ### set/check 'att' argument
+            # set/check the 'att' argument
 
             if (missing(att) || is.null(att)) {
                att <- x$att
@@ -120,7 +121,7 @@ anova.rma <- function(object, object2, btt, X, att, Z, rhs, adjust, digits, refi
 
          } else {
 
-            ### set/check 'btt' argument
+            # set/check the 'btt' argument
 
             if (missing(btt) || is.null(btt)) {
                btt <- x$btt
@@ -196,7 +197,7 @@ anova.rma <- function(object, object2, btt, X, att, Z, rhs, adjust, digits, refi
 
          if (inherits(object, "rma.ls") && !missing(Z)) {
 
-            ### if 'Z' has been specified, then do Wald-type test(s) via 'Z' argument
+            # if 'Z' was specified, then do Wald-type test(s) via the 'Z' argument
 
             if (!missing(X))
                stop(mstyle$stop("Can only specify either 'X' or 'Z', but not both."))
@@ -210,7 +211,7 @@ anova.rma <- function(object, object2, btt, X, att, Z, rhs, adjust, digits, refi
             if (is.character(Z))
                stop(mstyle$stop("Argument 'Z' must be a numeric vector/matrix."))
 
-            ### if model has an intercept term and Z has q-1 columns, assume user left out the intercept and add it automatically
+            # if the model has an intercept term and Z has q-1 columns, assume the user left out the intercept and add it automatically
 
             if (x$Z.int.incl && ncol(Z) == (x$q-1))
                Z <- cbind(1, Z)
@@ -220,7 +221,7 @@ anova.rma <- function(object, object2, btt, X, att, Z, rhs, adjust, digits, refi
 
             m <- nrow(Z)
 
-            ### specification of the right-hand side
+            # specification of the right-hand side
 
             if (missing(rhs)) {
                rhs <- rep(0, m)
@@ -230,7 +231,7 @@ anova.rma <- function(object, object2, btt, X, att, Z, rhs, adjust, digits, refi
                   stop(mstyle$stop(paste0("Length of 'rhs' (", length(rhs), ") does not match the number of linear combinations (", m, ").")))
             }
 
-            ### test of individual hypotheses
+            # test of individual hypotheses
 
             Za  <- Z %*% x$alpha - rhs
             vZa <- Z %*% x$va %*% t(Z)
@@ -244,7 +245,7 @@ anova.rma <- function(object, object2, btt, X, att, Z, rhs, adjust, digits, refi
                pval <- 2*pnorm(abs(zval), lower.tail=FALSE)
             }
 
-            ### omnibus test of all hypotheses (only possible if 'Z' is of full rank)
+            # omnibus test of all hypotheses (only possible if 'Z' is of full rank)
 
             QS  <- NA_real_ # need this in case QS cannot be calculated below
             QSp <- NA_real_ # need this in case QSp cannot be calculated below
@@ -267,7 +268,7 @@ anova.rma <- function(object, object2, btt, X, att, Z, rhs, adjust, digits, refi
 
             }
 
-            ### create a data frame with each row specifying the linear combination tested
+            # create a data frame with each row specifying the linear combination tested
 
             hyp <- rep("", m)
             for (j in seq_len(m)) {
@@ -290,9 +291,9 @@ anova.rma <- function(object, object2, btt, X, att, Z, rhs, adjust, digits, refi
             colnames(hyp) <- ""
             rownames(hyp) <- paste0(seq_len(m), ":") # add '1:', '2:', ... as row names
 
-            ### abbreviate some hyp elements
+            # abbreviate some 'hyp' elements
 
-            if (.isTRUE(ddd$abbrev)) {
+            if (isTRUE(ddd$abbrev)) {
                hyp[,1] <- gsub("factor(", "", hyp[,1], fixed=TRUE)
                hyp[,1] <- gsub(")", "", hyp[,1], fixed=TRUE)
             }
@@ -304,7 +305,7 @@ anova.rma <- function(object, object2, btt, X, att, Z, rhs, adjust, digits, refi
 
          } else {
 
-            ### if 'X' has been specified, then do Wald-type test(s) via 'X' argument
+            # if 'X' was specified, then do Wald-type test(s) via the 'X' argument
 
             if (.is.vector(X))
                X <- rbind(X)
@@ -315,7 +316,7 @@ anova.rma <- function(object, object2, btt, X, att, Z, rhs, adjust, digits, refi
             if (is.character(X))
                stop(mstyle$stop("Argument 'X' must be a numeric vector/matrix."))
 
-            ### if model has an intercept term and X has p-1 columns, assume user left out the intercept and add it automatically
+            # if the model has an intercept term and X has p-1 columns, assume the user left out the intercept and add it automatically
 
             if (x$int.incl && ncol(X) == (x$p-1))
                X <- cbind(1, X)
@@ -344,9 +345,9 @@ anova.rma <- function(object, object2, btt, X, att, Z, rhs, adjust, digits, refi
                zval <- c(Xb/se)
                pval <- cs.lc$p_val
 
-               ### omnibus test of all hypotheses (only possible if 'X' is of full rank)
+               # omnibus test of all hypotheses (only possible if 'X' is of full rank)
 
-               QM   <- NA_real_    # need this in case QMp cannot be calculated below
+               QM   <- NA_real_    # need this in case QM cannot be calculated below
                QMp  <- NA_real_    # need this in case QMp cannot be calculated below
                QMdf <- NA_integer_ # need this in case X is not of full rank
 
@@ -365,7 +366,7 @@ anova.rma <- function(object, object2, btt, X, att, Z, rhs, adjust, digits, refi
 
             } else {
 
-               ### ddf calculation
+               # ddf calculation
 
                if (is.element(x$test, c("knha","adhoc","t"))) {
                   if (length(x$ddf) == 1L) {
@@ -381,7 +382,7 @@ anova.rma <- function(object, object2, btt, X, att, Z, rhs, adjust, digits, refi
                   ddf <- rep(NA_integer_, m)
                }
 
-               ### specification of the right-hand side
+               # specification of the right-hand side
 
                if (missing(rhs)) {
                   rhs <- rep(0, m)
@@ -391,7 +392,7 @@ anova.rma <- function(object, object2, btt, X, att, Z, rhs, adjust, digits, refi
                      stop(mstyle$stop(paste0("Length of 'rhs' (", length(rhs), ") does not match the number of linear combinations (", m, ").")))
                }
 
-               ### test of individual hypotheses
+               # test of individual hypotheses
 
                Xb  <- X %*% x$beta - rhs
                vXb <- X %*% x$vb %*% t(X)
@@ -405,18 +406,18 @@ anova.rma <- function(object, object2, btt, X, att, Z, rhs, adjust, digits, refi
                   pval <- 2*pnorm(abs(zval), lower.tail=FALSE)
                }
 
-               ### omnibus test of all hypotheses (only possible if 'X' is of full rank)
+               # omnibus test of all hypotheses (only possible if 'X' is of full rank)
 
-               QM   <- NA_real_    # need this in case QMp cannot be calculated below
+               QM   <- NA_real_    # need this in case QM cannot be calculated below
                QMp  <- NA_real_    # need this in case QMp cannot be calculated below
                QMdf <- NA_integer_ # need this in case X is not of full rank
 
                if (rankMatrix(X) == m) {
 
-                  ### use try(), since this could fail: this could happen when the var-cov matrix of the
-                  ### fixed effects has been estimated using robust() -- 'vb' is then only guaranteed to
-                  ### be positive semidefinite, so for certain linear combinations, vXb could be singular
-                  ### (see Cameron & Miller, 2015, p. 326)
+                  # use try(), since this could fail: this could happen when the var-cov matrix of the
+                  # fixed effects was estimated using robust() -- 'vb' is then only guaranteed to be
+                  # positive semidefinite, so for certain linear combinations, vXb could be singular
+                  # (see Cameron & Miller, 2015, p. 326)
 
                   QM <- try(as.vector(t(Xb) %*% chol2inv(chol(vXb)) %*% Xb), silent=TRUE)
 
@@ -436,7 +437,7 @@ anova.rma <- function(object, object2, btt, X, att, Z, rhs, adjust, digits, refi
 
             }
 
-            ### create a data frame with each row specifying the linear combination tested
+            # create a data frame with each row specifying the linear combination tested
 
             hyp <- rep("", m)
             for (j in seq_len(m)) {
@@ -459,9 +460,9 @@ anova.rma <- function(object, object2, btt, X, att, Z, rhs, adjust, digits, refi
             colnames(hyp) <- ""
             rownames(hyp) <- paste0(seq_len(m), ":") # add '1:', '2:', ... as row names
 
-            ### abbreviate some hyp elements
+            # abbreviate some 'hyp' elements
 
-            if (.isTRUE(ddd$abbrev)) {
+            if (isTRUE(ddd$abbrev)) {
                hyp[,1] <- gsub("factor(", "", hyp[,1], fixed=TRUE)
                hyp[,1] <- gsub(")", "", hyp[,1], fixed=TRUE)
             }
@@ -477,8 +478,8 @@ anova.rma <- function(object, object2, btt, X, att, Z, rhs, adjust, digits, refi
 
    } else {
 
-      ### if 'object' and 'object2' have been specified, can use function to
-      ### do model comparisons via a likelihood ratio test (and fit indices)
+      # if 'object' and 'object2' were specified, can use the function to
+      # do model comparisons via a likelihood ratio test (and fit indices)
 
       if (!inherits(object2, "rma"))
          stop(mstyle$stop("Argument 'object2' must be an object of class \"rma\"."))
@@ -494,26 +495,27 @@ anova.rma <- function(object, object2, btt, X, att, Z, rhs, adjust, digits, refi
 
       test <- .chkddd(ddd$test, "LRT", match.arg(ddd$test, c("LRT", "Wald")))
 
-      ### get df value (NULL if not specified)
+      # get the 'df' value; can be used to adjust the degrees of freedom (i.e., number of
+      # parameters) of the full model given via 'object1' (NULL if not specified); see [a]
 
       df <- ddd$df
 
-      ### assume 'object' is the full model and 'object2' the reduced model
+      # assume 'object' is the full model and 'object2' is the reduced model
 
       model.f <- object
       model.r <- object2
 
-      ### number of parameters in the models
+      # number of parameters in the models
 
       parms.f <- model.f$parms
       parms.r <- model.r$parms
 
-      ### check if they have the same number of parameters
+      # check if they have the same number of parameters
 
       if (is.null(df) && parms.f == parms.r)
-         stop(mstyle$stop("Models have the same number of parameters. LRT not meaningful."))
+         stop(mstyle$stop("Models have the same number of parameters."))
 
-      ### if parms.f < parms.r, then let 'object' be the reduced model and 'object2' the full model (only do this if 'df' is not specified)
+      # if parms.f < parms.r, then let 'object' be the reduced model and 'object2' be the full model (but only do this if 'df' was not specified)
 
       if (is.null(df) && parms.f < parms.r) {
          model.f <- object2
@@ -522,9 +524,7 @@ anova.rma <- function(object, object2, btt, X, att, Z, rhs, adjust, digits, refi
          parms.r <- model.r$parms
       }
 
-      ### check if models are based on the same data (TODO: also check for same weights?)
-      ### note: using as.vector() to strip attributes/names, as.matrix() to make both V matrices non-sparse, and
-      ###       isTRUE(all.equal()) because conversion to non-sparse can introduce some negligible discrepancies
+      # check if models are based on the same data (TODO: also check for the same weights?)
 
       if (inherits(object, "rma.uni")) {
          if (!identical(model.f$chksumyi, model.r$chksumyi) || !identical(model.f$chksumvi, model.r$chksumvi))
@@ -547,27 +547,27 @@ anova.rma <- function(object, object2, btt, X, att, Z, rhs, adjust, digits, refi
 
       }
 
-      ### for Wald-type test, both models should be fitted using the same method
+      # for Wald-type tests, both models must have been fitted using the same method
 
       if (test == "Wald" && (model.f$method != model.r$method))
          stop(mstyle$stop("Full and reduced model must use the same 'method' for the model fitting."))
 
-      ### for LRTs, reduced model may use method="FE/EE/CE" and full model method="(RE)ML" but the other way around is not allowed
+      # for LRTs, the reduced model may use method="FE/EE/CE" and the full model method="(RE)ML" but not the other way around
 
       if (is.element(model.f$method, c("FE","EE","CE")) && !is.element(model.r$method, c("FE","EE","CE")))
          stop(mstyle$stop("Full model uses a fixed- and reduced model uses a random/mixed-effects model."))
 
-      ### but have to check for a ML/REML mismatch
+      # but have to check for a ML/REML mismatch
 
       if ((model.f$method == "ML" && model.r$method == "REML") || model.r$method == "ML" && model.f$method == "REML")
          stop(mstyle$stop(paste0("Mismatch between the use of ", model.f$method, " and ", model.r$method, " estimation in the full versus reduced model.")))
 
-      ### for LRTs, using anything besides ML/REML is strictly speaking incorrect
+      # for LRTs, using anything besides ML/REML is strictly speaking incorrect
 
       if (test == "LRT" && (!is.element(model.f$method, c("FE","EE","CE","ML","REML")) || !is.element(model.r$method, c("FE","EE","CE","ML","REML"))))
          warning(mstyle$warning("LRTs should be based on ML/REML estimation."), call.=FALSE)
 
-      ### for LRTs based on REML estimation, check if fixed effects differ
+      # for LRTs based on REML estimation, check if the fixed effects differ
 
       if (test == "LRT" && model.f$method == "REML" && !identical(model.f$chksumX, model.r$chksumX)) {
          if (refit) {
@@ -600,17 +600,17 @@ anova.rma <- function(object, object2, btt, X, att, Z, rhs, adjust, digits, refi
          }
       }
 
-      ### in this case, one could consider just taking the ML deviances, but this
-      ### is really ad-hoc; there is some theory in Welham & Thompson (1997) about
-      ### LRTs for fixed effects when using REML estimation, but this involves
-      ### additional work
+      # one could also consider just taking the ML deviances, but this is really ad-hoc;
+      # there is some theory in Welham & Thompson (1997) about LRTs for fixed effects
+      # when using REML estimation, but this seems to involve additional work
 
-      ### could do even more checks for cases where the models are clearly not nested
+      if (test == "LRT" && !identical(model.f$chksumX, model.r$chksumX) && !.is.nested(model.f$X, model.r$X))
+         warning(mstyle$warning("The models being compared appear not to be nested."), call.=FALSE)
 
       ######################################################################
 
-      ### for 'rma.uni' objects, calculate pseudo R^2 value (based on the
-      ### proportional reduction in tau^2) comparing full vs. reduced model
+      # for 'rma.uni' objects, calculate the pseudo R^2 value (based on the
+      # proportional reduction in tau^2) comparing the full vs. reduced model
 
       if (inherits(object, "rma.uni") && !inherits(object, "rma.ls") && !inherits(object, "rma.gen")) {
          if (is.element(model.f$method, c("FE","EE","CE"))) {
@@ -644,7 +644,7 @@ anova.rma <- function(object, object2, btt, X, att, Z, rhs, adjust, digits, refi
          R2 <- NA_real_
       }
 
-      ### for 'rma.uni' objects, extract tau^2 estimates
+      # for 'rma.uni' objects, extract the tau^2 estimates
 
       if (inherits(object, "rma.uni") && !inherits(object, "rma.ls") && !inherits(object, "rma.gen")) {
          tau2.f <- model.f$tau2
@@ -659,7 +659,7 @@ anova.rma <- function(object, object2, btt, X, att, Z, rhs, adjust, digits, refi
          if (is.null(df)) {
             parms.diff <- parms.f - parms.r
          } else {
-            parms.f <- parms.f + df
+            parms.f <- parms.f + df # [a]
             parms.diff <- df
          }
 
@@ -677,7 +677,7 @@ anova.rma <- function(object, object2, btt, X, att, Z, rhs, adjust, digits, refi
 
          }
 
-         ### set LRT to 0 if LRT < 0 (this should not happen, but could due to numerical issues)
+         # set LRT to 0 if LRT < 0 (this should not happen, but could be due to numerical issues)
 
          LRT[LRT < 0] <- 0
 

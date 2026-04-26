@@ -27,7 +27,7 @@ add=x$add, to=x$to, transf, targs, pch=21, psize, plim=c(0.5,3.5), col, bg, lty,
    if (length(to) == 2L)  # for rma.mh and rma.peto objects (1st 'to' value applies to the individual outcomes)
       to <- to[1]
 
-   if (!is.element(to, c("all","only0","if0all","none")))
+   if (!is.character(to) || length(to) != 1 || is.na(to) || !is.element(to, c("all","only0","if0all","none")))
       stop(mstyle$stop("Unknown 'to' argument specified."))
 
    .start.plot()
@@ -381,7 +381,7 @@ add=x$add, to=x$to, transf, targs, pch=21, psize, plim=c(0.5,3.5), col, bg, lty,
 
    ### add grid (and redraw box)
 
-   if (.isTRUE(grid)) {
+   if (isTRUE(grid)) {
       grid(col=gridcol)
       lbox(...)
    }
@@ -401,12 +401,34 @@ add=x$add, to=x$to, transf, targs, pch=21, psize, plim=c(0.5,3.5), col, bg, lty,
 
    ### add legend
 
-   if (is.logical(legend) && isTRUE(legend))
-      lpos <- ifelse(intrcpt > 0, "bottomright", "topleft")
+   lopts <- list(x      = ifelse(intrcpt > 0, "bottomright", "topleft"),
+                 y      = NULL,
+                 inset  = 0.01,
+                 cex    = 1,
+                 pt.cex = 2.5)
 
-   if (is.character(legend)) {
-      lpos <- legend
+   if (is.list(legend)) {
+
+      # replace defaults with any user-defined values
+      lopts.pos <- pmatch(names(legend), names(lopts))
+      lopts[c(na.omit(lopts.pos))] <- legend[!is.na(lopts.pos)]
+
+      # rescale pt.cex based on cex (if pt.cex was not specified)
+      if (!is.null(legend$cex) && is.null(legend$pt.cex))
+         lopts$pt.cex <- lopts$pt.cex * lopts$cex
+
       legend <- TRUE
+
+   } else {
+
+      if (is.character(legend)) {
+         lopts$x <- legend
+         legend <- TRUE
+      } else {
+         if (!is.logical(legend))
+            stop(mstyle$stop("Argument 'legend' must either be logical, a string, or a list."), call.=FALSE)
+      }
+
    }
 
    if (legend) {
@@ -425,8 +447,9 @@ add=x$add, to=x$to, transf, targs, pch=21, psize, plim=c(0.5,3.5), col, bg, lty,
       sel <- c(lty != "blank" & lty != 0, ci, pi)
 
       if (any(sel)) {
-         legend(lpos, inset=0.01, bg=.coladj(par("bg"), dark=0, light=0), pch=lpch[sel],
-                pt.cex=2.5, pt.lwd=0, pt.bg=lpt.bg[sel], lty=llty[sel], legend=ltxt[sel])
+         legend(x=lopts$x, y=lopts$y, inset=lopts$inset, bg=.coladj(par("bg"), dark=0, light=0),
+                pch=lpch[sel], pt.cex=lopts$pt.cex, pt.lwd=0, pt.bg=lpt.bg[sel],
+                lty=llty[sel], legend=ltxt[sel], cex=lopts$cex)
       }
 
    }

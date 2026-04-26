@@ -8,8 +8,11 @@ bldiag <- function(..., order) {
    if (length(mlist)==1L && is.list(mlist[[1]]))
       mlist <- unlist(mlist, recursive=FALSE)
 
+   ### turn sparse matrices into regular ones
+   mlist <- lapply(mlist, function(x) if (inherits(x, "sparseMatrix")) as.matrix(x) else x)
+
    ### make sure each element is a matrix (so that bldiag(matrix(1, nrow=3, ncol=3), 2) also works)
-   mlist <- lapply(mlist, function(x) if (inherits(x, "matrix")) x else diag(x, nrow=length(x), ncol=length(x)))
+   mlist <- lapply(mlist, function(x) if (inherits(x, "matrix")) x else .diag(x))
 
    ### find any ?x0 or 0x? matrices
    is00 <- sapply(mlist, function(x) any(dim(x) == c(0L,0L)))
@@ -51,6 +54,9 @@ bldiag <- function(..., order) {
       }
       out[sort.vec, sort.vec] <- out
    }
+
+   if (any(sapply(mlist, function(x) inherits(x, "vcovmat"))))
+      class(out) <- c("vcovmat", class(out))
 
    return(out)
 

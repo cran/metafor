@@ -16,19 +16,19 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, vlong=FALSE, append=TRUE, 
                               "MPRD","MPRR","MPOR","MPORC","MPPETO","MPORM",       # - measures for matched pairs data
                               "IRR","IRD","IRSD",                                  # two-group person-time data measures
                               "MD","SMD","SMDH","ROM",                             # two-group mean/SD measures
-                              "CVR","VR",                                          # coefficient of variation ratio, variability ratio
+                              "VR","CVR",                                          # variability ratio, coefficient of variation ratio
                               "RPB","RBIS","D2OR","D2ORN","D2ORL",                 # - transformations to r_PB, r_BIS, and log(OR)
                               "COR","UCOR","ZCOR",                                 # correlations (raw and r-to-z transformed)
                               "PCOR","ZPCOR","SPCOR",                              # partial and semi-partial correlations
                               "R2","ZR2","R2F","ZR2F",                             # coefficient of determination (raw and r-to-z transformed)
                               "PR","PLN","PLO","PRZ","PAS","PFT",                  # single proportions (and transformations thereof)
                               "IR","IRLN","IRS","IRFT",                            # single-group person-time data (and transformations thereof)
-                              "MN","SMN","MNLN","CVLN","SDLN",                     # mean, single-group standardized mean, log(mean), log(CV), log(SD),
-                              "MC","SMCC","SMCR","SMCRH","ROMC","CVRC","VRC",      # raw/standardized mean change, log(ROM), CVR, and VR for dependent samples
+                              "MN","SMN","MNLN","SDLN","CVLN",                     # mean, single-group standardized mean, log(mean), log(SD), log(CV)
+                              "MC","SMCC","SMCR","SMCRH","ROMC","VRC","CVRC",      # raw/standardized mean change, log(ROM), VR, and CVR for dependent samples
                               "ARAW","AHW","ABT")))                                # alpha (and transformations thereof)
       stop(mstyle$stop("Unknown 'measure' specified."))
 
-   if (is.element(measure, c("CVR","VR","PCOR","ZPCOR","SPCOR","R2","ZR2","R2F","ZR2F","CVLN","SDLN","VRC")))
+   if (is.element(measure, c("VR","CVR","PCOR","ZPCOR","SPCOR","R2","ZR2","R2F","ZR2F","SDLN","CVLN","VRC")))
       stop(mstyle$stop("Function not available for this outcome measure."))
 
    na.act <- getOption("na.action")
@@ -36,10 +36,10 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, vlong=FALSE, append=TRUE, 
    if (!is.element(na.act, c("na.omit", "na.exclude", "na.fail", "na.pass")))
       stop(mstyle$stop("Unknown 'na.action' specified under options()."))
 
-   if (!is.element(to, c("all","only0","if0all","none")))
+   if (!is.character(to) || length(to) != 1 || is.na(to) || !is.element(to, c("all","only0","if0all","none")))
       stop(mstyle$stop("Unknown 'to' argument specified."))
 
-   ### check if data argument has been specified
+   ### check if the 'data' argument was specified
 
    if (missing(data))
       data <- NULL
@@ -658,7 +658,7 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, vlong=FALSE, append=TRUE, 
          data <- .getsubset(data, subset)
    }
 
-   ### check if study labels are unique; if not, make them unique
+   ### check if the study labels are unique; if not, make them unique
 
    if (anyDuplicated(slab))
       slab <- .make.unique(slab)

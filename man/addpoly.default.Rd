@@ -21,8 +21,8 @@
    \item{rows}{vector to specify the rows (or more generally, the positions) for plotting the polygons (defaults is \code{-1}). Can also be a single value to specify the row of the first polygon (the remaining polygons are then plotted below this starting row). When \code{predstyle} is not \code{"line"}, can also be a vector of two numbers, the first for the position of the polygon, the second for the position of the prediction interval/distribution.}
    \item{level}{optional numeric value between 0 and 100 to specify the confidence interval level (see \link[=misc-options]{here} for details).}
    \item{annotate}{optional logical to specify whether annotations should be added to the plot for the polygons that are drawn.}
-   \item{predstyle}{character string to specify the style of the prediction interval (either \code{"line"} (the default), \code{"bar"}, \code{"shade"}, or \code{"dist"}; the last three only when adding a single polygon). Can be abbreviated.}
-   \item{predlim}{optional argument to specify the limits of the prediction distribution when \code{predstyle="dist"}.}
+   \item{predstyle}{character string to specify the style of the prediction interval (either \code{"line"} (the default), \code{"polygon"}, \code{"bar"}, \code{"shade"}, or \code{"dist"}; the last three only when adding a single polygon). Can be abbreviated.}
+   \item{predlim}{optional argument to specify the limits of the predictive distribution when \code{predstyle="dist"}.}
    \item{digits}{optional integer to specify the number of decimal places to which the annotations should be rounded.}
    \item{width}{optional integer to manually adjust the width of the columns for the annotations.}
    \item{mlab}{optional character vector of the same length as \code{x} giving labels for the polygons that are drawn.}
@@ -43,7 +43,7 @@
 
    To use the function, one should specify the values at which the polygons should be drawn (via the \code{x} argument) together with the corresponding variances (via the \code{vi} argument) or with the corresponding standard errors (via the \code{sei} argument). Alternatively, one can specify the values at which the polygons should be drawn together with the corresponding confidence interval bounds (via the \code{ci.lb} and \code{ci.ub} arguments). Optionally, one can also specify the bounds of the corresponding prediction interval bounds via the \code{pi.lb} and \code{pi.ub} arguments. If the latter are specified, then they are added by default as lines around the summary polygons. When adding a single polygon to the plot, one can also use the \code{predstyle} argument to change the way the prediction interval is visualized (see \code{\link{forest.rma}} for details).
 
-   If unspecified, arguments \code{level}, \code{annotate}, \code{digits}, \code{width}, \code{transf}, \code{atransf}, \code{targs}, \code{efac} (only if the forest plot was created with \code{\link{forest.rma}}), \code{fonts}, \code{cex}, \code{annosym}, and \code{textpos} are automatically set equal to the same values that were used when creating the forest plot.
+   If unspecified, arguments \code{level}, \code{annotate}, \code{digits}, \code{width}, \code{transf}, \code{atransf}, \code{targs}, \code{efac}, \code{fonts}, \code{cex}, \code{annosym}, and \code{textpos} are automatically set equal to the same values that were used when creating the forest plot.
 }
 \author{
    Wolfgang Viechtbauer (\email{wvb@metafor-project.org}, \url{https://www.metafor-project.org}).

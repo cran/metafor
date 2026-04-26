@@ -36,7 +36,7 @@ influence.rma.uni <- function(model, digits, progbar=FALSE, ...) {
    if (!measure == "cooks.distance" && inherits(model, "robust.rma"))
       stop(mstyle$stop("Method not available for objects of class \"robust.rma\"."))
 
-   if (.isTRUE(ddd$time))
+   if (isTRUE(ddd$time))
       time.start <- proc.time()
 
    if (!is.null(ddd[["code1"]]))
@@ -67,7 +67,7 @@ influence.rma.uni <- function(model, digits, progbar=FALSE, ...) {
 
    if (x$weighted) {
       if (!is.null(x$weights)) {
-         A <- diag(x$weights, nrow=x$k, ncol=x$k)
+         A <- .diag(x$weights)
          stXAX <- .invcalc(X=x$X, W=A, k=x$k)
          H <- x$X %*% stXAX %*% t(x$X) %*% A
       }
@@ -130,10 +130,10 @@ influence.rma.uni <- function(model, digits, progbar=FALSE, ...) {
          if (is.null(x$weights)) {
             dffits[i] <- (pred.full[i] - delpred[i]) / sqrt(res$s2w * hat[i] * (tau2.del[i] + x$vi[i]))
          } else {
-            dffits[i] <- (pred.full[i] - delpred[i]) / sqrt(res$s2w * diag(H %*% diag(tau2.del[i] + x$vi, nrow=x$k, ncol=x$k) %*% t(H)))[i]
+            dffits[i] <- (pred.full[i] - delpred[i]) / sqrt(res$s2w * diag(H %*% .diag(tau2.del[i] + x$vi) %*% t(H)))[i]
          }
       } else {
-         dffits[i] <- (pred.full[i] - delpred[i]) / sqrt(res$s2w * diag(H %*% diag(tau2.del[i] + x$vi, nrow=x$k, ncol=x$k) %*% t(H)))[i]
+         dffits[i] <- (pred.full[i] - delpred[i]) / sqrt(res$s2w * diag(H %*% .diag(tau2.del[i] + x$vi) %*% t(H)))[i]
       }
 
       #dffits[i]  <- (pred.full[i] - delpred[i]) / sqrt(vdelpred[i])
@@ -142,12 +142,12 @@ influence.rma.uni <- function(model, digits, progbar=FALSE, ...) {
 
       if (x$weighted) {
          if (is.null(x$weights)) {
-            vb.del <- .invcalc(X=x$X, W=diag(1/(x$vi+tau2.del[i]), nrow=x$k, ncol=x$k), k=x$k)
+            vb.del <- .invcalc(X=x$X, W=.diag(1/(x$vi+tau2.del[i])), k=x$k)
          } else {
-            vb.del <- tcrossprod(stXAX,x$X) %*% A %*% diag(x$vi+tau2.del[i], nrow=x$k, ncol=x$k) %*% A %*% x$X %*% stXAX
+            vb.del <- tcrossprod(stXAX,x$X) %*% A %*% .diag(x$vi+tau2.del[i]) %*% A %*% x$X %*% stXAX
          }
       } else {
-         vb.del <- tcrossprod(stXX,x$X) %*% diag(x$vi+tau2.del[i], nrow=x$k, ncol=x$k) %*% x$X %*% stXX
+         vb.del <- tcrossprod(stXX,x$X) %*% .diag(x$vi+tau2.del[i]) %*% x$X %*% stXX
       }
 
       ### compute DFBETA and DFBETAS
@@ -286,7 +286,7 @@ influence.rma.uni <- function(model, digits, progbar=FALSE, ...) {
 
    }
 
-   if (.isTRUE(ddd$time)) {
+   if (isTRUE(ddd$time)) {
       time.end <- proc.time()
       .print.time(unname(time.end - time.start)[3])
    }

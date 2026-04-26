@@ -17,10 +17,10 @@ data, rho, phi, rvars, checkpd=TRUE, nearpd=FALSE, sparse=FALSE, ...) {
 
    .chkdots(ddd, c("nearPD", "retdat"))
 
-   if (.isTRUE(ddd$nearPD))
+   if (isTRUE(ddd$nearPD))
       nearpd <- TRUE
 
-   ### check if data argument has been specified
+   ### check if the 'data' argument was specified
 
    if (missing(data))
       data <- NULL
@@ -514,8 +514,11 @@ data, rho, phi, rvars, checkpd=TRUE, nearpd=FALSE, sparse=FALSE, ...) {
    if (!sparse)
       V <- as.matrix(V)
 
-   if (.isTRUE(ddd$retdat))
+   if (isTRUE(ddd$retdat))
       V <- data.frame(cluster, type, obs, grp1, grp2, time1, time2, w1, w2, vi, V=V)
+
+   if (!inherits(V, "sparseMatrix"))
+      class(V) <- c("vcovmat", "matrix", "array")
 
    return(V)
 

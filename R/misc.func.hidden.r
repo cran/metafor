@@ -182,6 +182,17 @@
 .sqrt <- function(x)
    sapply(x, function(x) if (is.na(x) || x < 0) NA_real_ else sqrt(x))
 
+### function to construct a diagonal matrix that also works if x is a scalar
+
+.diag <- function(x, names=TRUE, dim) {
+   if (missing(dim)) {
+      k <- NROW(x)
+   } else {
+      k <- dim
+   }
+   diag(x, nrow=k, ncol=k, names=names)
+}
+
 ### function to obtain the trace of a matrix
 
 .tr <- function(X)
@@ -199,6 +210,14 @@
 
 .is.intercept <- function(x, eps=1e-08)
    return(all(abs(x - 1) < eps))
+
+### function to check if a formula is simply '~ 1'
+
+.is.tilde1 <- function(f) {
+   # isTRUE(all.equal(f, ~ 1))
+   tt <- terms(f)
+   length(attr(tt, "term.labels")) == 0L && attr(tt, "intercept") == 1L
+}
 
 ### function to test whether a vector is a dummy variable (i.e., consists of only 0s and 1s)
 
@@ -237,6 +256,34 @@
    is.numeric(x)
 }
 
+### function to test if two model matrices are nested
+
+.is.nested <- function(x1, x2) {
+
+   if (nrow(x1) != nrow(x2))
+      return(FALSE)
+
+   # compute ranks manually using qr()
+
+   #qrx1 <- try(qr(x1), silent=TRUE)
+   #qrx2 <- try(qr(x2), silent=TRUE)
+   #qrx1x2 <- try(qr(cbind(x1, x2)), silent=TRUE)
+
+   #if (inherits(qrx1, "try-error") || inherits(qrx2, "try-error") || inherits(qrx1x2, "try-error"))
+   #   return(FALSE)
+
+   #rank.f <- max(qrx1$rank, qrx2$rank)
+   #rank.c <- qrx1x2$rank
+
+   # use Matrix::rankMatrix()
+
+   rank.f <- c(max(rankMatrix(x1), rankMatrix(x2)))
+   rank.c <- c(rankMatrix(cbind(x1,x2)))
+
+   return(identical(rank.f, rank.c))
+
+}
+
 ### sapply()-like function but for matrices that always preserves the matrix dimensions (used in traceplot.rma.uni())
 
 .matapply <- function(x, FUN, targs=NULL) {
@@ -250,7 +297,7 @@
    return(x)
 }
 
-### check if ddd element is NULL; if so, return ifnull, otherwise the ddd element or ifnot
+### check if ddd element is NULL; if so, return ifnull, otherwise return the ddd element or ifnot (if the latter is not NULL)
 
 .chkddd <- function(x, ifnull=NULL, ifnot=NULL) {
 
@@ -684,6 +731,11 @@
 
 }
 
+### get the maximum length of a bunch of vectors
+
+.maxlength <- function(...)
+   max(lengths(list(...), use.names=FALSE))
+
 ############################################################################
 
 ### set axis label (for forest, funnel, and labbe functions)
@@ -846,18 +898,6 @@
                lab <- ifelse(short, "Correlation", "Point-Biserial Correlation Coefficient")
          }
       }
-      if (measure == "CVR") {
-         if (identical(transf.char, "FALSE") && identical(atransf.char, "FALSE")) {
-            lab <- ifelse(short, "Log[CVR]", "Log Coefficient of Variation Ratio")
-         } else {
-            lab <- ifelse(short, lab, "Transformed Log Coefficient of Variation Ratio")
-            funlist <- lapply(list(exp, transf.exp.int), deparse)
-            if (any(sapply(funlist, identical, atransf.char)))
-               lab <- ifelse(short, "CVR", "Coefficient of Variation Ratio (log scale)")
-            if (any(sapply(funlist, identical, transf.char)))
-               lab <- ifelse(short, "CVR", "Coefficient of Variation Ratio")
-         }
-      }
       if (measure == "VR") {
          if (identical(transf.char, "FALSE") && identical(atransf.char, "FALSE")) {
             lab <- ifelse(short, "Log[VR]", "Log Variability Ratio")
@@ -868,6 +908,18 @@
                lab <- ifelse(short, "VR", "Variability Ratio (log scale)")
             if (any(sapply(funlist, identical, transf.char)))
                lab <- ifelse(short, "VR", "Variability Ratio")
+         }
+      }
+      if (measure == "CVR") {
+         if (identical(transf.char, "FALSE") && identical(atransf.char, "FALSE")) {
+            lab <- ifelse(short, "Log[CVR]", "Log Coefficient of Variation Ratio")
+         } else {
+            lab <- ifelse(short, lab, "Transformed Log Coefficient of Variation Ratio")
+            funlist <- lapply(list(exp, transf.exp.int), deparse)
+            if (any(sapply(funlist, identical, atransf.char)))
+               lab <- ifelse(short, "CVR", "Coefficient of Variation Ratio (log scale)")
+            if (any(sapply(funlist, identical, transf.char)))
+               lab <- ifelse(short, "CVR", "Coefficient of Variation Ratio")
          }
       }
       ######################################################################
@@ -991,7 +1043,7 @@
             lab <- ifelse(short, expression(Phi^{-1}*(p)), "Probit Transformed Proportion") # expression(z[p])
          } else {
             lab <- ifelse(short, lab, "Transformed Probit Transformed Proportion")
-            funlist <- lapply(list(pnorm), deparse)
+            funlist <- lapply(list(transf.iprobit, transf.iprobit.int, pnorm), deparse)
             if (any(sapply(funlist, identical, atransf.char)))
                lab <- ifelse(short, "Proportion", "Proportion (probit scale)")
             if (any(sapply(funlist, identical, transf.char)))
@@ -1003,7 +1055,7 @@
             lab <- ifelse(short, expression(arcsin(sqrt(p))), "Arcsine Transformed Proportion")
          } else {
             lab <- ifelse(short, lab, "Transformed Arcsine Transformed Proportion")
-            funlist <- lapply(list(transf.iarcsin), deparse)
+            funlist <- lapply(list(transf.iarcsin, transf.iarcsin.int), deparse)
             if (any(sapply(funlist, identical, atransf.char)))
                lab <- ifelse(short, "Proportion", "Proportion (arcsine scale)")
             if (any(sapply(funlist, identical, transf.char)))
@@ -1088,18 +1140,6 @@
                lab <- ifelse(short, "Mean", "Mean")
          }
       }
-      if (measure == "CVLN") {
-         if (identical(transf.char, "FALSE") && identical(atransf.char, "FALSE")) {
-            lab <- ifelse(short, "Log[CV]", "Log Coefficient of Variation")
-         } else {
-            lab <- ifelse(short, lab, "Transformed Log Coefficient of Variation")
-            funlist <- lapply(list(exp, transf.exp.int), deparse)
-            if (any(sapply(funlist, identical, atransf.char)))
-               lab <- ifelse(short, "CV", "Coefficient of Variation (log scale)")
-            if (any(sapply(funlist, identical, transf.char)))
-               lab <- ifelse(short, "CV", "Coefficient of Variation")
-         }
-      }
       if (measure == "SDLN") {
          if (identical(transf.char, "FALSE") && identical(atransf.char, "FALSE")) {
             lab <- ifelse(short, "Log[SD]", "Log Standard Deviation")
@@ -1110,6 +1150,18 @@
                lab <- ifelse(short, "SD", "Standard Deviation (log scale)")
             if (any(sapply(funlist, identical, transf.char)))
                lab <- ifelse(short, "SD", "Standard Deviation")
+         }
+      }
+      if (measure == "CVLN") {
+         if (identical(transf.char, "FALSE") && identical(atransf.char, "FALSE")) {
+            lab <- ifelse(short, "Log[CV]", "Log Coefficient of Variation")
+         } else {
+            lab <- ifelse(short, lab, "Transformed Log Coefficient of Variation")
+            funlist <- lapply(list(exp, transf.exp.int), deparse)
+            if (any(sapply(funlist, identical, atransf.char)))
+               lab <- ifelse(short, "CV", "Coefficient of Variation (log scale)")
+            if (any(sapply(funlist, identical, transf.char)))
+               lab <- ifelse(short, "CV", "Coefficient of Variation")
          }
       }
       ######################################################################
@@ -1139,18 +1191,6 @@
                lab <- ifelse(short, "Ratio of Means", "Ratio of Means")
          }
       }
-      if (measure == "CVRC") {
-         if (identical(transf.char, "FALSE") && identical(atransf.char, "FALSE")) {
-            lab <- ifelse(short, "Log[CVR]", "Log Coefficient of Variation Ratio")
-         } else {
-            lab <- ifelse(short, lab, "Transformed Log Coefficient of Variation Ratio")
-            funlist <- lapply(list(exp, transf.exp.int), deparse)
-            if (any(sapply(funlist, identical, atransf.char)))
-               lab <- ifelse(short, "CVR", "Coefficient of Variation Ratio (log scale)")
-            if (any(sapply(funlist, identical, transf.char)))
-               lab <- ifelse(short, "CVR", "Coefficient of Variation Ratio")
-         }
-      }
       if (measure == "VRC") {
          if (identical(transf.char, "FALSE") && identical(atransf.char, "FALSE")) {
             lab <- ifelse(short, "Log[VR]", "Log Variability Ratio")
@@ -1161,6 +1201,18 @@
                lab <- ifelse(short, "VR", "Variability Ratio (log scale)")
             if (any(sapply(funlist, identical, transf.char)))
                lab <- ifelse(short, "VR", "Variability Ratio")
+         }
+      }
+      if (measure == "CVRC") {
+         if (identical(transf.char, "FALSE") && identical(atransf.char, "FALSE")) {
+            lab <- ifelse(short, "Log[CVR]", "Log Coefficient of Variation Ratio")
+         } else {
+            lab <- ifelse(short, lab, "Transformed Log Coefficient of Variation Ratio")
+            funlist <- lapply(list(exp, transf.exp.int), deparse)
+            if (any(sapply(funlist, identical, atransf.char)))
+               lab <- ifelse(short, "CVR", "Coefficient of Variation Ratio (log scale)")
+            if (any(sapply(funlist, identical, transf.char)))
+               lab <- ifelse(short, "CVR", "Coefficient of Variation Ratio")
          }
       }
       ######################################################################
@@ -1176,7 +1228,7 @@
             lab <- ifelse(short, expression('Alpha'[HW]), "Transformed Cronbach's alpha")
          } else {
             lab <- ifelse(short, lab, "Transformed Cronbach's alpha")
-            funlist <- lapply(list(transf.iahw), deparse)
+            funlist <- lapply(list(transf.iahw, transf.iahw.int), deparse)
             if (any(sapply(funlist, identical, atransf.char)))
                lab <- ifelse(short, "Alpha", "Cronbach's alpha")
             if (any(sapply(funlist, identical, transf.char)))
@@ -1188,7 +1240,7 @@
             lab <- ifelse(short, expression('Alpha'[B]), "Transformed Cronbach's alpha")
          } else {
             lab <- ifelse(short, lab, "Transformed Cronbach's alpha")
-            funlist <- lapply(list(transf.iabt), deparse)
+            funlist <- lapply(list(transf.iabt, transf.iabt.int), deparse)
             if (any(sapply(funlist, identical, atransf.char)))
                lab <- ifelse(short, "Alpha", "Cronbach's alpha")
             if (any(sapply(funlist, identical, transf.char)))
@@ -1388,7 +1440,7 @@
 
 .print.table <- function(x, mstyle) {
 
-   is.header <- !grepl(" [-0-9]", x)
+   is.header <- !grepl(" [-0-9]", x) & !grepl(" NA ", x, fixed=TRUE)
    #is.header <- !grepl("^\\s*[0-9]", x)
    has.header <- any(is.header)
 
@@ -1404,6 +1456,21 @@
             x[i] <- mstyle$body1(x[i])
          }
       }
+      cat(x[i], "\n")
+   }
+
+}
+
+.print.vcovmat <- function(x, mstyle) {
+
+   for (i in seq_along(x)) {
+      x[i] <- gsub("NA", mstyle$na("NA"), x[i], fixed=TRUE)
+      x[i] <- gsub(" .", mstyle$legend(" ."), x[i], fixed=TRUE)
+      #if (i == 1) {
+      #   x[i] <- mstyle$section(x[i])
+      #} else {
+      #   x[i] <- gsub("^( ?\\S+)", mstyle$section("\\1"), x[i])
+      #}
       cat(x[i], "\n")
    }
 
@@ -1495,11 +1562,11 @@
 
 ### check if x is logical and TRUE/FALSE (NAs and NULL always evaluate as FALSE)
 
-.isTRUE <- function(x)
-   !is.null(x) && is.logical(x) && !is.na(x) && x
-
-.isFALSE <- function(x)
-   !is.null(x) && is.logical(x) && !is.na(x) && !x
+#isTRUE <- function(x)
+#   !is.null(x) && is.logical(x) && !is.na(x) && x
+#
+#isFALSE <- function(x)
+#   !is.null(x) && is.logical(x) && !is.na(x) && !x
 
 # not sure anymore why I implemented these; c(isTRUE(NULL), isTRUE(NA), isFALSE(NULL), isFALSE(NA)) are all FALSE
 
@@ -1721,7 +1788,7 @@
          stop(mstyle$stop("Please install the 'Rsolnp' package to use this optimizer."), call.=FALSE)
    }
 
-   if (optimizer == "constrOptim.nl") {
+   if (is.element(optimizer, c("constrOptim.nl","auglag"))) {
       if (!requireNamespace("alabama", quietly=TRUE))
          stop(mstyle$stop("Please install the 'alabama' package to use this optimizer."), call.=FALSE)
    }
@@ -1786,9 +1853,9 @@
       ctrl.arg <- ", control=optcontrol"
    }
 
-   if (optimizer == "constrOptim.nl") {
+   if (is.element(optimizer, c("constrOptim.nl","auglag"))) {
       par.arg <- "par"
-      optimizer <- "alabama::constrOptim.nl"
+      optimizer <- paste0("alabama::", optimizer)
       if ("control.outer" %in% names(optcontrol)) {
          # can specify 'control.outer' to be passed to constrOptim.nl(), but when using
          # the 'method' argument, must escape " or use ' for this to work; for example:
@@ -1825,7 +1892,7 @@
 
 }
 
-.chkconv <- function(optimizer, opt.res, optcontrol, fun, verbose) {
+.chkconv <- function(optimizer, opt.res, optcontrol, fun, verbose, paronly=TRUE) {
 
    mstyle <- .get.mstyle()
 
@@ -1842,7 +1909,7 @@
    if (optimizer == "lbfgsb3c::lbfgsb3c" && is.null(opt.res$convergence)) # special provision for lbfgsb3c in case 'convergence' is missing
       opt.res$convergence <- -99
 
-   if (is.element(optimizer, c("optim","constrOptim","nlminb","dfoptim::hjk","dfoptim::nmk","lbfgsb3c::lbfgsb3c","subplex::subplex","BB::BBoptim","Rsolnp::solnp","alabama::constrOptim.nl","optimx::Rcgmin","optimx:Rvmmin","optimParallel::optimParallel")) && opt.res$convergence != 0)
+   if (is.element(optimizer, c("optim","constrOptim","nlminb","dfoptim::hjk","dfoptim::nmk","lbfgsb3c::lbfgsb3c","subplex::subplex","BB::BBoptim","Rsolnp::solnp","alabama::constrOptim.nl","alabama::auglag","optimx::Rcgmin","optimx:Rvmmin","optimParallel::optimParallel")) && opt.res$convergence != 0)
       stop(mstyle$stop(paste0("Optimizer (", optimizer, ") did not achieve convergence (convergence = ", opt.res$convergence, ").")), call.=FALSE)
 
    if (is.element(optimizer, c("dfoptim::mads")) && opt.res$convergence > optcontrol$tol)
@@ -1872,7 +1939,22 @@
    if (optimizer=="Rsolnp::solnp")
       opt.res$par <- opt.res$pars
 
-   return(opt.res$par)
+   ### copy function value to 'value'
+
+   if (is.element(optimizer, c("nlminb", "nloptr::nloptr")))
+      opt.res$value <- opt.res$objective
+   if (is.element(optimizer, c("minqa::uobyqa","minqa::newuoa","minqa::bobyqa")))
+      opt.res$value <- opt.res$fval
+   if (optimizer=="nlm")
+      opt.res$value <- opt.res$minimum
+   if (optimizer=="Rsolnp::solnp")
+      opt.res$value <- tail(opt.res$values, 1)
+
+   if (paronly) {
+      return(opt.res$par)
+   } else {
+      return(opt.res)
+   }
 
 }
 
@@ -2063,5 +2145,9 @@
    }
 
 }
+
+############################################################################
+
+.trapezoid <- function(x,y) sum(diff(x)*(y[-1]+y[-length(y)]))/2
 
 ############################################################################

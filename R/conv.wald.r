@@ -52,7 +52,7 @@ conv.wald <- function(out, ci.lb, ci.ub, zval, pval, n, data, include,
             yi.name <- attr(x, "yi.names")[1] # take the first entry to be the yi variable
          } else {                             # if not, see if 'yi' is in the object and assume that is the yi variable
             if (!is.element("yi", names(x)))
-               stop(mstyle$stop("Cannot determine name of the 'yi' variable."))
+               stop(mstyle$stop("Cannot determine the name of the 'yi' variable."))
             yi.name <- "yi"
          }
 
@@ -60,7 +60,7 @@ conv.wald <- function(out, ci.lb, ci.ub, zval, pval, n, data, include,
             vi.name <- attr(x, "vi.names")[1] # take the first entry to be the vi variable
          } else {                             # if not, see if 'vi' is in the object and assume that is the vi variable
             if (!is.element("vi", names(x)))
-               stop(mstyle$stop("Cannot determine name of the 'vi' variable."))
+               stop(mstyle$stop("Cannot determine the name of the 'vi' variable."))
             vi.name <- "vi"
          }
 
@@ -105,7 +105,7 @@ conv.wald <- function(out, ci.lb, ci.ub, zval, pval, n, data, include,
    if (!.equal.length(out, ci.lb, ci.ub, zval, pval, n))
       stop(mstyle$stop("Supplied data vectors are not all of the same length."))
 
-   k <- max(length(out), length(ci.lb), length(ci.ub), length(zval), length(pval), length(n))
+   k <- .maxlength(out, ci.lb, ci.ub, zval, pval, n)
 
    if (is.null(out))
       out <- rep(NA_real_, k)
@@ -191,7 +191,7 @@ conv.wald <- function(out, ci.lb, ci.ub, zval, pval, n, data, include,
 
    ### convert Wald-type CIs to sampling variances
 
-   vi <- ((ci.ub-ci.lb)/(2*crit))^2
+   vi <- ifelse(is.na(ci.lb), ((ci.ub-out)/crit)^2, ((ci.ub-ci.lb)/(2*crit))^2)
 
    ### check if yi is about halfway between CI bounds
 
@@ -231,7 +231,7 @@ conv.wald <- function(out, ci.lb, ci.ub, zval, pval, n, data, include,
    ### note: if both (ci.lb,ci.ub) and zval/pval is available, then this favors
    ### the back-calculation based on (ci.lb,ci.ub) which seems reasonable
 
-   ### TODO: could consider checking if the back-calculated vi's differs in this case
+   ### TODO: could consider checking if the back-calculated vi's differ in this case
    ### (or if x$vi is already available)
 
    ### replace missing x$vi values

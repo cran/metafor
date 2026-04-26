@@ -199,9 +199,9 @@
          Z.G1 <- cbind(rep(1,k))
       } else {
          if (sparse) {
-            Z.G1 <- sparse.model.matrix(~ mf.g[[1]] - 1)
+            Z.G1 <- sparse.model.matrix(~ 0 + mf.g[[1]])
          } else {
-            Z.G1 <- model.matrix(~ mf.g[[1]] - 1)
+            Z.G1 <- model.matrix(~ 0 + mf.g[[1]])
          }
       }
 
@@ -231,9 +231,9 @@
       Z.G2 <- cbind(rep(1,k))
    } else {
       if (sparse) {
-         Z.G2 <- sparse.model.matrix(~ mf.g[[nvars]] - 1)
+         Z.G2 <- sparse.model.matrix(~ 0 + mf.g[[nvars]])
       } else {
-         Z.G2 <- model.matrix(~ mf.g[[nvars]] - 1)
+         Z.G2 <- model.matrix(~ 0 + mf.g[[nvars]])
       }
    }
 
@@ -861,8 +861,8 @@
                        withS, withG, withH,
                        struct, g.levels.r, h.levels.r, g.values, h.values,
                        sparse, cholesky, nearpd, vctransf, vccov, vccon,
-                       verbose, digits, REMLf,
-                       dofit=FALSE, hessian=FALSE, optbeta=FALSE, lambda=0, intercept=TRUE) {
+                       verbose, digits, REMLf, mfmaxit=Inf,
+                       dofit=FALSE, hessian=FALSE, optbeta=FALSE, lambda1=0, lambda2=0, intercept=TRUE) {
 
    mstyle <- .get.mstyle()
 
@@ -886,6 +886,8 @@
 
       #if (any(is.nan(sigma2)))
       #   return(Inf)
+
+      #sigma2[is.nan(sigma2)] <- 0
 
       ### set really small sigma2 values equal to 0 (anything below .Machine$double.eps*10 is essentially 0)
       sigma2 <- ifelse(sigma2 <= .Machine$double.eps*10, 0, sigma2)
@@ -1025,13 +1027,13 @@
             beta <- matrix(stXWX %*% crossprod(X,W) %*% Y, ncol=1)
          beta  <- ifelse(is.na(beta.arg), beta, beta.arg)
          RSS   <- as.vector(t(Y - X %*% beta) %*% W %*% (Y - X %*% beta))
-         if (optbeta && lambda > 0) {
+         if (optbeta && (lambda1 > 0 || lambda2 > 0)) {
             if (intercept) {
-               RSS <- RSS + c(lambda * crossprod(beta[-1]))
-               #RSS <- RSS + c(lambda * sum(abs(beta[-1])))
+               RSS <- RSS + c(lambda1 * sum(abs(beta[-1])) + lambda2 * crossprod(beta[-1]))
+               #RSS <- RSS + c(lambda1 * sum(abs(beta[-1])) + lambda2 * sum(abs(beta[-1])))
             } else {
-               RSS <- RSS + c(lambda * crossprod(beta))
-               #RSS <- RSS + c(lambda * sum(abs(beta)))
+               RSS <- RSS + c(lambda1 * sum(abs(beta)) + lambda2 * crossprod(beta))
+               #RSS <- RSS + c(lambda1 * sum(abs(beta)) + lambda2 * sum(abs(beta)))
             }
          }
          vb    <- stXWX
@@ -1042,11 +1044,11 @@
          beta  <- matrix(stXAX %*% crossprod(X,A) %*% Y, ncol=1)
          beta  <- ifelse(is.na(beta.arg), beta, beta.arg)
          RSS   <- as.vector(t(Y - X %*% beta) %*% W %*% (Y - X %*% beta))
-         if (optbeta && lambda > 0) {
+         if (optbeta && (lambda1 > 0 || lambda2 > 0)) {
             if (intercept) {
-               RSS <- RSS + c(lambda * crossprod(beta[-1]))
+               RSS <- RSS + c(lambda1 * sum(abs(beta[-1])) + lambda2 * crossprod(beta[-1]))
             } else {
-               RSS <- RSS + c(lambda * crossprod(beta))
+               RSS <- RSS + c(lambda1 * sum(abs(beta)) + lambda2 * crossprod(beta))
             }
          }
          vb    <- matrix(stXAX %*% t(X) %*% A %*% M %*% A %*% X %*% stXAX, nrow=pX, ncol=pX)
@@ -1091,16 +1093,17 @@
 
    }
 
+   iteration <- .getfromenv("iteration", default=NULL)
+
+   if (isTRUE(iteration > mfmaxit))
+      stop(mstyle$stop(paste0("Maximum number of iterations (mfmaxit=", mfmaxit, ") reached.")), call.=FALSE)
+
    if ((vctransf && verbose) || (!vctransf && (verbose > 1))) {
 
       if (!hessian) {
 
-         iteration <- .getfromenv("iteration", default=NULL)
-
-         if (!is.null(iteration)) {
+         if (!is.null(iteration))
             cat(mstyle$verbose(paste0("Iteration ", formatC(iteration, width=5, flag="-", format="f", digits=0), " ")))
-            try(assign("iteration", iteration+1, envir=.metafor), silent=TRUE)
-         }
 
       }
 
@@ -1118,6 +1121,8 @@
       cat("\n")
 
    }
+
+   try(assign("iteration", iteration+1, envir=.metafor), silent=TRUE)
 
    return(-1 * c(llval))
 

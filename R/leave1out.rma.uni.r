@@ -30,16 +30,16 @@ leave1out.rma.uni <- function(x, cluster, digits, transf, targs, progbar=FALSE, 
    if (missing(targs))
       targs <- NULL
 
-   funlist <- lapply(list(transf.exp.int, transf.ilogit.int, transf.ztor.int, transf.exp.mode, transf.ilogit.mode, transf.ztor.mode), deparse)
+   funlist <- lapply(list(transf.exp.int, transf.ilogit.int, transf.iprobit.int, transf.ztor.int, transf.iarcsin.int, transf.iahw.int, transf.iabt.int, transf.dtocles.int, transf.exp.mode, transf.ilogit.mode, transf.iprobit.mode, transf.ztor.mode, transf.iarcsin.mode, transf.iahw.mode, transf.iabt.mode), deparse)
 
    if (is.null(targs) && any(sapply(funlist, identical, deparse(transf))) && inherits(x, c("rma.uni","rma.glmm")) && length(x$tau2 == 1L))
-      targs <- c(tau2=x$tau2)
+      targs <- list(tau2=x$tau2)
 
    ddd <- list(...)
 
    .chkdots(ddd, c("time", "code1", "code2"))
 
-   if (.isTRUE(ddd$time))
+   if (isTRUE(ddd$time))
       time.start <- proc.time()
 
    #########################################################################
@@ -200,7 +200,7 @@ leave1out.rma.uni <- function(x, cluster, digits, transf, targs, progbar=FALSE, 
    out$digits <- digits
    out$transf <- transf
 
-   if (.isTRUE(ddd$time)) {
+   if (isTRUE(ddd$time)) {
       time.end <- proc.time()
       .print.time(unname(time.end - time.start)[3])
    }

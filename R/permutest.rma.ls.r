@@ -17,24 +17,24 @@ permutest.rma.ls <- function(x, exact=FALSE, iter=1000, btt=x$btt, att=x$att, pr
 
    .chkdots(ddd, c("tol", "time", "seed", "verbose", "permci", "skip.beta", "skip.alpha", "fixed", "code1", "code2", "code3", "code4"))
 
-   if (!is.null(ddd$tol)) # in case user specified comptol in the old manner
+   if (!is.null(ddd$tol)) # in case the user specified comptol in the old manner
       comptol <- ddd$tol
 
-   fixed <- .chkddd(ddd$fixed, FALSE, .isTRUE(ddd$fixed))
+   fixed <- .chkddd(ddd$fixed, FALSE, isTRUE(ddd$fixed))
 
-   if (.isTRUE(ddd$permci))
+   if (isTRUE(ddd$permci))
       warning(mstyle$warning("Permutation-based CIs for location-scale models not currently available."), call.=FALSE)
 
-   if (.isTRUE(ddd$time))
+   if (isTRUE(ddd$time))
       time.start <- proc.time()
 
-   if (.isTRUE(ddd$skip.beta)) {
+   if (isTRUE(ddd$skip.beta)) {
       skip.beta <- TRUE
    } else {
       skip.beta <- FALSE
    }
 
-   if (.isTRUE(ddd$skip.alpha)) {
+   if (isTRUE(ddd$skip.alpha)) {
       skip.alpha <- TRUE
    } else {
       skip.alpha <- FALSE
@@ -81,7 +81,7 @@ permutest.rma.ls <- function(x, exact=FALSE, iter=1000, btt=x$btt, att=x$att, pr
       btt <- .set.btt(btt, x$p, x$int.incl, colnames(x$X), fixed=fixed)
       att <- .set.btt(att, x$q, x$Z.int.incl, colnames(x$Z), fixed=fixed)
 
-      args <- list(yi=x$yi, vi=x$vi, weights=x$weights, mods=X, intercept=FALSE, scale=x$Z, link=x$link, method=x$method,
+      args <- list(yi=x$yi, vi=x$vi, weights=x$weights, mods=x$X, intercept=FALSE, scale=x$Z, link=x$link, method=x$method,
                    weighted=x$weighted, test=x$test, level=x$level, btt=btt, att=att, alpha=ifelse(x$alpha.fix, x$alpha, NA),
                    optbeta=x$optbeta, beta=ifelse(x$beta.fix, x$beta, NA), control=x$control)
       x <- try(suppressWarnings(.do.call(rma.uni, args)), silent=!isTRUE(ddd$verbose))
@@ -738,7 +738,7 @@ permutest.rma.ls <- function(x, exact=FALSE, iter=1000, btt=x$btt, att=x$att, pr
    if (!skip.alpha)
       names(out$zval.alpha.perm) <- names(out$alpha.perm) <- colnames(x$Z)
 
-   if (.isTRUE(ddd$time)) {
+   if (isTRUE(ddd$time)) {
       time.end <- proc.time()
       .print.time(unname(time.end - time.start)[3])
    }

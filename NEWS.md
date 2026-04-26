@@ -1,3 +1,37 @@
+# metafor 5.0-1 (2026-04-26)
+
+- argument `legend` can now be a list for `funnel()`, `labbe()`, `regplot()`, and `plot.permutest.rma.uni()` for more control over the look of the legend
+
+- added `hetvar` argument to `predict.rma()` to manually specify the amount of heterogeneity for computing prediction intervals
+
+- fixed how `intercept` (when unspecified) is set in `predict.rma.ls()` when using `newscale`
+
+- renamed `pi.type` argument to `predtype` (which is more consistent with the `predstyle` argument), but `pi.type` will continue to work for backwards compatibility
+
+- added `predstyle="polygon"` as another option for drawing the prediction interval (as a polygon like for the pooled estimate)
+
+- can now use the `preddist` argument in `forest.rma()` and `addpoly.default()` to provide the predictive distribution directly
+
+- fixed `permutest.rma.ls()` not running when `btt` and/or `att` is specified
+
+- `ranktest()` now also provides a p-value when the number of estimates is large
+
+- added various methods and a `predict.matreg()` function for `matreg` objects; can now also specify a formula for the `y` argument of `matreg()`
+
+- `deltamethod()` can now also do the second-order delta method
+
+- for measures `"ROM"`, `"ROMC"`, `"CVR"`, and `"CVRC"`, the bias corrections based on the second-order Taylor expansions are now applied by default in `escalc()` (use `correct=FALSE` to switch this off)
+
+- all `addpoly()` functions now respect `alim` and `olim` as set by `forest()`
+
+- some functions (e.g., `vcalc()` and `rcalc()`) can now return variance-covariances matrices as objects of class `"vcovmat"`; these are printed nicely with `print.vcovmat()`
+
+- `rma()` nows calculates R^2 as long as a standard random-effects model is nested within the fitted mixed-effects model
+
+- `conv.2x2()` can now reconstruct tables for diagnostic studies based on diagnostic statistics (sensitivity, specificity, positive predictive value, negative predictive value)
+
+- added some more transformation functions
+
 # metafor 4.8-0 (2025-01-28)
 
 - some general changes to the various `forest()` functions: argument `header` is now `TRUE` by default, the y-axis is now created with `yaxs="i"`, and the y-axis limits have been tweaked slightly in accordance
@@ -52,7 +86,7 @@
 
 - `escalc()` gains a `correct` argument (to specify whether a bias correction should be applied)
 
-- added transformation function `transf.dtoovl()` (for transforming standardized mean differences to overlapping coefficient values) and ``transf.dtocliffd()` (for transforming standardized mean differences to Cliff's delta values)
+- added transformation function `transf.dtoovl()` (for transforming standardized mean differences to overlapping coefficient values) and `transf.dtocliffd()` (for transforming standardized mean differences to Cliff's delta values)
 
 - `qqnorm.rma.uni()` now shades the pseudo confidence region; all `qqnorm()` functions gain a `grid` argument
 

@@ -45,7 +45,7 @@ lty, lwd, col, level=99.99, refline=0, ...) {
 
    ddd <- list(...)
 
-   ### set defaults or get onlyo1, addyi, and addvi arguments
+   ### set defaults or get 'onlyo1', 'addyi', and 'addvi' arguments
 
    onlyo1 <- .chkddd(ddd$onlyo1, FALSE)
    addyi  <- .chkddd(ddd$addyi,  TRUE)
@@ -55,7 +55,7 @@ lty, lwd, col, level=99.99, refline=0, ...) {
 
    #########################################################################
 
-   ### check if data argument has been specified
+   ### check if the 'data' argument was specified
 
    if (missing(data))
       data <- NULL
@@ -335,10 +335,9 @@ lty, lwd, col, level=99.99, refline=0, ...) {
    }
 
    if (scale) {
-      trapezoid <- function(x,y) sum(diff(x)*(y[-1]+y[-length(y)]))/2
       lls.sum <- rep(NA_real_, k)
       for (i in seq_len(k)) {
-         lls.sum[i] <- trapezoid(xs[!is.na(lls[i,])], lls[i,!is.na(lls[i,])])
+         lls.sum[i] <- .trapezoid(xs[!is.na(lls[i,])], lls[i,!is.na(lls[i,])])
          lls[i,] <- lls[i,] / lls.sum[i]
       }
    }

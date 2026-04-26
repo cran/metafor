@@ -60,8 +60,6 @@ test_that("results for the random-effects model are correct.", {
 
 test_that("profile plot for tau^2 can be drawn.", {
 
-   expect_equivalent(TRUE, TRUE) # avoid 'Empty test' message
-
    skip_on_cran()
 
    res <- rma(yi, vi, data=dat, method="ML")
@@ -76,8 +74,6 @@ test_that("profile plot for tau^2 can be drawn.", {
 })
 
 test_that("forest plot of observed log(OR)s and corresponding BLUPs can be drawn.", {
-
-   expect_equivalent(TRUE, TRUE) # avoid 'Empty test' message
 
    skip_on_cran()
 
@@ -131,8 +127,6 @@ test_that("the prediction interval is correct.", {
 
 test_that("L'Abbe plot can be drawn.", {
 
-   expect_equivalent(TRUE, TRUE) # avoid 'Empty test' message
-
    skip_on_cran()
 
    res <- rma(measure="OR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat, method="EE")
@@ -174,6 +168,20 @@ test_that("results for the bivariate model are correct.", {
    expect_equivalent(res$tau2, c(2.4073, 1.4314), tolerance=.tol[["var"]])
    expect_equivalent(res$rho, .9467, tolerance=.tol[["cor"]])
 
+   ### amount of heterogeneity in log odds ratios
+   tmp <- res$tau2[1] + res$tau2[2] - 2*res$rho*sqrt(res$tau2[1]*res$tau2[2])
+   expect_equivalent(tmp, 0.3241, tolerance=.tol[["var"]])
+   tmp <- sum(res$tau2) - 2*res$G[1,2]
+   expect_equivalent(tmp, 0.3241, tolerance=.tol[["var"]])
+
+   ### estimated odds ratio with prediction interval
+   pred <- predict(res, newmods=c(-1,1), hetvar=sum(res$tau2) - 2*res$G[1,2], transf=exp)
+   expect_equivalent(pred$pred,  0.4782, tolerance=.tol[["pred"]])
+   expect_equivalent(pred$ci.lb, 0.3362, tolerance=.tol[["ci"]])
+   expect_equivalent(pred$ci.ub, 0.6801, tolerance=.tol[["ci"]])
+   expect_equivalent(pred$pi.lb, 0.1484, tolerance=.tol[["ci"]])
+   expect_equivalent(pred$pi.ub, 1.5407, tolerance=.tol[["ci"]])
+
    res <- rma.mv(yi, vi, mods = ~ group, random = ~ group | trial, struct="UN", data=dat.long, method="ML", sparse=.sparse)
 
    ### compare with results on pages 604-605 (in text)
@@ -185,10 +193,6 @@ test_that("results for the bivariate model are correct.", {
    expect_equivalent(tmp$pred,  0.4782, tolerance=.tol[["pred"]])
    expect_equivalent(tmp$ci.lb, 0.3362, tolerance=.tol[["ci"]])
    expect_equivalent(tmp$ci.ub, 0.6801, tolerance=.tol[["ci"]])
-
-   ### amount of heterogeneity in log odds ratios
-   tmp <- res$tau2[1] + res$tau2[2] - 2*res$rho*sqrt(res$tau2[1]*res$tau2[2])
-   expect_equivalent(tmp, 0.3241, tolerance=.tol[["var"]])
 
    ### regression of log(odds)_EXP on log(odds)_CON
    res <- rma.mv(yi, vi, mods = ~ 0 + group, random = ~ group | trial, struct="UN", data=dat.long, method="ML", sparse=.sparse)

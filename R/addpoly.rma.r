@@ -17,7 +17,7 @@ transf, atransf, targs, efac, col, border, lty, fonts, cex, ...) {
    if (missing(predstyle)) {
       predstyle <- "line"
    } else {
-      predstyle <- match.arg(predstyle, c("line", "bar", "shade", "dist"))
+      predstyle <- match.arg(predstyle, c("line", "polygon", "bar", "shade", "dist"))
       addpred <- TRUE
    }
 
@@ -28,7 +28,7 @@ transf, atransf, targs, efac, col, border, lty, fonts, cex, ...) {
       digits <- .getfromenv("forest", "digits", default=2)
 
    if (missing(width))
-      width <- .getfromenv("forest", "width", default=NULL)
+      width <- .getfromenv("forest", "width")
 
    if (missing(mlab))
       mlab <- NULL
@@ -40,10 +40,10 @@ transf, atransf, targs, efac, col, border, lty, fonts, cex, ...) {
       atransf <- .getfromenv("forest", "atransf", default=FALSE)
 
    if (missing(targs))
-      targs <- .getfromenv("forest", "targs", default=NULL)
+      targs <- .getfromenv("forest", "targs")
 
    if (missing(efac))
-      efac <- .getfromenv("forest", "efac", default=1)
+      efac <- .getfromenv("forest", "efac")
 
    if (missing(col))
       col <- par("fg")
@@ -55,19 +55,20 @@ transf, atransf, targs, efac, col, border, lty, fonts, cex, ...) {
       lty <- "dotted"
 
    if (missing(fonts))
-      fonts <- .getfromenv("forest", "fonts", default=NULL)
+      fonts <- .getfromenv("forest", "fonts")
 
    if (missing(cex))
-      cex <- .getfromenv("forest", "cex", default=NULL)
+      cex <- .getfromenv("forest", "cex")
 
    ddd <- list(...)
 
    if (!is.null(ddd$addcred))
       addpred <- ddd$addcred
 
-   pi.type <- .chkddd(ddd$pi.type, "default")
+   pi.type  <- .chkddd(ddd$pi.type, "default", tolower(ddd$pi.type))
+   predtype <- .chkddd(ddd$predtype, pi.type, tolower(ddd$predtype))
 
-   predres <- predict(x, level=level, pi.type=pi.type)
+   predres <- predict(x, level=level, predtype=predtype)
 
    ci.lb <- predres$ci.lb
    ci.ub <- predres$ci.ub

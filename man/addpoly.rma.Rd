@@ -15,8 +15,8 @@
    \item{level}{numeric value between 0 and 100 to specify the confidence interval level (see \link[=misc-options]{here} for details). The default is to take the value from the object.}
    \item{annotate}{optional logical to specify whether annotations for the pooled estimate should be added to the plot.}
    \item{addpred}{logical to specify whether the prediction interval should be added to the plot (the default is \code{FALSE}).}
-   \item{predstyle}{character string to specify the style of the prediction interval (either \code{"line"}, \code{"bar"}, \code{"shade"}, or \code{"dist"}). Can be abbreviated. Setting this argument automatically sets \code{addpred=TRUE}.}
-   \item{predlim}{optional argument to specify the limits of the prediction distribution when \code{predstyle="dist"}.}
+   \item{predstyle}{character string to specify the style of the prediction interval (either \code{"line"}, \code{"polygon"}, \code{"bar"}, \code{"shade"}, or \code{"dist"}). Can be abbreviated. Setting this argument automatically sets \code{addpred=TRUE}.}
+   \item{predlim}{optional argument to specify the limits of the predictive distribution when \code{predstyle="dist"}.}
    \item{digits}{optional integer to specify the number of decimal places to which the annotations should be rounded.}
    \item{width}{optional integer to manually adjust the width of the columns for the annotations.}
    \item{mlab}{optional character string giving a label for the pooled estimate. If unspecified, the function sets a default label.}
@@ -34,7 +34,7 @@
 \details{
    The function can be used to add a four-sided polygon, sometimes called a summary \sQuote{diamond}, to an existing forest plot created with the \code{\link{forest}} function. The polygon shows the pooled estimate (with its confidence interval bounds) based on an equal- or a random-effects model. Using this function, pooled estimates based on different types of models can be shown in the same plot. Also, pooled estimates based on a subgrouping of the studies can be added to the plot this way. See \sQuote{Examples}.
 
-   If unspecified, arguments \code{annotate}, \code{digits}, \code{width}, \code{transf}, \code{atransf}, \code{targs}, \code{efac} (only if the forest plot was created with \code{\link{forest.rma}}), \code{fonts}, \code{cex}, \code{annosym}, and \code{textpos} are automatically set equal to the same values that were used when creating the forest plot.
+   If unspecified, arguments \code{annotate}, \code{digits}, \code{width}, \code{transf}, \code{atransf}, \code{targs}, \code{efac}, \code{fonts}, \code{cex}, \code{annosym}, and \code{textpos} are automatically set equal to the same values that were used when creating the forest plot.
 }
 \author{
    Wolfgang Viechtbauer (\email{wvb@metafor-project.org}, \url{https://www.metafor-project.org}).

@@ -1,4 +1,4 @@
-deltamethod <- function(x, vcov, fun, level, H0=0, digits) {
+deltamethod <- function(x, vcov, fun, order=1, level, H0=0, digits) {
 
    mstyle <- .get.mstyle()
 
@@ -10,6 +10,9 @@ deltamethod <- function(x, vcov, fun, level, H0=0, digits) {
 
    if (!is.function(fun))
       stop(mstyle$stop("Argument 'fun' must be a function."))
+
+   if (!is.element(order, c(1,2)))
+      stop(mstyle$stop("Argument 'order' must be equal to 1 or 2."))
 
    #########################################################################
 
@@ -73,11 +76,8 @@ deltamethod <- function(x, vcov, fun, level, H0=0, digits) {
 
    #########################################################################
 
-   if (.is.vector(vcov) || nrow(vcov) == 1L || ncol(vcov) == 1L) {
-      vcov <- as.vector(vcov)
-      p <- length(vcov)
-      vcov <- diag(vcov, nrow=p, ncol=p)
-   }
+   if (.is.vector(vcov) || nrow(vcov) == 1L || ncol(vcov) == 1L)
+      vcov <- .diag(as.vector(vcov))
 
    if (!.is.square(vcov))
       stop(mstyle$stop("Argument 'vcov' must be a square matrix."))
@@ -104,7 +104,7 @@ deltamethod <- function(x, vcov, fun, level, H0=0, digits) {
    } else {
 
       if (length(args) != p)
-         stop(mstyle$stop(paste0("Number of function arguments (", length(args), ") do not match the number of coefficients (", p, ").")))
+         stop(mstyle$stop(paste0("Number of function arguments (", length(args), ") does not match the number of coefficients (", p, ").")))
 
       names(coef) <- args
       coef.transf <- try(do.call(fun, args=as.list(coef)))
@@ -125,6 +125,12 @@ deltamethod <- function(x, vcov, fun, level, H0=0, digits) {
    if (ncol(grad) != p)
       stop(mstyle$stop(paste0("Length of the gradient (", ncol(grad), ") does not match the dimensions of 'vcov' (", pvcov, "x", pvcov, ").")))
 
+   if (order == 2) {
+      Hessian <- try(calculus::hessian(fun, var=coef, accuracy=4, drop=TRUE))
+      if (inherits(Hessian, "try-error"))
+         stop(mstyle$stop("Error when computing the Hessian."))
+   }
+
    q <- length(coef.transf)
 
    if (length(H0) == 1L)
@@ -137,7 +143,11 @@ deltamethod <- function(x, vcov, fun, level, H0=0, digits) {
 
    level <- .level(level)
 
-   vcov.transf <- grad %*% vcov %*% t(grad)
+   if (order == 1) {
+      vcov.transf <- grad %*% vcov %*% t(grad)
+   } else {
+      vcov.transf <- grad %*% vcov %*% t(grad) + 1/2 * .tr(Hessian %*% vcov %*% vcov %*% Hessian)
+   }
 
    rownames(vcov.transf) <- colnames(vcov.transf) <- names(coef.transf)
 

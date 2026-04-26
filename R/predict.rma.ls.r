@@ -1,5 +1,5 @@
 predict.rma.ls <- function(object, newmods, intercept, addx=FALSE, newscale, addz=FALSE,
-level, adjust=FALSE, digits, transf, targs, vcov=FALSE, ...) {
+                           level, adjust=FALSE, digits, transf, targs, vcov=FALSE, ...) {
 
    #########################################################################
 
@@ -16,6 +16,8 @@ level, adjust=FALSE, digits, transf, targs, vcov=FALSE, ...) {
 
    mf <- match.call()
 
+   # so that pairmat() works when the model object is not specified
+
    if (any(grepl("pairmat(", as.character(mf), fixed=TRUE))) {
       try(assign("pairmat", object, envir=.metafor), silent=TRUE)
       on.exit(suppressWarnings(rm("pairmat", envir=.metafor)))
@@ -25,7 +27,6 @@ level, adjust=FALSE, digits, transf, targs, vcov=FALSE, ...) {
       newmods <- NULL
 
    if (missing(intercept)) {
-      intercept <- x$intercept
       int.spec <- FALSE
    } else {
       int.spec <- TRUE
@@ -56,9 +57,11 @@ level, adjust=FALSE, digits, transf, targs, vcov=FALSE, ...) {
 
    ddd <- list(...)
 
-   .chkdots(ddd, c("pi.type", "newvi"))
+   .chkdots(ddd, c("pi.type", "predtype", "newvi"))
 
-   pi.type <- .chkddd(ddd$pi.type, "default", tolower(ddd$pi.type))
+   pi.type  <- .chkddd(ddd$pi.type, "default", tolower(ddd$pi.type))
+   predtype <- .chkddd(ddd$predtype, pi.type, tolower(ddd$predtype))
+   predtype <- match.arg(predtype, c("default","simple","riley","t"))
 
    if (!is.null(newmods) && x$int.only && !(x$int.only && identical(newmods, 1)))
       stop(mstyle$stop("Cannot specify new moderator values for models without moderators."))
@@ -72,7 +75,7 @@ level, adjust=FALSE, digits, transf, targs, vcov=FALSE, ...) {
 
    if (!is.null(newmods)) {
 
-      ### if newmods has been specified
+      # if newmods has been specified
 
       if (!(.is.vector(newmods) || inherits(newmods, "matrix")))
          stop(mstyle$stop(paste0("Argument 'newmods' should be a vector or matrix, but is of class '", class(newmods), "'.")))
@@ -98,7 +101,7 @@ level, adjust=FALSE, digits, transf, targs, vcov=FALSE, ...) {
             X.new <- cbind(newmods)                              #
             rnames <- rownames(newmods)                          #
          }                                                       #
-         ### allow matching of terms by names (note: only possible if all columns in X.new and x$X have colnames)
+         # allow matching of terms by names (note: only possible if all columns in X.new and x$X have colnames)
          if (!is.null(colnames(X.new)) && all(colnames(X.new) != "") && !is.null(colnames(x$X)) && all(colnames(x$X) != "")) {
             colnames.mod <- colnames(x$X)
             if (x$int.incl)
@@ -133,9 +136,12 @@ level, adjust=FALSE, digits, transf, targs, vcov=FALSE, ...) {
       if (inherits(X.new[1,1], "character"))
          stop(mstyle$stop(paste0("Argument 'newmods' should only contain numeric variables.")))
 
-      ### if the user has specified newmods and an intercept was included in the original model, add the intercept to X.new
-      ### but user can also decide to remove the intercept from the predictions with intercept=FALSE
-      ### one special case: when the location model is an intercept-only model, one can set newmods=1 to obtain the predicted intercept
+      # if the user has specified newmods and an intercept was included in the original model, add the intercept to X.new
+      # but user can also decide to remove the intercept from the predictions with intercept=FALSE
+      # one special case: when the location model is an intercept-only model, one can set newmods=1 to obtain the predicted intercept
+
+      if (missing(intercept))
+         intercept <- x$intercept
 
       if (!singlemod && ncol(X.new) == x$p) {
 
@@ -190,7 +196,7 @@ level, adjust=FALSE, digits, transf, targs, vcov=FALSE, ...) {
             if (is.null(rnames))                                 #
                rnames <- rownames(newscale)                      #
          }                                                       #
-         ### allow matching of terms by names (note: only possible if all columns in Z.new and x$Z have colnames)
+         # allow matching of terms by names (note: only possible if all columns in Z.new and x$Z have colnames)
          if (!is.null(colnames(Z.new)) && all(colnames(Z.new) != "") && !is.null(colnames(x$Z)) && all(colnames(x$Z) != "")) {
             colnames.mod <- colnames(x$Z)
             if (x$Z.int.incl)
@@ -225,10 +231,13 @@ level, adjust=FALSE, digits, transf, targs, vcov=FALSE, ...) {
       if (inherits(Z.new[1,1], "character"))
          stop(mstyle$stop(paste0("Argument 'newscale' should only contain numeric variables.")))
 
-      ### if the user has specified newscale and an intercept was included in the original model, add the intercept to Z.new
-      ### but user can also decide to remove the intercept from the predictions with intercept=FALSE (only when predicting log(tau^2))
-      ### one special case: when the scale model is an intercept-only model, one can set newscale=1 to obtain the predicted intercept
-      ### (which can be converted to tau^2 with transf=exp when using a log link)
+      # if the user has specified newscale and an intercept was included in the original model, add the intercept to Z.new
+      # but user can also decide to remove the intercept from the predictions with intercept=FALSE (only when predicting log(tau^2))
+      # one special case: when the scale model is an intercept-only model, one can set newscale=1 to obtain the predicted intercept
+      # (which can be converted to tau^2 with transf=exp when using a log link)
+
+      if (missing(intercept))
+         intercept <- x$Z.intercept
 
       if (!singlescale && ncol(Z.new) == x$q) {
 
@@ -320,17 +329,17 @@ level, adjust=FALSE, digits, transf, targs, vcov=FALSE, ...) {
          }
 
          if (length(tau2.f) != k.new)
-            stop(mstyle$stop(paste0("Dimensions of 'newmods' (", k.new, ") do not match dimensions of newscale (", length(tau2.f), ").")))
+            stop(mstyle$stop(paste0("Dimensions of 'newmods' (", k.new, ") do not match the dimensions of 'newscale' (", length(tau2.f), ").")))
 
       }
 
    }
 
-   #return(list(k.new=k.new, tau2=x$tau2, gamma2=x$gamma2, tau2.levels=tau2.levels, gamma2.levels=gamma2.levels))
+   #return(list(k.new=k.new, tau2=x$tau2))
 
    #########################################################################
 
-   ### predicted values, SEs, and confidence intervals
+   # predicted values, SEs, and confidence intervals
 
    pred  <- rep(NA_real_, k.new)
    vpred <- rep(NA_real_, k.new)
@@ -381,17 +390,17 @@ level, adjust=FALSE, digits, transf, targs, vcov=FALSE, ...) {
       if (vcov)
          vcovpred <- symmpart(X.new %*% x$vb %*% t(X.new))
 
-      if (pi.type == "simple") {
+      if (predtype == "simple") {
          crit <- qnorm(level/ifelse(adjust, 2*k.new, 2), lower.tail=FALSE)
          vpred <- 0
       }
 
       pi.ddf <- ddf
 
-      if (is.element(pi.type, c("riley","t"))) {
-         if (pi.type == "riley")
+      if (is.element(predtype, c("riley","t"))) {
+         if (predtype == "riley")
             pi.ddf <- x$k - x$p - x$q
-         if (pi.type == "t")
+         if (predtype == "t")
             pi.ddf <- x$k - x$p
          pi.ddf[pi.ddf < 1] <- 1
          crit <- qt(level/ifelse(adjust, 2*k.new, 2), df=pi.ddf, lower.tail=FALSE)
@@ -406,7 +415,7 @@ level, adjust=FALSE, digits, transf, targs, vcov=FALSE, ...) {
             stop(mstyle$stop(paste0("Length of the 'newvi' argument (", length(newvi), ") does not match the number of predicted values (", k.new, ").")))
       }
 
-      ### prediction intervals
+      # prediction intervals
 
       pi.se <- sqrt(vpred + tau2.f + newvi)
       pi.lb <- pred - crit * pi.se
@@ -424,7 +433,7 @@ level, adjust=FALSE, digits, transf, targs, vcov=FALSE, ...) {
 
    #########################################################################
 
-   ### apply transformation function if one has been specified
+   # apply transformation function if one has been specified
 
    if (is.function(transf)) {
       if (is.null(targs)) {
@@ -449,7 +458,7 @@ level, adjust=FALSE, digits, transf, targs, vcov=FALSE, ...) {
       do.transf <- FALSE
    }
 
-   ### make sure order of intervals is always increasing
+   # make sure order of intervals is always increasing
 
    tmp <- .psort(ci.lb, ci.ub)
    ci.lb <- tmp[,1]
@@ -459,7 +468,7 @@ level, adjust=FALSE, digits, transf, targs, vcov=FALSE, ...) {
    pi.lb <- tmp[,1]
    pi.ub <- tmp[,2]
 
-   ### when predicting tau^2 values, set negative tau^2 values and CI bounds to 0
+   # when predicting tau^2 values, set negative tau^2 values and CI bounds to 0
 
    if (!pred.mui && x$link=="identity" && !is.function(transf)) {
       if (any(pred < 0))
@@ -469,7 +478,7 @@ level, adjust=FALSE, digits, transf, targs, vcov=FALSE, ...) {
       ci.ub[ci.ub < 0] <- 0
    }
 
-   ### use study labels from the object when the model has moderators and no new moderators have been specified
+   # use study labels from the object when the model has moderators and no new moderators have been specified
 
    if (pred.mui) {
       if (is.null(newmods)) {
@@ -489,17 +498,17 @@ level, adjust=FALSE, digits, transf, targs, vcov=FALSE, ...) {
       }
    }
 
-   ### add row/colnames to vcovpred
+   # add row/colnames to vcovpred
 
    if (vcov)
       rownames(vcovpred) <- colnames(vcovpred) <- slab
 
-   ### but when predicting just a single value, use "" as study label
+   # but when predicting just a single value, use "" as study label
 
    if (k.new == 1L && is.null(rnames))
       slab <- ""
 
-   ### handle NAs
+   # handle NAs
 
    not.na <- rep(TRUE, k.new)
 
@@ -538,25 +547,25 @@ level, adjust=FALSE, digits, transf, targs, vcov=FALSE, ...) {
 
    }
 
-   ### add X matrix to list
+   # add X matrix to list
 
    if (addx) {
       out$X <- matrix(X.new[not.na,], ncol=x$p)
       colnames(out$X) <- colnames(x$X)
    }
 
-   ### add Z matrix to list
+   # add Z matrix to list
 
    if (addz) {
       out$Z <- matrix(Z.new[not.na,], ncol=x$q)
       colnames(out$Z) <- colnames(x$Z)
    }
 
-   ### add slab values to list
+   # add slab values to list
 
    out$slab <- slab[not.na]
 
-   ### for FE/EE/CE models, remove the columns corresponding to the prediction interval bounds
+   # for FE/EE/CE models, remove the columns corresponding to the prediction interval bounds
 
    if (is.element(x$method, c("FE","EE","CE")) || !pred.mui) {
       out$cr.lb <- NULL
@@ -574,19 +583,27 @@ level, adjust=FALSE, digits, transf, targs, vcov=FALSE, ...) {
       out$ddf <- ddf
 
    if (pred.mui) {
-      if ((x$test != "z" || is.element(pi.type, c("riley","t"))) && pi.type != "simple") {
+      if ((x$test != "z" || is.element(predtype, c("riley","t"))) && predtype != "simple") {
          out$pi.dist <- "t"
          out$pi.ddf <- pi.ddf
       } else {
          out$pi.dist <- "norm"
       }
       out$pi.se <- pi.se
+      attr(out$pi.lb, "level") <- level
+      attr(out$pi.lb, "dist") <- out$pi.dist
+      if (out$pi.dist == "t") {
+         attr(out$pi.lb, "ddf") <- out$pi.ddf
+      }
+      attr(out$pi.lb, "se") <- pi.se
    }
 
    class(out) <- c("predict.rma", "list.rma")
 
    if (vcov & !do.transf) {
       out <- list(pred=out)
+      if (!inherits(vcovpred, "sparseMatrix"))
+         class(vcovpred) <- c("vcovmat", class(vcovpred))
       out$vcov <- vcovpred
    }
 

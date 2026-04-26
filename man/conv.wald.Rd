@@ -6,7 +6,8 @@
 }
 \usage{
 conv.wald(out, ci.lb, ci.ub, zval, pval, n, data, include,
-          level=95, transf, check=TRUE, var.names, append=TRUE, replace="ifna", \dots)
+          level=95, transf, check=TRUE,
+          var.names, append=TRUE, replace="ifna", \dots)
 }
 \arguments{
    \item{out}{vector with the observed effect sizes or outcomes.}
@@ -56,8 +57,8 @@ dat
       Study 2 does not report the counts (or sufficient information to reconstruct them), but the odds ratio and a corresponding 95\% confidence interval (CI) directly, as given by variables \code{oddsratio}, \code{lower}, and \code{upper}. The CI is a standard Wald-type CI that was computed on the log scale (and whose bounds were then exponentiated). Then the present function can be used as follows:
 
 \preformatted{
-dat <- conv.wald(out=oddsratio, ci.lb=lower, ci.ub=upper, data=dat, transf=log)
-dat
+dat2 <- conv.wald(out=oddsratio, ci.lb=lower, ci.ub=upper, data=dat, transf=log)
+dat2
 
 #   study cases.trt n.trt cases.plc n.plc oddsratio lower upper      yi     vi
 # 1     1        23   194        38   201        NA    NA    NA -0.5500 0.0818
@@ -70,6 +71,19 @@ dat
 
       By default (i.e., when \code{check=TRUE}), the function carries out a rough check to examine if the point estimate falls (approximately) halfway between the CI bounds (on the transformed scale) for each study for which the conversion was carried out. A warning is issued if there are studies where this is not the case. This may indicate that a particular CI was not a Wald-type CI or was computed on a different scale (in which case the back-calculation above would be inappropriate), but can also arise due to rounding of the reported values (in which case the back-calculation would still be appropriate, albeit possibly a bit inaccurate). Care should be taken when using such back-calculated values in a meta-analysis.
 
+      When the CI bounds are log transformed (as in the example above) and rounded, then using the lower bound in the back-calculation can be more inaccurate than using the upper CI bound and the point estimate for the back-calculation. When the lower CI bounds are not specified or are missing for a study, then the function automatically uses the formula \mjdeqn{v_i = \left(\frac{\text{ci.ub} - \text{yi}}{z_{crit}}\right)^2}{v_i = ((ci.ub - yi) / z_crit)^2} for the back-calculation (after first applying the transformation specified via \code{transf}). In the example above, we could therefore do:
+
+\preformatted{
+dat3 <- conv.wald(out=oddsratio, ci.ub=upper, data=dat, transf=log)
+dat3
+
+#   study cases.trt n.trt cases.plc n.plc oddsratio lower upper      yi     vi
+# 1     1        23   194        38   201        NA    NA    NA -0.5500 0.0818
+# 2     2        NA   183        NA   188      0.64  0.33  1.22 -0.4463 0.1083
+# 3     3         4    46         7    44        NA    NA    NA -0.6864 0.4437}
+
+      In this case, the check that the point estimate falls halfway between the CI bounds is of course skipped.
+
    }
 
    \subsection{Converting Test Statistics and P-Values}{
@@ -78,7 +92,7 @@ dat
 
       A given p-value can be back-transformed into the corresponding test statistic (if it is not already available) with \mjseqn{\text{zval} = \Phi^{-1}(1 - \text{pval}/2)}, where \mjeqn{\Phi^{-1}(\cdot)}{Phi^{-1}(.)} denotes the quantile function (i.e., the inverse of the cumulative distribution function) of a standard normal distribution (i.e., \code{\link{qnorm}}). Then \mjdeqn{v_i = \left(\frac{y_i}{\text{zval}}\right)^2}{v_i = (yi / zval)^2} is used to back-calculate a missing \code{vi} value in the dataset.
 
-      Note that the conversion of a p-value to the corresponding test statistic (which is then converted into sampling variance) as shown above assumes that the exact p-value is reported. If authors only report that the p-value fell below a certain threshold (e.g., \mjseqn{p < .01} or if authors only state that the test was significant -- which typically implies \mjseqn{p < .05}), then a common approach is to use the value of the cutoff reported (e.g., if \mjseqn{p < .01} is reported, then assume \mjseqn{p = .01}), which is conservative (since the actual p-value was below that assumed value by some unknown amount). The conversion will therefore tend to be much less accurate.
+      Note that the conversion of a p-value to the corresponding test statistic (which is then converted into sampling variance) as shown above assumes that the exact p-value is reported. If authors only report that the p-value fell below a certain threshold (e.g., \mjteqn{p < .01}{p \lt .01}{p < .01} or if authors only state that the test was significant -- which typically implies \mjteqn{p < .05}{p \lt .05}{p < .05}), then a common approach is to use the value of the cutoff reported (e.g., if \mjteqn{p < .01}{p \lt .01}{p < .01} is reported, then assume \mjseqn{p = .01}), which is conservative (since the actual p-value was below that assumed value by some unknown amount). The conversion will therefore tend to be much less accurate.
 
       Using the earlier example, suppose that only the odds ratio and the corresponding two-sided p-value from a Wald-type test (whether the log odds ratio differs significantly from zero) is reported for study 2.
 
@@ -98,8 +112,8 @@ dat
       Then the function can be used as follows:
 
 \preformatted{
-dat <- conv.wald(out=oddsratio, pval=pval, data=dat, transf=log)
-dat
+dat4 <- conv.wald(out=oddsratio, pval=pval, data=dat, transf=log)
+dat4
 
 #   study cases.trt n.trt cases.plc n.plc oddsratio pval      yi     vi
 # 1     1        23   194        38   201        NA   NA -0.5500 0.0818
@@ -171,11 +185,12 @@ dat2
 ### in studies 1 and 12, authors reported only the odds ratio and the corresponding p-value
 ### in studies 4 and 9, authors reported only the odds ratio and the corresponding 95\% CI
 
-### use escalc() first
+### use the escalc() function first to compute log odds ratios and corresponding sampling
+### variances for the studies for which we have 2x2 table data
 dat2 <- escalc(measure="OR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat2)
 dat2
 
-### fill in the missing log odds ratios and sampling variances
+### fill in the missing log odds ratios and sampling variances using conv.wald()
 dat2 <- conv.wald(out=or, ci.lb=ci.lb, ci.ub=ci.ub, pval=pval, n=ntot, data=dat2, transf=log)
 dat2
 

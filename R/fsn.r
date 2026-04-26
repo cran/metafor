@@ -44,7 +44,7 @@ fsn <- function(x, vi, sei, subset, data, type, alpha=.05, target,
 
    #########################################################################
 
-   ### check if data argument has been specified
+   ### check if the 'data' argument was specified
 
    if (missing(data))
       data <- NULL
@@ -343,11 +343,6 @@ fsn <- function(x, vi, sei, subset, data, type, alpha=.05, target,
       est  <- tmp$beta[1]
       tau2 <- tmp$tau2
       pval <- tmp$pval
-
-      if (mumiss != 0 && sign(est) == sign(mumiss)) {
-         mumiss <- -mumiss
-         message(mstyle$message("Flipped the sign of 'mumiss'."))
-      }
 
       if (is.null(target)) {
 
