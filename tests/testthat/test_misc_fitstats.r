@@ -26,20 +26,20 @@ test_that("fit statistics are correct for rma.uni().", {
    expect_equivalent(tmp, -2 * sum(dnorm(dat$yi, coef(res1), sqrt(dat$vi+res1$tau2), log=TRUE)) + 2*2, tolerance=.tol[["fit"]])
 
    tmp <- AIC(res1, res2)
-   expect_equivalent(tmp, structure(list(df = c(2, 3), AIC = c(29.3302, 21.3713)), .Names = c("df", "AIC"), row.names = c("res1", "res2"), class = "data.frame"), tolerance=.tol[["fit"]])
+   expect_equivalent(tmp, structure(list(df = c(2, 3), AIC = c(29.3302, 21.3713)), names = c("df", "AIC"), row.names = c("res1", "res2"), class = "data.frame"), tolerance=.tol[["fit"]])
 
    tmp <- BIC(res1)
    expect_equivalent(tmp, 30.4601, tolerance=.tol[["fit"]])
    expect_equivalent(tmp, -2 * sum(dnorm(dat$yi, coef(res1), sqrt(dat$vi+res1$tau2), log=TRUE)) + 2*log(res1$k), tolerance=.tol[["fit"]])
 
    tmp <- BIC(res1, res2)
-   expect_equivalent(tmp, structure(list(df = c(2, 3), BIC = c(30.4601, 23.0662)), .Names = c("df", "BIC"), row.names = c("res1", "res2"), class = "data.frame"), tolerance=.tol[["fit"]])
+   expect_equivalent(tmp, structure(list(df = c(2, 3), BIC = c(30.4601, 23.0662)), names = c("df", "BIC"), row.names = c("res1", "res2"), class = "data.frame"), tolerance=.tol[["fit"]])
 
    tmp <- c(fitstats(res1))
    expect_equivalent(tmp, c(-12.6651, 37.1160, 29.3302, 30.4601, 30.5302), tolerance=.tol[["fit"]])
 
    tmp <- fitstats(res1, res2)
-   expect_equivalent(tmp, structure(list(res1 = c(-12.6651, 37.116, 29.3302, 30.4601, 30.5302), res2 = c(-7.6857, 27.1572, 21.3713, 23.0662, 24.038)), .Names = c("res1", "res2"), row.names = c("logLik:", "deviance:", "AIC:", "BIC:", "AICc:"), class = "data.frame"), tolerance=.tol[["fit"]])
+   expect_equivalent(tmp, structure(list(res1 = c(-12.6651, 37.116, 29.3302, 30.4601, 30.5302), res2 = c(-7.6857, 27.1572, 21.3713, 23.0662, 24.038)), names = c("res1", "res2"), row.names = c("logLik:", "deviance:", "AIC:", "BIC:", "AICc:"), class = "data.frame"), tolerance=.tol[["fit"]])
 
    tmp <- nobs(res1)
    expect_equivalent(tmp, 13)

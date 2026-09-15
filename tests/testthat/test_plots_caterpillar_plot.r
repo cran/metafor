@@ -27,14 +27,12 @@ test_that("plot can be drawn.", {
              xlim=c(-2.5,3.5), ylim=c(-8, 254),
              order=yi,
              slab=NA, annotate=FALSE,
-             efac=0,
+             efac=c(0,1),
              pch=19,
-             col="gray40",
-             psize=2,
+             colci="gray40",
+             psize=2.5,
              cex.lab=1, cex.axis=1,
              lty=c("solid","blank"))
-
-      points(sort(yi), k:1, pch=19, cex=0.5)
 
       addpoly(res, mlab="", cex=1)
       text(-2, -2, "RE Model", pos=4, offset=0, cex=1)

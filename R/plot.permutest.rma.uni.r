@@ -10,6 +10,11 @@ plot.permutest.rma.uni <- function(x, beta, alpha, QM=FALSE, QS=FALSE,
 
    .start.plot()
 
+   if (interactive()) {
+      dev.hold()
+      on.exit(dev.flush(), add=TRUE)
+   }
+
    if (missing(col))
       col <- .coladj(par("bg","fg"), dark=0.3, light=-0.3)
 

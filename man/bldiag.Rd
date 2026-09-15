@@ -11,6 +11,9 @@ bldiag(\dots, order)
    \item{\dots}{individual matrices or a list of matrices.}
    \item{order}{optional argument to specify a variable based on which a square block diagonal matrix should be ordered.}
 }
+\value{
+   A (block diagonal) matrix.
+}
 \author{
    Posted to R-help by Berton Gunter (2 Sep 2005) with some further adjustments by Wolfgang Viechtbauer (\email{wvb@metafor-project.org}, \url{https://www.metafor-project.org}).
 }
@@ -24,7 +27,7 @@ bldiag(\dots, order)
 dat <- dat.berkey1998
 dat
 
-### construct list with the variance-covariance matrices of the observed outcomes for the studies
+### construct list with the variance-covariance matrices of the effect sizes within the studies
 V <- lapply(split(dat[c("v1i","v2i")], dat$trial), as.matrix)
 V
 

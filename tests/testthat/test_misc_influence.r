@@ -62,7 +62,7 @@ test_that("model.matrix() works for rma().", {
    dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
    res <- rma(yi, vi, mods = ~ ablat, data=dat)
 
-   sav <- structure(c(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 44, 55, 42, 52, 13, 44, 19, 13, 27, 42, 18, 33, 33), .Dim = c(13L, 2L), .Dimnames = list(c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13"), c("intrcpt", "ablat")))
+   sav <- structure(c(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 44, 55, 42, 52, 13, 44, 19, 13, 27, 42, 18, 33, 33), dim = c(13L, 2L), dimnames = list(c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13"), c("intrcpt", "ablat")))
 
    expect_equivalent(sav, model.matrix(res))
 
@@ -75,7 +75,7 @@ test_that("hatvalues() works for rma().", {
 
    expect_equivalent(hatvalues(res), c(0.049, 0.1493, 0.0351, 0.3481, 0.2248, 0.2367, 0.064, 0.357, 0.0926, 0.1157, 0.2309, 0.0189, 0.0778), tolerance=.tol[["inf"]])
 
-   sav <- structure(c(0.049, 0.067, 0.0458, 0.0994, 0.1493, 0.0904, 0.0374, 0.0498, 0.0351), .Dim = c(3L, 3L), .Dimnames = list(c("1", "2", "3"), c("1", "2", "3")))
+   sav <- structure(c(0.049, 0.067, 0.0458, 0.0994, 0.1493, 0.0904, 0.0374, 0.0498, 0.0351), dim = c(3L, 3L), dimnames = list(c("1", "2", "3"), c("1", "2", "3")))
    expect_equivalent(hatvalues(res, type="matrix")[1:3,1:3], sav, tolerance=.tol[["inf"]])
 
 })
@@ -87,7 +87,7 @@ test_that("hatvalues() works for rma.mv().", {
 
    expect_equivalent(hatvalues(res), c(0.049, 0.1493, 0.0351, 0.3481, 0.2248, 0.2367, 0.064, 0.357, 0.0926, 0.1157, 0.2309, 0.0189, 0.0778), tolerance=.tol[["inf"]])
 
-   sav <- structure(c(0.049, 0.067, 0.0458, 0.0994, 0.1493, 0.0904, 0.0374, 0.0498, 0.0351), .Dim = c(3L, 3L), .Dimnames = list(c("1", "2", "3"), c("1", "2", "3")))
+   sav <- structure(c(0.049, 0.067, 0.0458, 0.0994, 0.1493, 0.0904, 0.0374, 0.0498, 0.0351), dim = c(3L, 3L), dimnames = list(c("1", "2", "3"), c("1", "2", "3")))
    expect_equivalent(hatvalues(res, type="matrix")[1:3,1:3], sav, tolerance=.tol[["inf"]])
 
 })

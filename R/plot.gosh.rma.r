@@ -42,6 +42,11 @@ xlim, ylim, xhist=TRUE, yhist=TRUE, hh=0.3, breaks, adjust, lwd, labels, ...) {
 
    .start.plot()
 
+   if (interactive()) {
+      dev.hold()
+      on.exit(dev.flush(), add=TRUE)
+   }
+
    lplot  <- function(..., trim) plot(...)
    lpairs <- function(..., trim) pairs(...)
 

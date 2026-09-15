@@ -11,14 +11,14 @@ deltamethod <- function(x, vcov, fun, order=1, level, H0=0, digits) {
    if (!is.function(fun))
       stop(mstyle$stop("Argument 'fun' must be a function."))
 
-   if (!is.element(order, c(1,2)))
-      stop(mstyle$stop("Argument 'order' must be equal to 1 or 2."))
+   if (!is.element(order, c(1,2,3)))
+      stop(mstyle$stop("Argument 'order' must be equal to 1, 2, or 3."))
 
    #########################################################################
 
    if (.is.vector(x)) {
 
-      ### when x is a vector of coefficients
+      # when x is a vector of coefficients
 
       coef <- x
 
@@ -27,7 +27,7 @@ deltamethod <- function(x, vcov, fun, order=1, level, H0=0, digits) {
 
    } else {
 
-      ### when x is not a vector (and then presumably a model object)
+      # when x is not a vector (and then presumably a model object)
 
       coef <- try(coef(x))
 
@@ -76,6 +76,9 @@ deltamethod <- function(x, vcov, fun, order=1, level, H0=0, digits) {
 
    #########################################################################
 
+   if (is.list(vcov))
+      stop(mstyle$stop("Argument 'vcov' is not a matrix."))
+
    if (.is.vector(vcov) || nrow(vcov) == 1L || ncol(vcov) == 1L)
       vcov <- .diag(as.vector(vcov))
 
@@ -117,6 +120,8 @@ deltamethod <- function(x, vcov, fun, order=1, level, H0=0, digits) {
    if (!.is.vector(coef.transf))
       stop(mstyle$stop("Specified function does not return an atomic vector."))
 
+   q <- length(coef.transf)
+
    grad <- try(calculus::derivative(fun, var=coef, drop=FALSE))
 
    if (inherits(grad, "try-error"))
@@ -125,13 +130,41 @@ deltamethod <- function(x, vcov, fun, order=1, level, H0=0, digits) {
    if (ncol(grad) != p)
       stop(mstyle$stop(paste0("Length of the gradient (", ncol(grad), ") does not match the dimensions of 'vcov' (", pvcov, "x", pvcov, ").")))
 
-   if (order == 2) {
+   grad <- array(grad, dim=c(q, p))
+
+   if (order >= 2) {
       Hessian <- try(calculus::hessian(fun, var=coef, accuracy=4, drop=TRUE))
       if (inherits(Hessian, "try-error"))
          stop(mstyle$stop("Error when computing the Hessian."))
+      Hessian <- array(Hessian, dim=c(q, p, p))
    }
 
-   q <- length(coef.transf)
+   if (order == 3) {
+
+      # calculus::derivative(order=3) only returns pure third derivatives; to
+      # obtain the full third-order derivative tensor, including mixed partial
+      # derivatives, we must differentiate with respect to each combination of
+      # variables separately
+
+      Third <- array(NA_real_, dim=c(q, p, p, p))
+
+      for (i in seq_len(p)) {
+         for (j in i:p) {
+            for (k in j:p) {
+               ord <- tabulate(c(i, j, k), nbins=p)
+               val <- try(calculus::derivative(fun, var=coef, order=ord, accuracy=4, drop=TRUE))
+               if (inherits(val, "try-error"))
+                  stop(mstyle$stop("Error when computing the third-derivative tensor."))
+               if (length(val) != q)
+                  stop(mstyle$stop("Incorrect length of the computed third derivatives."))
+               idx <- unique(rbind(c(i,j,k), c(i,k,j), c(j,i,k), c(j,k,i), c(k,i,j), c(k,j,i)))
+               for (r in seq_len(nrow(idx)))
+                  Third[, idx[r,1], idx[r,2], idx[r,3]] <- val
+            }
+         }
+      }
+
+   }
 
    if (length(H0) == 1L)
       H0 <- rep(H0, q)
@@ -143,10 +176,62 @@ deltamethod <- function(x, vcov, fun, order=1, level, H0=0, digits) {
 
    level <- .level(level)
 
-   if (order == 1) {
+   if (order == 1)
       vcov.transf <- grad %*% vcov %*% t(grad)
-   } else {
-      vcov.transf <- grad %*% vcov %*% t(grad) + 1/2 * .tr(Hessian %*% vcov %*% vcov %*% Hessian)
+
+   if (order == 2) {
+
+      #vcov.transf <- grad %*% vcov %*% t(grad) + 1/2 * .tr(Hessian %*% vcov %*% vcov %*% Hessian)
+
+      vcov.transf <- grad %*% vcov %*% t(grad)
+
+      for (a in seq_len(q)) {
+         for (b in a:q) {
+            Ha <- matrix(Hessian[a,,], nrow=p, ncol=p)
+            Hb <- matrix(Hessian[b,,], nrow=p, ncol=p)
+            val <- vcov.transf[a,b] + 1/2 * .tr(Ha %*% vcov %*% Hb %*% vcov)
+            vcov.transf[a,b] <- val
+            vcov.transf[b,a] <- val
+         }
+      }
+
+   }
+
+   if (order == 3) {
+
+      vcov.transf <- matrix(NA_real_, nrow=q, ncol=q)
+
+      u <- matrix(NA_real_, q, p)
+
+      for (a in seq_len(q)) {
+         for (k in seq_len(p)) {
+            u[a,k] <- sum(Third[a,,,k] * vcov)
+         }
+      }
+
+      K3 <- kronecker(vcov, kronecker(vcov, vcov))
+
+      for (a in seq_len(q)) {
+         for (b in a:q) {
+            ga <- grad[a,,drop=FALSE]
+            gb <- grad[b,,drop=FALSE]
+            Ha <- matrix(Hessian[a,,], nrow=p, ncol=p)
+            Hb <- matrix(Hessian[b,,], nrow=p, ncol=p)
+            Ta <- as.vector(Third[a,,,])
+            Tb <- as.vector(Third[b,,,])
+            # linear-linear covariance
+            term11 <- drop(ga %*% vcov %*% t(gb))
+            # quadratic-quadratic covariance
+            term22 <- 1/2 * .tr(Ha %*% vcov %*% Hb %*% vcov)
+            # linear-cubic and cubic-linear covariances
+            term13 <- 1/2 * drop(ga %*% vcov %*% u[b,] + gb %*% vcov %*% u[a,])
+            # cubic-cubic covariance
+            term33 <- drop(crossprod(Ta, K3 %*% Tb)) / 6 + drop(u[a,] %*% vcov %*% u[b,]) / 4
+            vcov.transf[a,b] <- term11 + term22 + term13 + term33
+            vcov.transf[b,a] <- vcov.transf[a,b]
+         }
+      }
+
    }
 
    rownames(vcov.transf) <- colnames(vcov.transf) <- names(coef.transf)

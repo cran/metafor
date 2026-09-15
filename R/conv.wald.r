@@ -16,7 +16,7 @@ conv.wald <- function(out, ci.lb, ci.ub, zval, pval, n, data, include,
       }
    }
 
-   replace <- match.arg(replace, c("ifna","all"))
+   replace <- match.arg(replace, c("ifna","all","complete"))
 
    ### get ... argument and check for extra/superfluous arguments
 
@@ -172,11 +172,12 @@ conv.wald <- function(out, ci.lb, ci.ub, zval, pval, n, data, include,
 
    ### replace missing x$yi values
 
-   if (replace=="ifna") {
+   if (replace=="ifna")
       x[[yi.name]] <- replmiss(x[[yi.name]], out)
-   } else {
+   if (replace=="all")
       x[[yi.name]][!is.na(out)] <- out[!is.na(out)]
-   }
+   if (replace=="complete")
+      x[[yi.name]] <- out
 
    ### replace missing ni attribute values (or add 'ni' attribute if at least one value is not missing)
 
@@ -236,11 +237,12 @@ conv.wald <- function(out, ci.lb, ci.ub, zval, pval, n, data, include,
 
    ### replace missing x$vi values
 
-   if (replace=="ifna") {
+   if (replace=="ifna")
       x[[vi.name]] <- replmiss(x[[vi.name]], vi)
-   } else {
+   if (replace=="all")
       x[[vi.name]][!is.na(vi)] <- vi[!is.na(vi)]
-   }
+   if (replace=="complete")
+      x[[vi.name]] <- vi
 
    #########################################################################
 
@@ -251,7 +253,7 @@ conv.wald <- function(out, ci.lb, ci.ub, zval, pval, n, data, include,
 
    #escall <- paste0("escalc(measure='", measure, "', data=x, yi=", yi.name, ", vi=", vi.name, ", var.names=c('", yi.name, "','", vi.name, "'))")
    #x <- eval(str2lang(escall))
-   x <- escalc(measure=measure, data=x, yi=x[[yi.name]], vi=x[[vi.name]], var.names=c(yi.name,vi.name))
+   x <- escalc(measure=measure, data=x, yi=x[[yi.name]], vi=x[[vi.name]], var.names=c(yi.name,vi.name), cutoff=NA_real_)
 
    if (!append)
       x <- x[,c(yi.name, vi.name)]

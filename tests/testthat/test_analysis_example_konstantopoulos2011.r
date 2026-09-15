@@ -107,7 +107,7 @@ test_that("results are correct for the three-level random-effects model fitted w
    ### CIs for variance components
    sav <- confint(res.ml)
    sav <- round(as.data.frame(sav), 4)
-   expected <- structure(c(0.0651, 0.2551, 0.0327, 0.1809, 0.0222, 0.1491, 0.0163, 0.1276, 0.2072, 0.4552, 0.0628, 0.2507), .Dim = 4:3, .Dimnames = list(c("sigma^2.1", "sigma.1", "sigma^2.2", "sigma.2"), c("estimate", "ci.lb", "ci.ub")))
+   expected <- structure(c(0.0651, 0.2551, 0.0327, 0.1809, 0.0222, 0.1491, 0.0163, 0.1276, 0.2072, 0.4552, 0.0628, 0.2507), dim = 4:3, dimnames = list(c("sigma^2.1", "sigma.1", "sigma^2.2", "sigma.2"), c("estimate", "ci.lb", "ci.ub")))
    expect_equivalent(sav, expected, tolerance=.tol[["var"]])
 
 })

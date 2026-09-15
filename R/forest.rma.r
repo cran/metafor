@@ -3,7 +3,7 @@ annotate=TRUE, addfit=TRUE, addpred=FALSE, predstyle="line", preddist, showweigh
 xlim, alim, olim, ylim, predlim, at, steps=5, level=x$level, refline=0, digits=2L, width,
 xlab, slab, mlab, ilab, ilab.lab, ilab.xpos, ilab.pos, order,
 transf, atransf, targs, rows,
-efac=1, pch, psize, plim=c(0.5,1.5), colout, col, border, shade, colshade,
+efac=1, pch, psize, plim=c(0.5,1.5), colout, colci, col, border, shade, colshade,
 lty, fonts, cex, cex.lab, cex.axis, ...) {
 
    #########################################################################
@@ -34,6 +34,11 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
       stop(mstyle$stop("Use either 'transf' or 'atransf' to specify a transformation (not both)."))
 
    .start.plot()
+
+   if (interactive()) {
+      dev.hold()
+      on.exit(dev.flush(), add=TRUE)
+   }
 
    if (missing(targs))
       targs <- NULL
@@ -70,6 +75,12 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
       colout <- .getx("colout", mf=mf, data=x$data)
    }
 
+   if (missing(colci)) {
+      colci <- colout
+   } else {
+      colci <- .getx("colci", mf=mf, data=x$data)
+   }
+
    if (missing(shade)) {
       shade <- NULL
    } else {
@@ -103,10 +114,10 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
    level <- .level(level)
    predlevel <- level # needed when using preddist and it has pi.lb/pi.ub and level elements
 
-   predstyle <- match.arg(predstyle, c("line", "polygon", "bar", "shade", "dist"))
+   if (is.logical(addpred) && isFALSE(addpred) && !missing(predstyle))
+      addpred <- TRUE # specifying predstyle sets addpred=TRUE automatically
 
-   if (predstyle %in% c("polygon","bar","shade","dist") && isFALSE(addpred))
-      addpred <- TRUE
+   predstyle <- match.arg(predstyle, c("line", "polygon", "bar", "shade", "dist"))
 
    if (missing(predlim))
       predlim <- NULL
@@ -309,16 +320,16 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
 
    xlabfont <- .chkddd(ddd$xlabfont, 1)
 
-   lplot     <- function(..., textpos, addcred, pi.type, predtype, decreasing, clim, rowadj, annosym, tabfig, top, xlabadj, xlabfont, at.lab, preddist) plot(...)
-   labline   <- function(..., textpos, addcred, pi.type, predtype, decreasing, clim, rowadj, annosym, tabfig, top, xlabadj, xlabfont, at.lab, preddist) abline(...)
-   lsegments <- function(..., textpos, addcred, pi.type, predtype, decreasing, clim, rowadj, annosym, tabfig, top, xlabadj, xlabfont, at.lab, preddist) segments(...)
-   laxis     <- function(..., textpos, addcred, pi.type, predtype, decreasing, clim, rowadj, annosym, tabfig, top, xlabadj, xlabfont, at.lab, preddist) axis(...)
-   lmtext    <- function(..., textpos, addcred, pi.type, predtype, decreasing, clim, rowadj, annosym, tabfig, top, xlabadj, xlabfont, at.lab, preddist) mtext(...)
-   lpolygon  <- function(..., textpos, addcred, pi.type, predtype, decreasing, clim, rowadj, annosym, tabfig, top, xlabadj, xlabfont, at.lab, preddist) polygon(...)
-   ltext     <- function(..., textpos, addcred, pi.type, predtype, decreasing, clim, rowadj, annosym, tabfig, top, xlabadj, xlabfont, at.lab, preddist) text(...)
-   lpoints   <- function(..., textpos, addcred, pi.type, predtype, decreasing, clim, rowadj, annosym, tabfig, top, xlabadj, xlabfont, at.lab, preddist) points(...)
-   lrect     <- function(..., textpos, addcred, pi.type, predtype, decreasing, clim, rowadj, annosym, tabfig, top, xlabadj, xlabfont, at.lab, preddist) rect(...)
-   llines    <- function(..., textpos, addcred, pi.type, predtype, decreasing, clim, rowadj, annosym, tabfig, top, xlabadj, xlabfont, at.lab, preddist) lines(...)
+   lplot     <- function(..., textpos, addcred, pi.type, predtype, decreasing, clim, rowadj, annosym, tabfig, top, xlabadj, xlabfont, at.lab, predtail) plot(...)
+   labline   <- function(..., textpos, addcred, pi.type, predtype, decreasing, clim, rowadj, annosym, tabfig, top, xlabadj, xlabfont, at.lab, predtail) abline(...)
+   lsegments <- function(..., textpos, addcred, pi.type, predtype, decreasing, clim, rowadj, annosym, tabfig, top, xlabadj, xlabfont, at.lab, predtail) segments(...)
+   laxis     <- function(..., textpos, addcred, pi.type, predtype, decreasing, clim, rowadj, annosym, tabfig, top, xlabadj, xlabfont, at.lab, predtail) axis(...)
+   lmtext    <- function(..., textpos, addcred, pi.type, predtype, decreasing, clim, rowadj, annosym, tabfig, top, xlabadj, xlabfont, at.lab, predtail) mtext(...)
+   lpolygon  <- function(..., textpos, addcred, pi.type, predtype, decreasing, clim, rowadj, annosym, tabfig, top, xlabadj, xlabfont, at.lab, predtail) polygon(...)
+   ltext     <- function(..., textpos, addcred, pi.type, predtype, decreasing, clim, rowadj, annosym, tabfig, top, xlabadj, xlabfont, at.lab, predtail) text(...)
+   lpoints   <- function(..., textpos, addcred, pi.type, predtype, decreasing, clim, rowadj, annosym, tabfig, top, xlabadj, xlabfont, at.lab, predtail) points(...)
+   lrect     <- function(..., textpos, addcred, pi.type, predtype, decreasing, clim, rowadj, annosym, tabfig, top, xlabadj, xlabfont, at.lab, predtail) rect(...)
+   llines    <- function(..., textpos, addcred, pi.type, predtype, decreasing, clim, rowadj, annosym, tabfig, top, xlabadj, xlabfont, at.lab, predtail) lines(...)
 
    if (is.character(showweights)) {
       weighttype  <- match.arg(showweights, c("diagonal", "rowsum"))
@@ -357,7 +368,7 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
    k <- length(yi)                              # length of yi.f
 
    ### note: slab (if specified), ilab (if specified), pch (if vector), psize (if
-   ###       vector), colout (if vector), order (if vector) must have the same
+   ###       vector), colout (if vector), colci (if vector), order (if vector) must have the same
    ###       length as the original dataset
 
    slab.null <- FALSE
@@ -424,6 +435,13 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
 
    colout <- .getsubset(colout, x$subset)
 
+   colci <- .expand1(colci, x$k.all)
+
+   if (length(colci) != x$k.all)
+      stop(mstyle$stop(paste0("Length of the 'colci' argument (", length(colci), ") does not correspond to the size of the original dataset (", x$k.all, ").")))
+
+   colci <- .getsubset(colci, x$subset)
+
    shade.type <- "none"
 
    if (is.character(shade)) {
@@ -463,7 +481,7 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
    } else {
       predres <- predict(x, level=level, predtype=predtype)
       pred <- predres$pred
-      if (addpred) {
+      if (isTRUE(addpred)) {
          pred.ci.lb <- predres$pi.lb
          pred.ci.ub <- predres$pi.ub
       } else {
@@ -483,9 +501,9 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
 
       if (length(order) == 1L) {
 
-         order <- match.arg(order, c("obs", "yi", "fit", "prec", "vi", "resid", "rstandard", "abs.resid", "abs.rstandard"))
+         order <- match.arg(order, c("est", "obs", "yi", "fit", "prec", "vi", "resid", "rstandard", "abs.resid", "abs.rstandard"))
 
-         if (order == "obs" || order == "yi")
+         if (order == "est" || order == "obs" || order == "yi")
             sort.vec <- order(yi)
          if (order == "fit")
             sort.vec <- order(pred)
@@ -528,6 +546,7 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
       pch        <- pch[sort.vec]
       psize      <- psize[sort.vec]             # if NULL, remains NULL
       colout     <- colout[sort.vec]
+      colci      <- colci[sort.vec]
       if (shade.type == "logical")
          shade <- shade[sort.vec]
 
@@ -564,6 +583,7 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
    pch        <- pch[k:1]
    psize      <- psize[k:1]                     # if NULL, remains NULL
    colout     <- colout[k:1]
+   colci      <- colci[k:1]
    rows       <- rows[k:1]
    if (shade.type == "logical")
       shade <- shade[k:1]
@@ -589,6 +609,7 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
          pch        <- pch[not.na]
          psize      <- psize[not.na]            # if NULL, remains NULL
          colout     <- colout[not.na]
+         colci      <- colci[not.na]
 
          rows.new <- rows                       # rearrange rows due to NAs being omitted from plot
          rows.na  <- rows[!not.na]              # shift higher rows down according to number of NAs omitted
@@ -1226,8 +1247,19 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
                }
             }
 
-            sel.l0 <- xs < 0
-            sel.g0 <- xs > 0
+            if (predstyle == "dist") {
+               if (is.null(ddd$predtail)) {
+                  ddd$predtail <- 0
+                  pred.lower.tail <- predres$pred > ddd$predtail
+               } else {
+                  pred.lower.tail <- grepl("<", ddd$predtail, fixed=TRUE)
+                  predtailtxt <- gsub("[<=>]", "", ddd$predtail)
+                  ddd$predtail <- try(eval(parse(text=predtailtxt)), silent=TRUE)
+               }
+            }
+
+            sel.l0 <- xs < ddd$predtail
+            sel.g0 <- xs > ddd$predtail
 
             if (is.function(transf)) {
                xs <- sapply(xs, transf)
@@ -1328,9 +1360,9 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
             ys.sel.l0 <- ys.sel.l0 + drow
             ys.sel.g0 <- ys.sel.g0 + drow
 
-            ### shade regions above/below 0
+            ### shade regions above/below 0 (or predtail)
 
-            if (predres$pred > 0) {
+            if (pred.lower.tail) {
                lpolygon(c(xs.sel.g0,rev(xs.sel.g0)), c(ys.sel.g0,rep(drow,length(ys.sel.g0))), col=col[4], border=ifelse(is.na(col[4]),NA,border[2]), ...)
                lpolygon(c(xs.sel.l0,rev(xs.sel.l0)), c(ys.sel.l0,rep(drow,length(ys.sel.l0))), col=col[3], border=ifelse(is.na(col[3]),NA,border[2]), ...)
             } else {
@@ -1421,37 +1453,37 @@ lty, fonts, cex, cex.lab, cex.axis, ...) {
    for (i in seq_len(k)) {
 
       ### need to skip missings (if check below will otherwise throw an error)
-      if (is.na(yi[i]) || is.na(vi[i]))
+      if (is.na(yi[i]) || is.na(vi[i]) || is.na(colci[i]))
          next
 
       ### if the lower bound is actually larger than upper x-axis limit, then everything is to the right and just draw a polygon pointing in that direction
       if (ci.lb[i] >= alim[2]) {
          lpolygon(x=c(alim[2], alim[2]-arrowwidth, alim[2]-arrowwidth, alim[2]),
-                  y=c(rows[i], rows[i]+arrowheight, rows[i]-arrowheight, rows[i]), col=colout[i], border=colout[i], ...)
+                  y=c(rows[i], rows[i]+arrowheight, rows[i]-arrowheight, rows[i]), col=colci[i], border=colci[i], ...)
          next
       }
 
       ### if the upper bound is actually lower than lower x-axis limit, then everything is to the left and just draw a polygon pointing in that direction
       if (ci.ub[i] <= alim[1]) {
          lpolygon(x=c(alim[1], alim[1]+arrowwidth, alim[1]+arrowwidth, alim[1]),
-                  y=c(rows[i], rows[i]+arrowheight, rows[i]-arrowheight, rows[i]), col=colout[i], border=colout[i], ...)
+                  y=c(rows[i], rows[i]+arrowheight, rows[i]-arrowheight, rows[i]), col=colci[i], border=colci[i], ...)
          next
       }
 
-      lsegments(max(ci.lb[i], alim[1]), rows[i], min(ci.ub[i], alim[2]), rows[i], lty=lty[1], col=colout[i], ...)
+      lsegments(max(ci.lb[i], alim[1]), rows[i], min(ci.ub[i], alim[2]), rows[i], lty=lty[1], col=colci[i], ...)
 
       if (ci.lb[i] >= alim[1]) {
-         lsegments(ci.lb[i], rows[i]-ciendheight, ci.lb[i], rows[i]+ciendheight, col=colout[i], ...)
+         lsegments(ci.lb[i], rows[i]-ciendheight, ci.lb[i], rows[i]+ciendheight, col=colci[i], ...)
       } else {
          lpolygon(x=c(alim[1], alim[1]+arrowwidth, alim[1]+arrowwidth, alim[1]),
-                  y=c(rows[i], rows[i]+arrowheight, rows[i]-arrowheight, rows[i]), col=colout[i], border=colout[i], ...)
+                  y=c(rows[i], rows[i]+arrowheight, rows[i]-arrowheight, rows[i]), col=colci[i], border=colci[i], ...)
       }
 
       if (ci.ub[i] <= alim[2]) {
-         lsegments(ci.ub[i], rows[i]-ciendheight, ci.ub[i], rows[i]+ciendheight, col=colout[i], ...)
+         lsegments(ci.ub[i], rows[i]-ciendheight, ci.ub[i], rows[i]+ciendheight, col=colci[i], ...)
       } else {
          lpolygon(x=c(alim[2], alim[2]-arrowwidth, alim[2]-arrowwidth, alim[2]),
-                  y=c(rows[i], rows[i]+arrowheight, rows[i]-arrowheight, rows[i]), col=colout[i], border=colout[i], ...)
+                  y=c(rows[i], rows[i]+arrowheight, rows[i]-arrowheight, rows[i]), col=colci[i], border=colci[i], ...)
       }
 
    }

@@ -1,4 +1,4 @@
-rma <- rma.uni <- function(yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, m1i, m2i, sd1i, sd2i, xi, mi, ri, ti, fi, pi, sdi, r2i, ni, mods, scale,
+rma <- rma.uni <- function(yi, vi, sei, weights, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, m1i, m2i, sd1i, sd2i, xi, mi, ri, ti, fi, pi, sdi, r2i, mini, maxi, ni, mods, scale,
 measure="GEN", data, slab, subset,
 add=1/2, to="only0", drop00=FALSE, intercept=TRUE,
 method="REML", weighted=TRUE,
@@ -16,16 +16,17 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
                               "PBIT","OR2D","OR2DN","OR2DL",                                                    # 2x2 table transformations to SMDs
                               "MPRD","MPRR","MPOR","MPORC","MPPETO","MPORM",                                    # 2x2 table measures for matched pairs / pre-post data
                               "IRR","IRD","IRSD",                                                               # two-group person-time data (incidence) measures
-                              "MD","SMD","SMDH","SMD1","SMD1H","ROM",                                           # two-group mean/SD measures
+                              "MD","POMPMD","SMD","SMDH","SMD1","SMD1H","ROM",                                  # two-group mean/SD measures
                               "VR","CVR",                                                                       # variability ratio, coefficient of variation ratio
                               "RPB","ZPB","RBIS","ZBIS","D2OR","D2ORN","D2ORL",                                 # two-group mean/SD transformations to r_pb, r_bis, and log(OR)
                               "COR","UCOR","ZCOR",                                                              # correlations (raw and r-to-z transformed)
                               "PCOR","ZPCOR","SPCOR","ZSPCOR",                                                  # partial and semi-partial correlations
+                              #"ICC", "ZICC",                                                                    # ICC(1) and r-to-z transformed
                               "R2","ZR2","R2F","ZR2F",                                                          # coefficient of determination / R^2 (raw and r-to-z transformed)
                               "PR","PLN","PLO","PRZ","PAS","PFT",                                               # single proportions (and transformations thereof)
                               "IR","IRLN","IRS","IRFT",                                                         # single-group person-time (incidence) data (and transformations thereof)
-                              "MN","SMN","MNLN","SDLN","CVLN",                                                  # mean, single-group standardized mean, log(mean), log(SD), log(CV)
-                              "MC","SMCC","SMCR","SMCRH","SMCRP","SMCRPH","CLESCN","AUCCN","ROMC","VRC","CVRC", # raw/standardized mean change, CLES/AUC, log(ROM), VR, and CVR for dependent samples
+                              "MN","POMPMN","SMN","MNLN","SDLN","CVLN",                                         # mean, single-group standardized mean, log(mean), log(SD), log(CV)
+                              "MC","POMPMC","SMCC","SMCR","SMCRH","SMCRP","SMCRPH","CLESCN","AUCCN","ROMC","VRC","CVRC", # raw/standardized mean change, CLES/AUC, log(ROM), VR, and CVR for dependent samples
                               "ARAW","AHW","ABT",                                                               # alpha (and transformations thereof)
                               "REH","CLES","CLESN","AUC","AUCN",                                                # relative excess heterozygosity, common language effect size / area under the curve
                               "HR","HD",                                                                        # hazard (rate) ratios and differences
@@ -67,7 +68,7 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
 
    ddd <- list(...)
 
-   .chkdots(ddd, c("vtype", "knha", "onlyo1", "addyi", "addvi", "correct", "i2def", "r2def", "skipr2", "abbrev", "dfs", "time", "outlist", "link", "optbeta", "alpha", "beta", "skiphes", "retopt", "randhet", "omega2", "pleasedonotreportI2thankyouverymuch"))
+   .chkdots(ddd, c("vtype", "knha", "onlyo1", "addyi", "addvi", "correct", "cutoff", "i2def", "r2def", "skipr2", "abbrev", "dfs", "time", "outlist", "link", "optbeta", "alpha", "beta", "skiphes", "retopt", "randhet", "omega2", "pleasedonotreportI2thankyouverymuch"))
 
    if (is.null(ddd$vtype)) {
       vtype <- "LS"
@@ -96,12 +97,13 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
       model <- "rma.ls"
    }
 
-   # set defaults or get 'onlyo1', 'addyi', 'addvi', and 'correct' arguments
+   # set defaults or get 'onlyo1', 'addyi', 'addvi', 'correct', and 'cutoff' arguments
 
    onlyo1  <- .chkddd(ddd$onlyo1,  FALSE)
    addyi   <- .chkddd(ddd$addyi,   TRUE)
    addvi   <- .chkddd(ddd$addvi,   TRUE)
    correct <- .chkddd(ddd$correct, TRUE)
+   cutoff  <- .chkddd(ddd$cutoff)
 
    # set defaults for 'i2def' and 'r2def'
 
@@ -323,6 +325,10 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
 
       attr(yi, "measure") <- measure
 
+      # check for unusually large estimates for a given measure
+
+      .chkyisize(as.vector(yi), measure=measure, cutoff=cutoff)
+
       # extract 'vi' and 'sei' values (but only if 'yi' wasn't an 'escalc' object)
 
       if (!yi.escalc) {
@@ -493,7 +499,7 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
 
       }
 
-      if (is.element(measure, c("MD","SMD","SMDH","SMD1","SMD1H","ROM","RPB","ZPB","RBIS","ZBIS","D2OR","D2ORN","D2ORL","VR","CVR"))) {
+      if (is.element(measure, c("MD","POMPMD","SMD","SMDH","SMD1","SMD1H","ROM","RPB","ZPB","RBIS","ZBIS","D2OR","D2ORN","D2ORL","VR","CVR"))) {
 
          m1i  <- .getx("m1i",  mf=mf, data=data, checknumeric=TRUE)
          m2i  <- .getx("m2i",  mf=mf, data=data, checknumeric=TRUE)
@@ -505,6 +511,8 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
          ti   <- .getx("ti",   mf=mf, data=data, checknumeric=TRUE)
          pi   <- .getx("pi",   mf=mf, data=data, checknumeric=TRUE)
          ri   <- .getx("ri",   mf=mf, data=data, checknumeric=TRUE)
+         mini <- .getx("mini", mf=mf, data=data, checknumeric=TRUE)
+         maxi <- .getx("maxi", mf=mf, data=data, checknumeric=TRUE)
 
          if (is.element(measure, c("SMD","RPB","ZPB","RBIS","ZBIS","D2OR","D2ORN","D2ORL"))) {
 
@@ -524,6 +532,13 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
 
          }
 
+         if (measure == "POMPMD") {
+
+            if (!.equal.length(m1i, m2i, sd1i, sd2i, n1i, n2i, mini, maxi))
+               stop(mstyle$stop("Supplied data vectors are not all of the same length."))
+
+         }
+
          k <- length(n1i) # number of outcomes before subsetting
          k.all <- k
 
@@ -535,9 +550,11 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
             sd2i <- .getsubset(sd2i, subset)
             n1i  <- .getsubset(n1i,  subset)
             n2i  <- .getsubset(n2i,  subset)
+            mini <- .getsubset(mini, subset)
+            maxi <- .getsubset(maxi, subset)
          }
 
-         args <- list(m1i=m1i, m2i=m2i, sd1i=sd1i, sd2i=sd2i, n1i=n1i, n2i=n2i)
+         args <- list(m1i=m1i, m2i=m2i, sd1i=sd1i, sd2i=sd2i, n1i=n1i, n2i=n2i, mini=mini, maxi=maxi)
 
       }
 
@@ -599,6 +616,29 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
          }
 
          args <- list(ri=ri, mi=mi, ni=ni, r2i=r2i)
+
+      }
+
+      if (is.element(measure, c("ICC","ZICC"))) {
+
+         ri <- .getx("r2i", mf=mf, data=data, checknumeric=TRUE)
+         mi <- .getx("mi",  mf=mf, data=data, checknumeric=TRUE)
+         ni <- .getx("ni",  mf=mf, data=data, checknumeric=TRUE)
+
+         if (!.equal.length(ri, mi, ni))
+            stop(mstyle$stop("Supplied data vectors are not all of the same length."))
+
+         k <- length(ri) # number of outcomes before subsetting
+         k.all <- k
+
+         if (!is.null(subset)) {
+            subset <- .chksubset(subset, k)
+            ri <- .getsubset(r2i,  subset)
+            mi <- .getsubset(mi,  subset)
+            ni <- .getsubset(ni,  subset)
+         }
+
+         args <- list(ri=ri, mi=mi, ni=ni)
 
       }
 
@@ -669,27 +709,31 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
 
       }
 
-      if (is.element(measure, c("MN","SMN","MNLN","SDLN","CVLN"))) {
+      if (is.element(measure, c("MN","POMPMN","SMN","MNLN","SDLN","CVLN"))) {
 
-         mi  <- .getx("mi",  mf=mf, data=data, checknumeric=TRUE)
-         sdi <- .getx("sdi", mf=mf, data=data, checknumeric=TRUE)
-         ni  <- .getx("ni",  mf=mf, data=data, checknumeric=TRUE)
+         mi   <- .getx("mi",   mf=mf, data=data, checknumeric=TRUE)
+         sdi  <- .getx("sdi",  mf=mf, data=data, checknumeric=TRUE)
+         ni   <- .getx("ni",   mf=mf, data=data, checknumeric=TRUE)
+         mini <- .getx("mini", mf=mf, data=data, checknumeric=TRUE)
+         maxi <- .getx("maxi", mf=mf, data=data, checknumeric=TRUE)
 
          k <- length(ni) # number of outcomes before subsetting
          k.all <- k
 
          if (!is.null(subset)) {
             subset <- .chksubset(subset, k)
-            mi  <- .getsubset(mi,  subset)
-            sdi <- .getsubset(sdi, subset)
-            ni  <- .getsubset(ni,  subset)
+            mi   <- .getsubset(mi,   subset)
+            sdi  <- .getsubset(sdi,  subset)
+            ni   <- .getsubset(ni,   subset)
+            mini <- .getsubset(mini, subset)
+            maxi <- .getsubset(maxi, subset)
          }
 
-         args <- list(mi=mi, sdi=sdi, ni=ni)
+         args <- list(mi=mi, sdi=sdi, ni=ni, mini=mini, maxi=maxi)
 
       }
 
-      if (is.element(measure, c("MC","SMCC","SMCR","SMCRH","SMCRP","SMCRPH","CLESCN","AUCCN","ROMC","VRC","CVRC"))) {
+      if (is.element(measure, c("MC","POMPMC","SMCC","SMCR","SMCRH","SMCRP","SMCRPH","CLESCN","AUCCN","ROMC","VRC","CVRC"))) {
 
          m1i  <- .getx("m1i",  mf=mf, data=data, checknumeric=TRUE)
          m2i  <- .getx("m2i",  mf=mf, data=data, checknumeric=TRUE)
@@ -700,6 +744,8 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
          di   <- .getx("di",   mf=mf, data=data, checknumeric=TRUE)
          ti   <- .getx("ti",   mf=mf, data=data, checknumeric=TRUE)
          pi   <- .getx("pi",   mf=mf, data=data, checknumeric=TRUE)
+         mini <- .getx("mini", mf=mf, data=data, checknumeric=TRUE)
+         maxi <- .getx("maxi", mf=mf, data=data, checknumeric=TRUE)
 
          ri <- .expand1(ri, list(m1i, m2i, sd1i, sd2i, ni, di, ti, pi))
 
@@ -730,9 +776,11 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
             sd2i <- .getsubset(sd2i, subset)
             ni   <- .getsubset(ni,   subset)
             ri   <- .getsubset(ri,   subset)
+            mini <- .getsubset(mini, subset)
+            maxi <- .getsubset(maxi, subset)
          }
 
-         args <- list(m1i=m1i, m2i=m2i, sd1i=sd1i, sd2i=sd2i, ri=ri, ni=ni)
+         args <- list(m1i=m1i, m2i=m2i, sd1i=sd1i, sd2i=sd2i, ri=ri, ni=ni, mini=mini, maxi=maxi)
 
       }
 
@@ -867,7 +915,7 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
 
       }
 
-      args <- c(args, list(measure=measure, vtype=vtype, correct=correct))
+      args <- c(args, list(measure=measure, vtype=vtype, correct=correct, cutoff=cutoff))
 
       dat <- .do.call(escalc, args)
 
@@ -2348,8 +2396,13 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
 
       beta     <- cbind(opt.res$par[pos.beta])
       alpha    <- cbind(opt.res$par[pos.alpha])
-      lnomega2 <- unname(opt.res$par[pos.omega2]) # numeric(0) if !randhet
-      omega2   <- exp(lnomega2)                   # numeric(0) if !randhet
+      if (is.na(omega2.arg)) {
+         lnomega2 <- unname(opt.res$par[pos.omega2]) # numeric(0) if !randhet
+         omega2   <- exp(lnomega2)                   # numeric(0) if !randhet
+      } else {
+         lnomega2 <- log(omega2.arg)
+         omega2 <- omega2.arg
+      }
 
       # try to compute var-cov matrix for the scale parameter estimates (and omega^2)
 
@@ -2702,8 +2755,8 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
 
    # the Knapp & Hartung method as described in the literature is only for random/mixed-effects models
 
-   if (is.element(method[1], c("FE","EE","CE")) && is.element(test, c("knha","adhoc")))
-      warning(mstyle$warning(paste0("Knapp and Hartung method is not meant to be used in the context of '", method[1], "' models.")), call.=FALSE)
+   #if (is.element(method[1], c("FE","EE","CE")) && is.element(test, c("knha","adhoc")))
+   #   warning(mstyle$warning(paste0("Knapp and Hartung method is not meant to be used in the context of '", method[1], "' models.")), call.=FALSE)
 
    # Knapp & Hartung method with ad-hoc correction so that the scaling factor is always >= 1
 
@@ -3026,6 +3079,8 @@ test="z", level=95, btt, att, tau2, verbose=FALSE, digits, control, ...) {
 
    p.eff <- p
    k.eff <- k
+
+   class(M) <- c("vcovmat", class(M))
 
    if (is.null(ddd$outlist) || ddd$outlist == "nodata") {
 

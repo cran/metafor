@@ -16,6 +16,11 @@ qqnorm.rma.mh <- function(y, type="rstandard", pch=21, col, bg, grid=FALSE, labe
 
    .start.plot()
 
+   if (interactive()) {
+      dev.hold()
+      on.exit(dev.flush(), add=TRUE)
+   }
+
    if (missing(col))
       col <- par("fg")
 

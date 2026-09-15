@@ -25,6 +25,11 @@ transf, targs, pch=21, col, bg, back, arc.res=100, cex, cex.lab, cex.axis, ...) 
 
    .start.plot()
 
+   if (interactive()) {
+      dev.hold()
+      on.exit(dev.flush(), add=TRUE)
+   }
+
    if (missing(back))
       back <- .coladj(par("bg","fg"), dark=0.1, light=-0.1)
 

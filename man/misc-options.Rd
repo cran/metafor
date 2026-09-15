@@ -9,7 +9,7 @@ This page documents some miscellaneous options and features that do not fit very
 
    \subsection{Specifying the Confidence Level}{
 
-      Several functions in the \pkg{metafor} package have a \code{level} argument for specifying the confidence level when calculating confidence (and prediction) intervals. The default is to use a 95\% level throughout the package by convention. Note that values \mjseqn{>=1} are treated as coverage percentages, values between 0.5 and 1 as coverage proportions, and values below 0.5 as (two-sided) alpha values, so \code{level=95} is the same as \code{level=.95} and \code{level=.05} (but \code{level=0} is always treated as a 0\% confidence level).
+      Several functions in the \pkg{metafor} package have a \code{level} argument for specifying the confidence level when calculating confidence (and prediction) intervals. The default is to use a 95\% level throughout the package by convention. Note that values \mjseqn{>=1} are treated as coverage percentages, values between 0.5 and 1 as coverage proportions, and values below 0.5 as (two-sided) alpha values, so \code{level=95} is the same as \code{level=0.95} and \code{level=0.05} (but \code{level=0} is always treated as a 0\% confidence level).
 
    }
 
@@ -22,7 +22,7 @@ This page documents some miscellaneous options and features that do not fit very
       where the elements control the displayed number of digits for various aspects of the output, namely:
 
       \itemize{
-      \item \code{est} for estimates (e.g., effect sizes, model coefficients, predicted values),
+      \item \code{est} for estimates (e.g., effect size estimates, model coefficients, predicted values),
       \item \code{se} for standard errors,
       \item \code{test} for test statistics,
       \item \code{pval} for p-values,

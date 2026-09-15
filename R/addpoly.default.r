@@ -268,11 +268,11 @@ transf, atransf, targs, efac, col, border, lty, fonts, cex, constarea=FALSE, ...
       }
    }
 
-   lsegments <- function(..., cr.lb, cr.ub, addpred, addcred, pi.type, predtype, lcol, rowadj, annosym, textpos, preddist, alim, olim) segments(...)
-   ltext     <- function(..., cr.lb, cr.ub, addpred, addcred, pi.type, predtype, lcol, rowadj, annosym, textpos, preddist, alim, olim) text(...)
-   lpolygon  <- function(..., cr.lb, cr.ub, addpred, addcred, pi.type, predtype, lcol, rowadj, annosym, textpos, preddist, alim, olim) polygon(...)
-   lrect     <- function(..., cr.lb, cr.ub, addpred, addcred, pi.type, predtype, lcol, rowadj, annosym, textpos, preddist, alim, olim) rect(...)
-   llines    <- function(..., cr.lb, cr.ub, addpred, addcred, pi.type, predtype, lcol, rowadj, annosym, textpos, preddist, alim, olim) lines(...)
+   lsegments <- function(..., cr.lb, cr.ub, addpred, addcred, pi.type, predtype, lcol, rowadj, annosym, textpos, preddist, predtail, alim, olim) segments(...)
+   ltext     <- function(..., cr.lb, cr.ub, addpred, addcred, pi.type, predtype, lcol, rowadj, annosym, textpos, preddist, predtail, alim, olim) text(...)
+   lpolygon  <- function(..., cr.lb, cr.ub, addpred, addcred, pi.type, predtype, lcol, rowadj, annosym, textpos, preddist, predtail, alim, olim) polygon(...)
+   lrect     <- function(..., cr.lb, cr.ub, addpred, addcred, pi.type, predtype, lcol, rowadj, annosym, textpos, preddist, predtail, alim, olim) rect(...)
+   llines    <- function(..., cr.lb, cr.ub, addpred, addcred, pi.type, predtype, lcol, rowadj, annosym, textpos, preddist, predtail, alim, olim) lines(...)
 
    ### set/get fonts (1st for labels, 2nd for annotations)
    ### when passing a named vector, the names are for 'family' and the values are for 'font'
@@ -362,12 +362,14 @@ transf, atransf, targs, efac, col, border, lty, fonts, cex, constarea=FALSE, ...
       cdf <- cumsum(diff(pdxs) * (pdys[-1]+pdys[-length(pdys)])/2)
       cdf <- cdf / max(cdf)
       if (is.null(preddist$pi.lb)) {
-         pi.lb <- pdxs[which.min(abs(cdf - pi.level/2))]
+         if (!hasArg(pi.lb) || is.null(pi.lb))
+            pi.lb <- pdxs[which.min(abs(cdf - pi.level/2))]
       } else {
          pi.lb <- preddist$pi.lb
       }
       if (is.null(preddist$pi.ub)) {
-         pi.ub <- pdxs[which.min(abs(cdf - (1-pi.level/2)))]
+         if (!hasArg(pi.ub) || is.null(pi.ub))
+            pi.ub <- pdxs[which.min(abs(cdf - (1-pi.level/2)))]
       } else {
          pi.ub <- preddist$pi.ub
       }
@@ -410,7 +412,7 @@ transf, atransf, targs, efac, col, border, lty, fonts, cex, constarea=FALSE, ...
          pi.lb <- pi.lb[not.na]
          pi.ub <- pi.ub[not.na]
          if (predstyle == "line")
-            mlab  <- mlab[not.na]
+            mlab <- mlab[not.na]
 
          ### rearrange rows due to NAs being omitted
 
@@ -744,8 +746,19 @@ transf, atransf, targs, efac, col, border, lty, fonts, cex, constarea=FALSE, ...
             }
          }
 
-         sel.l0 <- xs < 0
-         sel.g0 <- xs > 0
+         if (predstyle == "dist") {
+            if (is.null(ddd$predtail)) {
+               ddd$predtail <- 0
+               pred.lower.tail <- yi.utransf[i] > ddd$predtail
+            } else {
+               pred.lower.tail <- grepl("<", ddd$predtail, fixed=TRUE)
+               predtailtxt <- gsub("[<=>]", "", ddd$predtail)
+               ddd$predtail <- try(eval(parse(text=predtailtxt)), silent=TRUE)
+            }
+         }
+
+         sel.l0 <- xs < ddd$predtail
+         sel.g0 <- xs > ddd$predtail
 
          if (is.function(transf)) {
             xs <- sapply(xs, transf)
@@ -846,9 +859,9 @@ transf, atransf, targs, efac, col, border, lty, fonts, cex, constarea=FALSE, ...
          ys.sel.l0 <- ys.sel.l0 + drow
          ys.sel.g0 <- ys.sel.g0 + drow
 
-         ### shade regions above/below 0
+         ### shade regions above/below 0 (or predtail)
 
-         if (yi.utransf[i] > 0) {
+         if (pred.lower.tail) {
             lpolygon(c(xs.sel.g0,rev(xs.sel.g0)), c(ys.sel.g0,rep(drow,length(ys.sel.g0))), col=col[4], border=ifelse(is.na(col[4]),NA,border[2]), ...)
             lpolygon(c(xs.sel.l0,rev(xs.sel.l0)), c(ys.sel.l0,rep(drow,length(ys.sel.l0))), col=col[3], border=ifelse(is.na(col[3]),NA,border[2]), ...)
          } else {

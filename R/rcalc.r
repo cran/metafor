@@ -263,7 +263,7 @@ rcalc <- function(x, ni, data, rtoz=FALSE, nfun="min", sparse=FALSE, ...) {
    ### apply r-to-z transformation if requested
 
    if (rtoz)
-      ri <- 1/2 * log((1 + ri)/(1 - ri))
+      ri <- atanh(ri) # same as 1/2 * log((1 + ri) / (1 - ri))
 
    ### I and J are matrices with 1:dimsx for rows and columns, respectively
 

@@ -1,5 +1,6 @@
-escalc <- function(measure, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, m1i, m2i, sd1i, sd2i, xi, mi, ri, ti, fi, pi, sdi, r2i, ni, yi, vi, sei,
-data, slab, flip, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", correct=TRUE, var.names=c("yi","vi"), add.measure=FALSE, append=TRUE, replace=TRUE, digits, ...) {
+escalc <- function(measure, ai, bi, ci, di, n1i, n2i, x1i, x2i, t1i, t2i, m1i, m2i, sd1i, sd2i, xi, mi, ri, ti, fi, pi, sdi, r2i, mini, maxi, ni, yi, vi, sei,
+data, slab, flip, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS", correct=TRUE, cutoff,
+var.names=c("yi","vi"), add.measure=FALSE, append=TRUE, replace=TRUE, digits, ...) {
 
    ### check argument specifications
 
@@ -18,16 +19,17 @@ data, slab, flip, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS"
                               "PBIT","OR2D","OR2DN","OR2DL",                                                    # 2x2 table transformations to SMDs
                               "MPRD","MPRR","MPOR","MPORC","MPPETO","MPORM",                                    # 2x2 table measures for matched pairs / pre-post data
                               "IRR","IRD","IRSD",                                                               # two-group person-time data (incidence) measures
-                              "MD","SMD","SMDH","SMD1","SMD1H","ROM",                                           # two-group mean/SD measures
+                              "MD","POMPMD","SMD","SMDH","SMD1","SMD1H","ROM",                                  # two-group mean/SD measures
                               "VR","CVR",                                                                       # variability ratio, coefficient of variation ratio
                               "RPB","ZPB","RBIS","ZBIS","D2OR","D2ORN","D2ORL",                                 # two-group mean/SD transformations to r_pb, r_bis, and log(OR)
                               "COR","UCOR","ZCOR",                                                              # correlations (raw and r-to-z transformed)
                               "PCOR","ZPCOR","SPCOR","ZSPCOR",                                                  # partial and semi-partial correlations
+                              #"ICC","ZICC",                                                                    # ICC(1) and r-to-z transformed
                               "R2","ZR2","R2F","ZR2F",                                                          # coefficient of determination / R^2 (raw and r-to-z transformed)
                               "PR","PLN","PLO","PRZ","PAS","PFT",                                               # single proportions (and transformations thereof)
                               "IR","IRLN","IRS","IRFT",                                                         # single-group person-time (incidence) data (and transformations thereof)
-                              "MN","SMN","MNLN","SDLN","CVLN",                                                  # mean, single-group standardized mean, log(mean), log(SD), log(CV)
-                              "MC","SMCC","SMCR","SMCRH","SMCRP","SMCRPH","CLESCN","AUCCN","ROMC","VRC","CVRC", # raw/standardized mean change, CLES/AUC, log(ROM), VR, and CVR for dependent samples
+                              "MN","POMPMN","SMN","MNLN","SDLN","CVLN",                                         # mean, single-group standardized mean, log(mean), log(SD), log(CV)
+                              "MC","POMPMC","SMCC","SMCR","SMCRH","SMCRP","SMCRPH","CLESCN","AUCCN","ROMC","VRC","CVRC", # raw/standardized mean change, CLES/AUC, log(ROM), VR, and CVR for dependent samples
                               "ARAW","AHW","ABT",                                                               # alpha (and transformations thereof)
                               "REH","CLES","CLESN","AUC","AUCN",                                                # relative excess heterozygosity, common language effect size / area under the curve
                               "HR","HD",                                                                        # hazard (rate) ratios and differences
@@ -139,6 +141,9 @@ data, slab, flip, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS"
 
    if (is.element(measure, c("AS","PHI","ZPHI","RTET","ZTET","IRSD","PAS","PFT","IRS","IRFT")) && is.null(addval))
       add <- 0
+
+   if (is.element(measure, c("ROM","VR","CVR","SDLN","CVLN","ROMC","CVRC")) && !is.logical(correct))
+      stop(mstyle$stop("Argument 'correct' must be a logical for this measure."))
 
    #########################################################################
    #########################################################################
@@ -843,7 +848,7 @@ data, slab, flip, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS"
 
       ######################################################################
 
-      if (is.element(measure, c("MD","SMD","SMDH","SMD1","SMD1H","ROM","RPB","ZPB","RBIS","ZBIS","D2OR","D2ORN","D2ORL","VR","CVR"))) {
+      if (is.element(measure, c("MD","POMPMD","SMD","SMDH","SMD1","SMD1H","ROM","RPB","ZPB","RBIS","ZBIS","D2OR","D2ORN","D2ORL","VR","CVR"))) {
 
          m1i  <- .getx("m1i",  mf=mf, data=data, checknumeric=TRUE) # for VR, do not need to supply this
          m2i  <- .getx("m2i",  mf=mf, data=data, checknumeric=TRUE) # for VR, do not need to supply this
@@ -855,10 +860,12 @@ data, slab, flip, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS"
          ti   <- .getx("ti",   mf=mf, data=data, checknumeric=TRUE)
          pi   <- .getx("pi",   mf=mf, data=data, checknumeric=TRUE)
          ri   <- .getx("ri",   mf=mf, data=data, checknumeric=TRUE) # point-biserial correlation
-
-         ### for these measures, need m1i, m2i, sd1i, sd2i, n1i, and n2i (and can also specify di/ti/pi/ri)
+         mini <- .getx("mini", mf=mf, data=data, checknumeric=TRUE) # for POMPMD
+         maxi <- .getx("maxi", mf=mf, data=data, checknumeric=TRUE) # for POMPMD
 
          if (is.element(measure, c("SMD","RPB","ZPB","RBIS","ZBIS","D2OR","D2ORN","D2ORL"))) {
+
+            ### for these measures, need m1i, m2i, sd1i, sd2i, n1i, and n2i (and can also specify di/ti/pi/ri)
 
             if (!.equal.length(m1i, m2i, sd1i, sd2i, n1i, n2i, di, ti, pi, ri))
                stop(mstyle$stop("Supplied data vectors are not all of the same length."))
@@ -889,9 +896,9 @@ data, slab, flip, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS"
 
          }
 
-         ### for these measures, need m1i, m2i, sd1i, sd2i, n1i, and n2i
-
          if (is.element(measure, c("MD","SMDH","SMD1H","ROM","CVR"))) {
+
+            ### for these measures, need m1i, m2i, sd1i, sd2i, n1i, and n2i
 
             if (!.all.specified(m1i, m2i, sd1i, sd2i, n1i, n2i))
                stop(mstyle$stop("Cannot compute outcomes. Check that all of the required information is specified\n  via the appropriate arguments (i.e., m1i, m2i, sd1i, sd2i, n1i, n2i)."))
@@ -901,9 +908,26 @@ data, slab, flip, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS"
 
          }
 
-         ### for this measure, need sd1i, sd2i, n1i, and n2i
+         if (measure == "POMPMD") {
+
+            ### for this measure, need m1i, m2i, sd1i, sd2i, n1i, n2i, mini, and maxi
+
+            if (!.all.specified(m1i, m2i, sd1i, sd2i, n1i, n2i, mini, maxi))
+               stop(mstyle$stop("Cannot compute outcomes. Check that all of the required information is specified\n  via the appropriate arguments (i.e., m1i, m2i, sd1i, sd2i, n1i, n2i, mini, maxi)."))
+
+            if (!.equal.length(m1i, m2i, sd1i, sd2i, n1i, n2i, mini, maxi))
+               stop(mstyle$stop("Supplied data vectors are not all of the same length."))
+
+            m1i <- 100 * (m1i - mini) / (maxi - mini)
+            m2i <- 100 * (m2i - mini) / (maxi - mini)
+            sd1i <- 100 * sd1i / (maxi - mini)
+            sd2i <- 100 * sd2i / (maxi - mini)
+
+         }
 
          if (measure == "VR") {
+
+            ### for this measure, need sd1i, sd2i, n1i, and n2i
 
             if (!.all.specified(sd1i, sd2i, n1i, n2i))
                stop(mstyle$stop("Cannot compute outcomes. Check that all of the required information is specified\n  via the appropriate arguments (i.e., sd1i, sd2i, n1i, n2i)."))
@@ -913,9 +937,9 @@ data, slab, flip, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS"
 
          }
 
-         ### for this measure, need m1i, m2i, sd2i, n1i, and n2i
-
          if (measure == "SMD1") {
+
+            ### for this measure, need m1i, m2i, sd2i, n1i, and n2i
 
             if (!.all.specified(m1i, m2i, sd2i, n1i, n2i))
                stop(mstyle$stop("Cannot compute outcomes. Check that all of the required information is specified\n  via the appropriate arguments (i.e., m1i, m2i, sd2i, n1i, n2i)."))
@@ -961,9 +985,9 @@ data, slab, flip, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS"
 
          di <- (m1i - m2i) / sdpi
 
-         ### (raw) mean difference
+         ### (raw) mean difference (raw and POMP version)
 
-         if (measure == "MD") {
+         if (is.element(measure, c("MD","POMPMD"))) {
 
             yi <- m1i - m2i
 
@@ -994,7 +1018,7 @@ data, slab, flip, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS"
 
             ### apply bias-correction to di values
 
-            cmi <- .cmicalc(mi, correct=correct)
+            cmi <- cmicalc(mi, method=correct)
             yi <- cmi * di
 
             vtype <- .expand1(vtype, k)
@@ -1003,7 +1027,7 @@ data, slab, flip, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS"
 
             mnwyi <- .wmean(yi, ni, na.rm=TRUE) # sample size weighted average of yi's
 
-            if (!all(is.element(vtype, c("LS","LS2","UB","AV","H0"))))
+            if (!all(is.element(vtype, c("LS","LS2","LS3","UB","AV","H0"))))
                stop(mstyle$stop("For this outcome measure, 'vtype' must be either 'LS', 'LS2', 'UB', or 'H0'."))
 
             for (i in seq_len(k)) {
@@ -1015,6 +1039,10 @@ data, slab, flip, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS"
                ### alternative large sample approximation to the sampling variance
                if (vtype[i] == "LS2")
                   vi[i] <- cmi[i]^2 * (1/n1i[i] + 1/n2i[i] + di[i]^2/(2*npi[i])) # Borenstein, 2009, equation 12.17; analogous to LS2 for SMCC and SMCR; see [b]
+
+               ### large sample approximation to the sampling variance (used by Revman; and correct="approx")
+               if (vtype[i] == "LS3")
+                  vi[i] <- 1/n1i[i] + 1/n2i[i] + yi[i]^2/(2*(npi[i]-3.94)) # Hedges & Olkin, 1985, equation 8 / Lin & Aloe, 2020, equation 14
 
                ### unbiased estimate of the sampling variance
                if (vtype[i] == "UB")
@@ -1036,7 +1064,7 @@ data, slab, flip, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS"
 
          if (measure == "SMDH") {
 
-            cmi  <- .cmicalc(mi, correct=correct)
+            cmi  <- cmicalc(mi, method=correct)
             sdpi <- sqrt((sd1i^2 + sd2i^2)/2)
             di   <- (m1i - m2i) / sdpi
             yi   <- cmi * di
@@ -1076,7 +1104,7 @@ data, slab, flip, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS"
          ### standardized mean difference standardized by SD of group 2 (with heteroscedastic SDs)
 
          if (measure == "SMD1H") {
-            cmi <- .cmicalc(mi, correct=correct)
+            cmi <- cmicalc(mi, method=correct)
             yi <- cmi * di
             vi <- (sd1i^2/sd2i^2)/(n1i-1) + 1/(n2i-1) + yi^2/(2*(n2i-1)) # Bonett, 2008a, equation 12
             #vi <- cmi^2 * vi
@@ -1181,7 +1209,7 @@ data, slab, flip, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS"
             vi  <- 1/(ni-1) * (p1i*p2i/fzi^2 - (3/2 + (1 - p1i*zi/fzi)*(1 + p2i*zi/fzi)) * yi.t^2 + yi.t^4) # Soper, 1914
             #vi <- 1/(ni-1) * (yi.t^4 + yi.t^2 * (p1i*p2i*zi^2/fzi^2 + (2*p1i-1)*zi/fzi - 5/2) + p1i*p2i/fzi^2) # Tate, 1955; equivalent to equation from Soper, 1914
             # equation appears to work even if dichotomization is done based on a sample quantile value (so that p1i, p2i, and fzi are fixed by design)
-            # this is asymptotically consistent with escalc(measure="SMD", correct=FALSE) -> conv.delta(transf=transf.dtorbis)
+            # this is consistent with escalc(measure="SMD", correct=FALSE) -> conv.delta(transf=transf.dtorbis)
             #tmp <- escalc(measure="SMD", m1i=m1i, sd1i=sd1i, n1i=n1i, m2i=m2i, sd2i=sd2i, n2i=n2i, correct=FALSE)
             #yi <- conv.delta(yi, vi, data=tmp, transf=transf.dtorbis, replace=TRUE, n1i=n1i, n2i=n2i)$yi
             #vi <- conv.delta(yi, vi, data=tmp, transf=transf.dtorbis, replace=TRUE, n1i=n1i, n2i=n2i)$vi
@@ -1454,6 +1482,8 @@ data, slab, flip, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS"
                # this is consistent with escalc(measure="SMDH", correct=FALSE) -> conv.delta(transf=transf.dtocles)
                #tmp <- escalc(measure="SMDH", m1i=m1i[i], sd1i=sd1i[i], n1i=n1i[i], m2i=m2i[i], sd2i=sd2i[i], n2i=n2i[i], correct=FALSE)
                #vi[i] <- conv.delta(yi, vi, data=tmp, transf=transf.dtocles, replace=TRUE)$vi
+               # could also write this entirely as a function of yi
+               #vi[i] <- exp(-qnorm(yi[i])^2) / (8*base::pi) * (2*qnorm(yi[i])^2 * vri[i]^2 / (n1i[i]-1) + 2*qnorm(yi[i])^2 * (1-vri[i])^2 / (n2i[i]-1) + 4*vri[i]/(n1i[i]-1) + 4*(1-vri[i])/(n2i[i]-1))
             }
 
             ### large sample approximation to the sampling variance based on the binormal model
@@ -1478,6 +1508,8 @@ data, slab, flip, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS"
                # this is consistent with escalc(measure="SMD", correct=FALSE) -> conv.delta(transf=transf.dtocles)
                #tmp <- escalc(measure="SMD", m1i=m1i[i], sd1i=sd1i[i], n1i=n1i[i], m2i=m2i[i], sd2i=sd2i[i], n2i=n2i[i], correct=FALSE)
                #vi[i] <- conv.delta(yi, vi, data=tmp, transf=transf.dtocles, replace=TRUE)$vi
+               # could also write this entirely as a function of yi
+               #vi[i] <- exp(-qnorm(yi[i])^2) / (4*base::pi) * (1/n1i[i] + 1/n2i[i] + qnorm(yi[i])^2 / (n1i[i]+n2i[i]))
             }
 
             ### estimate under H0: CLES=AUC=0.5
@@ -1743,6 +1775,66 @@ data, slab, flip, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS"
          if (measure == "ZSPCOR") {
             vi <- vi / (1 - ifelse(yi^2 > 1, 1, yi^2))^2
             yi <- transf.rtoz(yi)
+         }
+
+      }
+
+      ######################################################################
+
+      if (is.element(measure, c("ICC","ZICC"))) {
+
+         ri <- .getx("ri", mf=mf, data=data, checknumeric=TRUE)
+         mi <- .getx("mi", mf=mf, data=data, checknumeric=TRUE)
+         ni <- .getx("ni", mf=mf, data=data, checknumeric=TRUE)
+
+         if (!.all.specified(ri, mi, ni))
+            stop(mstyle$stop("Cannot compute outcomes. Check that all of the required information is specified\n  via the appropriate arguments (i.e., ri, mi, ni)."))
+
+         if (!.equal.length(ri, mi, ni))
+            stop(mstyle$stop("Supplied data vectors are not all of the same length."))
+
+         k.all <- length(ri)
+
+         if (!is.null(subset)) {
+            subset <- .chksubset(subset, k.all)
+            ri <- .getsubset(ri, subset)
+            mi <- .getsubset(mi, subset)
+            ni <- .getsubset(ni, subset)
+         }
+
+         if (any(abs(ri) > 1, na.rm=TRUE))
+            stop(mstyle$stop("One or more ICC values are > 1 or < -1."))
+
+         if (any(mi < 2, na.rm=TRUE))
+            stop(mstyle$stop("One or more mi values are < 2."))
+
+         if (any(ni <= 0, na.rm=TRUE))
+            stop(mstyle$stop("One or more sample sizes are <= 0."))
+
+         ni.u <- ni # unadjusted total sample sizes
+
+         k <- length(ri)
+
+         ### raw ICC values
+
+         if (measure == "ICC") {
+            yi <- ri
+            vi <- 2 * (1-ri)^2 * (1 + (mi-1) * ri)^2 / (mi * (mi-1) * ni) # Fisher, 1925
+         }
+
+         ### distinguish between the 'proper' ZICC transformation and using a value of mi that does not match up with the actual mi?
+
+         ### r-to-z transformed ICC values
+
+         if (measure == "ZICC") {
+            yi <- 1/2 * log((1 + (mi-1) * ri) / (1 - ri))
+            vi <- mi / (2 * (mi-1) * ni)
+            # this is consistent with escalc(measure="ICC") -> conv.delta(transf=transf.icctoz)
+            #tmp <- escalc(measure="ICC", ri=ri, mi=mi, ni=ni)
+            #vi <- conv.delta(yi, vi, data=tmp, transf=transf.icctoz, mi=mi, replace=TRUE)$vi
+            # but Fisher (1925) gives the following equations
+            #vi <- mi / (2 * (mi-1) * (ni-2)) # in general
+            #vi <- 1 / (ni - 3/2) # for mi=2 (which is not consistent with the general equation either)
          }
 
       }
@@ -2158,7 +2250,7 @@ data, slab, flip, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS"
          if (measure == "PFT") {
             yi <- 1/2*(asin(sqrt(xi/(ni+1))) + asin(sqrt((xi+1)/(ni+1))))
             vi <- 1/(4*ni+2)
-            # this is asymptotically consistent with escalc(measure="PR") -> conv.delta(transf=transf.pft)
+            # this is consistent with escalc(measure="PR") -> conv.delta(transf=transf.pft)
             #tmp <- escalc(measure="PR", xi=xi, ni=ni)
             #vi <- conv.delta(yi, vi, data=tmp, transf=transf.pft, ni=ni, replace=TRUE)$vi
          }
@@ -2291,7 +2383,7 @@ data, slab, flip, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS"
          if (measure == "IRFT") {
             yi <- 1/2 * (sqrt(iri) + sqrt(iri+1/ti))
             vi <- 1 / (4*ti)
-            # this is asymptotically consistent with escalc(measure="IR") -> conv.delta(transf=transf.irft)
+            # this is consistent with escalc(measure="IR") -> conv.delta(transf=transf.irft)
             #tmp <- escalc(measure="IR", xi=xi, ti=ti)
             #vi <- conv.delta(yi, vi, data=tmp, transf=transf.irft, ti=ti, replace=TRUE)$vi
          }
@@ -2300,15 +2392,17 @@ data, slab, flip, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS"
 
       ######################################################################
 
-      if (is.element(measure, c("MN","SMN","MNLN","SDLN","CVLN"))) {
+      if (is.element(measure, c("MN","POMPMN","SMN","MNLN","SDLN","CVLN"))) {
 
-         mi  <- .getx("mi",  mf=mf, data=data, checknumeric=TRUE) # for SDLN, do not need to supply this
-         sdi <- .getx("sdi", mf=mf, data=data, checknumeric=TRUE)
-         ni  <- .getx("ni",  mf=mf, data=data, checknumeric=TRUE)
-
-         ### for these measures, need mi, sdi, and ni
+         mi   <- .getx("mi",   mf=mf, data=data, checknumeric=TRUE) # for SDLN, do not need to supply this
+         sdi  <- .getx("sdi",  mf=mf, data=data, checknumeric=TRUE)
+         ni   <- .getx("ni",   mf=mf, data=data, checknumeric=TRUE)
+         mini <- .getx("mini", mf=mf, data=data, checknumeric=TRUE) # only need this for POMPMN
+         maxi <- .getx("maxi", mf=mf, data=data, checknumeric=TRUE) # only need this for POMPMN
 
          if (is.element(measure, c("MN","SMN","MNLN","CVLN"))) {
+
+            ### for these measures, need mi, sdi, and ni
 
             if (!.all.specified(mi, sdi, ni))
                stop(mstyle$stop("Cannot compute outcomes. Check that all of the required information is specified\n  via the appropriate arguments (i.e., mi, sdi, ni)."))
@@ -2318,9 +2412,24 @@ data, slab, flip, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS"
 
          }
 
-         ### for this measure, need sdi and ni
+         if (measure == "POMPMN") {
+
+            ### for this measure, need mi, sdi, ni, mini, and maxi
+
+            if (!.all.specified(mi, sdi, ni, mini, maxi))
+               stop(mstyle$stop("Cannot compute outcomes. Check that all of the required information is specified\n  via the appropriate arguments (i.e., mi, sdi, ni, mini, maxi)."))
+
+            if (!.equal.length(mi, sdi, ni, mini, maxi))
+               stop(mstyle$stop("Supplied data vectors are not all of the same length."))
+
+            mi  <- 100 * (mi - mini) / (maxi - mini)
+            sdi <- 100 * sdi / (maxi - mini)
+
+         }
 
          if (measure == "SDLN") {
+
+            ### for this measure, need sdi and ni
 
             if (!.all.specified(sdi, ni))
                stop(mstyle$stop("Cannot compute outcomes. Check that all of the required information is specified\n  via the appropriate arguments (i.e., sdi, ni)."))
@@ -2352,9 +2461,9 @@ data, slab, flip, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS"
 
          k <- length(ni)
 
-         ### (raw) mean
+         ### (raw) mean (raw and POMP version)
 
-         if (measure == "MN") {
+         if (is.element(measure, c("MN","POMPMN"))) {
 
             yi <- mi
             sdpi <- sqrt(.wmean(sdi^2, ni-1, na.rm=TRUE))
@@ -2383,7 +2492,7 @@ data, slab, flip, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS"
          ### single-group standardized mean
 
          if (measure == "SMN") {
-            cmi <- .cmicalc(ni-1, correct=correct)
+            cmi <- cmicalc(ni-1, method=correct)
             yi <- cmi * mi / sdi
             vi <- 1 / ni + yi^2 / (2*ni)
          }
@@ -2423,7 +2532,7 @@ data, slab, flip, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS"
 
       ######################################################################
 
-      if (is.element(measure, c("MC","SMCC","SMCR","SMCRH","SMCRP","SMCRPH","CLESCN","AUCCN","ROMC","VRC","CVRC"))) {
+      if (is.element(measure, c("MC","POMPMC","SMCC","SMCR","SMCRH","SMCRP","SMCRPH","CLESCN","AUCCN","ROMC","VRC","CVRC"))) {
 
          m1i  <- .getx("m1i",  mf=mf, data=data, checknumeric=TRUE) # for VRC, do not need to supply this
          m2i  <- .getx("m2i",  mf=mf, data=data, checknumeric=TRUE) # for VRC, do not need to supply this
@@ -2434,6 +2543,8 @@ data, slab, flip, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS"
          di   <- .getx("di",   mf=mf, data=data, checknumeric=TRUE)
          ti   <- .getx("ti",   mf=mf, data=data, checknumeric=TRUE)
          pi   <- .getx("pi",   mf=mf, data=data, checknumeric=TRUE)
+         mini <- .getx("mini", mf=mf, data=data, checknumeric=TRUE) # only need this for POMPMC
+         maxi <- .getx("maxi", mf=mf, data=data, checknumeric=TRUE) # only need this for POMPMC
 
          ri <- .expand1(ri, list(m1i, m2i, sd1i, sd2i, ni, di, ti, pi))
 
@@ -2449,9 +2560,26 @@ data, slab, flip, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS"
 
          }
 
+         if (measure == "POMPMC") {
+
+            ### for this measure, need m1i, m2i, sd1i, sd2i, ni, ri, mini, and maxi
+
+            if (!.all.specified(m1i, m2i, sd1i, sd2i, ni, ri, mini, maxi))
+               stop(mstyle$stop("Cannot compute outcomes. Check that all of the required information is specified\n  via the appropriate arguments (i.e., m1i, m2i, sd1i, sd2i, ni, mini, maxi)."))
+
+            if (!.equal.length(m1i, m2i, sd1i, sd2i, ni, ri, mini, maxi))
+               stop(mstyle$stop("Supplied data vectors are not all of the same length."))
+
+            m1i <- 100 * (m1i - mini) / (maxi - mini)
+            m2i <- 100 * (m2i - mini) / (maxi - mini)
+            sd1i <- 100 * sd1i / (maxi - mini)
+            sd2i <- 100 * sd2i / (maxi - mini)
+
+         }
+
          if (measure == "SMCC") {
 
-            ### for this measures, need m1i, m2i, sd1i, sd2i, ni, and ri (and can also specify di/ti/pi)
+            ### for this measure, need m1i, m2i, sd1i, sd2i, ni, and ri (and can also specify di/ti/pi)
 
             if (!.equal.length(m1i, m2i, sd1i, sd2i, ri, ni, di, ti, pi))
                stop(mstyle$stop("Supplied data vectors are not all of the same length."))
@@ -2513,7 +2641,7 @@ data, slab, flip, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS"
             ri   <- .getsubset(ri,   subset)
          }
 
-         if (is.element(measure, c("MC","SMCC","SMCRH","SMCRP","SMCRPH","CLESCN","AUCCN","ROMC","VRC","CVRC"))) {
+         if (is.element(measure, c("MC","POMPMC","SMCC","SMCRH","SMCRP","SMCRPH","CLESCN","AUCCN","ROMC","VRC","CVRC"))) {
             if (any(c(sd1i, sd2i) < 0, na.rm=TRUE))
                stop(mstyle$stop("One or more standard deviations are negative."))
          }
@@ -2539,9 +2667,9 @@ data, slab, flip, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS"
          sddiffi <- sqrt(sd1i^2 + sd2i^2 - 2*ri*sd1i*sd2i) # SD of the change scores
          sdpi <- sqrt((sd1i^2+sd2i^2)/2) # pooled SD
 
-         ### (raw) mean change
+         ### (raw) mean change (raw and POMP version)
 
-         if (measure == "MC") {
+         if (is.element(measure, c("MC","POMPMC"))) {
             yi <- m1i - m2i
             vi <- sddiffi^2 / ni
          }
@@ -2551,7 +2679,7 @@ data, slab, flip, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS"
 
          if (measure == "SMCC") {
 
-            cmi <- .cmicalc(mi, correct=correct)
+            cmi <- cmicalc(mi, method=correct)
             di <- (m1i - m2i) / sddiffi
             yi <- cmi * di
 
@@ -2588,7 +2716,7 @@ data, slab, flip, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS"
 
          if (measure == "SMCR") {
 
-            cmi <- .cmicalc(mi, correct=correct)
+            cmi <- cmicalc(mi, method=correct)
             di <- (m1i - m2i) / sd1i
             yi <- cmi * di
 
@@ -2607,8 +2735,8 @@ data, slab, flip, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS"
 
                ### alternative large sample approximation to the sampling variance
                if (vtype[i] == "LS2")
-                  vi[i] <- cmi[i]^2 * (2*(1-ri[i])/ni[i] + di[i]^2 / (2*ni[i])) # corrected (!) equation from Borenstein et al., 2009; analogous to LS2 for SMD and SMCC; see [b]
-                  #vi[i] <- cmi[i]^2 * 2 * (1-ri[i]) * (1/ni[i] + di[i]^2 / (2*ni[i])) # Borenstein, 2009, equation 4.28 (with J^2 multiplier) but this is incorrect
+                  vi[i] <- cmi[i]^2 * (2*(1-ri[i])/ni[i] + di[i]^2 / (2*ni[i])) # corrected (!) equation from Borenstein et al., 2009/2021; analogous to LS2 for SMD and SMCC; see [b]
+                  #vi[i] <- cmi[i]^2 * 2 * (1-ri[i]) * (1/ni[i] + di[i]^2 / (2*ni[i])) # Borenstein, 2009/2021, equation 4.28 (with J^2 multiplier) but this is incorrect
 
                ### unbiased estimate of the sampling variance
                if (vtype[i] == "UB") {
@@ -2630,7 +2758,7 @@ data, slab, flip, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS"
 
          if (measure == "SMCRH") {
 
-            cmi <- .cmicalc(mi, correct=correct)
+            cmi <- cmicalc(mi, method=correct)
             di <- (m1i - m2i) / sd1i
             yi <- cmi * di
 
@@ -2663,7 +2791,7 @@ data, slab, flip, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS"
          if (measure == "SMCRP") {
 
             mi <- 2*(ni-1) / (1 + ri^2)
-            cmi <- .cmicalc(mi, correct=correct)
+            cmi <- cmicalc(mi, method=correct)
             di <- (m1i - m2i) / sdpi
             yi <- cmi * di
 
@@ -2689,7 +2817,7 @@ data, slab, flip, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS"
          if (measure == "SMCRPH") {
 
             mi <- 2*(ni-1) / (1 + ri^2)
-            cmi <- .cmicalc(mi, correct=correct)
+            cmi <- cmicalc(mi, method=correct)
             di <- (m1i - m2i) / sdpi
             yi <- cmi * di
 
@@ -2748,7 +2876,8 @@ data, slab, flip, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS"
                   vi[i] <- sd1i[i]^2 / (ni[i]*m1i[i]^2) + sd2i[i]^2 / (ni[i]*m2i[i]^2) - 2*ri[i]*sd1i[i]*sd2i[i]/(m1i[i]*m2i[i]*ni[i]) # Senior et al., 2020, equation 18
 
                if (vtype[i] == "LS2")
-                  vi[i] <- sd1i[i]^2 / (ni[i]*m1i[i]^2) + sd2i[i]^2 / (ni[i]*m2i[i]^2) + sd1i[i]^4/(2*ni[i]^2*m1i[i]^4) + sd2i[i]^4/(2*ni[i]^2*m2i[i]^4) - ri[i]*2*sd1i[i]*sd2i[i]/(ni[i]*m1i[i]*m2i[i]) + ri[i]^2*sd1i[i]^2*sd2i[i]^2*(m1i[i]^4+m2i[i]^4)/(2*ni[i]^2*m1i[i]^4*m2i[i]^4) # Senior et al., 2020, equation 19
+                  vi[i] <- sd1i[i]^2 / (ni[i]*m1i[i]^2) + sd2i[i]^2 / (ni[i]*m2i[i]^2) - 2*ri[i]*sd1i[i]*sd2i[i]/(m1i[i]*m2i[i]*ni[i]) + sd1i[i]^4/(2*ni[i]^2*m1i[i]^4) + sd2i[i]^4/(2*ni[i]^2*m2i[i]^4) - ri[i]^2*sd1i[i]^2*sd2i[i]^2/(ni[i]^2*m1i[i]^2*m2i[i]^2)
+                  #vi[i] <- sd1i[i]^2 / (ni[i]*m1i[i]^2) + sd2i[i]^2 / (ni[i]*m2i[i]^2) + sd1i[i]^4/(2*ni[i]^2*m1i[i]^4) + sd2i[i]^4/(2*ni[i]^2*m2i[i]^4) - ri[i]*2*sd1i[i]*sd2i[i]/(ni[i]*m1i[i]*m2i[i]) + ri[i]^2*sd1i[i]^2*sd2i[i]^2*(m1i[i]^4+m2i[i]^4)/(2*ni[i]^2*m1i[i]^4*m2i[i]^4) # Senior et al., 2020, equation 19 (incorrect!)
 
             }
 
@@ -2773,7 +2902,8 @@ data, slab, flip, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS"
                   vi[i] <- (1-ri[i]^2) / (ni[i]-1) # Senior et al., 2020, equation 21
 
                if (vtype[i] == "LS2")
-                  vi[i] <- ni[i] / (ni[i]-1)^2 - ri[i]^2 / (ni[i]-1) + ri[i]^4*(sd1i[i]^8+sd2i[i]^8) / (2*(ni[i]-1)^2*sd1i[i]^4*sd2i[i]^4) # Senior et al., 2020, equation 22
+                  vi[i] <- (1-ri[i]^2) / (ni[i]-1) + (1-ri[i]^4) / (ni[i]-1)^2
+                  #vi[i] <- ni[i] / (ni[i]-1)^2 - ri[i]^2 / (ni[i]-1) + ri[i]^4*(sd1i[i]^8+sd2i[i]^8) / (2*(ni[i]-1)^2*sd1i[i]^4*sd2i[i]^4) # Senior et al., 2020, equation 22 (incorrect!)
 
             }
 
@@ -2802,7 +2932,8 @@ data, slab, flip, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS"
                   vi[i] <- sd1i[i]^2 / (ni[i]*m1i[i]^2) + sd2i[i]^2 / (ni[i]*m2i[i]^2) - 2*ri[i]*sd1i[i]*sd2i[i]/(m1i[i]*m2i[i]*ni[i]) + (1-ri[i]^2) / (ni[i]-1) # Senior et al., 2020, equation 23
 
                if (vtype[i] == "LS2")
-                  vi[i] <- sd1i[i]^2 / (ni[i]*m1i[i]^2) + sd2i[i]^2 / (ni[i]*m2i[i]^2) + sd1i[i]^4/(2*ni[i]^2*m1i[i]^4) + sd2i[i]^4/(2*ni[i]^2*m2i[i]^4) - ri[i]*2*sd1i[i]*sd2i[i]/(ni[i]*m1i[i]*m2i[i]) + ri[i]^2*sd1i[i]^2*sd2i[i]^2*(m1i[i]^4+m2i[i]^4)/(2*ni[i]^2*m1i[i]^4*m2i[i]^4) + ni[i] / (ni[i]-1)^2 - ri[i]^2 / (ni[i]-1) + ri[i]^4*(sd1i[i]^8+sd2i[i]^8) / (2*(ni[i]-1)^2*sd1i[i]^4*sd2i[i]^4) # Senior et al., 2020, equation 24
+                  vi[i] <- sd1i[i]^2 / (ni[i]*m1i[i]^2) + sd2i[i]^2 / (ni[i]*m2i[i]^2) - 2*ri[i]*sd1i[i]*sd2i[i]/(m1i[i]*m2i[i]*ni[i]) + sd1i[i]^4/(2*ni[i]^2*m1i[i]^4) + sd2i[i]^4/(2*ni[i]^2*m2i[i]^4) - ri[i]^2*sd1i[i]^2*sd2i[i]^2/(ni[i]^2*m1i[i]^2*m2i[i]^2) + (1-ri[i]^2) / (ni[i]-1) + (1-ri[i]^4) / (ni[i]-1)^2
+                  #vi[i] <- sd1i[i]^2 / (ni[i]*m1i[i]^2) + sd2i[i]^2 / (ni[i]*m2i[i]^2) + sd1i[i]^4/(2*ni[i]^2*m1i[i]^4) + sd2i[i]^4/(2*ni[i]^2*m2i[i]^4) - ri[i]*2*sd1i[i]*sd2i[i]/(ni[i]*m1i[i]*m2i[i]) + ri[i]^2*sd1i[i]^2*sd2i[i]^2*(m1i[i]^4+m2i[i]^4)/(2*ni[i]^2*m1i[i]^4*m2i[i]^4) + ni[i] / (ni[i]-1)^2 - ri[i]^2 / (ni[i]-1) + ri[i]^4*(sd1i[i]^8+sd2i[i]^8) / (2*(ni[i]-1)^2*sd1i[i]^4*sd2i[i]^4) # Senior et al., 2020, equation 24 (incorrect!)
 
             }
 
@@ -2860,7 +2991,7 @@ data, slab, flip, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS"
             yi <- 1 - (1-ai)^(1/3) # but with this, yi remains a monotonically increasing function of ai
             vi <- 18*mi*(ni-1)*(1-ai)^(2/3) / ((mi-1)*(9*ni-11)^2)
             #vi <- 2*mi*(1-ai)^(2/3) / (9*(mi-1)*(ni-2)) # this follows from the delta method
-            # this is asymptotically consistent with escalc(measure="ARAW") -> conv.delta(transf=transf.ahw)
+            # this is consistent with escalc(measure="ARAW") -> conv.delta(transf=transf.ahw)
             #tmp <- escalc(measure="ARAW", ai=ai, mi=mi, ni=ni)
             #vi <- conv.delta(yi, vi, data=tmp, transf=transf.ahw, replace=TRUE)$vi
          }
@@ -3002,6 +3133,13 @@ data, slab, flip, subset, include, add=1/2, to="only0", drop00=FALSE, vtype="LS"
       yi[is.NaN] <- NA_real_
       vi[is.NaN] <- NA_real_
    }
+
+   ### check for unusually large estimates for a given measure
+
+   if (missing(cutoff))
+      cutoff <- NULL
+
+   .chkyisize(as.vector(yi), measure=measure, cutoff=cutoff)
 
    ### check for negative vi's (should not happen, but just in case)
 

@@ -60,7 +60,7 @@ ranktest <- function(x, vi, sei, subset, data, digits, ...) {
    } else {
 
       if (!.is.vector(x))
-         stop(mstyle$stop("Argument 'x' must be a vector or an 'rma' model object."))
+         stop(mstyle$stop("Argument 'x' must be a vector with estimates or an 'rma' model object."))
 
       yi <- x
 
@@ -120,7 +120,7 @@ ranktest <- function(x, vi, sei, subset, data, digits, ...) {
 
             yi <- yi[not.na]
             vi <- vi[not.na]
-            warning(mstyle$warning(paste(sum(has.na), ifelse(sum(has.na) > 1, "studies", "study"), "with NAs omitted from test.")), call.=FALSE)
+            warning(mstyle$warning(paste(sum(has.na), ifelse(sum(has.na) > 1, "studies", "study"), "with NAs omitted from the test.")), call.=FALSE)
 
          }
 

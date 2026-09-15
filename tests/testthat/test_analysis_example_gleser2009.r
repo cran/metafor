@@ -38,8 +38,8 @@ test_that("results are correct for the multiple-treatment studies example with r
 
    ### compare with results on page 361 (eq. 19.7)
    tmp <- vcov(res) * 10^6
-   expected <- structure(c(24.612, 19.954, 13.323, 19.954, 28.538, 13.255, 13.323, 13.255, 69.806), .Dim = c(3L, 3L),
-                         .Dimnames = list(c("factor(trt)1", "factor(trt)2", "factor(trt)3"), c("factor(trt)1", "factor(trt)2", "factor(trt)3")))
+   expected <- structure(c(24.612, 19.954, 13.323, 19.954, 28.538, 13.255, 13.323, 13.255, 69.806), dim = c(3L, 3L),
+                         dimnames = list(c("factor(trt)1", "factor(trt)2", "factor(trt)3"), c("factor(trt)1", "factor(trt)2", "factor(trt)3")))
    expect_equivalent(tmp, expected, tolerance=.tol[["var"]])
 
    ### compare with results on page 362 (eq. 19.8)
@@ -69,8 +69,8 @@ test_that("results are correct for the multiple-treatment studies example with l
 
    ### compare with results on page 363
    tmp <- vcov(res)
-   expected <- structure(c(0.01412, 0.00712, 0.00425, 0.00712, 0.01178, 0.00455, 0.00425, 0.00455, 0.02703), .Dim = c(3L, 3L),
-                         .Dimnames = list(c("factor(trt)1", "factor(trt)2", "factor(trt)3"), c("factor(trt)1", "factor(trt)2", "factor(trt)3")))
+   expected <- structure(c(0.01412, 0.00712, 0.00425, 0.00712, 0.01178, 0.00455, 0.00425, 0.00455, 0.02703), dim = c(3L, 3L),
+                         dimnames = list(c("factor(trt)1", "factor(trt)2", "factor(trt)3"), c("factor(trt)1", "factor(trt)2", "factor(trt)3")))
    expect_equivalent(tmp, expected, tolerance=.tol[["var"]])
 
    ### compare with results on page 363
@@ -100,8 +100,8 @@ test_that("results are correct for the multiple-treatment studies example with l
 
    ### (results for this not given in chapter)
    tmp <- vcov(res)
-   expected <- structure(c(0.01287, 0.00623, 0.00371, 0.00623, 0.01037, 0.00399, 0.00371, 0.00399, 0.02416), .Dim = c(3L, 3L),
-                         .Dimnames = list(c("factor(trt)1", "factor(trt)2", "factor(trt)3"), c("factor(trt)1", "factor(trt)2", "factor(trt)3")))
+   expected <- structure(c(0.01287, 0.00623, 0.00371, 0.00623, 0.01037, 0.00399, 0.00371, 0.00399, 0.02416), dim = c(3L, 3L),
+                         dimnames = list(c("factor(trt)1", "factor(trt)2", "factor(trt)3"), c("factor(trt)1", "factor(trt)2", "factor(trt)3")))
    expect_equivalent(tmp, expected, tolerance=.tol[["var"]])
 
    ### (results for this not given in chapter)
@@ -131,8 +131,8 @@ test_that("results are correct for the multiple-treatment studies example with d
 
    ### compare with results on page 365
    tmp <- vcov(res)*2^2
-   expected <- structure(c(0.00058, 4e-04, 0.00024, 4e-04, 0.00061, 0.00025, 0.00024, 0.00025, 0.00137), .Dim = c(3L, 3L),
-                         .Dimnames = list(c("factor(trt)1", "factor(trt)2", "factor(trt)3"), c("factor(trt)1", "factor(trt)2", "factor(trt)3")))
+   expected <- structure(c(0.00058, 4e-04, 0.00024, 4e-04, 0.00061, 0.00025, 0.00024, 0.00025, 0.00137), dim = c(3L, 3L),
+                         dimnames = list(c("factor(trt)1", "factor(trt)2", "factor(trt)3"), c("factor(trt)1", "factor(trt)2", "factor(trt)3")))
    expect_equivalent(tmp, expected, tolerance=.tol[["var"]])
 
    ### compare with results on page 365
@@ -175,7 +175,7 @@ test_that("results are correct for the multiple-treatment studies example with s
 
    ### compare with results on page 367
    tmp <- vcov(res)
-   expected <- structure(c(0.02257, 0.01244, 0.01244, 0.03554), .Dim = c(2L, 2L), .Dimnames = list(c("factor(trt)1", "factor(trt)2"), c("factor(trt)1", "factor(trt)2")))
+   expected <- structure(c(0.02257, 0.01244, 0.01244, 0.03554), dim = c(2L, 2L), dimnames = list(c("factor(trt)1", "factor(trt)2"), c("factor(trt)1", "factor(trt)2")))
    expect_equivalent(tmp, expected, tolerance=.tol[["var"]])
 
    ### compare with results on page 367
@@ -213,7 +213,7 @@ test_that("results are correct for the multiple-endpoint studies example with st
 
    ### (results for this not given in chapter)
    tmp <- vcov(res)
-   expected <- structure(c(0.01008, 0.00537, 0.00537, 0.00989), .Dim = c(2L, 2L), .Dimnames = list(c("outcomemath", "outcomereading"), c("outcomemath", "outcomereading")))
+   expected <- structure(c(0.01008, 0.00537, 0.00537, 0.00989), dim = c(2L, 2L), dimnames = list(c("outcomemath", "outcomereading"), c("outcomemath", "outcomereading")))
    expect_equivalent(tmp, expected, tolerance=.tol[["var"]])
 
    ### compare with results on page 371

@@ -35,11 +35,11 @@
 transf.rtoz <- function(xi) { # resulting value between -Inf (for -1) and +Inf (for +1)
    xi[xi >  1] <-  1
    xi[xi < -1] <- -1
-   atanh(xi) # same as 1/2 * log((1+xi)/(1-xi))
+   atanh(xi) # same as 1/2 * log((1 + xi) / (1 - xi))
 }
 
 transf.ztor <- function(xi)
-   tanh(xi) # same as (exp(2*xi)-1)/(exp(2*xi)+1)
+   tanh(xi) # same as (exp(2*xi) - 1) / (exp(2*xi) + 1)
 
 transf.ztor.int <- function(xi, targs=NULL) {
 
@@ -67,7 +67,7 @@ transf.ztor.int <- function(xi, targs=NULL) {
    }
 
    if (tau2 == 0) {
-      zi <- transf.ztor(xi)
+      zi <- tanh(xi)
    } else {
       zi <- mapply(xi, FUN=cfunc, tau=tau, lower=targs$lower, upper=targs$upper)
    }
@@ -124,6 +124,21 @@ transf.r2toz <- function(xi) {
 
 transf.ztor2 <- function(xi)
    tanh(xi)^2
+
+############################################################################
+
+#transf.icctoz <- function(xi, mi) {
+#   xi[xi >  1] <-  1
+#   xi[xi < -1] <- -1
+#   1/2 * log((1 + (mi-1)*xi) / (1 - xi))
+#}
+#
+#transf.ztoicc <- function(xi, mi) {
+#   a <- exp(2 * xi)
+#   (a - 1) / (a + mi - 1)
+#}
+
+# need a version with targs?
 
 ############################################################################
 
@@ -224,7 +239,7 @@ transf.ilogit.int <- function(xi, targs=NULL) {
    }
 
    if (tau2 == 0) {
-      zi <- transf.ilogit(xi)
+      zi <- plogis(xi)
    } else {
       zi <- mapply(xi, FUN=cfunc, tau=tau, lower=targs$lower, upper=targs$upper)
    }
@@ -302,9 +317,9 @@ transf.iarcsin.int <- function(xi, targs=NULL) {
    tau <- sqrt(targs$tau2)
 
    if (is.null(targs$lower))
-      targs$lower <- 0
+      targs$lower <- max(0, xi-10*tau)
    if (is.null(targs$upper))
-      targs$upper <- base::pi/2
+      targs$upper <- min(base::pi/2, xi+10*tau)
 
    toint <- function(zval, xi, tau)
       transf.iarcsin(zval) * dnorm(zval, mean=xi, sd=tau) / (pnorm((base::pi/2-xi)/tau) - pnorm(-xi/tau))
@@ -539,9 +554,9 @@ transf.iahw.int <- function(xi, targs=NULL) {
    tau <- sqrt(tau2)
 
    if (is.null(targs$lower))
-      targs$lower <- 0
+      targs$lower <- max(0, xi-10*tau)
    if (is.null(targs$upper))
-      targs$upper <- 1
+      targs$upper <- min(1, xi+10*tau)
 
    toint <- function(zval, xi, tau)
       transf.iahw(zval) * dnorm(zval, mean=xi, sd=tau) / (pnorm((1-xi)/tau) - pnorm(-xi/tau))
@@ -556,7 +571,7 @@ transf.iahw.int <- function(xi, targs=NULL) {
    }
 
    if (tau2 == 0) {
-      zi <- transf.ztor(xi)
+      zi <- transf.iahw(xi)
    } else {
       zi <- mapply(xi, FUN=cfunc, tau=tau, lower=targs$lower, upper=targs$upper)
    }
@@ -598,7 +613,7 @@ transf.iahw.mode <- function(xi, targs=NULL) {
 
    zi <- sapply(xi, function(x) {
       if (tau2 == 0)
-         return(transf.iarcsin(xi))
+         return(transf.iahw(xi))
       res <- try(optimize(dfun, maximum=TRUE, lower=0, upper=1, mu=x, tau=tau))
       if (inherits(res, "try-error")) {
          return(NA_real_)
@@ -638,7 +653,7 @@ transf.iabt.int <- function(xi, targs=NULL) {
    tau <- sqrt(tau2)
 
    if (is.null(targs$lower))
-      targs$lower <- 0
+      targs$lower <- max(0, xi-10*tau)
    if (is.null(targs$upper))
       targs$upper <- xi+10*tau
 
@@ -655,7 +670,7 @@ transf.iabt.int <- function(xi, targs=NULL) {
    }
 
    if (tau2 == 0) {
-      zi <- transf.ztor(xi)
+      zi <- transf.iabt(xi)
    } else {
       zi <- mapply(xi, FUN=cfunc, tau=tau, lower=targs$lower, upper=targs$upper)
    }
@@ -697,7 +712,7 @@ transf.iabt.mode <- function(xi, targs=NULL) {
 
    zi <- sapply(xi, function(x) {
       if (tau2 == 0)
-         return(transf.iarcsin(xi))
+         return(transf.iabt(xi))
       res <- try(optimize(dfun, maximum=TRUE, lower=0, upper=1, mu=x, tau=tau))
       if (inherits(res, "try-error")) {
          return(NA_real_)

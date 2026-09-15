@@ -26,7 +26,7 @@ test_that("permutest() gives correct results for a random-effects model.", {
 
    tmp <- coef(sav)
    expected <- structure(list(estimate = 0.029444, se = 0.013068, zval = 2.253107, pval = 0.0625, ci.lb = 0.003831, ci.ub = 0.055058),
-                         .Names = c("estimate", "se", "zval", "pval", "ci.lb", "ci.ub"), row.names = "intrcpt", class = "data.frame")
+                         names = c("estimate", "se", "zval", "pval", "ci.lb", "ci.ub"), row.names = "intrcpt", class = "data.frame")
    expect_equivalent(tmp, expected, tolerance=.tol[["misc"]])
 
    ### approximate permutation test

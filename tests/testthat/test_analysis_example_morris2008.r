@@ -49,7 +49,7 @@ test_that("calculations of escalc() are correct for measure='SMCR'.", {
 
    sd_pool <- sqrt((with(datT, (ni-1)*sd_pre^2) + with(datC, (ni-1)*sd_pre^2)) / (datT$ni + datC$ni - 2))
 
-   dat <- data.frame(yi = metafor:::.cmicalc(datT$ni + datC$ni - 2) * (with(datT, m_post - m_pre) - with(datC, m_post - m_pre)) / sd_pool)
+   dat <- data.frame(yi = cmicalc(datT$ni + datC$ni - 2) * (with(datT, m_post - m_pre) - with(datC, m_post - m_pre)) / sd_pool)
    dat$vi <- 2*(1-datT$ri) * (1/datT$ni + 1/datC$ni) + dat$yi^2 / (2*(datT$ni + datC$ni))
 
    ### compare with results on page 382 (Table 5)

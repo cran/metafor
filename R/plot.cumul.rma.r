@@ -14,6 +14,11 @@ digits, cols, grid=TRUE, pch=19, cex=1, lwd=2, ...) {
 
    .start.plot()
 
+   if (interactive()) {
+      dev.hold()
+      on.exit(dev.flush(), add=TRUE)
+   }
+
    if (missing(cols))
       cols <- c(.coladj(par("bg","fg"), dark=0.2, light=-0.2), .coladj(par("bg","fg"), dark=0.8, light=-0.8))
 
@@ -24,9 +29,9 @@ digits, cols, grid=TRUE, pch=19, cex=1, lwd=2, ...) {
          yaxis <- "tau2"
       }
    } else {
-      yaxis <- match.arg(yaxis, c("tau2","I2","H2"))
+      yaxis <- match.arg(yaxis, c("tau2","tau","I2","H2"))
       if (is.null(x$tau2))
-         stop(mstyle$stop("Cannot use yaxis=\"tau2\" for equal/fixed-effects models."))
+         stop(mstyle$stop(paste0("Cannot use yaxis=\"", yaxis, "\" for equal/fixed-effects models.")))
    }
 
    if (missing(transf))
@@ -48,6 +53,9 @@ digits, cols, grid=TRUE, pch=19, cex=1, lwd=2, ...) {
       if (yaxis == "tau2")
          #ylab <- "Amount of Heterogeneity (tau^2)"
          ylab <- expression(paste("Amount of Heterogeneity ", (tau^2)))
+      if (yaxis == "tau")
+         #ylab <- "Amount of Heterogeneity (tau)"
+         ylab <- expression(paste("Amount of Heterogeneity ", (tau)))
       if (yaxis == "I2")
          #ylab <- "Percentage of Variability due to Heterogeneity (I^2)"
          ylab <- expression(paste("Percentage of Variability due to Heterogeneity ", (I^2)))
@@ -69,6 +77,8 @@ digits, cols, grid=TRUE, pch=19, cex=1, lwd=2, ...) {
 
    if (missing(digits)) {
       if (yaxis == "tau2")
+         digits <- c(2L,3L)
+      if (yaxis == "tau")
          digits <- c(2L,3L)
       if (yaxis == "I2")
          digits <- c(2L,1L)
@@ -107,6 +117,8 @@ digits, cols, grid=TRUE, pch=19, cex=1, lwd=2, ...) {
 
    if (yaxis == "tau2")
       dat$yval <- x$tau2
+   if (yaxis == "tau")
+      dat$yval <- sqrt(x$tau2)
    if (yaxis == "I2")
       dat$yval <- x$I2
    if (yaxis == "H2")

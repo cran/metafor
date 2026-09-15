@@ -21,6 +21,11 @@ label=FALSE, offset=0.3, pos=13, lty, ...) {
 
    .start.plot()
 
+   if (interactive()) {
+      dev.hold()
+      on.exit(dev.flush(), add=TRUE)
+   }
+
    envelopecol <- .coladj(par("bg","fg"), dark=0.15, light=-0.15)
 
    if (label == "out" && is.logical(envelope))

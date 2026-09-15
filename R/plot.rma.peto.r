@@ -14,6 +14,11 @@ plot.rma.peto <- function(x, qqplot=FALSE, ...) {
 
    .start.plot()
 
+   if (interactive()) {
+      dev.hold()
+      on.exit(dev.flush(), add=TRUE)
+   }
+
    # if no plotting device is open or mfrow is too small, set mfrow appropriately
    if (dev.cur() == 1L || prod(par("mfrow")) < 4L)
       par(mfrow=n2mfrow(4))

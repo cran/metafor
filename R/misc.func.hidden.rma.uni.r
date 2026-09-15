@@ -71,3 +71,95 @@
 }
 
 ############################################################################
+
+.re.fit.quick <- function(yi, vi, method, threshold=10^-5, maxiter=100, addei=TRUE, addhi=TRUE) {
+
+   k <- length(yi)
+   wi <- 1 / vi
+   sumwi <- sum(wi)
+   theta <- sum(wi * yi) / sumwi
+   Q <- sum(wi * (yi - theta)^2)
+
+   if (method == "EE")
+      tau2 <- 0
+
+   if (method == "HS")
+      tau2 <- max(0, (Q - k) / sumwi)
+
+   if (method == "HSk")
+      tau2 <- max(0, (k/(k-1)*Q - k) / sumwi)
+
+   if (method == "HE")
+      tau2 <- max(0, var(yi) - mean(vi))
+
+   if (method %in% c("DL","ML","REML","EB"))
+      tau2 <- max(0, (Q - (k-1)) / (sumwi - sum(wi^2) / sumwi))
+
+   if (method == "SJ") {
+      tau2.0 <- var(yi) * (k-1) / k
+      ri <- tau2.0 / (vi + tau2.0)
+      mu <- sum(ri*yi) / sum(ri)
+      tau2 <- sum(ri * (yi - mu)^2) / (k-1)
+   }
+
+   if (method %in% c("ML","REML","EB")) {
+
+      tau2 <- max(0.01, tau2)
+
+      diff <- 1
+      conv <- 1
+      iter <- 1
+
+      while (diff > threshold) {
+         if (iter > maxiter) {
+            conv <- 0
+            break
+         }
+         tau2.old <- tau2
+         wi <- 1 / (tau2 + vi)
+         sumwi <- sum(wi)
+         mu <- sum(wi*yi) / sumwi
+         if (method == "ML")
+            tau2 <- sum(wi^2 * ((yi - mu)^2 - vi)) / sum(wi^2)
+         if (method == "REML")
+            tau2 <- sum(wi^2 * ((yi - mu)^2 - vi)) / sum(wi^2) + 1 / sumwi
+         if (method == "EB")
+            tau2 <- sum(wi * (k/(k-1) * ((yi - mu)^2) - vi)) / sumwi
+         tau2 <- max(0, tau2)
+         diff <- abs(tau2 - tau2.old)
+         iter <- iter + 1
+      }
+
+      if (conv == 0)
+         stop()
+
+   }
+
+   wi <- 1 / (tau2 + vi)
+   sumwi <- sum(wi)
+   mu <- sum(wi*yi) / sumwi
+
+   if (method == "REML") {
+      ll <- sum(dnorm(yi, mean=mu, sd=sqrt(vi + tau2), log=TRUE)) + 1/2 * log(2*k*pi) - 1/2 * log(sumwi)
+   } else {
+      method <- "ML"
+      ll <- sum(dnorm(yi, mean=mu, sd=sqrt(vi + tau2), log=TRUE))
+   }
+
+   fit.stats <- matrix(NA_real_, nrow=5, ncol=2)
+   dimnames(fit.stats) <- list(c("ll","dev","AIC","BIC","AICc"), c("ML","REML"))
+   fit.stats["ll",method] <- ll
+
+   out <- list(beta=mu, vb=1/sumwi, tau2=tau2, Q=Q, k=k, fit.stats=fit.stats)
+
+   if (addei)
+      out$ei <- yi - mu
+
+   if (addhi)
+      out$hi <- wi / sumwi
+
+   return(out)
+
+}
+
+############################################################################

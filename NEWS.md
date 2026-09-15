@@ -1,3 +1,35 @@
+# metafor 5.2-1 (2026-09-15)
+
+- `escalc()` and `rma()` now warn about unusually large standardized mean differences (possibly a result of using SEs instead of SDs in their calculation)
+
+- added measures `"POMPMD"`, `"POMPMN"`, and `"POMPMC"` to `escalc()`
+
+- corrected the equations for `vtype="LS2"` for measures `"ROMC"`, `"VRC"`, and `"CVRC"`
+
+- added `vtype="LS3"` for measure `"SMD"`
+
+- adjusted the default bounds for some of the integral transformations to avoid numerical issues
+
+- added `hettest()` function to test for heteroscedastic heterogeneity
+
+- added `colci` argument to `forest.default()`, `forest.rma()`, and `forest.cumul.rma()`
+
+- corrected a bug in `conv.2x2()` where some values for the `ci` and `di` cells could be incorrectly replaced when `replace="all"`
+
+- can now also use `replace="complete"` in `conv.2x2()`, `conv.delta()`, `conv.fivenum()`, and `conv.wald()` to also replace non-missing values with NAs
+
+- the `predict()` functions gain argument `prob` to obtain probabilistic estimates from the predictive distribution
+
+- fixed a bug in `deltamethod()` when `order=2` and added `order=3` as an option
+
+- added `yaxis="tau"` as an option to `plot.cumul.rma()`
+
+- corrected a bug in `transf.iahw.int()`, `transf.iahw.mode()`, `transf.iabt.int()`, and `transf.iabt.mode()` not returning the correct value when `tau2 == 0`
+
+- added `cmicalc()` as an exported function
+
+- improved the documentation a bit
+
 # metafor 5.0-1 (2026-04-26)
 
 - argument `legend` can now be a list for `funnel()`, `labbe()`, `regplot()`, and `plot.permutest.rma.uni()` for more control over the look of the legend
@@ -24,9 +56,9 @@
 
 - all `addpoly()` functions now respect `alim` and `olim` as set by `forest()`
 
-- some functions (e.g., `vcalc()` and `rcalc()`) can now return variance-covariances matrices as objects of class `"vcovmat"`; these are printed nicely with `print.vcovmat()`
+- some functions (e.g., `vcalc()` and `rcalc()`) can now return variance-covariance matrices as objects of class `"vcovmat"`; these are printed nicely with `print.vcovmat()`
 
-- `rma()` nows calculates R^2 as long as a standard random-effects model is nested within the fitted mixed-effects model
+- `rma()` now calculates R^2 as long as a standard random-effects model is nested within the fitted mixed-effects model
 
 - `conv.2x2()` can now reconstruct tables for diagnostic studies based on diagnostic statistics (sensitivity, specificity, positive predictive value, negative predictive value)
 

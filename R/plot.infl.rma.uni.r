@@ -17,6 +17,11 @@ slab.style=1, las=0, pch=21, bg, bg.infl, col.na, ...) {
 
    .start.plot()
 
+   if (interactive()) {
+      dev.hold()
+      on.exit(dev.flush(), add=TRUE)
+   }
+
    if (missing(bg))
       bg <- .coladj(par("bg","fg"), dark=0.35, light=-0.35)
 

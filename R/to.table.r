@@ -20,6 +20,7 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, rows, cols) {
                               "RPB","RBIS","D2OR","D2ORN","D2ORL",                 # - transformations to r_PB, r_BIS, and log(OR)
                               "COR","UCOR","ZCOR",                                 # correlations (raw and r-to-z transformed)
                               "PCOR","ZPCOR","SPCOR",                              # partial and semi-partial correlations
+                              #"ICC", "ZICC",                                       # ICC(1) and r-to-z transformed
                               "R2","ZR2","R2F","ZR2F",                             # coefficient of determination (raw and r-to-z transformed)
                               "PR","PLN","PLO","PRZ","PAS","PFT",                  # single proportions (and transformations thereof)
                               "IR","IRLN","IRS","IRFT",                            # single-group person-time data (and transformations thereof)
@@ -28,7 +29,7 @@ data, slab, subset, add=1/2, to="none", drop00=FALSE, rows, cols) {
                               "ARAW","AHW","ABT")))                                # alpha (and transformations thereof)
       stop(mstyle$stop("Unknown 'measure' specified."))
 
-   if (is.element(measure, c("VR","CVR","PCOR","ZPCOR","SPCOR","R2","ZR2","R2F","ZR2F","SDLN","CVLN","VRC")))
+   if (is.element(measure, c("VR","CVR","PCOR","ZPCOR","SPCOR","ICC","ZICC","R2","ZR2","R2F","ZR2F","SDLN","CVLN","VRC","POMPMD","POMPMN","POMPMC")))
       stop(mstyle$stop("Function not available for this outcome measure."))
 
    na.act <- getOption("na.action")

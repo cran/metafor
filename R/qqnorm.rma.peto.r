@@ -16,6 +16,11 @@ qqnorm.rma.peto <- function(y, type="rstandard", pch=21, col, bg, grid=FALSE, la
 
    .start.plot()
 
+   if (interactive()) {
+      dev.hold()
+      on.exit(dev.flush(), add=TRUE)
+   }
+
    if (missing(col))
       col <- par("fg")
 

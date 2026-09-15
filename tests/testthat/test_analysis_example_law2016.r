@@ -48,7 +48,7 @@ test_that("results are correct for example 1.", {
    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.0219285638496459,
    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.168131868131868,
    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.0826973577700322
-   ), .Dim = c(17, 17))
+   ), dim = c(17, 17))
 
    ### create contrast matrix
    X <- contrmat(EG1, grp1="trt", grp2="ref", append=FALSE, last=NA)[,-1] # remove 'A' to make it the reference level
@@ -122,7 +122,7 @@ test_that("results are correct for example 2.", {
    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2857143, 0.5151261,
    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.4361111, 0.2111111,
    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2111111, 0.5380342
-   ), .Dim = c(16, 16))
+   ), dim = c(16, 16))
 
    ### create contrast matrix
    X <- contrmat(EG2, grp1="trt", grp2="ref", append=FALSE, last=NA)[,-1] # remove 'A' to make it the reference level

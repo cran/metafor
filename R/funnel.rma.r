@@ -29,6 +29,11 @@ label=FALSE, offset=0.4, legend=FALSE, ...) {
 
    .start.plot()
 
+   if (interactive()) {
+      dev.hold()
+      on.exit(dev.flush(), add=TRUE)
+   }
+
    mf <- match.call()
 
    if (missing(back))

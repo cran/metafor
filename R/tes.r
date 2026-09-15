@@ -1,6 +1,6 @@
 tes <- function(x, vi, sei, subset, data,
-   H0=0, alternative="two.sided", alpha=.05, theta, tau2,
-   test, tes.alternative="greater", progbar=TRUE, tes.alpha=.10,
+   H0=0, alternative="two.sided", alpha=0.05, theta, tau2,
+   test, tes.alternative="greater", progbar=TRUE, tes.alpha=0.10,
    digits, ...) {
 
    # allow multiple alpha values? plot for pval as a function of alpha?
@@ -75,7 +75,7 @@ tes <- function(x, vi, sei, subset, data,
       #########################################################################
 
       if (!.is.vector(x))
-         stop(mstyle$stop("Argument 'x' must be a vector or an 'rma' model object."))
+         stop(mstyle$stop("Argument 'x' must be a vector with estimates or an 'rma' model object."))
 
       yi <- x
 
@@ -202,7 +202,7 @@ tes <- function(x, vi, sei, subset, data,
             yi <- yi[not.na]
             vi <- vi[not.na]
             theta <- theta[not.na]
-            warning(mstyle$warning(paste(sum(has.na), ifelse(sum(has.na) > 1, "studies", "study"), "with NAs omitted from test.")), call.=FALSE)
+            warning(mstyle$warning(paste(sum(has.na), ifelse(sum(has.na) > 1, "studies", "study"), "with NAs omitted from the test.")), call.=FALSE)
 
          }
 

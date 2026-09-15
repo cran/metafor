@@ -32,7 +32,7 @@ trimfill.rma.uni <- function(x, side, estimator="L0", maxiter=100, verbose=FALSE
    if (is.null(side)) {
       args <- list(yi=yi, vi=vi, weights=wi, mods=sqrt(vi), method=x$method, weighted=x$weighted, control=x$control, outlist="beta=beta", ...)
       res <- suppressWarnings(.do.call(rma.uni, args))
-      ### TODO: add check in case there are problems with fitting the model
+      # TODO: add check in case there are problems with fitting the model
       if (res$beta[2] < 0) {
          side <- "right"
       } else {

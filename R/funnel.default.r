@@ -28,6 +28,11 @@ label=FALSE, offset=0.4, legend=FALSE, ...) {
 
    .start.plot()
 
+   if (interactive()) {
+      dev.hold()
+      on.exit(dev.flush(), add=TRUE)
+   }
+
    if (missing(back))
       back <- .coladj(par("bg","fg"), dark=0.1, light=-0.2)
 
